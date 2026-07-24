@@ -1,0 +1,30 @@
+generated: '2026-07-18'
+method: searched
+source: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+spec_type: Webhooks
+# CertifyOS documents a webhook surface but publishes no AsyncAPI document.
+# Consumers register endpoints via the /v2/webhooks API to receive real-time
+# notifications on "dozens of critical events" across the provider lifecycle.
+# Only events explicitly named in public docs are captured verbatim below;
+# the full event catalog is documented behind the account-gated API reference.
+registration:
+  endpoint: /v2/webhooks
+  base_url: https://api.certifyos.com
+  method: POST
+  description: >-
+    Register for real-time notifications on provider-lifecycle events. Delivered
+    as HTTP callbacks to a consumer-supplied endpoint.
+events:
+- name: CREDENTIALING_COMPLETED
+  description: A provider's credentialing workflow has completed.
+  source: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+- name: PROVIDER_TERMINATED
+  description: A provider has been terminated from the network.
+  source: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+notes: >-
+  CertifyOS states it can share atomic data elements or a full provider data
+  payload (verified data elements and credentialing packets) with downstream
+  systems via webhooks or API calls. Additional event types (e.g. monitoring
+  flags, license status changes) are referenced as "dozens of critical events"
+  but not individually enumerated in public materials, so they are not listed
+  here to avoid fabrication.
