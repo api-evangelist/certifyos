@@ -1,0 +1,48 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for Certify API Layer (roster-service)
+  version: 1.0.0
+extends: openapi/certify-roster-service-openapi.yml
+x-generated: '2026-08-09'
+x-method: generated
+x-source: >-
+  API Evangelist enrichment pass 2026-08-09. Captures our annotations WITHOUT
+  mutating the spec harvested verbatim from
+  https://docs.certifyos.com/_spec/reference/roster-service/openapi.yaml
+actions:
+- target: $.info
+  update:
+    x-apievangelist-provider: certify
+    x-apievangelist-harvested: '2026-08-09'
+    x-apievangelist-source: https://docs.certifyos.com/_spec/reference/roster-service/openapi.yaml
+    x-apievangelist-production-server: https://api-service.certifyos.com
+    x-apievangelist-artifacts:
+      conventions: conventions/certify-conventions.yml
+      errors: errors/certify-problem-types.yml
+      webhooks: asyncapi/certify-webhooks.yml
+      data-model: data-model/certify-data-model.yml
+      json-schema: json-schema/certify-json-schema.yml
+      conformance: conformance/certify-conformance.yml
+      lifecycle: lifecycle/certify-lifecycle.yml
+- target: $.info
+  update:
+    x-apievangelist-notes:
+    - >-
+      Errors are not RFC 9457; three proprietary envelopes coexist (ApiError,
+      BadRequestErrorResponse, NpiValidationErrorResponse).
+    - >-
+      No rate-limit headers and no 429 response are declared anywhere in this
+      document.
+    - >-
+      No request-level idempotency: no operation accepts an Idempotency-Key.
+- target: $.components.securitySchemes.jwt
+  update:
+    x-apievangelist-note: >-
+      This scheme deviates from RFC 6750 - the description instructs callers to
+      send the raw JWT with no "Bearer " prefix.
+- target: $.servers
+  update:
+    x-apievangelist-note: >-
+      localhost is listed first in servers[]; the production host is
+      api-service.certifyos.com. Non-production hosts (staging, test, demo,
+      internal) are published but no self-serve sandbox or test credentials exist.

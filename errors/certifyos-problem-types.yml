@@ -1,0 +1,134 @@
+generated: '2026-08-09'
+method: derived
+source: >-
+  openapi/certify-api-service-openapi.yml, openapi/certify-application-openapi.json,
+  openapi/certify-roster-service-openapi.yml (4xx/5xx responses across 520 operations)
+format: proprietary
+format_note: >-
+  NOT RFC 9457. No operation in any of the three specs returns
+  application/problem+json — every error is application/json carrying a
+  Certify-specific envelope. The ErrorObject shape is RFC 9457-adjacent (it
+  carries title, detail and an httpStatus) but the members are not the RFC 9457
+  members, there is no `type` URI, and no problem-type registry is published.
+envelopes:
+- name: ApiError
+  shape: '{ "errors": [ ErrorObject ] }'
+  used_by: [api-service, roster-service]
+  fields:
+    httpStatus: HTTP status code for this error (integer)
+    reason: error reason/code, e.g. VALIDATION_ERROR
+    title: 'error title/summary, e.g. "Validation failed for field: eventTypes"'
+    detail: detailed error message
+- name: BadRequestErrorResponse
+  shape: '{ "errors": ["string"], "errorDetails": [ ... ] }'
+  used_by: [api-service, roster-service]
+  note: >-
+    The 400 envelope on most write operations. errors[] is a flat list of
+    strings; errorDetails carries structured validation failures.
+- name: NpiValidationErrorResponse
+  shape: '{ "status": 400, "error": "Bad Request", "message": "..." }'
+  used_by: [api-service]
+  note: A third, inconsistent envelope used only by the NPI validation endpoint.
+problems:
+- status: 400
+  title: Bad Request
+  occurrences: 400
+  schemas: [BadRequestErrorResponse, ApiError]
+  common_descriptions:
+  - Invalid request data
+  - Bad Request
+  meaning: >-
+    Deserialization failure (invalid enum value), constraint violation (empty or
+    mixed eventTypes, malformed URL), or a failed field validation.
+  remediation: Correct the request body or query parameters against the schema; do not retry unchanged.
+- status: 401
+  title: Unauthorized
+  occurrences: 461
+  common_descriptions:
+  - Unauthorized - Authentication required
+  - Unauthorized if authorization token is not provided or invalid.
+  meaning: Missing, malformed, or expired bearer JWT.
+  remediation: >-
+    Re-mint a token via POST /auth/login (authenticateUser) or POST
+    /auth/client-credentials (clientCredentials) and retry. Note the api-service
+    jwt scheme expects the RAW token, without a "Bearer " prefix.
+- status: 403
+  title: Forbidden
+  occurrences: 437
+  common_descriptions:
+  - Forbidden - Insufficient permissions
+  - Forbidden - User does not have required permissions
+  meaning: >-
+    The token is valid but the caller's role/permission set does not allow the
+    operation, or the tenant-id / organization-id header does not match the
+    token's tenant.
+  remediation: Grant the role via the roles/permissions endpoints; do not retry unchanged.
+- status: 404
+  title: Not Found
+  occurrences: 322
+  schemas: [ApiError]
+  common_descriptions:
+  - Credentialing workflow not found
+  - Resource not found.
+  meaning: The addressed resource does not exist in this tenant.
+  remediation: Verify the id and that the tenant-id header scopes to the owning tenant.
+- status: 409
+  title: Conflict
+  occurrences: 33
+  common_descriptions:
+  - Conflict - Workflow is not the latest version for this practitioner
+  - Conflict - Group facility already has this specialty
+  meaning: Optimistic-concurrency or uniqueness violation on a write.
+  remediation: Re-read the current resource state and re-apply the change.
+- status: 415
+  title: Unsupported Media Type
+  occurrences: 2
+  common_descriptions:
+  - Unsupported Media Type - Invalid file type
+  meaning: Roster/file upload rejected because the uploaded file type is not accepted.
+  remediation: Upload CSV as documented for the roster upload endpoints.
+- status: 422
+  title: Unprocessable Entity
+  occurrences: 6
+  schemas: [NpiValidationErrorResponse]
+  common_descriptions:
+  - Unprocessable Entity - Business rule violation
+  - Initiating tenant outreach template missing or incomplete
+  meaning: Syntactically valid but violates a business rule (e.g. NPI validation, missing outreach template).
+  remediation: Resolve the named business precondition before retrying.
+- status: 500
+  title: Internal Server Error
+  occurrences: 377
+  common_descriptions:
+  - Internal server error
+  - Internal Server Error - An unexpected error occurred
+  meaning: Unhandled server-side failure.
+  remediation: Retry with backoff; if persistent, check https://status.certifyos.com/ and open a ticket.
+- status: 502
+  title: Bad Gateway
+  occurrences: 11
+  common_descriptions:
+  - Returned if the request is a bad gateway. Downstream service error.
+  - Bad Gateway - DAL cleanser unavailable
+  meaning: >-
+    A downstream dependency (the DAL data-access layer, or a primary source)
+    failed. Also the status the webhook delivery callback returns to signal
+    Cloud Tasks to retry a failed delivery.
+  remediation: Retry with backoff.
+- status: 503
+  title: Service Unavailable
+  occurrences: 14
+  common_descriptions:
+  - Returned if the request is a service unavailable. Network connectivity issues.
+  - Service Unavailable - DAL service is down
+  meaning: A dependency is down or unreachable.
+  remediation: Retry with backoff; check the status page components for api-service.certifyos.com.
+coverage:
+  operations_scanned: 520
+  error_responses: 1663
+  distinct_status_codes: 10
+gaps:
+- No RFC 9457 application/problem+json representation on any operation.
+- No published error-code registry; `reason` (e.g. VALIDATION_ERROR) appears only as a schema example.
+- Three different error envelopes coexist across the same product surface.
+- No Retry-After documented on 429/503; no 429 is declared anywhere in the three specs.

@@ -1,17 +1,32 @@
-generated: '2026-07-18'
+generated: '2026-08-09'
 method: searched
 source: https://status.certifyos.com/
 versioning:
-  scheme: uri-path
-  current: v2
-  evidence: >-
-    Public API endpoints are namespaced under /v2/ (e.g.
-    /v2/provider/{providerId}/caqh-data, /v2/provider/{providerId}/psv/signed-url,
-    /v2/webhooks).
-  docs: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+  scheme: uri-path (partial)
+  current:
+    certifyos_api: v2
+    providerhub_api: '1.0.0 (info.version; paths largely unversioned)'
+  docs: https://docs.certifyos.com/providerhub
+  policy_published: false
+deprecation:
+  policy_url: null
+  policy_published: false
+  sunset_header: false
+  deprecation_header: false
+  deprecated_operations:
+  - openapi/certify-api-service-openapi.yml#getPractitionerLocationsByPractitionerId
+  note: >-
+    Exactly one operation across 520 carries `deprecated: true` in the specs and
+    no deprecation or sunset policy is published anywhere on the developer
+    surface. RFC 8594 Sunset / Deprecation headers are not declared.
+sla:
+  url: null
+  uptime_target: null
+  published: false
 status_page:
   url: https://status.certifyos.com/
-  provider: Better Stack
+  platform: Atlassian Statuspage
+  http_status: 200
   components:
   - ng.certifyos.com
   - certifyos.com
@@ -19,24 +34,34 @@ status_page:
   - portal.certifyos.com
   - pdm.certifyos.com
   - api-service.certifyos.com
-  third_party_monitored:
+  third_party_components:
   - CAQH System Status
   - Flagsmith Status
   - NPPES Status
-  subscribe:
-  - email
-  - rss
-  - json-webhook
-  - slack
-  observed_uptime:
-    certifyos.com: '99.990%'
-    portal.certifyos.com: '99.949%'
-  observed_on: '2026-07-18'
-deprecation:
-  policy_url: null
-  sunset_header: null
-  note: No public deprecation/sunset policy located; API reference is account-gated.
-sla:
+  subscriptions: [email, RSS, Atom, JSON, webhook, Slack]
+  note: >-
+    Both production API hosts declared in the OpenAPI servers[] —
+    api-service.certifyos.com and ng-api-production.certifyos.com — are
+    individually monitored components, and the page also surfaces the upstream
+    primary sources (CAQH, NPPES) the platform depends on.
+changelog:
   url: null
-  note: No public SLA document located.
-deprecated_operations: []
+  published: false
+  note: >-
+    Probed https://www.certifyos.com/changelog (404) and
+    https://docs.certifyos.com/changelog (404); the 133-URL marketing sitemap and
+    the 599-URL docs sitemap contain no changelog or release-notes page. No
+    ChangeLog pointer is emitted.
+roadmap:
+  url: null
+  published: false
+x-evidence:
+- fetched: '2026-08-09'
+  url: https://status.certifyos.com/
+  http_status: 200
+- fetched: '2026-08-09'
+  url: https://www.certifyos.com/changelog
+  http_status: 404
+- fetched: '2026-08-09'
+  url: https://docs.certifyos.com/changelog
+  http_status: 404

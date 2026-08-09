@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/entities/TimelineEvent.schema.json",
+  "title": "Timeline Event",
+  "description": "Represents a timeline event that tracks workflow progress and state changes.",
+  "type": "object",
+  "oneOf": [
+    {
+      "description": "CRED_APPROVED status with required credentialingDecisionDate and nextCredentialingDate",
+      "type": "object",
+      "properties": {
+        "name": { "const": "CRED_APPROVED" },
+        "credentialingDecisionDate": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "nextCredentialingDate": {
+          "type": "string",
+          "format": "date", 
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "nextCredentialingDateSource": {
+          "type": "string",
+          "enum": ["SYSTEM_CALCULATED", "USER_INPUT"],
+          "description": "Indicates whether the next credentialing date was calculated by the system or entered by a user"
+        },
+        "changeReason": {
+          "type": "string"
+        },
+        "nextCredentialingDateChangeLog": {
+          "type": "array",
+          "description": "Array to track changes to the next credentialing date. The nextCredentialingDate field should reflect the latest value from this array.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "changedFrom": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Previous next credentialing date in YYYY-MM-DD format"
+              },
+              "changedTo": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "New next credentialing date in YYYY-MM-DD format"
+              },
+              "changeReason": {
+                "type": "string",
+                "description": "Reason for the change"
+              },
+              "createdBy": {
+                "type": "string",
+                "description": "User who made the change"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp when the change was made"
+              }
+            },
+            "required": ["changedFrom", "changedTo", "changeReason", "createdBy", "createdAt"],
+            "additionalProperties": false
+          }
+        },
+        "psvPdfPath": {
+          "type": "string",
+          "format": "uri-reference"
+        }
+      },
+      "required": ["name", "credentialingDecisionDate", "nextCredentialingDate"],
+      "additionalProperties": false
+    },
+    {
+      "description": "CRED_DENIED status with required credentialingDecisionDate",
+      "type": "object",
+      "properties": {
+        "name": { "const": "CRED_DENIED" },
+        "credentialingDecisionDate": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "changeReason": {
+          "type": "string"
+        },
+        "psvPdfPath": {
+            "type": "string",
+            "format": "uri-reference"
+          }
+      },
+      "required": ["name", "credentialingDecisionDate"],
+      "additionalProperties": false
+    },
+    {
+      "description": "DATA_MISSING and WITHDRAWN_CANCELLED statuses with required changeReason",
+      "type": "object",
+      "properties": {
+        "name": { 
+          "enum": ["DATA_MISSING", "WITHDRAWN_CANCELLED"]
+        },
+        "changeReason": {
+          "type": "string"
+        },
+        "psvPdfPath": {
+            "type": "string",
+            "format": "uri-reference"
+          }
+      },
+      "required": ["name", "changeReason"],
+      "additionalProperties": false
+    },
+    {
+      "description": "Other statuses with optional changeReason",
+      "type": "object",
+      "properties": {
+        "name": {
+          "enum": [
+            "NOT_STARTED",
+            "IN_PROGRESS",
+            "OUTREACH_IN_PROGRESS",
+            "PSV_COMPLETED",
+            "PSV_READY",
+            "SENT_TO_COMMITTEE",
+            "TABLED",
+            "HOLD_FOR_COMMITTEE"
+          ]
+        },
+        "changeReason": {
+          "type": "string"
+        },
+        "psvPdfPath": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "isOverride": {
+          "type": "boolean",
+          "description": "Indicates if the timeline event is an override bypassing the default validations."
+        },
+        "overrideReason": {
+            "type": "string",
+            "description": "Indicates the reason for the override",
+            "if": {
+                "properties": {
+                    "isOverride": { "const": true }
+                }
+                },
+            "then": {
+                "required": ["overrideReason"]
+                }
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    }
+  ],
+  "unevaluatedProperties": false
+}

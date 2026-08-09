@@ -1,0 +1,95 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.certifyos.com/entities/MonitoringWorkflow.schema.json",
+    "title": "MonitoringWorkflow",
+    "description": "Represents the monitoring workflow data stored in the data JSON field.",
+    "type": "object",
+    "properties": {
+        "practitioner": {
+            "$ref": "https://schemas.certifyos.com/entities/Practitioner.schema.json"
+        },
+        "externalId": {
+            "description": "External identifier for the monitoring workflow.",
+            "type": "string"
+        },
+        "flags": {
+            "description": "Array of flags associated with the monitoring workflow.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "flagType": {
+                        "description": "Type of flag.",
+                        "type": "string"
+                    },
+                    "flagValue": {
+                        "description": "Value of the flag.",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Description of the flag.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "flagType",
+                    "flagValue"
+                ],
+                "additionalProperties": true
+            }
+        },
+        "assignments": {
+            "description": "History of assignment changes for this workflow.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "description": "Reason for the assignment change.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "assignedBy": {
+                        "description": "User or system that made the change.",
+                        "type": "string"
+                    },
+                    "assignedFrom": {
+                        "description": "Previous assignee (if any).",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "assignedTo": {
+                        "description": "Assignee after the change.",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "assignedOn": {
+                        "description": "Timestamp when the change occurred.",
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "assignedBy",
+                    "assignedTo",
+                    "assignedOn"
+                ],
+                "additionalProperties": true
+            }
+        }
+    },
+    "required": [
+        "practitioner"
+    ],
+    "additionalProperties": true,
+    "unevaluatedProperties": true
+}

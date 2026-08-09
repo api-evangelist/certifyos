@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/entities/Contracts.schema.json",
+  "title": "Contracts",
+  "description": "Represents a contract between a healthcare provider and a payer.",
+  "type": "object",
+  "properties": {
+    "general": {
+      "type": "object",
+      "properties": {
+        "contractId": { "type": "string" },
+        "contractName": { "type": "string" },
+        "contractTemplate": { "type": "string" },
+        "contractRate": { "type": "string" },
+        "reimbursementCode": { "type": "string" },
+        "contractType": {
+          "type": "string",
+          "enum": ["FFS", "Capitation", "VBC"]
+        },
+        "vbcAttribution": { "type": "string" },
+        "contractStatus": {
+          "type": "string",
+          "enum": ["Active", "Terminated", "Contracting", "Not Known"]
+        },
+        "contractAgreementType": {
+          "type": "string",
+          "enum": ["Single", "Multiple Provider", "IPA", "System"]
+        },
+        "groupId": { "type": "string" },
+        "practitionerId": { "type": "string" },
+        "networkId": { "type": "string" },
+        "planId": { "type": "string" }
+      },
+      "required": ["contractId", "contractName", "contractType", "contractStatus"]
+    },
+    "lifecycle": {
+      "type": "object",
+      "properties": {
+        "contractEffectiveDate": { "type": "string", "format": "date" },
+        "initialTermDate": { "type": "string", "format": "date" },
+        "terminationInformedDate": { "type": "string", "format": "date" },
+        "terminationDate": { "type": "string", "format": "date" },
+        "billingEffectiveDate": { "type": "string", "format": "date" },
+        "billingTerminationDate": { "type": "string", "format": "date" }
+      }
+    },
+    "financial": {
+      "type": "object",
+      "properties": {
+        "feeSchedule": { "type": "string" },
+        "additionalFeeSchedule": { "type": "string" },
+        "contractPaymentType": {
+          "type": "string",
+          "enum": ["Per Claim", "Capitation", "Shared Savings"]
+        },
+        "nonTypicalContractTerms": { "type": "string" },
+        "providerRateCalculation": { "type": "string" },
+        "rateLesserOfClaimAllowed": { "type": "boolean" },
+        "sequestrationAllowed": { "type": "boolean" },
+        "sharedSavings": { "type": "boolean" },
+        "bonus": { "type": "boolean" },
+        "claimSubmissionCycle": {
+          "type": "string",
+          "enum": ["Weekly", "Biweekly", "Monthly"]
+        },
+        "snfCorporateChampionRate": { "type": "number" },
+        "snfCapitationPartARate": { "type": "number" },
+        "snfCapitationPartBRate": { "type": "number" },
+        "snfCapitationBillAboveRate": { "type": "number" },
+        "hasGssRate": { "type": "boolean" },
+        "gssRateDetails": { "type": "string" },
+        "gssMinimumMM": { "type": "integer" },
+        "gssTerm": { "type": "string" },
+        "gssFrequency": {
+          "type": "string",
+          "enum": ["Monthly", "Quarterly", "Annual"]
+        },
+        "appPenalty": { "type": "string" },
+        "telehealthNoShow": { "type": "string" }
+      }
+    },
+    "administrativeAndLegal": {
+      "type": "object",
+      "properties": {
+        "amendmentOnFile": { "type": "boolean" },
+        "amendmentNumber": { "type": "string" },
+        "practitionersTerminationNoticePeriod": {
+          "type": "string",
+          "enum": ["30", "60", "90", "120"]
+        },
+        "providersManualUpdatesNoticePeriod": {
+          "type": "string",
+          "enum": ["30", "60", "90", "120"]
+        },
+        "policyUpdateNotificationRequired": { "type": "boolean" },
+        "claimFilingLimit": { "type": "string" },
+        "reimbursementScheduleUpdateFrequency": {
+          "type": "string",
+          "enum": ["Monthly", "Quarterly"]
+        },
+        "timelyPaymentCommitment": { "type": "integer" }
+      }
+    },
+    "clinicalAndQuality": {
+      "type": "object",
+      "properties": {
+        "hasQualityProgram": { "type": "boolean" },
+        "qualityProgramInitiatives": { "type": "string" },
+        "averageStarsAndPmpmBonus": { "type": "string" },
+        "hasMlrTarget": { "type": "boolean" },
+        "mlrTargetDescription": { "type": "string" },
+        "performanceReportingRequirements": { "type": "string" },
+        "credentialingDelegation": { "type": "boolean" },
+        "recredentialingInterval": {
+          "type": "string",
+          "enum": ["1 yr", "2 yr", "3 yr"]
+        },
+        "referralRequirements": { "type": "boolean" },
+        "priorAuthorizationRequired": { "type": "boolean" },
+        "panelSizeLimits": { "type": "string" },
+        "providerRosterUpdateFrequency": {
+          "type": "string",
+          "enum": ["Monthly", "Quarterly"]
+        }
+      }
+    }
+  }
+}

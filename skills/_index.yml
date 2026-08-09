@@ -1,0 +1,35 @@
+generated: '2026-08-09'
+method: generated
+source: >-
+  Generated from openapi/certify-api-service-openapi.yml,
+  openapi/certify-roster-service-openapi.yml,
+  openapi/certify-application-openapi.json,
+  conventions/certify-conventions.yml, errors/certify-problem-types.yml and
+  asyncapi/certify-webhooks.yml. Every operationId referenced by every skill was
+  verified to exist verbatim in the referenced spec.
+provider_published_skills: none
+provider_published_skills_note: >-
+  No AGENTS.md, skills/ directory, or provider-authored agent instructions were
+  found on certifyos.com, docs.certifyos.com, or the CertifyOS GitHub
+  organization (which has zero public repositories).
+skills:
+- file: certify-authenticate-and-page.md
+  name: Authenticate and page the Certify ProviderHub API
+  api: openapi/certify-api-service-openapi.yml
+  operations: [authenticateUser, clientCredentials, practitionerFindMany, AuthTokensController_createApiToken]
+- file: certify-credential-a-practitioner.md
+  name: Credential a practitioner end to end
+  api: openapi/certify-api-service-openapi.yml
+  operations: [practitionerFindMany, practitionerCreate, practitionerGet, createCredentialingWorkflow, createBulkCredentialingWorkflows, getCredentialingWorkflows, getCredentialingWorkflow, getTimelineEvents, getPractitionerGroups]
+- file: certify-subscribe-to-credentialing-events.md
+  name: Subscribe to Certify credentialing webhooks
+  api: openapi/certify-api-service-openapi.yml
+  operations: [createWebhook, webhookFindMany, webhookDelete, triggerManualWebhookEvent, replayWebhooks, WebhooksController_create, WebhooksController_fetchAll, WebhooksController_remove, WebhooksController_testWebhook]
+- file: certify-upload-and-approve-a-roster.md
+  name: Upload, map, validate and approve a provider roster
+  api: openapi/certify-roster-service-openapi.yml
+  operations: [uploadCsvFile, getMappingsForTheUploadInAGivenTemplate, createTemplateFromMappings, getAllRosters, getRosterById, getRosterRowsPaged, revalidateRosterDraftRows, saveRosterRowsDraft, triggerSmartFix, approveRejectRosterImport, reuploadCsvFile, downloadRosterRecordsCsv, getRosterEffectiveSchema]
+- file: certify-monitor-and-triage-flags.md
+  name: Monitor a network and triage compliance flags
+  api: openapi/certify-application-openapi.json
+  operations: [getMonitoringWorkflows, getMonitoringWorkflow, bulkAssignMonitoringWorkflows, FlagsController_searchFlags, FlagsController_findAllFlags, FlagsController_markRead, FlagsController_markUnread, FlagsController_markProviderReviewedAndApproved, FlagsController_activateFlag, FlagsController_deactivateFlag, calculateFlags]

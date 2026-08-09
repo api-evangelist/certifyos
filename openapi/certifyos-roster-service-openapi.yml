@@ -1,0 +1,4732 @@
+openapi: 3.1.0
+info:
+  description: API for Certify application
+  title: Certify API Layer
+  version: 1.0.0
+servers:
+  - url: http://localhost:9001
+    description: Local Development Server
+  - url: https://api-service.staging.certifyos.com
+    description: Staging Server
+  - url: https://api-service.test.certifyos.com
+    description: Test Server
+tags:
+  - name: Contracts
+    description: APIs for managing contracts entities
+  - name: CredentialingWorkflow
+    description: APIs for managing credentialing workflows
+  - name: Network
+    description: APIs for managing network entities
+  - name: Payers
+    description: >-
+      This resource represents a payer in the healthcare system. A payer refers
+      to an entity that finances or reimburses the cost of health services. Use
+      it to get, create, and update payers.
+  - name: Permission
+    description: APIs for managing permissions
+  - name: Plan
+    description: APIs for managing plan entities
+  - name: Roster
+    description: APIs for managing roster file uploads and processing
+  - name: Roster upload
+    description: APIs for roster upload file column mappings
+  - name: RosterRecord
+    description: APIs for managing individual roster record entries
+  - name: Specialty
+    description: Endpoints for managing medical specialties.
+  - name: Template
+    description: APIs for managing roster templates and configurations
+  - name: Tenant Specialty
+    description: Endpoints for managing tenant-specific specialties.
+paths:
+  /auth/login:
+    post:
+      summary: User Login
+      description: Authenticates a user with email and password and returns a JWT token
+      operationId: authenticateUser
+      requestBody:
+        description: User credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request
+        '401':
+          description: Authentication failed - Invalid credentials
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      tags:
+        - Auth Resource
+      parameters:
+        - name: tenant-id
+          in: header
+          required: true
+          description: Tenant ID
+          schema:
+            type: string
+  /contracts:
+    get:
+      summary: Find Contract by filter criteria with pagination
+      description: >-
+        Returns a paginated filtered list of all Contracts based on the provided
+        criteria. Supports both offset-based (page/size) and cursor-based
+        (startAfter/endAt) pagination.
+      operationId: contractsFindMany
+      tags:
+        - Contracts
+      parameters:
+        - description: End at document ID, for backward cursor-based pagination
+          name: endAtId
+          in: query
+          schema:
+            type: string
+        - description: Page number (0-based), for offset-based pagination
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size
+          name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: '50'
+        - description: Start after document ID, for forward cursor-based pagination
+          name: startAfterId
+          in: query
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of Contracts found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedContractResponse'
+        '400':
+          description: Invalid filter criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+        - jwt: []
+    post:
+      summary: Create a new Contract
+      description: Creates a new Contract with the provided details
+      operationId: contractsCreate
+      tags:
+        - Contracts
+      parameters:
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      responses:
+        '201':
+          description: Contract created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+        - jwt: []
+  /contracts/{id}:
+    put:
+      summary: Update (replace) an existing Contract
+      description: Replace the data for an existing Contract
+      operationId: contractsReplace
+      tags:
+        - Contracts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      responses:
+        '200':
+          description: Contract updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '400':
+          description: Invalid Contract details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+    get:
+      summary: Find a Contract by their ID
+      description: Returns a single Contract by their ID
+      operationId: contractsFindById
+      tags:
+        - Contracts
+      parameters:
+        - description: ID of Contract to fetch
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contract found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+    delete:
+      summary: Delete a Contract
+      description: Deletes a Contract by their ID
+      operationId: contractsDelete
+      tags:
+        - Contracts
+      parameters:
+        - description: ID of Contract to delete
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Contract successfully deleted
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+  /credentialing-workflows:
+    get:
+      summary: Get credentialing workflows
+      description: Retrieves a list of credentialing workflows based on filter criteria
+      operationId: getCredentialingWorkflows
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: End at document ID, for backward cursor-based pagination
+          name: endAtId
+          in: query
+          schema:
+            type: string
+        - description: >
+            Filter criteria. The filter parameter must be URL encoded when sent.
+
+
+            Examples (before URL encoding):
+
+            - Filter by id: `{"id":{"eq":"123"}}`
+
+            - Filter by tenant_id: `{"tenantId":{"eq":"tenant123"}}`
+
+            - Filter by tenantPractitionerId:
+            `{"tenantPractitionerId":{"eq":"practitioner456"}}`
+
+            - Filter by practitioner firstName (case-insensitive contains):
+            `{"data.practitioner.firstName":{"contains":"Alice"}}`
+
+            - Filter by practitioner NPI (exact match):
+            `{"data.practitioner.npi":{"eq":"1234567890"}}`
+
+            - Combined filter:
+            `{"data.practitioner.firstName":{"contains":"Ali"},"data.practitioner.npi":{"eq":"1234567890"}}`
+
+
+            Example curl commands:
+
+            ```bash
+
+            # Filter by id
+
+            curl -X GET
+            'http://localhost:8080/credentialing-workflows?filter=%7B%22id%22%3A%7B%22eq%22%3A%223%22%7D%7D'
+
+
+            # Filter by tenant_id
+
+            curl -X GET
+            'http://localhost:8080/credentialing-workflows?filter=%7B%22tenantId%22%3A%7B%22eq%22%3A%22tenant123%22%7D%7D'
+
+
+            # Filter by practitioner firstName (case-insensitive contains)
+
+            curl -X GET
+            'http://localhost:8080/credentialing-workflows?filter=%7B%22data.practitioner.firstName%22%3A%7B%22contains%22%3A%22Alice%22%7D%7D'
+
+
+            # Filter by practitioner NPI
+
+            curl -X GET
+            'http://localhost:8080/credentialing-workflows?filter=%7B%22data.practitioner.npi%22%3A%7B%22eq%22%3A%221234567890%22%7D%7D'
+
+            ```
+
+
+            Available filter operations:
+
+            - eq: Equal to
+
+            - neq: Not equal to
+
+            - gt: Greater than
+
+            - gte: Greater than or equal to
+
+            - lt: Less than
+
+            - lte: Less than or equal to
+
+            - in: Value must be one of these (array)
+
+            - nin: Value must not be any of these (array)
+
+            - contains: String contains (case-sensitive for most fields, but
+            data.practitioner.firstName uses case-insensitive matching)
+
+
+            Note: When using the filter parameter in a browser or code, make
+            sure to properly URL encode the JSON string.
+          name: filter
+          in: query
+          schema:
+            type: string
+        - description: Ordering criteria for the results
+          name: order
+          in: query
+          schema:
+            type: string
+        - description: Page number (0-based), for offset-based pagination
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: '0'
+        - description: Page size
+          name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: '50'
+        - description: Start after document ID, for forward cursor-based pagination
+          name: startAfterId
+          in: query
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved credentialing workflows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCredentialingWorkflowsResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    post:
+      summary: Create a new credentialing workflow
+      description: Creates a new credentialing workflow
+      operationId: createCredentialingWorkflow
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCredentialingWorkflowRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the credentialing workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialingWorkflowResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /credentialing-workflows/{id}:
+    put:
+      summary: Update a credentialing workflow
+      description: Updates an existing credentialing workflow
+      operationId: updateCredentialingWorkflow
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: ID of the credentialing workflow to update
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCredentialingWorkflowRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the credentialing workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialingWorkflowResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    get:
+      summary: Get credentialing workflow by ID
+      description: Retrieves a single credentialing workflow by its ID
+      operationId: getCredentialingWorkflow
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: ID of the credentialing workflow to retrieve
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved the credentialing workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCredentialingWorkflowResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Credentialing workflow not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    delete:
+      summary: Delete a credentialing workflow
+      description: Deletes a credentialing workflow by ID
+      operationId: deleteCredentialingWorkflow
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: ID of the credentialing workflow to delete
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully deleted the credentialing workflow
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: credentialing workflow not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /credentialing-workflows/{workflowId}/timeline-events:
+    post:
+      summary: Create a timeline event for a credentialing workflow
+      description: Creates a new timeline event for the specified credentialing workflow
+      operationId: createTimelineEvent
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: ID of the credentialing workflow
+          in: path
+          required: true
+          name: workflowId
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTimelineEventRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the timeline event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimelineEventResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Credentialing workflow not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /credentialing-workflows/{workflowId}/timeline-events/status-options:
+    get:
+      summary: Get timeline event status options
+      description: >-
+        Retrieves available status options and required parameters for timeline
+        events
+      operationId: getTimelineEventStatusOptions
+      tags:
+        - CredentialingWorkflow
+      parameters:
+        - description: ID of the credentialing workflow
+          in: path
+          required: true
+          name: workflowId
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved timeline event status options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOptionsResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Credentialing workflow not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /file/download:
+    get:
+      operationId: downloadFile
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          required: true
+          description: Tenant ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            text/csv: {}
+        '400':
+          description: Bad Request - Invalid file path
+          content:
+            text/csv: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            text/csv: {}
+        '404':
+          description: File not found
+          content:
+            text/csv: {}
+        '500':
+          description: Internal Server Error - File download failed
+          content:
+            text/csv: {}
+      security:
+        - jwt: []
+      summary: Download File
+      tags:
+        - File Storage Resource
+  /file/read:
+    get:
+      operationId: readFile
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          required: true
+          description: Tenant ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File content parsed successfully
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request - Invalid file path
+          content:
+            application/json: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '404':
+          description: File not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - File processing failed
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+      summary: Read File
+      tags:
+        - File Storage Resource
+  /file/upload:
+    post:
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '201':
+          description: File uploaded successfully
+          content: {}
+        '400':
+          description: Bad Request - No file uploaded
+          content: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content: {}
+        '415':
+          description: Unsupported Media Type - Invalid file type
+          content: {}
+        '500':
+          description: Internal Server Error - File upload failed
+          content: {}
+      security:
+        - jwt: []
+      summary: Upload Csv File
+      tags:
+        - File Storage Resource
+      parameters:
+        - name: tenant-id
+          in: header
+          required: true
+          description: Tenant ID
+          schema:
+            type: string
+  /networks:
+    get:
+      summary: Get all networks
+      description: >-
+        Returns a list of networks for the provided tenant. The networks are
+        returned sorted by creation date, with the most recent networks
+        appearing first.
+      operationId: getNetworks
+      tags:
+        - Network
+      parameters:
+        - description: >-
+            Page number for offset-based pagination (0-based index). Defaults to
+            0 if not specified.
+          in: query
+          name: page
+          schema:
+            type: integer
+            format: int32
+        - description: >-
+            Number of items per page in offset-based pagination. Defaults to 10
+            if not specified.
+          in: query
+          name: size
+          schema:
+            type: integer
+            format: int32
+        - description: The tenant identifier.
+          in: header
+          name: tenant-id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returned if the request is successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllNetworksResponse'
+        '400':
+          description: >-
+            Returned if the request is invalid. `tenant-id` and `user-id`
+            headers are required.
+        '401':
+          description: Returned if the request is unauthorized. Authentication required.
+        '403':
+          description: Returned if the request is forbidden. Insufficient permissions.
+        '500':
+          description: Returned if the request is an internal server error.
+        '502':
+          description: Returned if the request is a bad gateway. Downstream service error.
+        '503':
+          description: >-
+            Returned if the request is a service unavailable. Network
+            connectivity issues.
+      security:
+        - jwt:
+            - R:ORGE
+    post:
+      summary: Create a new network
+      description: Creates a new network with the provided details
+      operationId: createNetwork
+      tags:
+        - Network
+      parameters:
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetworkRequest'
+        required: true
+      responses:
+        '201':
+          description: Network created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse.schema'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - C:OE
+  /networks/{id}:
+    put:
+      summary: Update a new network
+      description: Updates a new network with the provided details
+      operationId: updateNetwork
+      tags:
+        - Network
+      parameters:
+        - description: Network ID
+          example: '1234567890'
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetworkRequest'
+        required: true
+      responses:
+        '200':
+          description: Network updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse.schema'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - C:OE
+    get:
+      summary: Get a network by id
+      description: Get a network by id
+      operationId: findNetworkById
+      tags:
+        - Network
+      parameters:
+        - description: Network ID
+          example: '1234567890'
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Network fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse.schema'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - C:OE
+    delete:
+      summary: Delete a new network
+      description: Deletes a network with the given id
+      operationId: deleteNetwork
+      tags:
+        - Network
+      parameters:
+        - description: Network ID
+          example: '1234567890'
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Network deleted successfully
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - C:OE
+  /payers:
+    get:
+      summary: Get all payers
+      description: >-
+        Returns a list of payers for the provided tenant. The payers are
+        returned sorted by creation date, with the most recent payers appearing
+        first.
+      operationId: getPayers
+      tags:
+        - Payers
+      parameters:
+        - description: >-
+            Optional name to filter the list of payers. The search is
+            case-insensitive and partial.
+          in: query
+          name: name
+          schema:
+            type: string
+        - description: The tenant identifier.
+          in: header
+          name: tenant-id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returned if the request is successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllPayersResponse'
+        '400':
+          description: >-
+            Returned if the request is invalid. `tenant-id` and `user-id`
+            headers are required.
+        '401':
+          description: Returned if the request is unauthorized. Authentication required.
+        '403':
+          description: Returned if the request is forbidden. Insufficient permissions.
+        '500':
+          description: Returned if the request is an internal server error.
+        '502':
+          description: Returned if the request is a bad gateway. Downstream service error.
+        '503':
+          description: >-
+            Returned if the request is a service unavailable. Network
+            connectivity issues.
+      security:
+        - jwt:
+            - R:PAYOR
+    post:
+      summary: Create a new payer
+      description: Creates a new payer with the provided details
+      operationId: createPayer
+      tags:
+        - Payers
+      parameters:
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayerRequest'
+        required: true
+      responses:
+        '201':
+          description: Payer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayerResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - C:PAYOR
+  /payers/{id}:
+    put:
+      summary: Update an existing payer
+      description: Updates a payer with the provided details
+      operationId: updatePayer
+      tags:
+        - Payers
+      parameters:
+        - description: Payer identifier
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayerRequest'
+        required: true
+      responses:
+        '200':
+          description: Payer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayerResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Payer not found
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+    get:
+      summary: Get a payer by ID
+      description: Retrieves a specific payer by its unique identifier
+      operationId: getPayerById
+      tags:
+        - Payers
+      parameters:
+        - description: ID of the payer to retrieve
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payer retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayerResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Payer not found
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /permissions:
+    get:
+      summary: Get All Permissions
+      description: Returns all permissions from the database
+      operationId: getAllPermissions
+      tags:
+        - Permission
+      parameters:
+        - description: >-
+            Page number for offset based pagination (0-based index). Defaults to
+            0 if not specified.
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: '0'
+        - description: Number of items per page. Defaults to 100 if not specified.
+          name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: '100'
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Permissions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionListResponseDto'
+        '401':
+          description: Authentication required
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+    post:
+      summary: Create Permission
+      description: Creates a new permission
+      operationId: createPermission
+      tags:
+        - Permission
+      parameters:
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Permission created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+  /permissions/{id}:
+    put:
+      summary: Update Permission
+      description: Updates an existing permission
+      operationId: updatePermission
+      tags:
+        - Permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Permission updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '404':
+          description: Permission not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+    get:
+      summary: Get Permission by ID
+      description: Retrieves a specific permission by its ID
+      operationId: getPermissionById
+      tags:
+        - Permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Permission retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '404':
+          description: Permission not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+    delete:
+      summary: Delete Permission
+      description: Deletes a permission by its ID
+      operationId: deletePermission
+      tags:
+        - Permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Permission deleted successfully
+        '400':
+          description: Bad Request
+          content: {}
+        '404':
+          description: Permission not found
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+      security:
+        - jwt: []
+  /plans:
+    get:
+      summary: Get all plans
+      description: >-
+        Returns a list of plans for the provided tenant. The plans are returned
+        sorted by creation date, with the most recent plans appearing first.
+      operationId: getPlans
+      tags:
+        - Plan
+      parameters:
+        - description: The tenant identifier.
+          in: header
+          name: tenant-id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returned if the request is successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllPlansResponse'
+        '400':
+          description: >-
+            Returned if the request is invalid. `tenant-id` and `user-id`
+            headers are required.
+        '401':
+          description: Returned if the request is unauthorized. Authentication required.
+        '403':
+          description: Returned if the request is forbidden. Insufficient permissions.
+        '500':
+          description: Returned if the request is an internal server error.
+        '502':
+          description: Returned if the request is a bad gateway. Downstream service error.
+        '503':
+          description: >-
+            Returned if the request is a service unavailable. Network
+            connectivity issues.
+      security:
+        - jwt:
+            - R:PROV
+    post:
+      summary: Create a new plan
+      description: Creates a new plan with the provided details
+      operationId: createPlan
+      tags:
+        - Plan
+      parameters:
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+        required: true
+      responses:
+        '201':
+          description: Plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - R:PROV
+  /plans/{id}:
+    put:
+      summary: Update an existing plan
+      description: Updates a plan identified by ID with the provided details
+      operationId: updatePlan
+      tags:
+        - Plan
+      parameters:
+        - description: Plan ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+        required: true
+      responses:
+        '200':
+          description: Plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt:
+            - R:PROV
+  /roles:
+    get:
+      summary: Get All Roles
+      description: Returns all roles for the current tenant
+      operationId: getAllRoles
+      parameters:
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Roles retrieved successfully
+          content:
+            application/json: {}
+        '400':
+          description: Missing tenant-id header
+          content:
+            application/json: {}
+        '401':
+          description: Authentication required
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+      tags:
+        - Role Resource
+  /roster:
+    post:
+      summary: Upload a CSV file to Google Cloud Storage
+      description: >-
+        Uploads a CSV file to the specified bucket and returns the file path,
+        filename, and bucket name.
+      operationId: uploadCsvFile
+      tags:
+        - Roster
+      parameters:
+        - description: Tenant ID for source type generation
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                templateId:
+                  type: string
+                jobType:
+                  type: string
+                description:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+        - jwt: []
+    get:
+      summary: Get all roster jobs
+      description: Returns a list of all roster jobs for the tenant
+      operationId: getAllRosters
+      tags:
+        - Roster
+      parameters:
+        - description: End at document ID, for backward cursor-based pagination
+          name: endAtId
+          in: query
+          schema:
+            type: string
+        - description: >
+            Filter criteria. The filter parameter must be URL encoded when sent.
+
+
+            Examples (before URL encoding):
+
+            - - Filter by id: `{"id":{"eq":"123"}}`
+
+            Example curl commands:
+
+            ```bash
+
+            # Filter by id
+
+            curl -X GET
+            '<BaseURL>/roster?filter=%7B%22id%22%3A%7B%22eq%22%3A%223%22%7D%7D'
+
+            ```
+
+
+            Available filter operations:
+
+            - eq: Equal to
+
+            - neq: Not equal to
+
+            - gt: Greater than
+
+            - gte: Greater than or equal to
+
+            - lt: Less than
+
+            - lte: Less than or equal to
+
+            - in: Value must be one of these (array)
+
+            - nin: Value must not be any of these (array)
+
+            - contains: String contains (case-sensitive, string fields only)
+
+
+            Note: When using the filter parameter in a browser or code, make
+            sure to properly URL encode the JSON string.
+          name: filter
+          in: query
+          schema:
+            type: string
+        - description: Page number (0-based), for offset-based pagination
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size
+          name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: '50'
+        - description: Field to order by. Defaults to 'createdAt'.
+          example: createdAt
+          name: sortBy
+          in: query
+          schema:
+            type: string
+            default: createdAt
+        - description: 'Order direction: ASC or DESC. Defaults to ''DESC''.'
+          example: DESC
+          name: sortDirection
+          in: query
+          schema:
+            type: string
+            default: DESC
+        - description: Start after document ID, for forward cursor-based pagination
+          name: startAfterId
+          in: query
+          schema:
+            type: string
+        - description: Tenant ID for source type generation
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of roster jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+        - jwt: []
+  /roster-records:
+    get:
+      summary: Get all roster records
+      description: Returns a list of all roster records for the tenant
+      operationId: getAllRosterRecords
+      tags:
+        - RosterRecord
+      parameters:
+        - name: endAtId
+          in: query
+          schema:
+            type: string
+        - name: filter
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: startAfterId
+          in: query
+          schema:
+            type: string
+        - description: Tenant ID for source type generation
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of roster records
+          content:
+            application/json: {}
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: RosterRecords not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+  /roster-records/find-many:
+    get:
+      summary: Find many roster records
+      description: Returns a list of roster records for the tenant
+      operationId: findManyRosterRecord
+      tags:
+        - RosterRecord
+      parameters:
+        - name: filter
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - name: startAfterId
+          in: query
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of roster records
+          content:
+            application/json: {}
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: RosterRecords not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+  /roster-upload/{templateId}/column-mapping:
+    post:
+      summary: Get mappings for the upload in a given template
+      description: Get mappings details for the uploaded columns in a given template
+      operationId: getMappingsForTheUploadInAGivenTemplate
+      tags:
+        - Roster upload
+      parameters:
+        - description: Template ID to fetch
+          required: true
+          name: templateId
+          in: path
+          schema:
+            type: string
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetUploadMappingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Mapping details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUploadMappingsResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /roster-upload/{templateId}/column-mapping/template:
+    post:
+      summary: create template from column mappings
+      description: Creates a new template from the provided column mappings
+      operationId: createTemplateFromMappings
+      tags:
+        - Roster upload
+      parameters:
+        - description: Template ID to fetch
+          required: true
+          name: templateId
+          in: path
+          schema:
+            type: string
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveMappingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
+        '400':
+          description: Invalid input or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /roster/{id}:
+    get:
+      summary: Get roster job by ID
+      description: Returns a roster job for the given ID
+      operationId: getRosterById
+      tags:
+        - Roster
+      parameters:
+        - description: Roster job ID
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Roster job found
+          content:
+            application/json: {}
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+  /roster/{rosterId}/download-records:
+    get:
+      summary: Download failed roster records as CSV
+      description: >-
+        Downloads all failed roster records for the given roster job as a CSV
+        file
+      operationId: downloadRosterRecordsCsv
+      tags:
+        - Roster
+      parameters:
+        - description: Roster job ID to download records for
+          required: true
+          name: rosterId
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID
+          required: false
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+            default: public-user
+      responses:
+        '200':
+          description: CSV file containing failed roster records
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Signed URL for downloading the CSV file from GCS
+                examples:
+                  - fileUrl: >-
+                      https://storage.googleapis.com/bucket/roster-exports/123/123-rosterFileFAILED.csv
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job or failed records not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+        - jwt: []
+  /roster/{rosterId}/import:
+    get:
+      summary: Approve or reject a roster import
+      description: Approves or rejects a roster import based on the action parameter
+      operationId: approveRejectRosterImport
+      tags:
+        - Roster
+      parameters:
+        - description: Roster job ID
+          required: true
+          name: rosterId
+          in: path
+          schema:
+            type: string
+        - description: 'Action to perform: ''approved'' or ''rejected'''
+          required: true
+          name: action
+          in: query
+          schema:
+            type: string
+        - description: Tenant ID
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Roster import action completed successfully
+          content:
+            application/json: {}
+        '400':
+          description: Invalid action parameter
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Invalid roster status for approval/rejection
+          content:
+            application/json: {}
+      security:
+        - jwt: []
+  /roster/{rosterId}/reupload:
+    put:
+      summary: Reupload a corrected CSV file for an existing roster
+      description: >-
+        Reuploads a corrected CSV file for an existing roster ID. This replaces
+        the file and restart processing for that roster.
+      operationId: reuploadCsvFile
+      tags:
+        - Roster
+      parameters:
+        - description: Existing roster ID to reupload against
+          required: true
+          name: rosterId
+          in: path
+          schema:
+            type: string
+        - description: Tenant ID for source type generation
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                description:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: File reuploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterReuploadResponse'
+        '400':
+          description: Invalid input (missing file)
+        '404':
+          description: Roster not found
+        '409':
+          description: Cannot reupload to completed roster
+      security:
+        - jwt: []
+  /specialties:
+    get:
+      summary: Get all specialties
+      description: Retrieves a list of all specialties with optional filtering by name
+      operationId: getSpecialties
+      tags:
+        - Specialty
+      parameters:
+        - description: Filter specialties by name
+          example: Cardiology
+          in: query
+          name: name
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully retrieved list of specialties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    format: int64
+                  data:
+                    $ref: >-
+                      https://schemas.certifyos.com/entities/Specialty.schema.json
+                    type: object
+                $ref: '#/components/schemas/Specialty.schema'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    post:
+      summary: Create a new specialty
+      description: Creates a new specialty
+      operationId: createSpecialty
+      tags:
+        - Specialty
+      parameters:
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialtyRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  nuccSpecialty:
+                    type: string
+                  abmsSpecialty:
+                    type: string
+                  hsdSpecialty:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/Specialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /specialties/nucc:
+    post:
+      summary: Create a new NuccSpecialty
+      description: Creates a new NuccSpecialty
+      operationId: createNuccSpecialty
+      tags:
+        - Specialty
+      parameters:
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNuccSpecialtyRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the NuccSpecialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    $ref: '#/components/schemas/Date'
+                  createdBy:
+                    type: string
+                  updatedAt:
+                    $ref: '#/components/schemas/Date'
+                  updatedBy:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/NuccSpecialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /specialties/nuccByTaxonomy/{taxonomyCode}:
+    get:
+      summary: Get NuccSpecialty by Taxonomy Code
+      description: Retrieves a NuccSpecialty by its taxonomy code
+      operationId: getNuccSpecialtyByTaxonomyCode
+      tags:
+        - Specialty
+      parameters:
+        - description: Taxonomy code of the NuccSpecialty to retrieve
+          in: path
+          required: true
+          name: taxonomyCode
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully retrieved the NuccSpecialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    $ref: '#/components/schemas/Date'
+                  createdBy:
+                    type: string
+                  updatedAt:
+                    $ref: '#/components/schemas/Date'
+                  updatedBy:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/NuccSpecialty.schema'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: NuccSpecialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /specialties/{id}:
+    put:
+      summary: Update a specialty
+      description: Updates an existing specialty
+      operationId: updateSpecialty
+      tags:
+        - Specialty
+      parameters:
+        - description: ID of the specialty to update
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialtyRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  nuccSpecialty:
+                    type: string
+                  abmsSpecialty:
+                    type: string
+                  hsdSpecialty:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/Specialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    get:
+      summary: Get specialty by ID
+      description: Retrieves a single specialty by its ID
+      operationId: getSpecialty
+      tags:
+        - Specialty
+      parameters:
+        - description: ID of the specialty to retrieve
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully retrieved the specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  nuccSpecialty:
+                    type: string
+                  abmsSpecialty:
+                    type: string
+                  hsdSpecialty:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/Specialty.schema'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    delete:
+      summary: Delete a specialty
+      description: Deletes a specialty by ID
+      operationId: deleteSpecialty
+      tags:
+        - Specialty
+      parameters:
+        - description: ID of the specialty to delete
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '204':
+          description: Successfully deleted the specialty
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /templates:
+    post:
+      summary: Process and upload a template
+      description: Uploads a new template file with metadata for processing
+      operationId: processTemplate
+      tags:
+        - Template
+      parameters:
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/RosterJobType'
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: Template processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateUploadResponse'
+        '400':
+          description: Invalid input or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+    get:
+      summary: Get list of templates
+      description: Retrieve paginated and filtered list of templates
+      operationId: getTemplates
+      tags:
+        - Template
+      parameters:
+        - description: Page number for pagination
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Page size for pagination
+          name: size
+          in: query
+          schema:
+            type: integer
+            format: int32
+        - description: Filter by template status
+          name: status
+          in: query
+          schema:
+            type: string
+        - description: Filter by template type
+          name: type
+          in: query
+          schema:
+            type: string
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /templates/single-step:
+    post:
+      summary: Process and upload a template in single step
+      description: Uploads a new template file with metadata for processing
+      operationId: processSingleStepTemplate
+      tags:
+        - Template
+      parameters:
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/RosterJobType'
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: Template processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
+        '400':
+          description: Invalid input or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /templates/{id}:
+    put:
+      summary: Update an existing template
+      description: Update the template details by template ID
+      operationId: updateTemplate
+      tags:
+        - Template
+      parameters:
+        - description: Template ID to update
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateUpdateRequest'
+        '400':
+          description: Invalid template update details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+    get:
+      summary: Get template by ID
+      description: Fetch template details by template ID
+      operationId: getTemplateById
+      tags:
+        - Template
+      parameters:
+        - description: Template ID to fetch
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterTemplateResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /templates/{id}/approve:
+    put:
+      summary: Approve a template
+      description: Approve the template specified by ID
+      operationId: approveTemplate
+      tags:
+        - Template
+      parameters:
+        - description: Template ID to approve
+          required: true
+          name: id
+          in: path
+          schema:
+            type: string
+        - description: Tenant identifier
+          required: true
+          name: tenant-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Template approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApproveTemplateResponse'
+        '400':
+          description: Invalid approval request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+        - jwt: []
+  /tenant-specialties:
+    get:
+      summary: Get all tenant specialties
+      description: >-
+        Retrieves a list of all tenant specialties with optional filtering by
+        name
+      operationId: getTenantSpecialties
+      tags:
+        - Tenant Specialty
+      parameters:
+        - description: Filter tenant specialties by name
+          example: Cardiology
+          in: query
+          name: name
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully retrieved list of tenant specialties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    format: int64
+                  data:
+                    $ref: >-
+                      https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+                    type: array
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    post:
+      summary: Create a new tenant specialty
+      description: Creates a new tenant specialty
+      operationId: createTenantSpecialty
+      tags:
+        - Tenant Specialty
+      parameters:
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantSpecialtyRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the tenant specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenantId:
+                    type: string
+                  specialtyId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /tenant-specialties/by-classification:
+    get:
+      summary: Get tenant specialties by classification source and category
+      description: >-
+        Retrieves tenant specialties filtered by classification source and
+        category
+      operationId: getTenantSpecialtiesByClassification
+      tags:
+        - Tenant Specialty
+      parameters:
+        - description: Category to filter by
+          example: Individual
+          in: query
+          required: true
+          name: category
+          schema:
+            type: string
+        - description: Classification source to filter by
+          example: nucc
+          in: query
+          required: true
+          name: classificationSource
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully retrieved tenant specialties by classification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    format: int64
+                  data:
+                    $ref: >-
+                      https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+                    type: array
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /tenant-specialties/{id}:
+    put:
+      summary: Update a tenant specialty
+      description: Updates an existing tenant specialty
+      operationId: updateTenantSpecialty
+      tags:
+        - Tenant Specialty
+      parameters:
+        - description: ID of the tenant specialty to update
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantSpecialtyRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the tenant specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenantId:
+                    type: string
+                  specialtyId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    get:
+      summary: Get tenant specialty by ID
+      description: Retrieves a single tenant specialty by its ID
+      operationId: getTenantSpecialty
+      tags:
+        - Tenant Specialty
+      parameters:
+        - description: ID of the tenant specialty to retrieve
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully retrieved the tenant specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenantId:
+                    type: string
+                  specialtyId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Tenant specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+    delete:
+      summary: Delete a tenant specialty
+      description: Deletes a tenant specialty by ID
+      operationId: deleteTenantSpecialty
+      tags:
+        - Tenant Specialty
+      parameters:
+        - description: ID of the tenant specialty to delete
+          in: path
+          required: true
+          name: id
+          schema:
+            type: string
+        - name: tenant-id
+          in: header
+          schema:
+            type: string
+          required: true
+      responses:
+        '204':
+          description: Successfully deleted the tenant specialty
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Tenant specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+        - jwt: []
+  /test/health:
+    get:
+      summary: Check DAL Health
+      description: Tests connectivity to the Data Access Layer
+      operationId: getHealthStatus
+      responses:
+        '200':
+          description: Health check completed
+          content:
+            text/plain: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            text/plain: {}
+        '503':
+          description: Service Unavailable - DAL service is down
+          content:
+            text/plain: {}
+      tags:
+        - Dal Reactive Test Resource
+      parameters:
+        - name: tenant-id
+          in: header
+          required: true
+          description: Tenant ID
+          schema:
+            type: string
+components:
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+    ApproveTemplateResponse:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        status:
+          type: string
+    BadRequestErrorResponse:
+      description: >-
+        Standard error response structure for 400 Bad Request validation and
+        client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+            - - Validation failed
+              - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+        planId:
+          type: string
+        networkId:
+          type: string
+        documentId:
+          type: string
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+        generalInfo:
+          $ref: '#/components/schemas/ContractGeneralInfo'
+        lifecycle:
+          $ref: '#/components/schemas/ContractLifeCycleInfo'
+        financial:
+          $ref: '#/components/schemas/ContractFinancialInfo'
+        administrativeAndLegal:
+          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
+        clinicalAndQuality:
+          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
+    ContractAdministrativeAndLegalInfo:
+      type: object
+      properties:
+        amendmentOnFile:
+          type: boolean
+        amendmentNumber:
+          type: string
+        practitionersTerminationNoticePeriod:
+          type: string
+        providersManualUpdatesNoticePeriod:
+          type: string
+        policyUpdateNotificationRequired:
+          type: boolean
+        claimFilingLimit:
+          type: string
+        reimbursementScheduleUpdateFrequency:
+          type: string
+        timelyPaymentCommitment:
+          type: integer
+          format: int32
+    ContractClinicalAndQualityInfo:
+      type: object
+      properties:
+        hasQualityProgram:
+          type: boolean
+        qualityProgramInitiatives:
+          type: string
+        averageStarsAndPmpmBonus:
+          type: string
+        hasMlrTarget:
+          type: boolean
+        mlrTargetDescription:
+          type: string
+        performanceReportingRequirements:
+          type: string
+        credentialingDelegation:
+          type: boolean
+        recredentialingInterval:
+          type: string
+        referralRequirements:
+          type: boolean
+        priorAuthorizationRequired:
+          type: boolean
+        panelSizeLimits:
+          type: string
+        providerRosterUpdateFrequency:
+          type: string
+    ContractFinancialInfo:
+      type: object
+      properties:
+        feeSchedule:
+          type: string
+        additionalFeeSchedule:
+          type: string
+        contractPaymentType:
+          type: string
+        nonTypicalContractTerms:
+          type: string
+        providerRateCalculation:
+          type: string
+        rateLesserOfClaimAllowed:
+          type: boolean
+        sequestrationAllowed:
+          type: boolean
+        sharedSavings:
+          type: boolean
+        bonus:
+          type: boolean
+        claimSubmissionCycle:
+          type: string
+        snfCorporateChampionRate:
+          type: number
+        snfCapitationPartARate:
+          type: number
+        snfCapitationPartBRate:
+          type: number
+        snfCapitationBillAboveRate:
+          type: number
+        hasGssRate:
+          type: boolean
+        gssRateDetails:
+          type: string
+        gssMinimumMM:
+          type: integer
+          format: int32
+        gssTerm:
+          type: string
+        gssFrequency:
+          type: string
+        appPenalty:
+          type: string
+        telehealthNoShow:
+          type: string
+    ContractGeneralInfo:
+      type: object
+      properties:
+        contractId:
+          type: string
+        contractName:
+          type: string
+        contractTemplate:
+          type: string
+        contractRate:
+          type: string
+        reimbursementCode:
+          type: string
+        contractType:
+          type: string
+        vbcAttribution:
+          type: string
+        contractStatus:
+          type: string
+        contractAgreementType:
+          type: string
+        groupId:
+          type: string
+        practitionerId:
+          type: string
+        networkId:
+          type: string
+        planId:
+          type: string
+    ContractLifeCycleInfo:
+      type: object
+      properties:
+        contractEffectiveDate:
+          type: string
+        initialTermDate:
+          type: string
+        terminationInformedDate:
+          type: string
+        terminationDate:
+          type: string
+        billingEffectiveDate:
+          type: string
+        billingTerminationDate:
+          type: string
+    CreateCredentialingWorkflowRequest:
+      description: Request to create a new credentialing workflow
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CredentialingWorkflow.schema'
+          description: Credentialing workflow data
+    CreateNetworkRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Network.schema'
+          type: object
+    CreateNuccSpecialtyRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NuccSpecialty.schema'
+          type: object
+    CreatePayerRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Payer.schema'
+          type: object
+    CreatePlanRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Plan.schema'
+          type: object
+    CreateSpecialtyRequest:
+      type: object
+      properties:
+        nuccSpecialtyId:
+          type: string
+        abmsSpecialtyId:
+          type: string
+        hsdSpecialtyId:
+          type: string
+        data:
+          $ref: '#/components/schemas/Specialty.schema'
+          type: object
+    CreateTenantSpecialtyRequest:
+      type: object
+      properties:
+        specialtyId:
+          type: string
+        data:
+          $ref: '#/components/schemas/TenantSpecialty.schema'
+          type: object
+    CreateTimelineEventRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          pattern: \S
+        changeReason:
+          type: string
+        credentialingDecisionDate:
+          $ref: '#/components/schemas/LocalDate'
+        nextCredentialingDate:
+          $ref: '#/components/schemas/LocalDate'
+    CredentialingWorkflowResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantPractitionerId:
+          type: string
+        tenantCredentialingEntityId:
+          type: string
+        tenantId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+    Date:
+      type: string
+      format: date
+      examples:
+        - '2022-03-10'
+    ErrorObject:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    Field:
+      type: object
+      properties:
+        name:
+          type: string
+        mappedKey:
+          type: string
+        mappedEntity:
+          type: string
+        entityGroup:
+          type: string
+        isRequired:
+          type: boolean
+        validationRegex:
+          type: string
+        description:
+          type: string
+    FieldSuggestion:
+      type: object
+      properties:
+        name:
+          type: string
+        suggestedMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    GetAllNetworksResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkResponse.schema'
+    GetAllPayersResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
+    GetAllPlansResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
+    GetCredentialingWorkflowResponse:
+      description: Response containing a single credentialing workflow
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the credentialing workflow
+          examples:
+            - '1234'
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+            - tenant_123456
+        tenantPractitionerId:
+          type: string
+          description: ID of the tenant practitioner
+          examples:
+            - tp_123456
+        data:
+          $ref: '#/components/schemas/CredentialingWorkflow.schema'
+          description: Credentialing workflow data
+        createdBy:
+          type: string
+          description: ID of the user who created the credentialing workflow
+          examples:
+            - user_123456
+        updatedBy:
+          type: string
+          description: ID of the user who updated the credentialing workflow
+          examples:
+            - user_123456
+        createdAt:
+          description: Timestamp of the credentialing workflow creation
+          type: string
+          examples:
+            - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp of the credentialing workflow update
+          type: string
+          examples:
+            - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+    GetCredentialingWorkflowsResponse:
+      description: Response containing a list of credentialing workflows
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of credentialing workflows
+          examples:
+            - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetCredentialingWorkflowResponse'
+          description: Array of credentialing workflow records
+        links:
+          description: Pagination links for navigation
+          type: object
+          $ref: '#/components/schemas/PageLinks'
+    GetPayerResponse:
+      $ref: '#/components/schemas/Payer.schema'
+      type: object
+      properties:
+        jsonNode:
+          $ref: '#/components/schemas/JsonNode'
+    GetPlanResponse:
+      $ref: '#/components/schemas/Payer.schema'
+      type: object
+      properties:
+        jsonNode:
+          $ref: '#/components/schemas/JsonNode'
+    GetUploadMappingsRequest:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+    GetUploadMappingsResponse:
+      type: object
+      properties:
+        mapped:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        unMapped:
+          type: array
+          items:
+            type: string
+        systemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    Instant:
+      type: string
+      format: date-time
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+        - ARRAY
+        - BINARY
+        - BOOLEAN
+        - MISSING
+        - 'NULL'
+        - NUMBER
+        - OBJECT
+        - POJO
+        - STRING
+    LocalDate:
+      type: string
+      format: date
+      examples:
+        - '2022-03-10'
+    LoginRequest:
+      description: Request body for user authentication
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          description: User email address
+          examples:
+            - user@example.com
+        password:
+          type: string
+          description: User password
+          examples:
+            - password
+    NetworkResponse:
+      $ref: '#/components/schemas/NetworkResponse.schema'
+      type: object
+      properties:
+        jsonNode:
+          $ref: '#/components/schemas/JsonNode'
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+        - '2022-03-10T12:15:50-04:00'
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    PagedContractResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
+    PayerRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        dataToValidate:
+          $ref: '#/components/schemas/JsonNode'
+    PayerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    PermissionCreateRequest:
+      description: Request body for creating a new permission
+      type: object
+      properties:
+        resource:
+          type: string
+          maxLength: 100
+          pattern: \S
+          description: The resource name (e.g., 'user', 'roster')
+          examples:
+            - user
+        action:
+          type: string
+          maxLength: 100
+          pattern: \S
+          description: The action name (e.g., 'read', 'create')
+          examples:
+            - read
+        description:
+          type: string
+          maxLength: 500
+          description: A brief description of the permission
+          examples:
+            - Allows reading user profiles
+    PermissionListResponseDto:
+      description: Paginated list of permissions
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionResponseDto'
+          description: List of permissions
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of permissions
+        page:
+          type: integer
+          format: int32
+          description: Current page number
+        size:
+          type: integer
+          format: int32
+          description: Number of items per page
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+        hasPrevious:
+          type: boolean
+          description: Whether there is a previous page
+    PermissionResponseDto:
+      type: object
+      description: Permission information response
+      properties:
+        id:
+          type: string
+          description: Permission ID
+          examples:
+            - perm-123-456-789
+        resource:
+          type: string
+          description: Resource name
+          examples:
+            - user
+        action:
+          type: string
+          description: Action name
+          examples:
+            - read
+        description:
+          type: string
+          description: Permission description
+          examples:
+            - Allows reading user profiles
+        createdAt:
+          description: Creation timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          description: Last update timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+    PermissionUpdateRequest:
+      description: Request body for updating a permission
+      type: object
+      properties:
+        resource:
+          type: string
+          maxLength: 100
+          description: Resource name
+          examples:
+            - user
+        action:
+          type: string
+          maxLength: 100
+          description: Action name
+          examples:
+            - read
+        description:
+          type: string
+          maxLength: 500
+          description: Permission description
+          examples:
+            - Allows reading user profiles
+    PlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        payerId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    RosterJobType:
+      type: string
+      enum:
+        - PRACTITIONER
+        - FACILITY
+    RosterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        templateId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        invalidCount:
+          type: integer
+          format: int64
+        validCount:
+          type: integer
+          format: int64
+        completedCount:
+          type: integer
+          format: int64
+        failedCount:
+          type: integer
+          format: int64
+    RosterReuploadResponse:
+      type: object
+      properties:
+        rosterId:
+          type: string
+        path:
+          type: string
+        filename:
+          type: string
+        bucketName:
+          type: string
+        message:
+          type: string
+    RosterTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    SaveMappingsRequest:
+      type: object
+      properties:
+        updateExistingTemplate:
+          type: boolean
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    SingleStepTemplateFlowResponse:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        status:
+          type: string
+        templateId:
+          type: string
+        templateUrl:
+          type: string
+        schemaUrl:
+          type: string
+    StatusOption:
+      type: object
+      description: Status option with required fields
+      properties:
+        name:
+          type: string
+          description: Status name
+          examples:
+            - CRED_APPROVED
+        required:
+          type: array
+          items:
+            type: string
+          description: List of required field names for this status
+          examples:
+            - - name
+              - credentialingDecisionDate
+    StatusOptionsResponse:
+      description: List of available timeline event status options with required fields
+      type: object
+      properties:
+        statusOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusOption'
+          description: List of status options with their required fields
+    TemplateData:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        entities:
+          type: array
+          items:
+            type: string
+        allFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSuggestion'
+    TemplateUpdateRequest:
+      type: object
+      properties:
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    TemplateUploadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: '#/components/schemas/TemplateData'
+    TimelineEventResponse:
+      description: Response containing timeline event information
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the timeline event
+          examples:
+            - te_123456
+        workflowId:
+          type: string
+          description: ID of the associated credentialing workflow
+          examples:
+            - cw_123456
+        data:
+          description: Timeline event data containing name, changeReason, and date fields
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        createdBy:
+          type: string
+          description: ID of the user who created the timeline event
+          examples:
+            - user_123456
+        updatedBy:
+          type: string
+          description: ID of the user who last updated the timeline event
+          examples:
+            - user_123456
+        createdAt:
+          description: Timestamp when the timeline event was created
+          type: string
+          examples:
+            - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp when the timeline event was last updated
+          type: string
+          examples:
+            - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+    Practitioner.schema:
+      type: object
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Practioner.schema.json
+      title: Practioner Schema
+      additionalProperties: false
+      properties:
+        firstName:
+          title: First Name
+          type: string
+        middleName:
+          title: Middle Name
+          type: string
+        lastName:
+          title: Last Name
+          type: string
+        primaryEmail:
+          title: Primary Email
+          type: string
+        npi:
+          title: Nationa Provider Identifier
+          type: string
+        caqhProviderId:
+          title: CAQH Provider Id
+          type: string
+        providerType:
+          title: Provider Type
+          type: string
+        providerId:
+          title: Provider Id
+          type: string
+        dateOfBirth:
+          title: Date of Birth
+          type: string
+          format: date
+        ssn:
+          title: Social Security Number
+          type: string
+        gender:
+          title: Gender
+          type: string
+        race:
+          title: Race
+          type: string
+        ethnicity:
+          title: Ethnicity
+          type: string
+        providerCreatedDate:
+          title: Provider Created Date
+          type: string
+          format: date
+        npdbDatabankSubjectId:
+          title: NPDB Data Bank Subject Id
+          type: string
+        npdbDcn:
+          title: NPDB Dcn
+          type: string
+        isDeceased:
+          title: Is Deceased?
+          type: boolean
+        deceasedDate:
+          title: Deceased Date
+          type: string
+          format: date
+        deceasedExplanation:
+          title: Deceased Explanation
+          type: string
+        survivorId:
+          title: Survivor Id
+          type: string
+          description: Foreign Key
+        practitionerEmails:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                title: Email Address
+                type: string
+                format: email
+              emailType:
+                title: Type of Email
+                type: string
+                enum:
+                  - personal
+                  - business
+                  - credentialing
+            additionalProperties: false
+        practitionerMedicaid:
+          title: ' Practioner Medicaid'
+          type: array
+          items:
+            type: object
+            properties:
+              state:
+                title: State
+                type: string
+              medicaidNumber:
+                title: Medicaid Number
+                type: string
+              medicaidState:
+                title: Medicaid State
+                type: string
+              cdsNumber:
+                title: CDS Number
+                type: string
+            additionalProperties: false
+        malpracticeInsurance:
+          type: array
+          items:
+            type: object
+            properties:
+              expiryDate:
+                type: string
+                format: date
+              source:
+                type: string
+              status:
+                type: string
+              policyNumber:
+                type: string
+              aggregateCoverageAmount:
+                type: string
+              occuranceCoverageAmount:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+        supportingDocuments:
+          type: array
+          items:
+            type: object
+            properties:
+              createdAt:
+                type: string
+                format: date
+              fileType:
+                type: string
+              fileUrl:
+                type: string
+              originalFileName:
+                type: string
+        boardCertifications:
+          type: array
+          items:
+            type: object
+            properties:
+              certificateId:
+                type: string
+              certificateType:
+                type: string
+              durationType:
+                type: string
+              expireDate:
+                type: string
+                format: date
+              issueDate:
+                type: string
+                format: date
+              speciality:
+                type: string
+              subspeciality:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+              moc:
+                type: string
+              status:
+                type: string
+              occuranceType:
+                type: string
+              recordType:
+                type: string
+        hospitalAffiliations:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              speciality:
+                type: string
+              state:
+                type: string
+              type:
+                type: string
+              source:
+                type: string
+              startDate:
+                type: string
+                format: date
+              endDate:
+                type: string
+                format: date
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+        practitionerSanctions:
+          type: array
+          items:
+            type: object
+            properties:
+              dateOfReport:
+                type: string
+                format: date
+              sanctionType:
+                type: string
+              typeOfAction:
+                type: string
+              verifiedBy:
+                type: string
+              data:
+                type: string
+        workHistoryGaps:
+          type: array
+          items:
+            type: object
+            properties:
+              explanation:
+                type: string
+              gapStartDate:
+                type: string
+              gapEndDate:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+        disclosureQuestions:
+          type: array
+          items:
+            type: object
+            properties:
+              explanation:
+                type: string
+              question:
+                type: string
+              answer:
+                type: string
+              answerFlag:
+                type: string
+                format: date
+        nppes:
+          type: array
+          items:
+            type: object
+            properties:
+              firstName:
+                type: string
+              lastName:
+                type: string
+              lastActionDate:
+                type: string
+                format: date
+              reportDate:
+                type: string
+                format: date
+              source:
+                type: string
+              actionType:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              createdDate:
+                type: string
+                format: date
+        educationTraining:
+          type: array
+          items:
+            type: object
+            properties:
+              startDate:
+                type: string
+                format: date
+              endDate:
+                type: string
+                format: date
+              type:
+                type: string
+              degree:
+                type: string
+              speciality:
+                type: string
+              institution:
+                type: string
+              licensingBoardReference:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+        licenses:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              expiration:
+                type: string
+                format: date
+              issueDate:
+                type: string
+                format: date
+              licenseNumber:
+                type: string
+              state:
+                type: string
+              licenseType:
+                type: string
+              licenseStatus:
+                type: string
+              source:
+                type: string
+              reportDate:
+                type: string
+                format: date
+              licenseNumberVariations:
+                type: string
+        provderPracticeLocation:
+          type: array
+          items:
+            type: object
+            properties:
+              address1:
+                type: string
+              address2:
+                type: string
+              city:
+                type: string
+              county:
+                type: string
+              state:
+                type: string
+              zipcode:
+                type: string
+              healthcareServiceName:
+                type: string
+        practitionerLanguages:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+              isPrimary:
+                type: boolean
+        licensureActions:
+          type: array
+          items:
+            type: object
+            properties:
+              details:
+                type: string
+              state:
+                type: string
+              lastActionDate:
+                type: string
+                format: date
+              reportDate:
+                type: string
+                format: date
+              source:
+                type: string
+              actionType:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              createdDate:
+                type: string
+                format: date
+        dea:
+          type: array
+          items:
+            type: object
+            properties:
+              expireDate:
+                type: string
+                format: date
+              affliliation:
+                type: string
+              deaNumber:
+                type: string
+              state:
+                type: string
+              providerType:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              source:
+                type: string
+                format: date
+              type:
+                type: string
+                enum:
+                  - DEA
+                  - CDS
+              status:
+                type: string
+        npdbReports:
+          type: array
+          items:
+            type: object
+            properties:
+              reportDate:
+                type: string
+                format: date
+              processDate:
+                type: string
+                format: date
+              verifiedBy:
+                type: string
+              data:
+                type: object
+              verifiedDate:
+                type: string
+                format: date
+              typeOfAction:
+                type: string
+              createdDate:
+                type: string
+                format: date
+              deceased:
+                type: string
+              paymentAmount:
+                type: string
+              paymentDate:
+                type: string
+                format: date
+              patientAge:
+                type: string
+              patientGender:
+                type: string
+              patientType:
+                type: string
+              medicalConditionDescription:
+                type: string
+              procedureDescription:
+                type: string
+              allegationsDescription:
+                type: string
+              allegationNature:
+                type: string
+              specificAllegation:
+                type: string
+              specificAllegationDate:
+                type: string
+                format: date
+              outcome:
+                type: string
+              source:
+                type: string
+              reportType:
+                type: string
+              firstName:
+                type: string
+              lastName:
+                type: string
+              middleName:
+                type: string
+              gender:
+                type: string
+              npi:
+                type: string
+              homeAddress:
+                type: string
+              homeCity:
+                type: string
+              homeState:
+                type: string
+              homeZip:
+                type: string
+              dcn:
+                type: string
+              databankSubjectId:
+                type: string
+                format: date
+    CredentialingWorkflow.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/CredentialingWorkflow.schema.json
+      title: CredentialingWorkflow
+      description: >-
+        Represents the credentialing workflow data stored in the data JSON
+        field.
+      type: object
+      properties:
+        practitioner:
+          $ref: '#/components/schemas/Practitioner.schema'
+        credentialingCycle:
+          description: Cycle of credentialing the provider.
+          type: string
+          enum:
+            - INITIAL
+            - RECREDENTIALING
+        externalId:
+          description: Entity responsible for credentialing the provider.
+          type: string
+        assignedBy:
+          description: User or system that assigned the credentialing task.
+          type: string
+        assignedTo:
+          description: User or system assigned to handle the credentialing task.
+          type: string
+        practitionerFileType:
+          description: >-
+            Type of practitioner file associated with this credentialing
+            workflow.
+          type: string
+          enum:
+            - CLEAN
+            - NON_CLEAN
+            - PENDING
+        credentialedStates:
+          description: States involved in the credentialing process.
+          type: array
+          items:
+            type: string
+        previousCredentialedDate:
+          description: Date of the previous credentialing.
+          type: string
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        credentialingDueDate:
+          description: Date of the credentialing due.
+          type: string
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        receivedForCredentialingDate:
+          description: Date of the received for credentialing.
+          type: string
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+      required:
+        - practitioner
+      additionalProperties: false
+      unevaluatedProperties: false
+    NetworkResponse.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: >-
+        https://schemas.certifyos.com/api-contracts/response/network-response.schema.json
+      title: NetworkResponse
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            contractId:
+              type: string
+    Network.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Network.schema.json
+      title: Network
+      description: >-
+        Represents collection of health care providers associated with a plan
+        through a contract.
+      type: object
+      properties:
+        name:
+          description: The name of the network.
+          type: string
+        contractId:
+          description: The identifier of the associated contract.
+          type: string
+    Payer.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Payer.schema.json
+      title: Payer
+      description: >-
+        Represents an entity responsible for financing or reimbursing the cost
+        of healthcare services.
+      type: object
+      properties:
+        name:
+          description: The name of the payer.
+          type: string
+      required:
+        - name
+    LineOfBusiness.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business associated with a healthcare plan.
+      type: string
+      enum:
+        - Medicare
+        - Medicaid
+        - Commercial
+    NetworkType.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: >-
+        Specifies the line of business and network type combination for a
+        healthcare plan.
+      type: string
+      enum:
+        - Commercial - HMO
+        - Commercial - PPO
+        - Medicare - HMO
+        - Medicaid - HMO
+    Plan.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Plan.schema.json
+      title: Plan
+      description: >-
+        Represents a healthcare plan with business line, network type, and
+        benefits information.
+      type: object
+      properties:
+        lineOfBusiness:
+          description: >-
+            The line of business under which the plan operates (e.g.,
+            Commercial, Medicare, Medicaid).
+          $ref: '#/components/schemas/LineOfBusiness.schema'
+        networkType:
+          description: The type of network associated with the plan (e.g., HMO, PPO).
+          $ref: '#/components/schemas/NetworkType.schema'
+        benefits:
+          description: The benefits offered under the plan.
+          type: string
+        name:
+          description: The name of the plan.
+          type: string
+    NuccSpecialtyCategory.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.json
+      title: NUCC Specialty Category
+      description: Allowed categories for NUCC Specialty
+      type: string
+      enum:
+        - Individual
+        - Non-Individual
+    Specialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Specialty.schema.json
+      title: Specialty
+      description: >-
+        Represents the master specialty list, including custom specialties, to
+        include crosswalk between NUCC, HSD, and ABMS Specialties.  References
+        the entities for NUCC, HSD, and ABMS specialties.
+      type: object
+      properties:
+        name:
+          description: The name of the specialty.
+          type: string
+        classificationSource:
+          description: The source of the specialty classification (e.g., NUCC, HSD, ABMS).
+          type: string
+        subSpecialtyName:
+          description: The sub specialty name of the specialty.
+          type: string
+        specialtyCategory:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+        taxonomyCode:
+          description: The taxonomy code associated with the specialty.
+          type: string
+        taxonomyDescription:
+          description: The description of the taxonomy code.
+          type: string
+      required:
+        - name
+        - classificationSource
+        - specialtyCategory
+      additionalProperties: false
+    NuccSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
+      title: NuccSpecialty
+      description: >-
+        Represents the NUCC specialty information options for a healthcare
+        provider.
+      type: object
+      properties:
+        classification:
+          type: string
+          description: The classification of the NUCC specialty
+          minLength: 1
+        specialization:
+          type:
+            - string
+            - 'null'
+          description: The specific specialization within the NUCC classification
+        category:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+          description: The category of the NUCC specialty (Individual or Non-individual)
+        displayName:
+          type: string
+          description: The human-readable name of the NUCC specialty
+          minLength: 1
+        specialtyNuccTaxonomyCode:
+          type: string
+          description: The NUCC taxonomy code associated with the specialty
+          minLength: 1
+      required:
+        - classification
+        - category
+        - specialtyNuccTaxonomyCode
+        - displayName
+      additionalProperties: false
+    TenantSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+      title: TenantSpecialty
+      description: Represents a specialty associated with a tenant.
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name for the specialty.
+        description:
+          type: string
+          description: Detailed description of the specialty.
+        changeReason:
+          type: string
+          description: Reason for any change to the specialty.
+      additionalProperties: false
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

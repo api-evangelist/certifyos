@@ -1,0 +1,158 @@
+generated: '2026-08-09'
+method: searched
+source: https://docs.certifyos.com/providerhub
+derived_from:
+- openapi/certify-api-service-openapi.yml
+- openapi/certify-application-openapi.json
+- openapi/certify-roster-service-openapi.yml
+authentication:
+  style: bearer JWT
+  artifact: authentication/certify-authentication.yml
+  token_endpoints:
+  - operationId: authenticateUser
+    method: POST
+    path: /auth/login
+    api: Certify ProviderHub API
+  - operationId: clientCredentials
+    method: POST
+    path: /auth/client-credentials
+    api: Certify ProviderHub API
+  - operationId: AuthTokensController_createApiToken
+    method: POST
+    path: /auth-tokens/v2/api
+    api: CertifyOS API (v2)
+  gotcha: >-
+    The api-service and roster-service `jwt` scheme is documented as "Provide
+    only the raw token without Bearer prefix" — it deviates from RFC 6750. The
+    v2 application API uses a conventional `Authorization: Bearer <jwt>`.
+  oauth2: false
+  scopes: none
+  scopes_note: >-
+    No oauth2 securityScheme is declared in any spec, so there is no scope
+    surface; authorization is role/permission-based and administered through the
+    /roles and /permissions endpoints. scopes/ is intentionally not emitted.
+tenancy:
+  required: true
+  headers:
+  - name: tenant-id
+    in: header
+    required: true
+    apis: [Certify ProviderHub API]
+    coverage: 377 of 377 api-service operations, 64 of 64 roster-service operations
+  - name: organization-id
+    in: header
+    required: true
+    apis: [CertifyOS API (v2)]
+    coverage: 78 of 79 operations
+  - name: user-id
+    in: header
+    required: false
+    note: service-to-service calls only (12 operations)
+  note: >-
+    Strict tenant isolation is a first-class part of the contract — every
+    ProviderHub request is rejected without a tenant-id header.
+pagination:
+  styles:
+  - name: page-number
+    apis: [Certify ProviderHub API]
+    params: [page, size]
+    response_fields: [totalCount, data]
+  - name: cursor
+    apis: [Certify ProviderHub API]
+    params: [startAfterId, endAtId]
+    note: >-
+      Keyset paging offered alongside page/size on the higher-volume list
+      endpoints (15 operations use startAfterId, 14 use endAtId).
+  - name: offset-limit
+    apis: [CertifyOS API (v2)]
+    params: [offset, limit]
+  sorting:
+    params: [order, sortBy, sortDirection]
+filtering:
+  style: URL-encoded JSON filter grammar
+  param: filter
+  operators: [eq, gte, contains, in]
+  operators_note: >-
+    The operator list is the set the ProviderHub overview page names verbatim;
+    the docs describe it as "rich operators", so the full grammar may be larger.
+  docs: https://docs.certifyos.com/providerhub
+idempotency:
+  request_idempotency: none
+  request_idempotency_note: >-
+    No Idempotency-Key request parameter or header is accepted by any of the 520
+    operations, and no idempotency semantics are documented for writes. Retrying
+    a POST is not safe.
+  delivery_idempotency:
+    supported: true
+    direction: outbound (Certify -> subscriber)
+    header: Idempotency-Key
+    value: SHA-256 hash, identical across retries of the same event
+    purpose: lets a webhook CONSUMER de-duplicate redelivered events
+    source: openapi/certify-api-service-openapi.yml#triggerManualWebhookEvent
+  note: >-
+    Because the only idempotency contract runs in the delivery direction, no
+    `Idempotency` pointer is wired in apis.yml — emitting one would credit
+    Certify with request-level idempotency it does not offer.
+versioning:
+  scheme: uri-path (partial)
+  detail: >-
+    The v2 application API prefixes most resources with /v2 and retains a small
+    number of unprefixed v1 paths alongside them. The ProviderHub api-service
+    and roster-service are unversioned in the path except for an /api/v1
+    egress-templates cluster. There is no version header and no published
+    version-negotiation policy.
+  spec_versions:
+    api-service: 1.0.0 (OpenAPI 3.1.0)
+    roster-service: 1.0.0 (OpenAPI 3.1.0)
+    application: unset (OpenAPI 3.0.0, info.version absent)
+error_envelope:
+  artifact: errors/certify-problem-types.yml
+  primary: '{ "errors": [ { "httpStatus", "reason", "title", "detail" } ] }'
+  rfc9457: false
+rate_limiting:
+  documented: false
+  headers: none
+  note: >-
+    No RateLimit / X-RateLimit / Retry-After headers appear in any of the three
+    specs and no 429 response is declared anywhere. The only rate-limiting
+    statement in the public surface is that the Cloud Tasks queue throttles
+    OUTBOUND webhook dispatch to respect partner limits.
+request_tracing:
+  request_id_header: none
+  note: No request-id / correlation-id header is documented or declared.
+environments:
+  published_in_servers:
+  - url: https://api-service.certifyos.com
+    role: production
+    api: Certify ProviderHub API
+  - url: https://api-service.staging.certifyos.com
+    role: staging
+  - url: https://api-service.test.certifyos.com
+    role: test
+  - url: https://api-service.demo.certifyos.com
+    role: demo
+  - url: https://api-service.internal.certifyos.com
+    role: internal
+  - url: https://ng-api-production.certifyos.com
+    role: production
+    api: CertifyOS API (v2)
+  - url: https://ng-api-stg.certifyos.com/
+    role: staging
+  self_serve_sandbox: false
+  note: >-
+    Non-production hosts are enumerated in the specs' servers[] but there is no
+    self-serve sandbox, no test credentials, and no magic test values published,
+    so no sandbox/ artifact is emitted.
+bulk:
+  csv_upload: roster upload + column mapping + template approval flow
+  csv_download: text/csv responses on 5 operations (roster record export, directory exports)
+  bulk_create: createBulkCredentialingWorkflows, createBulkCredentialingWorkflowsV2
+media_types:
+  request: [application/json, multipart/form-data]
+  response: [application/json, text/csv, text/plain]
+cross_links:
+  errors: errors/certify-problem-types.yml
+  authentication: authentication/certify-authentication.yml
+  lifecycle: lifecycle/certify-lifecycle.yml
+  webhooks: asyncapi/certify-webhooks.yml
+  data_model: data-model/certify-data-model.yml

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/common/Deletion.schema.json",
+  "title": "Deletion",
+  "description": "Metadata block attached to every soft-deleted record. The five core fields are universal across any producer. The optional context bag holds source-specific fields so the core contract stays generic and reusable.",
+  "type": "object",
+  "required": ["deletedAt", "deletedBy"],
+  "properties": {
+    "deletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp (UTC, millisecond precision) at which the record was soft-deleted. Server-stamped."
+    },
+    "deletedBy": {
+      "type": "string",
+      "description": "User ID of the actor who performed the deletion. Server-stamped from UserContext."
+    },
+    "intent": {
+      "type": ["string", "null"],
+      "description": "Why the record was deleted. Allowed values enforced at the api-layer."
+    },
+    "reason": {
+      "type": ["string", "null"],
+      "description": "More specific reason for the deletion. Allowed values enforced at the api-layer."
+    },
+    "reasonText": {
+      "type": ["string", "null"],
+      "maxLength": 2000,
+      "description": "Free-text explanation. Required when reason is OTHER; otherwise optional."
+    },
+    "context": {
+      "type": "object",
+      "description": "Open bag for source-specific metadata. Credentialing places workflowId here. Kept outside the core fields so this schema stays reusable for scalar attributes and future use cases such as pinning."
+    }
+  },
+  "additionalProperties": false
+}

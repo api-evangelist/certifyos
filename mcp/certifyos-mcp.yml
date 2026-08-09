@@ -1,0 +1,52 @@
+generated: '2026-08-09'
+method: searched
+status: published
+source: https://docs.certifyos.com/app-data.json
+server:
+  name: certify-docs
+  transport: http
+  url: https://docs.certifyos.com/mcp
+  scope: documentation
+  vendor: Redocly (Reunite) — hosted docs MCP, enabled by CertifyOS in its docs config
+  display_name: MCP server
+authentication:
+  required: true
+  observed_response:
+    http_status: 401
+    body: '{"error":"unauthorized","message":"Authentication required"}'
+  authorization_server_metadata: well-known/certify-oauth-authorization-server.json
+  issuer: https://auth.cloud.redocly.com
+  authorization_endpoint: https://docs.certifyos.com/_mcp/oauth2/auth
+  token_endpoint: https://docs.certifyos.com/_mcp/oauth2/token-portal
+  registration_endpoint: https://docs.certifyos.com/_mcp/register
+  grant_types: [authorization_code, refresh_token, client_credentials]
+  scopes: [openid, profile, email, offline_access]
+  pkce: [S256]
+tools: []
+tools_note: >-
+  tools/list was POSTed anonymously with Accept: application/json,
+  text/event-stream and returned HTTP 401 — the live tool schemas require an
+  authenticated introspection through the Redocly authorization server above.
+  No tool list is recorded here because none was observed; the published
+  llms.txt (llms/certify-llms.txt) enumerates documentation pages, not MCP
+  tools, so there is no name/description fallback to harvest either.
+scope_caveat: >-
+  This is a DOCUMENTATION MCP server — it exposes the docs.certifyos.com content
+  set to an agent. It is NOT an MCP projection of the Certify ProviderHub REST
+  API: no MCP tool maps to a provider-data or credentialing operation. For that
+  reason no mcp/certify-tool-crosswalk.yml is emitted; a crosswalk between
+  docs-search tools and the 520 REST operations would assert a binding that does
+  not exist.
+x-evidence:
+- fetched: '2026-08-09'
+  url: https://docs.certifyos.com/app-data.json
+  http_status: 200
+  finding: 'mcp.docs.hide=false, mcpData.docs.enabled=true, name "MCP server"'
+- fetched: '2026-08-09'
+  url: https://docs.certifyos.com/mcp
+  http_status: 401
+  method: POST jsonrpc tools/list
+- fetched: '2026-08-09'
+  url: https://docs.certifyos.com/.well-known/oauth-authorization-server
+  http_status: 200
+  content_type: application/json

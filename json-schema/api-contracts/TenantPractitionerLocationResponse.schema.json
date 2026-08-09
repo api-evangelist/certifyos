@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/api-contracts/TenantPractitionerLocationResponse.schema.json",
+  "title": "TenantPractitionerLocationResponse",
+  "description": "Combined schema representing a practitioner's location within a tenant group, including all location details, tenant group associations, and practitioner-specific information.",
+  "type": "object",
+  "properties": {
+    "suppressSiteFromDirectory": {
+      "description": "Controls whether this location should be hidden from public directories and provider listings.",
+      "type": "boolean"
+    },
+    "active": {
+      "description": "Indicates if the location is currently active and operational.",
+      "type": "boolean"
+    },
+    "terminationDate": {
+      "description": "The date when the association was terminated.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "billingEffectiveDate": {
+      "description": "The effective date for billing purposes.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "billingTerminationDate": {
+      "description": "The termination date for billing purposes.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "effectiveStartDate": {
+      "description": "The start date when this record becomes effective.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "effectiveEndDate": {
+      "description": "The end date when this record is no longer effective.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "isPrimary": {
+      "description": "Indicates if this is the primary location for the practitioner.",
+      "type": "boolean"
+    },
+    "roleType": {
+      "description": "The role type of the practitioner at this location.",
+      "$ref": "https://schemas.certifyos.com/enums/RoleType.schema.json"
+    },
+    "panelStatus": {
+      "description": "The current panel status for the practitioner at this location.",
+      "$ref": "https://schemas.certifyos.com/enums/PanelStatus.schema.json"
+    },
+    "acceptingNewPatients": {
+      "description": "Indicates if the practitioner is accepting new patients at this location.",
+      "type": "boolean"
+    },
+    "effectiveDate": {
+      "description": "The date when this record becomes effective.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "npdbEnrollmentEnabled": {
+      "description": "Indicates if NPDB (National Practitioner Data Bank) enrollment is enabled.",
+      "type": "boolean"
+    },
+    "locationName": {
+      "type": "string",
+      "description": "Official name of the location"
+    },
+    "locationType": {
+      "$ref": "https://schemas.certifyos.com/enums/GroupLocationTypes.schema.json",
+      "description": "Specifies the primary type of healthcare services provided at this location"
+    },
+    "hasAdmittingPrivileges": {
+      "type": "boolean",
+      "description": "Indicates whether healthcare providers at this location have the authority to admit patients to affiliated hospitals"
+    },
+    "acceptsNewPatients": {
+      "type": "boolean",
+      "description": "Indicates whether the location is currently accepting new patient appointments or registrations"
+    },
+    "isPrimaryLocation": {
+      "type": "boolean",
+      "description": "Indicates whether this is the main practice location for the healthcare provider or group"
+    },
+    "adaCompliance": {
+      "$ref": "#/$defs/AdaCompliance",
+      "description": "Americans with Disabilities Act compliance information for the location"
+    },
+    "officeHours": {
+      "type": "array",
+      "description": "Operating hours for each day of the week",
+      "items": {
+        "$ref": "#/$defs/OfficeHour"
+      }
+    },
+    "locationHsdSpecialty": {
+      "type": ["string", "null"],
+      "description": "Healthcare service delivery specialty designation for this location"
+    },
+    "locationPrimarySpecialty": {
+      "type": ["string", "null"],
+      "description": "Primary medical specialty or focus area of the location"
+    },
+    "limitationsForMembers": {
+      "type": "array",
+      "description": "List of any restrictions or limitations that apply to members at this location",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tags": {
+      "type": "array",
+      "description": "Custom labels or categories associated with this location",
+      "items": {
+        "type": "string"
+      }
+    },
+    "createdBy": {
+      "type": "string",
+      "description": "Identifier of the user who created this location record"
+    },
+    "createdByName": {
+      "type": "string",
+      "description": "Name of the user who created this location record"
+    },
+    "updatedBy": {
+      "type": "string",
+      "description": "Identifier of the user who last updated this location record"
+    },
+    "updatedByName": {
+      "type": "string",
+      "description": "Name of the user who last updated this location record"
+    },
+    "contacts": {
+      "type": "array",
+      "description": "List of contact information for the location",
+      "items": {
+        "type": "object",
+        "properties": {
+          "afterHoursPhoneNumber": {
+            "type": "string",
+            "description": "Phone number to be used outside of regular business hours"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Primary email address for contact communications"
+          },
+          "fax": {
+            "type": "string",
+            "description": "Fax number for document transmission"
+          },
+          "mainPhoneNumber": {
+            "type": "string",
+            "description": "Primary contact phone number during regular business hours"
+          },
+          "name": {
+            "type": "string",
+            "description": "Full name or title of the contact person or department"
+          },
+          "contactType": {
+            "$ref": "https://schemas.certifyos.com/enums/ContactType.schema.json"
+          }
+        },
+        "required": ["contactType"],
+        "additionalProperties": false
+      }
+    },
+    "addresses": {
+      "type": "array",
+      "description": "List of addresses associated with the location",
+      "items": {
+        "type": "object",
+        "properties": {
+          "addressLine1": {
+            "type": "string",
+            "description": "Primary address line containing street number, street name, and apartment/suite if applicable"
+          },
+          "addressLine2": {
+            "type": "string",
+            "description": "Secondary address line for additional address information (building name, floor, etc.)"
+          },
+          "city": {
+            "type": "string",
+            "description": "Name of the city or municipality"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country name or code where the address is located"
+          },
+          "county": {
+            "type": "string",
+            "description": "County or district name within the state/province"
+          },
+          "state": {
+            "type": "string",
+            "description": "State, province, or region name/code"
+          },
+          "zip": {
+            "type": "string",
+            "description": "Postal code or ZIP code for the address"
+          },
+          "addressType": {
+            "$ref": "https://schemas.certifyos.com/enums/AddressType.schema.json"
+          }
+        },
+        "required": ["addressType"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "AdaCompliance": {
+      "type": "object",
+      "description": "Americans with Disabilities Act compliance details",
+      "properties": {
+        "handicapAccessible": {
+          "type": "boolean",
+          "description": "Indicates if the location is accessible to people with disabilities"
+        },
+        "handicapParking": {
+          "type": "boolean",
+          "description": "Indicates if designated handicap parking spaces are available"
+        },
+        "handicapRestroom": {
+          "type": "boolean",
+          "description": "Indicates if ADA-compliant restroom facilities are available"
+        }
+      }
+    },
+    "OfficeHour": {
+      "type": "object",
+      "description": "Operating hours for a specific day of the week",
+      "properties": {
+        "day": {
+          "$ref": "https://schemas.certifyos.com/enums/DaysOfTheWeek.schema.json",
+          "description": "Day of the week (three-letter abbreviation)"
+        },
+        "openTime": {
+          "type": "string",
+          "format": "time",
+          "description": "Time when the location opens on this day"
+        },
+        "closeTime": {
+          "type": "string",
+          "format": "time",
+          "description": "Time when the location closes on this day"
+        },
+        "closed": {
+          "type": "boolean",
+          "description": "Indicates if the location is closed on this day"
+        }
+      }
+    }
+  }
+}

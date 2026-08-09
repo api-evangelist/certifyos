@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/entities/TenantGroupPractitionerLocation.schema.json",
+  "title": "TenantGroupPractitionerLocation",
+  "description": "Represents the association of a practitioner details at a specific location within a tenant group, including role, availability, and effective dates.",
+  "type": "object",
+  "properties": {
+    "suppressSiteFromDirectory": {
+      "description": "Indicates if the site should be suppressed from the directory.",
+      "type": "boolean"
+    },
+    "active": {
+      "description": "Indicates if the record is currently active.",
+      "type": "boolean"
+    },
+    "terminationDate": {
+      "description": "The date when the association was terminated.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "billingEffectiveDate": {
+      "description": "The effective date for billing purposes.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "billingTerminationDate": {
+      "description": "The termination date for billing purposes.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "effectiveStartDate": {
+      "description": "The start date when this record becomes effective.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "effectiveEndDate": {
+      "description": "The end date when this record is no longer effective.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "isPrimary": {
+      "description": "Indicates if this is the primary location for the practitioner.",
+      "type": "boolean"
+    },
+    "practitionerRolesMap": {
+      "description": "Map of practitioner role key to effective/termination dates.",
+      "type": "object",
+      "propertyNames": {
+        "enum": ["pcp", "specialist", "hospitalist", "hospital-based provider"]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The effective date for the role."
+          },
+          "terminationDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The termination date for the role."
+          }
+        }
+      }
+    },
+    "practitionerRoles": {
+      "description": "The roles of the practitioner at this location.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["PCP", "Specialist", "Hospitalist", "Hospital-based Provider"]
+      }
+    },
+    "status": {
+      "description": "The status of the practitioner at this location.",
+      "$ref": "https://schemas.certifyos.com/enums/Status.schema.json"
+    },
+    "roleType": {
+      "description": "The role type of the practitioner at this location.",
+      "$ref": "https://schemas.certifyos.com/enums/RoleType.schema.json"
+    },
+    "panelStatus": {
+      "description": "The current panel status for the practitioner at this location.",
+      "$ref": "https://schemas.certifyos.com/enums/PanelStatus.schema.json"
+    },
+    "acceptingNewPatients": {
+      "description": "Indicates if the practitioner is accepting new patients at this location.",
+      "type": "boolean"
+    },
+    "medicare": {
+      "description": "Medicare ID for the practitioner at this location.",
+      "type": ["string", "null"],
+      "pattern": "^[a-zA-Z0-9]{5,20}$"
+    },
+    "npi": {
+      "description": "National Provider Identifier for the group practice location.",
+      "type": ["string", "null"],
+      "pattern": "^\\d{10}$"
+    },
+    "effectiveDate": {
+      "description": "The effective date for the practitioner location.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "changeEffectiveDate": {
+      "description": "The change effective date for the practitioner location.",
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "locationType": {
+      "description": "Type of group location (PRI = Primary, PRA = Practice).",
+      "type": ["string", "null"],
+      "enum": ["PRI", "PRA", null]
+    },
+    "genderAccepted": {
+      "description": "Gender accepted at the practitioner location.",
+      "type": ["string", "null"],
+      "enum": ["Both", "Male", "Female", "Unknown", null]
+    },
+    "acceptingMinimumPatientAge": {
+      "description": "Minimum patient age accepted at this location.",
+      "type": ["string", "null"]
+    },
+    "acceptingMaximumPatientAge": {
+      "description": "Maximum patient age accepted at this location.",
+      "type": ["string", "null"]
+    },
+    "minimumEnrolleesCapacity": {
+      "description": "Minimum enrollees capacity for this location.",
+      "type": ["string", "null"]
+    },
+    "maximumEnrolleesCapacity": {
+      "description": "Maximum enrollees capacity for this location.",
+      "type": ["string", "null"]
+    },
+    "practiceEmail": {
+      "description": "Practice email for the practitioner location.",
+      "type": ["string", "null"],
+      "format": "email"
+    },
+    "handicapAccessible": {
+      "description": "Indicates if the location is handicap accessible.",
+      "type": ["boolean", "null"]
+    },
+    "includeLocationInDirectory": {
+      "description": "Indicates if the practitioner location should be included in the directory.",
+      "type": ["boolean", "null"]
+    },
+    "roleAutoAssignment": {
+      "description": "Auto assignment of practitioner role.",
+      "type": ["string", "null"]
+    },
+    "locationTerminationReason": {
+      "description": "Reason provided during termination of a practitioner from location.",
+      "type": ["string", "null"]
+    },
+    "practitionerFax": {
+      "description": "Practitioner-specific fax number for this location.",
+      "type": ["string", "null"]
+    },
+    "contacts": {
+      "description": "Contact information for the group practice location.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "phone": {
+            "type": ["string", "null"],
+            "description": "Phone number for the location."
+          },
+          "fax": {
+            "type": ["string", "null"],
+            "description": "Fax number for the location."
+          },
+          "appointment": {
+            "type": ["string", "null"],
+            "description": "Appointment phone number for the location."
+          }
+        }
+      }
+    },
+    "officeHours": {
+      "description": "Office hours for each day of the week.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dayOfWeek": {
+            "description": "Day of the week.",
+            "$ref": "https://schemas.certifyos.com/enums/DaysOfTheWeek.schema.json"
+          },
+          "openTime": {
+            "type": ["string", "null"],
+            "description": "Opening time in HH:MM format.",
+            "pattern": "^(0?[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"
+          },
+          "closeTime": {
+            "type": ["string", "null"],
+            "description": "Closing time in HH:MM format.",
+            "pattern": "^(0?[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$"
+          },
+          "isClosed": {
+            "type": ["boolean", "null"],
+            "description": "Indicates if the location is closed on this day."
+          }
+        },
+        "required": ["dayOfWeek"]
+      }
+    },
+    "practiceLimitation": {
+      "description": "Practice limitations for the practitioner location.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "limitation": {
+            "type": ["string", "null"],
+            "description": "Practice limitation description."
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "Indicates if this is the primary practice limitation."
+          }
+        },
+        "required": ["isPrimary"]
+      }
+    }
+  }
+}

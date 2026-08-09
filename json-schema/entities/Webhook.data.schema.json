@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/entities/Webhook.data.schema.json",
+  "title": "Webhook",
+  "description": "Schema for webhook data payload",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "webhookUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "The URL endpoint where webhook events will be sent",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^https?://"
+    },
+    "eventTypes": {
+      "type": "array",
+      "description": "List of event types that will trigger this webhook",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100,
+        "pattern": "^[a-z0-9._-]+$"
+      },
+      "uniqueItems": true,
+      "minItems": 0,
+      "maxItems": 100
+    },
+    "headers": {
+      "anyOf": [
+        {
+          "type": "object",
+          "description": "Custom HTTP headers to include in webhook requests",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "maxProperties": 50
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Custom HTTP headers to include in webhook requests (optional)"
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Whether the webhook is currently active and will receive events",
+      "default": true
+    }
+  },
+  "required": ["webhookUrl", "eventTypes", "isActive"]
+}
+

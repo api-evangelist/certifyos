@@ -1,0 +1,1940 @@
+{
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/entities/Facility.schema.json",
+  "title": "Facility Schema",
+  "additionalProperties": false,
+  "description": "Schema for CertifyOS Facility data.",
+  "unevaluatedProperties": false,
+  "$defs": {
+    "facilityAttachment": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the attachment was created."
+        },
+        "fileType": {
+          "type": "string",
+          "description": "Supporting Document File Type (i.e. Malpractice Insurance Policy, License, etc.)"
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "Supporting Document File URI in GCS"
+        },
+        "originalFileName": {
+          "type": "string",
+          "description": "Supporting Document Original File Name"
+        },
+        "state": {
+          "type": "string",
+          "description": "The state associated with the supporting document."
+        },
+        "expirationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The expiration date of the supporting document."
+        },
+        "source": {
+          "type": "string",
+          "description": "The source of the supporting document."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The user who created the record."
+        }
+      }
+    }
+  },
+  "properties": {
+    "dba": {
+      "type": "string",
+      "description": "Doing Business As name."
+    },
+    "name": {
+      "type": "string",
+      "description": "The legal name of the facility."
+    },
+    "primaryEmail": {
+      "type": "string",
+      "format": "email",
+      "description": "Primary contact email for the facility."
+    },
+    "npi": {
+      "type": "string",
+      "description": "National Provider Identifier."
+    },
+    "tin": {
+      "type": "string",
+      "description": "Taxpayer Identification Number."
+    },
+    "externalId": {
+      "type": "string",
+      "description": "An external identifier for the facility."
+    },
+    "ncpdpId": {
+      "type": "string",
+      "description": "NCPDP identifier for pharmacy facilities. Required when facility type is Pharmacy."
+    },
+    "facilityType": {
+      "type": "string",
+      "description": "The type of the facility."
+    },
+    "deceasedDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of decease, if applicable."
+    },
+    "lastCredentialingDate": {
+      "title": "Last Credentialing Date",
+      "description": "Date of the last credentialing.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "nextCredentialingDate": {
+      "title": "Next Credentialing Date",
+      "description": "Date of the next credentialing due.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "initialCredentialingDate": {
+      "title": "Initial Credentialing Date",
+      "description": "Date of the initial credentialing.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "lineOfBusiness": {
+      "title": "Line of Business",
+      "description": "The line of business associated with the facility.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "attestationDate": {
+      "title": "Attestation Date",
+      "type": "string",
+      "description": "The date of attestation.",
+      "format": "date"
+    },
+    "userDefinedFields": {
+      "title": "User Defined Fields",
+      "type": "object",
+      "description": "User Defined Fields for the facility.",
+      "additionalProperties": true
+    },
+    "delegationStatus": {
+      "type": "string",
+      "enum": [
+        "Delegated",
+        "Direct"
+      ],
+      "description": "The delegation status of the facility."
+    },
+    "businessPurpose": {
+      "title": "Facility business purpose",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "isForCredentialing": {
+          "type": "object",
+          "description": "States if facility is enabled for credentialing.",
+          "properties": {
+            "value": {
+              "type": "boolean",
+              "description": "States if facility is enabled for credentialing."
+            },
+            "reason": {
+              "type": "string",
+              "description": "The reason for the credentialing status."
+            }
+          }
+        },
+        "isForMonitoring": {
+          "type": "object",
+          "description": "States if facility is enabled for monitoring.",
+          "properties": {
+            "value": {
+              "type": "boolean",
+              "description": "States if facility is enabled for monitoring."
+            },
+            "reason": {
+              "type": "string",
+              "description": "The reason for the monitoring status."
+            }
+          }
+        }
+      }
+    },
+    "emails": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "title": "Email Address",
+            "type": "string",
+            "format": "email"
+          },
+          "emailType": {
+            "title": "Type of Email",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string",
+            "description": "The source of the email."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "phoneNumbers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phoneNumber": {
+            "title": "Phone Number",
+            "type": "string",
+            "format": "phone"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string",
+            "description": "The source of the phone number."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "addresses": {
+      "title": "Facility Addresses",
+      "description": "A list of addresses associated with the facility.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "address1": {
+            "title": "Address Line 1",
+            "type": "string"
+          },
+          "address2": {
+            "title": "Address Line 2",
+            "type": "string"
+          },
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          },
+          "country": {
+            "title": "Country",
+            "type": "string"
+          },
+          "zipcode": {
+            "title": "Zipcode",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string",
+            "description": "The source of the address."
+          },
+          "type": {
+            "title": "Type",
+            "type": "string",
+            "description": "The type of address."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "States if the address is the primary address for the facility."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "licenses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "issueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "licenseNumber": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "licenseType": {
+            "type": "string"
+          },
+          "licenseStatus": {
+            "type": "string"
+          },
+          "licenseSource": {
+            "type": "string"
+          },
+          "reportDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "licenseNumberVariations": {
+            "type": "string"
+          },
+          "flaggedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The date the license was flagged."
+          },
+          "dataSource": {
+            "type": "string",
+            "description": "The data source of the license."
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL of the license."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the license.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the license was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the license."
+          }
+        }
+      }
+    },
+    "npdbReports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "reportDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "processDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "verifiedBy": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "typeOfAction": {
+            "type": "string"
+          },
+          "createdDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "deceased": {
+            "type": "string"
+          },
+          "paymentAmount": {
+            "type": "string"
+          },
+          "paymentDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "patientAge": {
+            "type": "string"
+          },
+          "patientGender": {
+            "type": "string"
+          },
+          "patientType": {
+            "type": "string"
+          },
+          "medicalConditionDescription": {
+            "type": "string"
+          },
+          "procedureDescription": {
+            "type": "string"
+          },
+          "allegationsDescription": {
+            "type": "string"
+          },
+          "allegationNature": {
+            "type": "string"
+          },
+          "specificAllegation": {
+            "type": "string"
+          },
+          "specificAllegationDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "reportType": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "middleName": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "npi": {
+            "type": "string"
+          },
+          "homeAddress": {
+            "type": "string"
+          },
+          "homeCity": {
+            "type": "string"
+          },
+          "homeState": {
+            "type": "string"
+          },
+          "homeZip": {
+            "type": "string"
+          },
+          "dcn": {
+            "type": "string"
+          },
+          "databankSubjectId": {
+            "type": "string",
+            "format": "date"
+          },
+          "enrollmentStatus": {
+            "type": "string",
+            "description": "The enrollment status."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the report.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          }
+        }
+      }
+    },
+    "nppes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "npi": {
+            "type": "string"
+          },
+          "active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "address1",
+                "addressType",
+                "city",
+                "countryCode",
+                "countryName",
+                "state"
+              ],
+              "properties": {
+                "address1": {
+                  "type": "string"
+                },
+                "addressPurpose": {
+                  "type": "string"
+                },
+                "addressType": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "countryCode": {
+                  "type": "string"
+                },
+                "countryName": {
+                  "type": "string"
+                },
+                "faxNumber": {
+                  "type": "string"
+                },
+                "postalCode": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "telephoneNumber": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "certificationDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "credential": {
+            "type": "string"
+          },
+          "enumerationDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "enumerationType": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "identifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string"
+                },
+                "issuer": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "lastUpdatedAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "middleName": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "otherNames": {
+            "type": "array"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "taxonomies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "desc"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "desc": {
+                  "type": "string"
+                },
+                "license": {
+                  "type": "string"
+                },
+                "primary": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "state": {
+                  "type": "string"
+                },
+                "taxonomyGroup": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "certificateId": {
+            "type": "string"
+          },
+          "certificateType": {
+            "type": "string"
+          },
+          "durationType": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "issueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "speciality": {
+            "type": "string"
+          },
+          "subspeciality": {
+            "type": "string"
+          },
+          "verifiedBy": {
+            "type": "string"
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "moc": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "occurrenceType": {
+            "type": "string"
+          },
+          "recordType": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string",
+            "description": "The certificate number."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the certificate."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the certificate.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          }
+        }
+      }
+    },
+    "supportingDocuments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/facilityAttachment"
+      }
+    },
+    "insurances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "carrierName": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "policyNumber": {
+            "type": "string"
+          },
+          "aggregateCoverageAmount": {
+            "type": "string"
+          },
+          "occurrenceCoverageAmount": {
+            "type": "string"
+          },
+          "verifiedBy": {
+            "type": "string"
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "description": "The type of insurance."
+          },
+          "unlimitedCoverage": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether the policy has unlimited coverage."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the insurance.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          }
+        }
+      }
+    },
+    "sanctions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "dateOfReport": {
+            "type": "string",
+            "format": "date"
+          },
+          "sanctionType": {
+            "type": "string"
+          },
+          "typeOfAction": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "flaggedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The date the sanction was flagged."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the sanction."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the sanction.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the sanction was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the sanction."
+          }
+        }
+      }
+    },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of specialty."
+          },
+          "specialty": {
+            "type": "string",
+            "description": "The specialty."
+          },
+          "subspecialty": {
+            "type": "string",
+            "description": "The subspecialty."
+          },
+          "primarySpecialty": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Whether this is the primary specialty."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the specialty."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the specialty.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the specialty was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the specialty."
+          }
+        }
+      }
+    },
+    "accreditations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "idNumber": {
+            "type": "string",
+            "description": "The accreditation ID number."
+          },
+          "accreditationBody": {
+            "type": "string",
+            "description": "The accreditation body."
+          },
+          "status": {
+            "type": "string",
+            "description": "The status of the accreditation."
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The effective date of the accreditation."
+          },
+          "expirationDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The expiration date of the accreditation."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the accreditation."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the accreditation.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the accreditation was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the accreditation."
+          }
+        }
+      }
+    },
+    "siteVisits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "grade": {
+            "type": "string",
+            "description": "The grade of the site visit."
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "The date of the site visit."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the site visit."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the site visit.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the site visit was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the site visit."
+          }
+        }
+      }
+    },
+    "medicareStarRatings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "starRating": {
+            "type": "string",
+            "description": "The star rating."
+          },
+          "reportDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The date of the report."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the rating."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the rating.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the rating was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the rating."
+          }
+        }
+      }
+    },
+    "appVerifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "verificationType": {
+            "type": "string",
+            "description": "The type of verification."
+          },
+          "explanation": {
+            "type": "string",
+            "description": "The explanation for the verification."
+          },
+          "source": {
+            "type": "string",
+            "description": "The source of the verification."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the verification.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the verification was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the verification."
+          }
+        }
+      }
+    },
+    "performanceIndicators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "totalComplaints": {
+            "type": "integer",
+            "description": "Total number of complaints."
+          },
+          "clinicalComplaints": {
+            "type": "integer",
+            "description": "Number of clinical complaints."
+          },
+          "serviceComplaints": {
+            "type": "integer",
+            "description": "Number of service complaints."
+          },
+          "benefitsComplaints": {
+            "type": "integer",
+            "description": "Number of benefits complaints."
+          },
+          "claimComplaints": {
+            "type": "integer",
+            "description": "Number of claim complaints."
+          },
+          "accessIssueComplaints": {
+            "type": "integer",
+            "description": "Number of access issue complaints."
+          },
+          "reportDate": {
+            "type": "string",
+            "format": "date",
+            "description": "The date of the report."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was created."
+          },
+          "createdBy": {
+            "type": "string",
+            "description": "The user who created the record."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the record was last updated."
+          },
+          "updatedBy": {
+            "type": "string",
+            "description": "The user who last updated the record."
+          },
+          "attachments": {
+            "type": "array",
+            "description": "Supporting documents for the indicator.",
+            "items": {
+              "$ref": "#/$defs/facilityAttachment"
+            }
+          },
+          "verifiedDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the indicator was verified."
+          },
+          "verifiedBy": {
+            "type": "string",
+            "description": "The user who verified the indicator."
+          }
+        }
+      }
+    },
+    "accreditationBody": {
+      "type": "string",
+      "description": "Primary Facility Accreditation"
+    },
+    "aggregateCoverageAmount": {
+      "type": "string",
+      "description": "Malpractice aggregate coverage amount"
+    },
+    "annualFWATraining": {
+      "type": "string",
+      "description": "Whether annual Fraud, Waste, and Abuse training has been completed"
+    },
+    "carrierName": {
+      "type": "string",
+      "description": "Malpractice carrier name"
+    },
+    "certificateNumber": {
+      "type": "string",
+      "description": "CLIA Certificate Number"
+    },
+    "credentialingType": {
+      "type": "string",
+      "description": "Type of credentialing (I = Initial, R = Recredentialing)",
+      "enum": [
+        "I",
+        "R"
+      ]
+    },
+    "criticalIncidentTraining": {
+      "type": "string",
+      "description": "Whether critical incident training has been completed"
+    },
+    "culturalCompetency": {
+      "type": "string",
+      "description": "Cultural competency training completed"
+    },
+    "effectiveDate": {
+      "type": "string",
+      "description": "Malpractice effective date",
+      "format": "date"
+    },
+    "expiration": {
+      "type": "string",
+      "description": "State License Expiration Date",
+      "format": "date"
+    },
+    "expirationDate": {
+      "type": "string",
+      "description": "CLIA Certificate Expiration Date",
+      "format": "date"
+    },
+    "expireDate": {
+      "type": "string",
+      "description": "DEA Expiration Date",
+      "format": "date"
+    },
+    "expiryDate": {
+      "type": "string",
+      "description": "Malpractice expiry date",
+      "format": "date"
+    },
+    "facilityChangeEffectiveDate": {
+      "type": "string",
+      "description": "Effective date of facility change",
+      "format": "date"
+    },
+    "facilityTaxEntityChangeDate": {
+      "type": "string",
+      "description": "Tax entity change date for the facility",
+      "format": "date"
+    },
+    "isFederallyQualifiedHealthCenter": {
+      "type": "string",
+      "description": "Whether the facility is a federally qualified health center"
+    },
+    "isOpen24Hours": {
+      "type": "string",
+      "description": "Whether facility is open 24 hours",
+      "enum": [
+        "Y",
+        "N"
+      ]
+    },
+    "issueDate": {
+      "type": "string",
+      "description": "State License Issue Date",
+      "format": "date"
+    },
+    "jurisdictionOfInterest": {
+      "type": "string",
+      "description": "Jurisdiction of interest for the facility"
+    },
+    "lastCredentialedDate": {
+      "type": "string",
+      "description": "Date of the last credentialing",
+      "format": "date"
+    },
+    "legalName": {
+      "type": "string",
+      "description": "Legal business name of the facility"
+    },
+    "licenseNumber": {
+      "type": "string",
+      "description": "State license number of facility"
+    },
+    "medicaidNumber": {
+      "type": "string",
+      "description": "Facility's Medicaid identifier",
+      "pattern": "^[a-zA-Z0-9]{5,20}$"
+    },
+    "modelOfCareTraining": {
+      "type": "string",
+      "description": "Whether model of care training has been completed"
+    },
+    "number": {
+      "type": "string",
+      "description": "Drug Enforcement Administration number",
+      "pattern": "^[A-Z][A-Z9]\\d{7,8}$"
+    },
+    "occuranceCoverageAmount": {
+      "type": "string",
+      "description": "Malpractice occurrence coverage amount"
+    },
+    "officeHours": {
+      "type": "string",
+      "description": "Day of the week",
+      "enum": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat"
+      ]
+    },
+    "paymentType": {
+      "type": "string",
+      "description": "Payment type for facility"
+    },
+    "penultimateCredentialingDate": {
+      "type": "string",
+      "description": "Date of the penultimate credentialing",
+      "format": "date"
+    },
+    "recredApprovalDate": {
+      "type": "string",
+      "description": "Date of the recredentialing approval",
+      "format": "date"
+    },
+    "reimbursementCode": {
+      "type": "string",
+      "description": "Reimbursement code for facility"
+    },
+    "remittanceType": {
+      "type": "string",
+      "description": "Remittance type for facility"
+    },
+    "state": {
+      "type": "string",
+      "description": "State License Issuing State (State Abbreviation code)",
+      "enum": [
+        "AK",
+        "AL",
+        "AR",
+        "AS",
+        "AZ",
+        "CA",
+        "CO",
+        "CT",
+        "DC",
+        "DE",
+        "FL",
+        "FM",
+        "GA",
+        "GU",
+        "HI",
+        "IA",
+        "ID",
+        "IL",
+        "IN",
+        "KS",
+        "KY",
+        "LA",
+        "MA",
+        "MD",
+        "ME",
+        "MH",
+        "MI",
+        "MN",
+        "MO",
+        "MP",
+        "MS",
+        "MT",
+        "NC",
+        "ND",
+        "NE",
+        "NH",
+        "NJ",
+        "NM",
+        "NV",
+        "NY",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "PR",
+        "PW",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "UM",
+        "VA",
+        "VI",
+        "VT",
+        "WA",
+        "WI",
+        "WV",
+        "WY"
+      ]
+    },
+    "statesToCredential": {
+      "type": "string",
+      "description": "States to credential the practitioner for",
+      "enum": [
+        "AK",
+        "AL",
+        "AR",
+        "AS",
+        "AZ",
+        "CA",
+        "CO",
+        "CT",
+        "DC",
+        "DE",
+        "FL",
+        "FM",
+        "GA",
+        "GU",
+        "HI",
+        "IA",
+        "ID",
+        "IL",
+        "IN",
+        "KS",
+        "KY",
+        "LA",
+        "MA",
+        "MD",
+        "ME",
+        "MH",
+        "MI",
+        "MN",
+        "MO",
+        "MP",
+        "MS",
+        "MT",
+        "NC",
+        "ND",
+        "NE",
+        "NH",
+        "NJ",
+        "NM",
+        "NV",
+        "NY",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "PR",
+        "PW",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "UM",
+        "VA",
+        "VI",
+        "VT",
+        "WA",
+        "WI",
+        "WV",
+        "WY"
+      ]
+    },
+    "udfContractedThrough": {
+      "type": "string",
+      "description": "Indicates through whom/which entity the facility is contracted"
+    },
+    "udfCredentialedType": {
+      "type": "string",
+      "description": "UDF field for credentialed type"
+    },
+    "udfFacilityEmployed": {
+      "type": "string",
+      "description": "UDF field indicating if facility is employed"
+    },
+    "udfFacilityRecordId": {
+      "type": "string",
+      "description": "Facility record id"
+    },
+    "udfNewRecords": {
+      "type": "string",
+      "description": "UDF field for new records"
+    },
+    "udfNotes": {
+      "type": "string",
+      "description": "UDF field for notes"
+    },
+    "udfProviderLinkedToMoreThanOneContract": {
+      "type": "string",
+      "description": "UDF field indicating if provider is linked to multiple contracts"
+    },
+    "udfRosterSourceFileID": {
+      "type": "string",
+      "description": "Roster source file id"
+    },
+    "udfStaffStatus": {
+      "type": "string",
+      "description": "Staff status of the facility"
+    },
+    "udfTooltipDescription": {
+      "type": "string",
+      "description": "UDF field for tooltip description"
+    },
+    "udfTooltipHeader": {
+      "type": "string",
+      "description": "UDF field for tooltip header"
+    },
+    "udfUSTHCreationDate": {
+      "type": "string",
+      "description": "USTH creation date of the facility",
+      "format": "date"
+    },
+    "udfUSTHModifiedDate": {
+      "type": "string",
+      "description": "Modified date of the facility",
+      "format": "date"
+    },
+    "udfUSTHVersion": {
+      "type": "string",
+      "description": "USTH version of the facility"
+    },
+    "udfUSTHVersionDate": {
+      "type": "string",
+      "description": "USTH version date of the facility",
+      "format": "date"
+    },
+    "address1": {
+      "type": "string",
+      "description": "Address line 1 of primary facility location"
+    },
+    "address2": {
+      "type": "string",
+      "description": "Address line 2 of primary facility location"
+    },
+    "city": {
+      "type": "string",
+      "description": "City of primary facility location"
+    },
+    "county": {
+      "type": "string",
+      "description": "County of primary facility location"
+    },
+    "credentialingStatus": {
+      "type": "string",
+      "description": "Credentialing status of the facility",
+      "enum": [
+        "Pending",
+        "Approved",
+        "Denied",
+        "In Progress",
+        "Cred Approved",
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "OUTREACH_IN_PROGRESS",
+        "DATA_MISSING",
+        "PSV_COMPLETED",
+        "PSV_READY",
+        "SENT_TO_COMMITTEE",
+        "TABLED",
+        "WITHDRAWN_CANCELLED",
+        "CRED_DENIED",
+        "CRED_APPROVED"
+      ]
+    },
+    "latitude": {
+      "type": "string",
+      "description": "Latitude of primary facility location"
+    },
+    "longitude": {
+      "type": "string",
+      "description": "Longitude of primary facility location"
+    },
+    "udfHum_MarketId": {
+      "type": "string",
+      "description": "Market ID for the facility",
+      "enum": [
+        "HumanaBehavioralHealth - (30000)",
+        "Brandover Networks Maintenance (77751)",
+        "Leased Networks Maintenance - (77761)",
+        "RHC/FQHC - (80000)",
+        "Alabama (AL) - (80150)",
+        "Alaska (AK) - (80250)",
+        "Phoenix - (80351)",
+        "Tucson - (80352)",
+        "Arkansas (AR) - (80450)",
+        "California (CA) - (80550)",
+        "Colorado (CO) - (80650)",
+        "Connecticut (CT) - (80750)",
+        "Delaware (DE) - (80850)",
+        "Orlando - (80911)",
+        "Tampa - (80912)",
+        "South Florida - (80913)",
+        "Daytona - (80914)",
+        "Atlanta - (81052)",
+        "Hawaii (HI) - (81150)",
+        "Idaho (ID) - (81250)",
+        "Chicago -(81301)",
+        "Indiana (IN) - (81450)",
+        "Iowa (IA) - (81550)",
+        "Louisville - (81701)",
+        "Lexington - (81702)",
+        "New Orleans - (81801)",
+        "Maine (ME) - (81950)",
+        "Maryland (MD) - (82050)",
+        "Massachusetts (MA) - (82150)",
+        "Michigan (MI) - (82250)",
+        "Minnesota (MN) - (82350)",
+        "Mississippi (MS) - (82450)",
+        "Kansas City - (82501)",
+        "Montana (MT) - (82650)",
+        "Nebraska (NE) - (82750)",
+        "Nevada (NV) - (82850)",
+        "New Hampshire (NH) - (82950)",
+        "New Jersey (NJ) - (83050)",
+        "New Mexico (NM) - (83150)",
+        "New York (NY) - (83250)",
+        "North Carolina (NC) - (83350)",
+        "North Dakota (ND) - (83450)",
+        "Cincinnati - (OH) - (83501)",
+        "Oklahoma (OK) - (83650)",
+        "Oregon (OR) - (83750)",
+        "Pennsylvania (PA) - (83850)",
+        "Rhode Island (RI) - (83950)",
+        "South Carolina (SC) - (84050)",
+        "South Dakota (SD) - (84150)",
+        "Tennessee (TN) - (84250)",
+        "Corpus Christi - (84301)",
+        "San Antonio - (84311)",
+        "Houston - (84352)",
+        "Dallas - (84353)",
+        "Austin - (84366)",
+        "Utah (UT) - (84450)",
+        "Vermont (VT) - (84550)",
+        "Virginia (VA) - (84654)",
+        "Washington (WA) - (84750)",
+        "District of Columbia (DC) - (84850)",
+        "West Virginia (WV) - (84950)",
+        "Milwaukee (WI) - (85011)",
+        "Wyoming (WY) - (85150)",
+        "CarePlus - (85757)",
+        "Jacksonville / North Florida - (85920)",
+        "Puerto Rico -(86539)",
+        "Pharmacy - (87758)",
+        "National Contracting - (89950)",
+        "NationalContractingSpecialProjects - (89951)",
+        "AmericanElderCare - (89960)",
+        "Puerto Rico Credentialing Market",
+        "CHC Credentialing Market",
+        "Dental Credentialing Market",
+        "Humana Behavioral Health",
+        "South Carolina Medicaid",
+        "Virginia Medicaid",
+        "Ohio Medicaid",
+        "Kentucky Medicaid",
+        "Michigan Medicaid",
+        "Oklahoma Medicaid",
+        "Indiana Medicaid",
+        "Kentucky Credentialing Market",
+        "Florida Medicaid (MMA)",
+        "Arcadian Credentialing Market",
+        "Florida Credentialing Market",
+        "CarePlus",
+        "Louisiana Medicaid",
+        "Illinois Credentialing Market",
+        "Illinois Medicaid",
+        "Ohio Credentialing Market",
+        "Missouri Credentialing Market",
+        "Wisconsin Credentialing Market",
+        "Nevada Credentialing Market",
+        "Arizona Credentialing Market",
+        "Georgia Credentialing Market",
+        "Texas Credentialing Market",
+        "Colorado Credentialing Market",
+        "California Credentialing Market",
+        "Virgin Islands Credentialing Market",
+        "Tennessee Credentialing Market",
+        "Indiana Credentialing Market",
+        "Minnesota Credentialing Market",
+        "Virginia Credentialing Market",
+        "Wisconsin Medicaid",
+        "Louisiana Credentialing Market",
+        "HMHS Credentialing Market",
+        "Arkansas Credentialing Market",
+        "West Virginia Credentialing Market",
+        "Kansas Credentialing Market",
+        "South Carolina Credentialing Market",
+        "Decred Deferment",
+        "Corporate Office",
+        "Georgia Medicaid",
+        "Wyoming Medicaid",
+        "Utah Credentialing Market",
+        "Mississippi Credentialing Market",
+        "North Carolina Credentialing Market",
+        "American Elder Care",
+        "Nebraska Credentialing Market",
+        "Wyoming Credentialing Market"
+      ]
+    },
+    "udfHum_ProviderType": {
+      "type": "string",
+      "description": "Provider type for the facility",
+      "enum": [
+        "Medical Facility",
+        "Hospital"
+      ]
+    },
+    "udfMedicaidIndicator": {
+      "type": "string",
+      "description": "Medicaid indicator for the facility",
+      "enum": [
+        "AK",
+        "AL",
+        "AR",
+        "AS",
+        "AZ",
+        "CA",
+        "CO",
+        "CT",
+        "DC",
+        "DE",
+        "FL",
+        "FM",
+        "GA",
+        "GU",
+        "HI",
+        "IA",
+        "ID",
+        "IL",
+        "IN",
+        "KS",
+        "KY",
+        "LA",
+        "MA",
+        "MD",
+        "ME",
+        "MH",
+        "MI",
+        "MN",
+        "MO",
+        "MP",
+        "MS",
+        "MT",
+        "NC",
+        "ND",
+        "NE",
+        "NH",
+        "NJ",
+        "NM",
+        "NV",
+        "NY",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "PR",
+        "PW",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "UM",
+        "VA",
+        "VI",
+        "VT",
+        "WA",
+        "WI",
+        "WV",
+        "WY",
+        "Not Applicable"
+      ]
+    },
+    "zipcode": {
+      "type": "string",
+      "description": "Zip code of primary facility location"
+    }
+  }
+}

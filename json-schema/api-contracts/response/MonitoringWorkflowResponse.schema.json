@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.certifyos.com/api-contracts/response/MonitoringWorkflowResponse.schema.json",
+    "title": "MonitoringWorkflowResponse",
+    "description": "Defines the structure for monitoring workflow response data, extending the base schema with system-computed fields.\n\nComputed fields are automatically derived by the system and returned as read-only values. They should not be included when creating or updating records.",
+    "allOf": [
+        {
+            "$ref": "https://schemas.certifyos.com/entities/MonitoringWorkflow.schema.json"
+        },
+        {
+            "type": "object",
+            "properties": {
+                "monitoringStatus": {
+                    "type": "string",
+                    "description": "Current status of the monitoring workflow.",
+                    "enum": [
+                        "NOT_STARTED",
+                        "IN_PROGRESS",
+                        "OUTREACH_IN_PROGRESS",
+                        "DATA_MISSING",
+                        "NO_ACTION_REQUIRED",
+                        "CERTIFYOS_REVIEW_COMPLETE"
+                    ],
+                    "example": "IN_PROGRESS",
+                    "readOnly": true
+                },
+                "monitoringStatusLastUpdatedDate": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "format": "date-time",
+                    "description": "Date when monitoring status was last updated.",
+                    "example": "2024-01-15T10:30:00Z",
+                    "readOnly": true
+                }
+            }
+        }
+    ],
+    "unevaluatedProperties": false
+}

@@ -1,0 +1,80 @@
+generated: '2026-08-09'
+method: probed
+source: live GET of /.well-known/* on every apis.yml and OpenAPI servers[] host
+hosts_probed:
+- https://www.certifyos.com
+- https://certifyos.com
+- https://api.certifyos.com
+- https://api-service.certifyos.com
+- https://ng-api-production.certifyos.com
+- https://docs.certifyos.com
+documents:
+- host: https://docs.certifyos.com
+  path: /.well-known/oauth-authorization-server
+  status: 200
+  file: certify-oauth-authorization-server.json
+  note: >-
+    RFC 8414 authorization-server metadata for the Redocly-hosted documentation
+    MCP server at https://docs.certifyos.com/mcp. Issuer is
+    https://auth.cloud.redocly.com (the docs platform), not a CertifyOS-operated
+    identity provider, and it does NOT authorize the ProviderHub REST APIs —
+    those use bearer JWTs minted by POST /auth/login and POST
+    /auth/client-credentials on the API host.
+- host: https://docs.certifyos.com
+  path: /.well-known/oauth-protected-resource
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/security.txt
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/openid-configuration
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/oauth-authorization-server
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/api-catalog
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/ai-plugin.json
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/agent-card.json
+  status: 404
+- host: https://www.certifyos.com
+  path: /.well-known/agent.json
+  status: 404
+- host: https://api-service.certifyos.com
+  path: /.well-known/security.txt
+  status: 404
+- host: https://api-service.certifyos.com
+  path: /.well-known/api-catalog
+  status: 404
+- host: https://api-service.certifyos.com
+  path: /.well-known/agent-card.json
+  status: 404
+- host: https://ng-api-production.certifyos.com
+  path: /.well-known/security.txt
+  status: 404
+- host: https://ng-api-production.certifyos.com
+  path: /.well-known/api-catalog
+  status: 404
+- host: https://ng-api-production.certifyos.com
+  path: /.well-known/agent-card.json
+  status: 404
+- host: https://api.certifyos.com
+  path: /.well-known/security.txt
+  status: 404
+- host: https://api.certifyos.com
+  path: /.well-known/agent-card.json
+  status: 404
+gaps:
+- no /.well-known/security.txt (RFC 9116) on any host
+- no /.well-known/api-catalog (RFC 9727) on any host
+- no A2A agent card at either /.well-known/agent-card.json or the legacy
+  /.well-known/agent.json on any of the six probed hosts
+notes: >-
+  certifyos.com (apex, no www) answers every /.well-known/* path with a 301 to
+  the www host; the www host then 404s, so the apex redirects are not counted as
+  hits. api.certifyos.com is a live JSON API gateway that returns
+  {"message":"Not Found"} for unrouted paths rather than HTML.

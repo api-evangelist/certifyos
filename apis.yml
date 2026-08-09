@@ -1,40 +1,31 @@
 aid: certifyos
 name: Certifyos
-description: >-
-  CertifyOS is a healthcare provider data platform that delivers a single,
-  AI-enabled source of truth for provider information. Founded in 2021 by former
-  Oscar Health employees and led by CEO Anshul Rathi, the New York-based company
-  offers an API-first platform that automates every stage of provider network
-  management: credentialing, licensing, payer enrollment, compliance monitoring,
-  roster management, and provider data management. CertifyOS connects directly to
-  600+ primary sources (including CAQH and NPPES) for real-time primary source
-  verification (PSV), and exposes verified provider data to downstream systems
-  through a RESTful v2 API, webhooks, and bulk exports. It serves payers, health
-  systems, multi-state provider groups, and rapidly scaling digital-health
-  companies. Backed by General Catalyst (Series A) and Transformation Capital
-  (Series B).
+description: 'Certify (operating as CertifyOS, certifyos.com) is a New York-based healthcare provider
+  data platform that automates the end-to-end provider network management lifecycle: credentialing, licensing,
+  payer enrollment, compliance monitoring, and roster management. Founded in 2020 by CEO Anshul Rathi,
+  the company describes itself as API-first and UI-agnostic, connecting directly to hundreds of primary
+  sources for real-time primary source verification (PSV) and exposing verified provider data to downstream
+  systems through REST APIs, webhooks, and bulk exports. Its public developer surface — the Certify ProviderHub
+  API — is documented on a Redocly-hosted docs site and backed by three published OpenAPI documents covering
+  520 operations across practitioner, facility, credentialing-workflow, monitoring, roster, contract,
+  network, and tenant/role administration. The company also publishes ~95 first-party JSON Schemas at
+  stable canonical URLs on schemas.certifyos.com. Customers are payers, health systems, multi-state provider
+  groups, and digital-health companies. Backed by General Catalyst, Transformation Capital, Upfront Ventures,
+  and SemperVirens; total disclosed funding $70.45M through a $40M Series B in June 2025.'
 url: https://raw.githubusercontent.com/api-evangelist/certifyos/refs/heads/main/apis.yml
 x-type: company
-x-source: vc-portfolio
-x-backed-by:
-- general-catalyst
-x-tier: stub
-x-tier-reason: portfolio-lead
-accessModel:
-  pricing: unknown
-  onboarding: unknown
-  trial: false
-  try_now: false
-  public: false
-  label: Unknown
-  confidence: low
-  source: []
-  generated: '2026-07-22'
-  method: derived
+x-source: harvest:secondary-market
+x-tier: full
+x-tier-reason: enriched
+x-duplicate-note: This repo and all/certifyos/ profile the SAME company (domain certifyos.com). "Certify"
+  is the current brand and the name Forge Global lists the stock under; "CertifyOS" is the legal/domain
+  name. The two entries should be merged by the duplicate-merge campaign — the artifacts harvested in
+  this pass live HERE and all/certifyos/ has no openapi/, so merge by moving these directories into the
+  surviving repo rather than deleting them.
 specificationVersion: '0.20'
-created: '2026-07-17'
-modified: '2026-07-18'
 image: https://www.certifyos.com/certifyos-favicon.png
+created: '2026-07-17'
+modified: '2026-08-08'
 tags:
 - Company
 - Healthcare
@@ -42,32 +33,67 @@ tags:
 - Credentialing
 - Licensing
 - Payer Enrollment
-- Compliance Monitoring
 - Primary Source Verification
 - Provider Network Management
 - Roster Management
+- Compliance Monitoring
 - Healthcare API
+- Webhooks
 apis:
-- name: CertifyOS Provider Data API
-  description: >-
-    RESTful v2 API for healthcare provider data management. Endpoints create,
-    retrieve, and manage provider and facility profiles, run real-time primary
-    source verification (PSV), retrieve CAQH data, and drive credentialing,
-    licensing, enrollment, and monitoring workflows. Real-time notifications are
-    delivered via webhooks; bulk data is available via exports.
-  humanURL: https://www.certifyos.com/platform
-  baseURL: https://api.certifyos.com
+- name: Certify ProviderHub API
+  description: The Certify ProviderHub API is the platform's primary REST surface, published as two OpenAPI
+    3.1.0 documents (the api-service API layer and the roster-service layer). It covers practitioner and
+    facility records, credentialing and facility-credentialing workflows, monitoring workflows and runs,
+    groups, locations, networks, payers, plans and contracts, rosters, roster records and templates, specialties,
+    users, roles and permissions, outreach and email settings, file storage, form submissions, and webhook
+    subscription management. Every request is JWT-authenticated and tenant-scoped via a required tenant-id
+    header; list endpoints support page/size paging, cursor paging (startAfterId/endAtId), ordering, and
+    a URL-encoded JSON filter grammar.
+  humanURL: https://docs.certifyos.com/reference/api-service/openapi
+  baseURL: https://api-service.certifyos.com
   tags:
   - Healthcare
   - Provider Data
   - Credentialing
   - Primary Source Verification
+  - Roster Management
   - Webhooks
   properties:
+  - type: OpenAPI
+    url: openapi/certifyos-api-service-openapi.yml
+  - type: OpenAPI
+    url: openapi/certifyos-roster-service-openapi.yml
   - type: Documentation
-    url: https://knowledgebase.certifyos.com/
+    url: https://docs.certifyos.com/providerhub
   - type: APIReference
-    url: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+    url: https://docs.certifyos.com/reference/api-service/openapi
+  - type: Overlay
+    url: overlays/certifyos-api-service-overlay.yaml
+  - type: Overlay
+    url: overlays/certifyos-roster-service-overlay.yaml
+  - type: Webhooks
+    url: asyncapi/certifyos-webhooks.yml
+- name: CertifyOS API (v2)
+  description: The CertifyOS v2 API is the application-tier REST surface published as an OpenAPI 3.0.0
+    document. It covers provider and facility creation and retrieval, provider-with-groups lookups, credentialing
+    workflow status transitions, monitoring flags, forms, API token issuance, and webhook registration
+    for credentialing lifecycle events. Requests are bearer-JWT authenticated and scoped by a required
+    organization-id header; list endpoints use offset/limit paging.
+  humanURL: https://docs.certifyos.com/reference/application/api
+  baseURL: https://ng-api-production.certifyos.com
+  tags:
+  - Healthcare
+  - Provider Data
+  - Credentialing
+  - Webhooks
+  - Monitoring
+  properties:
+  - type: OpenAPI
+    url: openapi/certifyos-application-openapi.json
+  - type: APIReference
+    url: https://docs.certifyos.com/reference/application/api
+  - type: Overlay
+    url: overlays/certifyos-application-overlay.yaml
   - type: Webhooks
     url: asyncapi/certifyos-webhooks.yml
 maintainers:
@@ -76,36 +102,69 @@ maintainers:
 - FN: APIs.json
   email: info@apis.io
 common:
-- type: DomainSecurity
-  url: security/certifyos-domain-security.yml
+- type: AgenticAccess
+  url: agentic-access/certifyos-agentic-access.yml
 - type: Website
   url: https://www.certifyos.com/
 - type: DeveloperPortal
-  url: https://provider.certifyos.com/
+  url: https://docs.certifyos.com/
 - type: Documentation
-  url: https://knowledgebase.certifyos.com/
+  url: https://docs.certifyos.com/providerhub
 - type: APIReference
-  url: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+  url: https://docs.certifyos.com/reference/api-service/openapi
+- type: GettingStarted
+  url: https://docs.certifyos.com/providerhub#getting-started
 - type: Support
   url: https://certifyos.atlassian.net/servicedesk/customer/portal/53
+- type: Login
+  url: https://ng.certifyos.com/login
 - type: Blog
-  url: https://www.certifyos.com/blog
+  url: https://www.certifyos.com/blogs
 - type: GitHubOrganization
-  url: https://github.com/certifyos
+  url: https://github.com/CertifyOS
 - type: StatusPage
   url: https://status.certifyos.com/
-- type: SignUp
-  url: https://ng.certifyos.com/login
 - type: TermsOfService
   url: https://www.certifyos.com/terms-of-service
 - type: PrivacyPolicy
   url: https://www.certifyos.com/privacy
+- type: Compliance
+  url: https://www.certifyos.com/company/news/third-soc2-compliance
+- type: Authentication
+  url: authentication/certifyos-authentication.yml
+- type: DomainSecurity
+  url: security/certifyos-domain-security.yml
+- type: LLMsTxt
+  url: llms/certifyos-llms.txt
+- type: WellKnown
+  url: well-known/certifyos-well-known.yml
+- type: MCPServer
+  url: mcp/certifyos-mcp.yml
+- type: JSONSchema
+  url: json-schema/certifyos-json-schema.yml
 - type: Webhooks
   url: asyncapi/certifyos-webhooks.yml
+- type: ErrorCatalog
+  url: errors/certifyos-problem-types.yml
+- type: Conventions
+  url: conventions/certifyos-conventions.yml
+- type: Conformance
+  url: conformance/certifyos-conformance.yml
 - type: Lifecycle
   url: lifecycle/certifyos-lifecycle.yml
+- type: DataModel
+  url: data-model/certifyos-data-model.yml
+- type: AgentSkill
+  url: skills/_index.yml
 x-enrichment:
-  date: '2026-07-19'
-  status: backfilled
+  date: '2026-08-09'
+  status: enriched
+  artifacts_added: 122
   pass: local-v1
-  note: backfilled from .gitignore signal + verified work evidence
+x-merged-from:
+- certify
+x-merge-note: certify merged in 2026-08-08. The harvest pulled this company again under the slug certify
+  (its Forge Global listing name); the enrichment pass identified it as CertifyOS and produced the deeper
+  profile - 2 APIs (ProviderHub, CertifyOS v2) and 18 artifact directories against this profile's 1 API
+  and 6. The richer artifacts were ported here and the certify slug retired, because certifyos matches
+  the company domain (certifyos.com) and was already published.

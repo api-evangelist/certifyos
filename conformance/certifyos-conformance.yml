@@ -1,0 +1,137 @@
+generated: '2026-08-09'
+method: searched
+source: >-
+  openapi/*, https://www.certifyos.com/company/news/third-soc2-compliance,
+  https://docs.certifyos.com/providerhub
+standards:
+- id: openapi-3.1
+  conforms: true
+  evidence: >-
+    openapi/certify-api-service-openapi.yml and
+    openapi/certify-roster-service-openapi.yml declare openapi: 3.1.0
+- id: openapi-3.0
+  conforms: true
+  evidence: 'openapi/certify-application-openapi.json declares openapi: 3.0.0'
+- id: json-schema-2020-12
+  conforms: true
+  evidence: >-
+    95 first-party schemas published at https://schemas.certifyos.com/ each
+    declaring $schema https://json-schema.org/draft/2020-12/schema with stable
+    $id URIs; inline schemas in the api-service spec (e.g.
+    Webhook.data.schema) carry the same dialect.
+- id: rfc6750-bearer-token
+  conforms: partial
+  evidence: >-
+    http/bearer securityScheme with bearerFormat JWT in all three specs, but the
+    api-service scheme description instructs callers to send the RAW token
+    without the "Bearer " prefix, which is not RFC 6750 conformant.
+- id: rfc8414-oauth-authorization-server-metadata
+  conforms: partial
+  evidence: >-
+    well-known/certify-oauth-authorization-server.json (200) — served for the
+    Redocly-hosted documentation MCP server at docs.certifyos.com, not for the
+    Certify APIs themselves.
+- id: oauth2
+  conforms: false
+  evidence: >-
+    No oauth2 securityScheme in any spec. Certify does CONSUME oauth2
+    client-credentials outbound when a webhook subscription carries a
+    WebhookOauthConfiguration, but it does not expose an OAuth authorization
+    server for its own APIs.
+- id: oidc
+  conforms: false
+- id: rfc9457-problem-details
+  conforms: false
+  evidence: >-
+    Zero operations return application/problem+json; three proprietary error
+    envelopes are used instead. See errors/certify-problem-types.yml.
+- id: rfc9116-security-txt
+  conforms: false
+  evidence: /.well-known/security.txt returned 404 on all six probed hosts.
+- id: rfc9727-api-catalog
+  conforms: false
+  evidence: /.well-known/api-catalog returned 404 on all six probed hosts.
+- id: rfc8594-sunset-header
+  conforms: false
+  evidence: No Sunset or Deprecation header declared in any spec; no deprecation policy published.
+- id: a2a-agent-card
+  conforms: false
+  evidence: >-
+    /.well-known/agent-card.json and the legacy /.well-known/agent.json returned
+    404 on all six probed hosts.
+- id: asyncapi
+  conforms: false
+  evidence: >-
+    A real webhook event surface exists (36 event types, see
+    asyncapi/certify-webhooks.yml) but no AsyncAPI document is published.
+- id: fhir-r4
+  conforms: false
+  evidence: >-
+    No FHIR resource shapes, no FHIR media types, no /fhir base path across 520
+    operations. Provider data is modelled on Certify's own Practitioner /
+    Facility / Location / Network entities rather than FHIR
+    Practitioner/PractitionerRole/Organization/Location.
+- id: ndh-national-directory-of-healthcare-providers
+  conforms: false
+  evidence: Not claimed anywhere on the public surface.
+- id: nucc-taxonomy
+  conforms: true
+  evidence: >-
+    json-schema/entities/NuccSpecialty.schema.json and
+    enums/NuccSpecialtyCategory.schema.json; a taxonomyCode path parameter on the
+    roster-service specialty endpoints.
+- id: nppes-npi
+  conforms: true
+  evidence: >-
+    npi query parameters and a dedicated /npi validation endpoint; NPPES is a
+    monitored third-party component on the status page.
+- id: caqh
+  conforms: true
+  evidence: >-
+    json-schema/entities/CaqhRosters.schema.json, a caqhProviderId field on the
+    Practitioner entity, and CAQH System Status as a monitored third-party
+    component on the status page.
+- id: abms
+  conforms: true
+  evidence: json-schema/entities/AbmsSpecialty.schema.json; board-certification PDF generation operations.
+- id: npdb
+  conforms: true
+  evidence: >-
+    npdbDatabankSubjectId on the Practitioner entity and an NPDB PDF generation
+    operation (generate-npdb-pdf).
+compliance:
+  published: true
+  page: https://www.certifyos.com/company/news/third-soc2-compliance
+  certifications:
+  - name: SOC 2 Type 2
+    status: achieved
+    year: 2025
+    detail: >-
+      Second consecutive Type 2 report (preceded by SOC 2 Type 1 in 2023);
+      Certify states 131 controls across nine categories were assessed over a
+      12-month period against AICPA Trust Services Criteria.
+  frameworks_referenced:
+  - name: NIST
+    claim: alignment only
+    note: Described as alignment with the framework, not a certification.
+  not_claimed:
+  - HITRUST
+  - ISO 27001
+  - NCQA
+  - URAC
+  - FedRAMP
+  note: >-
+    HIPAA is discussed in Certify's blog content but no HIPAA attestation, BAA
+    page, or trust center is published on the public site. trust.certifyos.com
+    and security.certifyos.com do not resolve; /security, /trust and /compliance
+    return 404 on www.certifyos.com.
+x-evidence:
+- fetched: '2026-08-09'
+  url: https://www.certifyos.com/company/news/third-soc2-compliance
+  http_status: 200
+- fetched: '2026-08-09'
+  url: https://schemas.certifyos.com/
+  http_status: 200
+- fetched: '2026-08-09'
+  url: https://www.certifyos.com/security
+  http_status: 404

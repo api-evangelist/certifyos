@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.certifyos.com/api-contracts/response/PractitionerGroupsResponse.schema.json",
+  "title": "PractitionerGroupsResponse",
+  "description": "Response containing groups that a practitioner belongs to. Each group represents a group operational value with core group data and metadata.",
+  "type": "object",
+  "required": ["data", "links"],
+  "properties": {
+    "data": {
+      "type": "array",
+      "description": "Array of groups the practitioner belongs to. Each group is a GroupOVResponse containing the group's operational value data.",
+      "items": {
+        "$ref": "#/$defs/GroupOVResponse"
+      }
+    },
+    "links": {
+      "$ref": "#/$defs/PageLinks",
+      "description": "Navigation links for the response"
+    },
+    "totalCount": {
+      "type": ["integer", "null"],
+      "description": "Total number of groups the practitioner belongs to (if available). May be null if the total count is not provided."
+    }
+  },
+  "$defs": {
+    "GroupOVResponse": {
+      "type": "object",
+      "description": "Represents a group operational value that the practitioner belongs to. Contains the group's core identifiers, operational data, and contributing slice information.",
+      "required": ["certifyGroupId", "tenantId"],
+      "properties": {
+        "certifyGroupId": {
+          "type": "string",
+          "description": "The unique Certify identifier for the group (certifyPractitionerId equivalent for groups)"
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "The tenant identifier that owns this group relationship"
+        },
+        "data": {
+          "$ref": "https://schemas.certifyos.com/entities/CoreGroupOperationalValue.data.base.schema.json",
+          "description": "Core group operational value data including name, NPI, TIN, active status, and other group attributes"
+        },
+        "contributingSlices": {
+          "type": "object",
+          "description": "Internal metadata about data sources that contributed to this group's operational value. Structure is implementation-specific.",
+          "additionalProperties": true
+        }
+      }
+    },
+    "PageLinks": {
+      "type": "object",
+      "description": "Navigation links for the response",
+      "required": ["self"],
+      "properties": {
+        "self": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to the current page of results"
+        },
+        "next": {
+          "type": ["string", "null"],
+          "format": "uri",
+          "description": "Link to the next page of results, or null if this is the last page"
+        },
+        "prev": {
+          "type": ["string", "null"],
+          "format": "uri",
+          "description": "Link to the previous page of results, or null if this is the first page"
+        }
+      }
+    }
+  }
+}
+

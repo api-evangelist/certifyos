@@ -1,0 +1,144 @@
+generated: '2026-08-09'
+method: derived
+source: >-
+  openapi/certify-api-service-openapi.yml, openapi/certify-roster-service-openapi.yml,
+  openapi/certify-application-openapi.json (path hierarchy + schema $refs),
+  json-schema/entities/* (published entity schemas)
+domain: Healthcare provider network management
+summary:
+  entities: 62
+  root_resources: 41
+  nested_relationships: 60
+  schema_source: https://schemas.certifyos.com/entities/
+core_entities:
+- name: Practitioner
+  aka: [CorePractitioner, provider]
+  schema: json-schema/entities/Practitioner.schema.json
+  root_path: /practitioners
+  operations: [practitionerFindMany, practitionerCreate, practitionerGet, practitionerUpdate]
+  key_fields: [npi, externalId, caqhProviderId, npdbDatabankSubjectId, supervisingPractitionerId, reimbursementId]
+  note: The central entity; 52 api-service operations carry the Practitioner tag.
+- name: Facility
+  schema: json-schema/entities/Facility.schema.json
+  root_path: /facilities
+  key_fields: [tin, medicareNumber, medicaidNumber, ncpdpId, externalId]
+- name: CredentialingWorkflow
+  schema: json-schema/entities/CredentialingWorkflow.schema.json
+  root_path: /credentialing-workflows
+  note: Highest-traffic resource in the API — 48 paths and 45 tagged operations.
+- name: FacilityCredentialingWorkflow
+  schema: json-schema/entities/FacilityCredentialingWorkflow.schema.json
+  root_path: /facility-credentialing-workflows
+- name: MonitoringWorkflow
+  schema: json-schema/entities/MonitoringWorkflow.schema.json
+  root_path: /monitoring-workflows
+  children: [MonitoringRun]
+- name: TenantGroup
+  aka: [Group, GroupRegistry]
+  schema: json-schema/entities/TenantGroup.schema.json
+  root_path: /groups
+- name: Location
+  schema: json-schema/entities/Location.schema.json
+  root_path: /locations
+- name: Network
+  schema: json-schema/entities/Network.schema.json
+  root_path: /networks
+  key_fields: [contractId]
+- name: Contracts
+  schema: json-schema/entities/Contracts.schema.json
+  root_path: /contracts
+- name: Payer
+  schema: json-schema/entities/Payer.schema.json
+  root_path: /payers
+- name: Plan
+  schema: json-schema/entities/Plan.schema.json
+  root_path: /plans
+- name: Roster
+  root_path: /roster
+  children: [RosterRecord, RosterTemplates, RosterTemplateColumns]
+- name: Specialty
+  schema: json-schema/entities/Specialty.schema.json
+  root_path: /specialties
+  variants: [NuccSpecialty, AbmsSpecialty, HsdSpecialty, TenantSpecialty, TenantFacilitySpecialty]
+- name: Tenant
+  schema: json-schema/entities/Tenant.schema.json
+  note: >-
+    The tenancy root. Not addressed by its own CRUD path — it is carried on
+    every request as the required tenant-id header, and it is the prefix of the
+    ~30 Tenant* join entities that scope shared reference data per customer.
+- name: User
+  root_path: /users
+  children: [Role, Permission]
+- name: Webhook
+  schema: json-schema/entities/Webhook.data.schema.json
+  root_path: /webhooks
+- name: TimelineEvent
+  schema: json-schema/entities/TimelineEvent.schema.json
+  sibling: FacilityTimelineEvent
+  note: >-
+    The append-only audit trail on workflows; creating a timeline event is what
+    fires the credential_workflow.status.changed webhook.
+relationships:
+- {from: CredentialingWorkflow, to: TimelineEvent, kind: has_many, via: "/credentialing-workflows/{id}/timeline-events"}
+- {from: CredentialingWorkflow, to: Note, kind: has_many, via: "/credentialing-workflows/{id}/notes"}
+- {from: CredentialingWorkflow, to: Step, kind: has_many, via: "/credentialing-workflows/{id}/steps"}
+- {from: CredentialingWorkflow, to: PipelineRun, kind: has_many, via: "/credentialing-workflows/{id}/pipeline-runs"}
+- {from: CredentialingWorkflow, to: Attachment, kind: has_many, via: "/credentialing-workflows/{id}/attachments"}
+- {from: CredentialingWorkflow, to: Address, kind: has_many, via: "/credentialing-workflows/{id}/addresses"}
+- {from: CredentialingWorkflow, to: SupportingDocument, kind: has_many, via: "/credentialing-workflows/{id}/supporting-documents"}
+- {from: CredentialingWorkflow, to: Practitioner, kind: belongs_to, via: practitionerId}
+- {from: FacilityCredentialingWorkflow, to: TimelineEvent, kind: has_many, via: "/facility-credentialing-workflows/{id}/timeline-events"}
+- {from: FacilityCredentialingWorkflow, to: Note, kind: has_many, via: "/facility-credentialing-workflows/{id}/notes"}
+- {from: FacilityCredentialingWorkflow, to: Step, kind: has_many, via: "/facility-credentialing-workflows/{id}/steps"}
+- {from: FacilityCredentialingWorkflow, to: Facility, kind: belongs_to, via: facilityId}
+- {from: Practitioner, to: TenantGroup, kind: has_many, via: "/practitioners/{id}/groups"}
+- {from: Practitioner, to: Location, kind: has_many, via: "/practitioners/{id}/locations"}
+- {from: Practitioner, to: Specialty, kind: has_many, via: "/practitioners/{id}/specialties"}
+- {from: Practitioner, to: Role, kind: has_many, via: "/practitioners/{id}/roles"}
+- {from: Practitioner, to: HospitalAffiliation, kind: has_many, via: "/practitioners/{id}/hospital-affiliations"}
+- {from: Practitioner, to: Practitioner, kind: belongs_to, via: supervisingPractitionerId}
+- {from: Practitioner, to: PractitionerRelationship, kind: has_many, via: "/practitioners/{id}/relationships"}
+- {from: Facility, to: Location, kind: has_many, via: "/facilities/{id}/locations"}
+- {from: Facility, to: TenantGroup, kind: has_many, via: "/facilities/{id}/groups"}
+- {from: Facility, to: Network, kind: has_many, via: "/facilities/{id}/networks"}
+- {from: TenantGroup, to: Location, kind: has_many, via: "/groups/{id}/locations"}
+- {from: TenantGroup, to: Practitioner, kind: has_many, via: "/groups/{id}/practitioners"}
+- {from: TenantGroup, to: Network, kind: has_many, via: "/groups/{id}/networks"}
+- {from: TenantGroup, to: Specialty, kind: has_many, via: "/groups/{id}/specialties"}
+- {from: Location, to: Network, kind: has_many, via: "/locations/{id}/networks"}
+- {from: Network, to: Contracts, kind: belongs_to, via: contractId}
+- {from: TenantNetwork, to: Plan, kind: has_many, via: json-schema/entities/TenantNetworkPlan.schema.json}
+- {from: MonitoringWorkflow, to: MonitoringRun, kind: has_many, via: "/monitoring-workflows/{id}/pipeline-runs"}
+- {from: MonitoringWorkflow, to: Note, kind: has_many, via: "/monitoring-workflows/{id}/notes"}
+- {from: Roster, to: RosterRecord, kind: has_many, via: "/roster-records/{rosterId}"}
+- {from: Roster, to: RosterTemplates, kind: belongs_to, via: templateId}
+- {from: RosterTemplates, to: RosterTemplateColumns, kind: has_many, via: "/roster-upload/{templateId}/column-mapping"}
+- {from: User, to: Role, kind: has_many, via: "/users/{id}/roles"}
+- {from: Role, to: Permission, kind: has_many, via: "/roles/{id}/permissions"}
+- {from: Organization, to: EventEmailSettings, kind: has_many, via: "/organizations/{id}/event-email-settings"}
+- {from: Organization, to: OutreachSettings, kind: has_many, via: "/organizations/{id}/outreach-settings"}
+join_entity_pattern:
+  description: >-
+    Roughly half the published entity schemas are Tenant*/Group* join tables that
+    scope shared reference data (specialties, networks, plans, participations,
+    locations) to a tenant, a group, a practitioner and a network simultaneously.
+  examples:
+  - TenantGroupPractitionerLocationNetworkSpecialty
+  - GroupPractitionerLocationNetworkParticipationSpecialty
+  - TenantGroupNetworkSpecialty
+  - TenantPractitionerSpecialty
+  implication: >-
+    Participation is modelled at the intersection of practitioner x location x
+    group x network x specialty, which is why the list endpoints ship a
+    URL-encoded JSON filter grammar rather than flat query parameters.
+identifiers:
+  external_keys:
+  - {name: npi, authority: NPPES, entities: [Practitioner, Facility]}
+  - {name: caqhProviderId, authority: CAQH, entities: [Practitioner]}
+  - {name: npdbDatabankSubjectId, authority: NPDB, entities: [Practitioner]}
+  - {name: taxonomyCode, authority: NUCC, entities: [Specialty]}
+  - {name: tin, authority: IRS, entities: [Facility]}
+  - {name: medicareNumber / medicaidNumber, authority: CMS, entities: [Facility]}
+  - {name: externalId, authority: customer-supplied, entities: [Practitioner, Facility, CredentialingWorkflow, MonitoringWorkflow]}
+  internal: UUID strings; no typed id prefixes are published.
+render: null

@@ -1,30 +1,166 @@
-generated: '2026-07-18'
-method: searched
-source: https://www.certifyos.com/resources/blog/api-future-of-provider-data
+generated: '2026-08-09'
+method: derived
+source: >-
+  openapi/certify-application-openapi.json (CreateWebhooksDto.event_types enum +
+  descriptions, WebhookResponseDto), openapi/certify-api-service-openapi.yml
+  (WebhookEventType enum, createWebhook / triggerManualWebhookEvent descriptions)
 spec_type: Webhooks
-# CertifyOS documents a webhook surface but publishes no AsyncAPI document.
-# Consumers register endpoints via the /v2/webhooks API to receive real-time
-# notifications on "dozens of critical events" across the provider lifecycle.
-# Only events explicitly named in public docs are captured verbatim below;
-# the full event catalog is documented behind the account-gated API reference.
-registration:
-  endpoint: /v2/webhooks
-  base_url: https://api.certifyos.com
-  method: POST
-  description: >-
-    Register for real-time notifications on provider-lifecycle events. Delivered
-    as HTTP callbacks to a consumer-supplied endpoint.
+asyncapi: none
+asyncapi_note: >-
+  Certify publishes no AsyncAPI document. This catalog is derived verbatim from
+  the enum values and their published descriptions inside the two OpenAPI
+  documents - nothing here is authored on the provider's behalf.
+surfaces:
+- name: v2 credentialing webhooks
+  api: CertifyOS API (v2)
+  base_url: https://ng-api-production.certifyos.com
+  scope_header: organization-id
+  subscription_fields: [url, event_types]
+  operations:
+  - {role: register, operationId: WebhooksController_create, method: POST, path: "/v2/webhooks"}
+  - {role: list, operationId: WebhooksController_fetchAll, method: GET, path: "/v2/webhooks"}
+  - {role: remove, operationId: WebhooksController_remove, method: DELETE, path: "/v2/webhooks"}
+  - {role: test, operationId: WebhooksController_testWebhook, method: POST, path: "/v2/webhooks/{webhookId}/test-event"}
+- name: ProviderHub workflow webhooks
+  api: Certify ProviderHub API
+  base_url: https://api-service.certifyos.com
+  scope_header: tenant-id
+  subscription_fields: [webhookUrl, eventTypes, oauthConfiguration, customHeaders]
+  operations:
+  - {role: register, operationId: createWebhook, method: POST, path: "/webhooks"}
+  - {role: list, operationId: webhookFindMany, method: GET, path: "/webhooks"}
+  - {role: remove, operationId: webhookDelete, method: DELETE, path: "/webhooks/{id}"}
+  - {role: test, operationId: triggerManualWebhookEvent, method: POST, path: "/webhooks/test/publish"}
+  - {role: replay, operationId: replayWebhooks, method: POST, path: "/credentialing-workflows/replay-webhooks", max_workflow_ids: 500}
+delivery:
+  transport: HTTPS POST to a subscriber-supplied URL
+  dispatcher: >-
+    Google Cloud Tasks; the queue rate-limits dispatches to stay within partner
+    rate limits.
+  retry: >-
+    A failed delivery returns 502 to the Cloud Tasks callback
+    (webhookDeliveryCallback) and Cloud Tasks retries.
+  headers:
+  - name: Content-Type
+    value: application/json
+  - name: User-Agent
+    value: CertifyOS-Webhook-Delivery/1.0
+  - name: Idempotency-Key
+    value: SHA-256 hash, stable across retries of the same event
+    purpose: consumer-side de-duplication
+  - name: (custom)
+    value: any additional headers configured on the webhook subscription
+  envelope:
+    eventType: string
+    timestamp: RFC 3339, set at delivery time
+    data: the event-specific payload
+  subscriber_auth:
+    oauth2_client_credentials: >-
+      A webhook subscription may carry a WebhookOauthConfiguration (tokenUrl,
+      clientId, clientSecret, scope); Certify fetches a token before each
+      delivery and injects Authorization: Bearer <token>.
+payload_schemas:
+- event: credential_workflow.status.changed
+  url: https://schemas.certifyos.com/webhook-events/credential-workflow-status-changed.schema.json
+  status: 200
+  file: json-schema/webhook-events/credential-workflow-status-changed.schema.json
+- event: facility_credential_workflow.status.changed
+  url: https://schemas.certifyos.com/webhook-events/facility-credential-workflow-status-changed.schema.json
+  status: 404
+  note: >-
+    Referenced by the createWebhook and triggerManualWebhookEvent documentation
+    but absent from the public schemas bucket - a dangling schema reference on
+    the provider's side.
 events:
-- name: CREDENTIALING_COMPLETED
-  description: A provider's credentialing workflow has completed.
-  source: https://www.certifyos.com/resources/blog/api-future-of-provider-data
-- name: PROVIDER_TERMINATED
-  description: A provider has been terminated from the network.
-  source: https://www.certifyos.com/resources/blog/api-future-of-provider-data
-notes: >-
-  CertifyOS states it can share atomic data elements or a full provider data
-  payload (verified data elements and credentialing packets) with downstream
-  systems via webhooks or API calls. Additional event types (e.g. monitoring
-  flags, license status changes) are referenced as "dozens of critical events"
-  but not individually enumerated in public materials, so they are not listed
-  here to avoid fabrication.
+  dotted_event_types:
+    note: >-
+      The ProviderHub api-service WebhookEventType enum - the event types
+      accepted by createWebhook and triggerManualWebhookEvent.
+    values:
+    - name: credential_workflow.status.changed
+      description: >-
+        Triggered automatically when a credentialing workflow status changes (a
+        timeline event is created).
+    - name: facility_credential_workflow.status.changed
+      description: >-
+        Triggered automatically when a facility credentialing workflow status
+        changes (a timeline event is created).
+  v2_event_types:
+    note: >-
+      The CertifyOS v2 API credentialing event enum; descriptions verbatim from
+      the spec.
+    values:
+    - name: IN_PROGRESS
+      description: "Credentialing is in progress"
+    - name: PSV_COMPLETED
+      description: "Primary source verification completed"
+    - name: CREDENTIALING_COMPLETED
+      description: "Credentialing completed"
+    - name: PROVIDER_TERMINATED
+      description: "Provider terminated"
+    - name: FACILITY_NOT_SENT_TO_CREDENTIALING
+      description: "Facility not sent to credentialing"
+    - name: FACILITY_IN_PROGRESS
+      description: "Facility credentialing in progress"
+    - name: FACILITY_DATA_MISSING
+      description: "Facility data missing"
+    - name: FACILITY_OUTREACH_IN_PROGRESS
+      description: "Facility outreach in progress"
+    - name: FACILITY_PSV_COMPLETE_BY_CERTIFYOS
+      description: "Facility PSV complete by CertifyOS"
+    - name: FACILITY_CREDENTIALING_RESTARTED
+      description: "Facility credentialing restarted"
+    - name: FACILITY_PSV_READY
+      description: "Facility PSV ready"
+    - name: FACILITY_CRED_APPROVED
+      description: "Facility credentialing approved"
+    - name: FACILITY_HOLD_FOR_CRED_COMM
+      description: "Facility hold for credentialing committee"
+    - name: FACILITY_CRED_DENIED
+      description: "Facility credentialing denied"
+    - name: FACILITY_TERMINATED
+      description: "Facility terminated"
+    - name: FACILITY_RECREDENTIALING_IN_PROGRESS
+      description: "Facility recredentialing in progress"
+    - name: FACILITY_TABLED
+      description: "Facility tabled"
+    - name: FACILITY_WITHDRAWN_CANCELLED
+      description: "Facility withdrawn or cancelled"
+    - name: FACILITY_NOT_STARTED
+      description: "Facility credentialing not started"
+    - name: PROVIDER_NOT_SENT_TO_CREDENTIALING
+      description: "Provider not sent to credentialing"
+    - name: PROVIDER_NOT_STARTED
+      description: "Provider credentialing not started"
+    - name: PROVIDER_IN_PROGRESS
+      description: "Provider credentialing in progress"
+    - name: PROVIDER_DATA_MISSING
+      description: "Provider data missing"
+    - name: PROVIDER_OUTREACH_IN_PROGRESS
+      description: "Provider outreach in progress"
+    - name: PROVIDER_PSV_COMPLETED
+      description: "Provider PSV completed"
+    - name: PROVIDER_CREDENTIALING_RESTARTED
+      description: "Provider credentialing restarted"
+    - name: PROVIDER_PSV_READY
+      description: "Provider PSV ready"
+    - name: PROVIDER_CRED_APPROVED
+      description: "Provider credentialing approved"
+    - name: PROVIDER_HOLD_FOR_CRED_COMM
+      description: "Provider hold for credentialing committee"
+    - name: PROVIDER_CRED_DENIED
+      description: "Provider credentialing denied"
+    - name: PROVIDER_RECREDENTIALING_IN_PROGRESS
+      description: "Provider recredentialing in progress"
+    - name: PROVIDER_TABLED
+      description: "Provider tabled"
+    - name: PROVIDER_WITHDRAWN_CANCELLED
+      description: "Provider withdrawn or cancelled"
+    - name: FORM_SUBMISSION_CREATED
+      description: "Form submission created"
+coverage:
+  dotted_event_types: 2
+  v2_event_types: 34
+  total: 36
+  payload_schemas_published: 1
+  payload_schemas_referenced: 2
