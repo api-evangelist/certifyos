@@ -1,0 +1,710 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Template API
+  version: 1.0.0
+  description: 'Operations tagged Template across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Template
+  description: APIs for managing roster templates and configurations
+paths:
+  /templates:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    post:
+      summary: Process and upload a template
+      description: Uploads a new template file with metadata for processing
+      operationId: processTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/RosterJobType'
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: Template processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateUploadResponse'
+        '400':
+          description: Invalid input or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    get:
+      summary: Get list of templates
+      description: Retrieve paginated and filtered list of templates
+      operationId: getTemplates
+      tags:
+      - Template
+      parameters:
+      - description: Page number for pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Page size for pagination
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Filter by template status
+        name: status
+        in: query
+        schema:
+          type: string
+      - description: Filter by template name
+        name: templateName
+        in: query
+        schema:
+          type: string
+      - description: Filter by template type
+        name: type
+        in: query
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse1'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/single-step:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    post:
+      summary: Process and upload a template in single step
+      description: Uploads a new template file with metadata for processing
+      operationId: processSingleStepTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/RosterJobType'
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: Template processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
+        '400':
+          description: Invalid input or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update an existing template
+      description: Update the template details by template ID
+      operationId: updateTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Template ID to update
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateUpdateRequest'
+        '400':
+          description: Invalid template update details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    get:
+      summary: Get template by ID
+      description: Fetch template details by template ID
+      operationId: getTemplateById
+      tags:
+      - Template
+      parameters:
+      - description: Template ID to fetch
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Template retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterTemplateResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a template
+      description: Deletes a template by template ID
+      operationId: deleteTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Template ID to delete
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Template deleted successfully
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/{id}/approve:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Approve a template
+      description: Approve the template specified by ID
+      operationId: approveTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Template ID to approve
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Template approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApproveTemplateResponse'
+        '400':
+          description: Invalid approval request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/{id}/single-step:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    patch:
+      summary: Partially update an existing template
+      description: Partially updates an existing template. Only provided fields (name, description, type, file) will be updated. If file is provided, CSV validation and schema generation will be performed.
+      operationId: updateSingleStepTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Template ID to update
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/RosterJobType'
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '200':
+          description: Template updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
+        '400':
+          description: Invalid input or request (missing tenant-id, invalid file type, validation errors)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+components:
+  schemas:
+    TemplateData:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        entities:
+          type: array
+          items:
+            type: string
+        allFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSuggestion'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    RosterTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    Date:
+      type: string
+      format: date
+    PagedResponse1:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
+    SingleStepTemplateFlowResponse:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        status:
+          type: string
+        templateId:
+          type: string
+        templateUrl:
+          type: string
+        schemaUrl:
+          type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    TemplateUploadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: '#/components/schemas/TemplateData'
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    TemplateUpdateRequest:
+      type: object
+      properties:
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    Field:
+      type: object
+      properties:
+        name:
+          type: string
+        mappedKey:
+          type: string
+        mappedEntity:
+          type: string
+        entityGroup:
+          type: string
+        isRequired:
+          type: boolean
+        isStaticField:
+          type: boolean
+        isSingleSelect:
+          type: boolean
+        validationRegex:
+          type: string
+        description:
+          type: string
+        enum:
+          type: array
+          items:
+            type: string
+        singleSelect:
+          type: boolean
+    ApproveTemplateResponse:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        status:
+          type: string
+    FieldSuggestion:
+      type: object
+      properties:
+        name:
+          type: string
+        suggestedMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

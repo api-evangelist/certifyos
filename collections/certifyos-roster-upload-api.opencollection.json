@@ -1,0 +1,84 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certifyos Roster upload API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Roster upload",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get mappings for the upload in a given template",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/roster-upload/:templateId/column-mapping",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "templateId",
+                "value": "",
+                "type": "path",
+                "description": "Template ID to fetch"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get mappings details for the uploaded columns in a given template. Requires the column_mapping_enabled feature flag to be enabled. Uses tenant-specific schema paths from tenant_configurations if configured, otherwise falls back to default schemas."
+        },
+        {
+          "info": {
+            "name": "create template from column mappings",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/roster-upload/:templateId/column-mapping/template",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "templateId",
+                "value": "",
+                "type": "path",
+                "description": "Template ID to fetch"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new template from the provided column mappings. Requires the column_mapping_enabled feature flag to be enabled. The mappings are validated against tenant-specific schemas if configured."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,5806 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Monitoring Workflow API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: MonitoringWorkflow
+  description: APIs for managing monitoring workflows
+paths:
+  /monitoring-workflows:
+    get:
+      summary: Get monitoring workflows
+      description: Retrieves a list of monitoring workflows based on filter criteria
+      operationId: getMonitoringWorkflows
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: End at document ID, for backward cursor-based pagination
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: Filter criteria as JSON object (URL encoded)
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: Sort order specification
+        name: order
+        in: query
+        schema:
+          type: string
+      - description: Page number (0-based), for offset-based pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Page size
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Start after document ID, for forward cursor-based pagination
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved monitoring workflows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMonitoringWorkflowsResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/assignments:
+    post:
+      summary: Create assignments for multiple monitoring workflows
+      description: Creates assignments for multiple monitoring workflows in a single operation. Workflows are evenly distributed across the provided user IDs using round-robin distribution. Each workflow is processed independently, and results include both successful and failed assignments.
+      operationId: bulkAssignMonitoringWorkflows
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkAssignMonitoringWorkflowRequest'
+        required: true
+      responses:
+        '200':
+          description: Bulk assignment operation completed. Check successful and failed arrays for individual results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkAssignMonitoringWorkflowResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/bulk/status:
+    put:
+      summary: Bulk update monitoring workflow status
+      description: Updates the monitoring status of multiple workflows to the specified status
+      operationId: bulkUpdateMonitoringWorkflowStatus
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkUpdateMonitoringWorkflowStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Bulk status update completed (may include partial failures)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkUpdateMonitoringWorkflowStatusResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/unassign:
+    patch:
+      summary: Unassign multiple monitoring workflows
+      description: Removes assignments from multiple monitoring workflows. Workflows can be specified by IDs or fetched using filter criteria.
+      operationId: bulkUnassignMonitoringWorkflows
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkUnassignMonitoringWorkflowRequest'
+        required: true
+      responses:
+        '200':
+          description: Bulk unassignment operation completed. Check successful and failed arrays for individual results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkUnassignMonitoringWorkflowResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{id}:
+    get:
+      summary: Get monitoring workflow by ID
+      description: Retrieves a single monitoring workflow by its ID
+      operationId: getMonitoringWorkflow
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the monitoring workflow to retrieve
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved the monitoring workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMonitoringWorkflowResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{id}/assignment:
+    post:
+      summary: Create assignment for a single monitoring workflow
+      description: Assigns a monitoring workflow to a specific user
+      operationId: assignMonitoringWorkflow
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the monitoring workflow to assign
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMonitoringWorkflowAssignmentRequest'
+        required: true
+      responses:
+        '200':
+          description: Assignment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentResult2'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{id}/unassign:
+    patch:
+      summary: Unassign a single monitoring workflow
+      description: Removes the assignment from a monitoring workflow
+      operationId: unassignMonitoringWorkflow
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the monitoring workflow to unassign
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Workflow unassigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnassignmentResult'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/attachments:
+    post:
+      summary: Upload attachment to monitoring workflow row
+      operationId: uploadMonitoringWorkflowAttachment
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - id
+              - file
+              properties:
+                id:
+                  type: string
+                  pattern: \S
+                file:
+                  type: string
+                  format: binary
+                expirationDate:
+                  type: string
+        required: true
+      responses:
+        '201':
+          description: Attachment uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadMonitoringWorkflowAttachmentResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    delete:
+      summary: Delete attachment from monitoring workflow row
+      operationId: deleteMonitoringWorkflowAttachment
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAttachmentRequest2'
+        required: true
+      responses:
+        '200':
+          description: Attachment deleted successfully
+          content:
+            application/json: {}
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/pipeline-runs:
+    post:
+      summary: Trigger pipeline execution for monitoring workflow
+      description: Triggers CAQH or NPDB pipeline execution for the specified monitoring workflow. Only CAQH and NPDB pipelines are supported.
+      operationId: runMonitoringPipeline
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the monitoring workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunPipelineRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully triggered pipeline execution
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    get:
+      summary: Get pipeline runs for a monitoring workflow
+      description: Retrieves pipeline runs for the specified monitoring workflow with optional filtering, pagination, and ordering.
+      operationId: getMonitoringPipelineRuns
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the monitoring workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Cursor for cursor-based pagination
+        name: cursor
+        in: query
+        schema:
+          type: string
+      - description: 'Filter criteria. Example: {"createdAt":{"gte":"2023-01-01T00:00:00Z"}}'
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: Whether to include pipeline steps in the response
+        name: includeSteps
+        in: query
+        schema:
+          type: boolean
+      - description: 'Sort order. Example: {"createdAt":"desc"}'
+        name: order
+        in: query
+        schema:
+          type: string
+      - description: Page number (0-based), for offset-based pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Page size
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved pipeline runs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMonitoringPipelineRunsResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/pipeline-runs/{id}:
+    get:
+      summary: Get a specific pipeline run for a monitoring workflow
+      description: Retrieves a specific pipeline run by ID for the specified monitoring workflow
+      operationId: getMonitoringPipelineRunById
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the pipeline run
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - description: ID of the monitoring workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Whether to include pipeline steps in the response
+        name: includeSteps
+        in: query
+        schema:
+          type: boolean
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved pipeline run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringWorkflowDataPipelineRequestResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Pipeline run or monitoring workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/records/{recordId}/verify:
+    patch:
+      summary: Verify a record in a monitoring workflow section
+      description: Marks a specific record as verified by setting verifiedBy (current user) and verifiedDate (current timestamp). The recordId format is '{section}-{index}' (e.g., 'dea-0', 'licenses-1'). This is an atomic operation that only modifies verification fields without affecting other data.
+      operationId: verifyMonitoringWorkflowRecord
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: Record identifier in format '{section}-{index}' (e.g., 'dea-0', 'licenses-1', 'boardCertifications-2')
+        example: dea-0
+        in: path
+        required: true
+        name: recordId
+        schema:
+          type: string
+          pattern: \S
+      - description: Monitoring workflow ID
+        example: mw_1234567890
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Record verified successfully
+          content:
+            application/json:
+              example:
+                workflowId: mw_1234567890
+                recordId: dea-0
+                section: dea
+                index: 0
+                verifiedBy: user_abc123
+                verifiedDate: '2024-10-29T15:30:00Z'
+                message: Record verified successfully
+              schema:
+                type: object
+        '400':
+          description: Bad request - Invalid record ID format or record not found
+          content:
+            application/json:
+              example:
+                errors:
+                - 'Invalid record ID format. Expected format: {section}-{index} (e.g., ''dea-0'')'
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Monitoring workflow not found or record not found in section
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/status:
+    put:
+      summary: Update monitoring workflow status
+      description: Updates the monitoring status of a workflow to the specified status
+      operationId: updateMonitoringWorkflowStatus
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: ID of the monitoring workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMonitoringWorkflowStatusRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the monitoring workflow status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringWorkflowResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/supporting-documents:
+    put:
+      summary: Update supporting documents for a monitoring workflow using replace-all pattern
+      description: Replaces the entire supporting documents array with the provided list (RESTful PUT semantics).
+      operationId: updateSupportingDocumentsForMonitoringWorkflow
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: Monitoring workflow ID
+        example: mw_1234567890
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Array of all supporting documents (desired state). Documents not included will be removed.
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/MonitoringSupportingDocumentUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Supporting documents updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request - Invalid input or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Monitoring workflow not found
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    post:
+      summary: Create a new supporting document for a monitoring workflow
+      description: Upload a new supporting document file for the specified monitoring workflow
+      operationId: createSupportingDocumentForMonitoringWorkflow
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: Monitoring workflow ID
+        example: mw_1234567890
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                fileType:
+                  type: string
+                  pattern: \S
+                state:
+                  type: string
+                expirationDate:
+                  type: string
+              required:
+              - fileType
+        required: true
+      responses:
+        '201':
+          description: Supporting document uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request - Invalid input, e.g., file is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Monitoring workflow not found
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/{sectionName}:
+    post:
+      summary: Create a new record in any monitoring workflow section
+      description: 'Generic endpoint to create records in sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments'
+      operationId: createMonitoringWorkflowSectionRecord
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: 'Section name. Available sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments'
+        example: appVerifications
+        in: path
+        required: true
+        name: sectionName
+        schema:
+          type: string
+          pattern: \S
+      - description: Monitoring workflow ID
+        example: UUID
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Request body schema varies by section. Use the appropriate schema based on sectionName.
+        content:
+          application/json:
+            examples: {}
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+        required: true
+      responses:
+        '201':
+          description: Record created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request - Invalid section name, input, or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Monitoring workflow not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /monitoring-workflows/{workflowId}/{sectionName}/{recordId}:
+    patch:
+      summary: Update a single record in any monitoring workflow section
+      description: 'Generic endpoint to update records by recordId format: ''{section}-{index}''. Works for all CRUD-enabled sections.'
+      operationId: updateMonitoringWorkflowSectionRecord
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: 'Record identifier format: ''{section}-{index}'' (e.g., ''appVerifications-0'')'
+        example: appVerifications-0
+        in: path
+        required: true
+        name: recordId
+        schema:
+          type: string
+          pattern: \S
+      - description: 'Section name. Available sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments'
+        example: appVerifications
+        in: path
+        required: true
+        name: sectionName
+        schema:
+          type: string
+          pattern: \S
+      - description: Monitoring workflow ID
+        example: mw_1234567890
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Request body schema varies by section. Use the appropriate schema based on sectionName.
+        content:
+          application/json:
+            examples: {}
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+        required: true
+      responses:
+        '200':
+          description: Record updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request - Invalid record ID format, section name, or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Monitoring workflow not found or record not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a record from any monitoring workflow section
+      description: 'Generic endpoint to delete records by recordId format: ''{section}-{index}''. Works for all CRUD-enabled sections.'
+      operationId: deleteMonitoringWorkflowSectionRecord
+      tags:
+      - MonitoringWorkflow
+      parameters:
+      - description: 'Record identifier format: ''{section}-{index}'' (e.g., ''appVerifications-0'')'
+        example: appVerifications-0
+        in: path
+        required: true
+        name: recordId
+        schema:
+          type: string
+          pattern: \S
+      - description: 'Section name. Available sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments'
+        example: appVerifications
+        in: path
+        required: true
+        name: sectionName
+        schema:
+          type: string
+          pattern: \S
+      - description: Monitoring workflow ID
+        example: mw_1234567890
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Record deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request - Invalid record ID format or section name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Monitoring workflow not found or record not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+components:
+  schemas:
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    RunPipelineRequest:
+      type: object
+      required:
+      - pipelineName
+      properties:
+        pipelineName:
+          $ref: '#/components/schemas/PipelineName'
+    WorkflowUpdateFailure:
+      type: object
+      properties:
+        workflowId:
+          type: string
+          description: Workflow ID that failed to update
+        errorMessage:
+          type: string
+          description: Error message describing the failure
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    GetMonitoringWorkflowsResponse:
+      description: Response containing a list of monitoring workflows
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of monitoring workflows
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetMonitoringWorkflowResponse'
+          description: Array of monitoring workflow records
+    BulkUpdateMonitoringWorkflowStatusRequest:
+      description: Request to update status of multiple monitoring workflows
+      type: object
+      required:
+      - workflowIds
+      - workflowStatus
+      - description
+      properties:
+        workflowIds:
+          type: array
+          items:
+            type: string
+          description: List of monitoring workflow IDs to update
+          examples:
+          - - workflow-id-1
+            - workflow-id-2
+          minItems: 1
+        workflowStatus:
+          type: string
+          description: The new workflow status
+          examples:
+          - IN_PROGRESS
+          pattern: \S
+        description:
+          type: string
+          description: Description for the timeline event
+          examples:
+          - Monitoring workflow status changed to IN_PROGRESS
+          pattern: \S
+    FlagHistoryAttachmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        flagHistoryId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+    CreateMonitoringWorkflowAssignmentRequest:
+      description: Request to create a new assignment for a monitoring workflow
+      type: object
+      required:
+      - assignTo
+      properties:
+        assignTo:
+          type: string
+          description: User ID being assigned to
+          examples:
+          - user_123456
+          pattern: \S
+    GetMonitoringWorkflowResponse:
+      description: Response containing a single monitoring workflow
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the monitoring workflow
+          examples:
+          - '1234'
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant_123456
+        tenantPractitionerId:
+          type: string
+          description: ID of the tenant practitioner
+          examples:
+          - tp_123456
+        certifyPractitionerId:
+          type: string
+          description: Certify practitioner ID
+          examples:
+          - cp_123456
+        data:
+          $ref: '#/components/schemas/MonitoringWorkflowResponse.schema'
+          description: Monitoring workflow data including practitioner information, flags array, and computed fields
+        createdBy:
+          type: string
+          description: ID of the user who created the monitoring workflow
+          examples:
+          - user_123456
+        updatedBy:
+          type: string
+          description: ID of the user who updated the monitoring workflow
+          examples:
+          - user_123456
+        createdAt:
+          description: Timestamp of the monitoring workflow creation
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp of the monitoring workflow update
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        newFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonNode'
+          description: Array of new flags detected for this monitoring workflow
+        sectionFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonNode'
+          description: Array of section-level flags for this monitoring workflow
+        allFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonNode'
+          description: Array of all existing flags (excluding new flags)
+        allFlagsCount:
+          type: integer
+          format: int32
+          description: Total count of all existing flags (excluding new flags)
+          examples:
+          - 5
+        otherWorkflows:
+          description: Map of other workflow IDs to their display labels (e.g. period name)
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+    MonitoringWorkflow.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/MonitoringWorkflow.schema.json
+      title: MonitoringWorkflow
+      description: Represents the monitoring workflow data stored in the data JSON field.
+      type: object
+      properties:
+        practitioner:
+          $ref: '#/components/schemas/Practitioner.schema'
+        externalId:
+          description: External identifier for the monitoring workflow.
+          type: string
+        flags:
+          description: Array of flags associated with the monitoring workflow.
+          type: array
+          items:
+            type: object
+            properties:
+              flagType:
+                description: Type of flag.
+                type: string
+              flagValue:
+                description: Value of the flag.
+                type: string
+              description:
+                description: Description of the flag.
+                type:
+                - string
+                - 'null'
+            required:
+            - flagType
+            - flagValue
+            additionalProperties: true
+        assignments:
+          description: History of assignment changes for this workflow.
+          type: array
+          items:
+            type: object
+            properties:
+              reason:
+                description: Reason for the assignment change.
+                type:
+                - string
+                - 'null'
+              assignedBy:
+                description: User or system that made the change.
+                type: string
+              assignedFrom:
+                description: Previous assignee (if any).
+                type:
+                - string
+                - 'null'
+              assignedTo:
+                description: Assignee after the change.
+                type:
+                - string
+                - 'null'
+              assignedOn:
+                description: Timestamp when the change occurred.
+                type: string
+                format: date-time
+            required:
+            - assignedBy
+            - assignedTo
+            - assignedOn
+            additionalProperties: true
+      required:
+      - practitioner
+      additionalProperties: true
+      unevaluatedProperties: true
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    AssignmentEntry2:
+      type: object
+      properties:
+        assignedTo:
+          type: string
+          description: User ID the assignment changed to
+          examples:
+          - user_789012
+        assignedBy:
+          type: string
+          description: User ID who made the assignment change
+          examples:
+          - user_345678
+        assignedAt:
+          type: string
+          description: Timestamp when the assignment was changed
+          examples:
+          - '2021-01-01T00:00:00Z'
+    AssignmentResult2:
+      type: object
+      description: Result of an individual assignment operation
+      properties:
+        workflowId:
+          type: string
+          description: ID of the credentialing workflow
+          examples:
+          - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+        assignment:
+          description: Assignment history response if successful
+          type: object
+          $ref: '#/components/schemas/AssignmentEntry2'
+        error:
+          type: string
+          description: Error message if assignment failed
+    FlagTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        flagType:
+          type: string
+        description:
+          type: string
+    FlagWithTypeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantProviderId:
+          type: string
+        flagTypeId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        originMonitoringWorkflowId:
+          type: string
+        hash:
+          type: string
+        flagType:
+          $ref: '#/components/schemas/FlagTypeResponse'
+    DeleteAttachmentRequest2:
+      description: Request to delete an attachment
+      type: object
+      required:
+      - id
+      - fileUrl
+      properties:
+        id:
+          type: string
+          description: Row identifier
+          examples:
+          - dea-0
+          pattern: \S
+        fileUrl:
+          type: string
+          description: File URL to identify the attachment for deletion
+          examples:
+          - monitoring-workflow-attachments/workflow-123/dea/1729771200000_dea-certificate.pdf
+          pattern: \S
+    attachment:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date
+          description: The date the attachment was created.
+        fileType:
+          type: string
+          description: Supporting Document File Type (i.e. Malpractice Insurance Policy, License, etc.)
+        fileUrl:
+          type: string
+          description: Supporting Document File URI in GCS
+        originalFileName:
+          type: string
+          description: Supporting Document Original File Name
+        state:
+          type: string
+          description: The state associated with the supporting document.
+        expirationDate:
+          type: string
+          format: date
+          description: The expiration date of the supporting document.
+        source:
+          type: string
+          description: The source of the supporting document.
+        createdBy:
+          type: string
+          description: The user who created the record.
+        credWorkflowRecordOrigin:
+          type: string
+          description: Indicate how this record was added/edited within the credentialing workflow.
+    Date:
+      type: string
+      format: date
+    MonitoringSupportingDocumentUpdateRequest:
+      title: Monitoring supporting documents
+      description: Supporting document data for PUT operations using replace-all pattern
+      type: object
+      required:
+      - fileUrl
+      - fileType
+      - originalFileName
+      properties:
+        fileUrl:
+          type: string
+          description: URL of the supporting document file
+          examples:
+          - tenant-1/monitoring-workflows/mw_123/supporting-documents/1729961373476_doc.pdf
+          pattern: \S
+        fileType:
+          type: string
+          description: Type of the supporting document
+          examples:
+          - Medical License
+          pattern: \S
+        originalFileName:
+          type: string
+          description: Original name of the uploaded file
+          examples:
+          - medical_license.pdf
+          pattern: \S
+        createdAt:
+          type: string
+          description: Date when the document was created
+          examples:
+          - '2024-01-15T10:00:00Z'
+        createdBy:
+          type: string
+          description: The user who created the record
+          examples:
+          - user@example.com
+        state:
+          type: string
+          description: The state associated with the supporting document
+          examples:
+          - CA
+        expirationDate:
+          type: string
+          description: The expiration date of the supporting document
+          examples:
+          - '2025-12-31'
+        source:
+          type: string
+          description: The source of the supporting document
+          examples:
+          - Manual Upload
+    BulkUnassignMonitoringWorkflowRequest:
+      description: Request to unassign multiple monitoring workflows
+      type: object
+      properties:
+        workflowIds:
+          type: array
+          items:
+            type: string
+          description: List of monitoring workflow IDs to unassign (workflow IDs will be fetched using the filter if not provided).
+          examples:
+          - - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+            - 55d9fb86-26b2-5801-b1ee-240169e2f97e
+        filter:
+          type: string
+          description: Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs. See GET /monitoring-workflows endpoint documentation for filter format.
+          examples:
+          - '{"data.workflowStatus":{"eq":"PENDING"}}'
+    MonitoringWorkflowDataPipelineRequestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        databankSubjectId:
+          type: string
+        caqhRequestMetaData:
+          $ref: '#/components/schemas/JsonNode'
+        npdbRequestMetaData:
+          $ref: '#/components/schemas/JsonNode'
+        monitoringWorkflowId:
+          type: string
+        dataPipelineRequestId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        createdByName:
+          type: string
+        updatedByName:
+          type: string
+        pipelineName:
+          type: string
+        stepStatus:
+          type: string
+        stepName:
+          type: string
+        dataPipelineRequestCreatedAt:
+          $ref: '#/components/schemas/Date'
+        dataPipelineRequestStepLastCreatedAt:
+          $ref: '#/components/schemas/Date'
+        dataPipelineRequestSteps:
+          $ref: '#/components/schemas/JsonNode'
+    BulkUpdateMonitoringWorkflowStatusResponse:
+      description: Response for bulk monitoring workflow status update
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of workflows processed
+        successCount:
+          type: integer
+          format: int32
+          description: Number of successfully updated workflows
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of failed updates
+        successfulWorkflowIds:
+          type: array
+          items:
+            type: string
+          description: List of successfully updated workflow IDs
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowUpdateFailure'
+          description: List of failed workflow IDs with error messages
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    FlagHistoryWithAttachmentsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        flagId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagHistoryAttachmentResponse'
+    GetMonitoringPipelineRunsResponse:
+      description: Response containing a paginated list of monitoring pipeline runs
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of pipeline runs matching the filter criteria
+          examples:
+          - 100
+        data:
+          description: Array of monitoring pipeline run records
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              databankSubjectId:
+                type: string
+              caqhRequestMetaData:
+                $ref: '#/components/schemas/JsonNode'
+              npdbRequestMetaData:
+                $ref: '#/components/schemas/JsonNode'
+              monitoringWorkflowId:
+                type: string
+              dataPipelineRequestId:
+                type: string
+              createdAt:
+                $ref: '#/components/schemas/Date'
+              createdBy:
+                type: string
+              updatedAt:
+                $ref: '#/components/schemas/Date'
+              updatedBy:
+                type: string
+              createdByName:
+                type: string
+              updatedByName:
+                type: string
+              pipelineName:
+                type: string
+              stepStatus:
+                type: string
+              stepName:
+                type: string
+              dataPipelineRequestCreatedAt:
+                $ref: '#/components/schemas/Date'
+              dataPipelineRequestStepLastCreatedAt:
+                $ref: '#/components/schemas/Date'
+              dataPipelineRequestSteps:
+                $ref: '#/components/schemas/JsonNode'
+        links:
+          description: Pagination links for navigation
+          type: object
+          $ref: '#/components/schemas/PageLinks'
+    BulkUnassignMonitoringWorkflowResponse:
+      description: Response containing results of bulk unassignment of monitoring workflows
+      type: object
+      properties:
+        successful:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnassignmentResult'
+          description: List of successful unassignments
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnassignmentResult'
+          description: List of failed unassignments with error details
+        totalProcessed:
+          type: integer
+          format: int32
+          description: Total number of workflows processed
+        successCount:
+          type: integer
+          format: int32
+          description: Number of successful unassignments
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of failed unassignments
+    Practitioner.schema:
+      type: object
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Practitioner.schema.json
+      title: Practitioner Schema
+      additionalProperties: false
+      $defs:
+        attachment:
+          type: object
+          properties:
+            createdAt:
+              type: string
+              format: date
+              description: The date the attachment was created.
+            fileType:
+              type: string
+              description: Supporting Document File Type (i.e. Malpractice Insurance Policy, License, etc.)
+            fileUrl:
+              type: string
+              description: Supporting Document File URI in GCS
+            originalFileName:
+              type: string
+              description: Supporting Document Original File Name
+            state:
+              type: string
+              description: The state associated with the supporting document.
+            expirationDate:
+              type: string
+              format: date
+              description: The expiration date of the supporting document.
+            source:
+              type: string
+              description: The source of the supporting document.
+            createdBy:
+              type: string
+              description: The user who created the record.
+            credWorkflowRecordOrigin:
+              type: string
+              description: Indicate how this record was added/edited within the credentialing workflow.
+      properties:
+        caqhPdqs:
+          type: object
+          properties:
+            practitionerProfessionalId:
+              type: object
+              additionalProperties: false
+              properties:
+                practitionerEcfmg:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    ecfmgNumber:
+                      type: string
+                      description: The ECFMG number of the practitioner.
+                    ecfmgIssueDate:
+                      type: string
+                      format: date
+                      description: The issue date of the ECFMG number.
+            practitionerSpecialty:
+              type: object
+              additionalProperties: false
+              properties:
+                otherSpecialty:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    listedUnderPPOFlag:
+                      type: boolean
+                      description: Whether the specialty is listed under PPO.
+            attestationDate:
+              title: CAQH Attestation Date
+              type: string
+              format: date
+            caqhApiResponseId:
+              title: CAQH API Response ID
+              type: string
+              description: Unique identifier returned from CAQH API response for this practitioner record.
+            dataAcquireDate:
+              title: Data Acquire Date
+              description: Date the data was acquired from the source.
+              type:
+              - string
+              - 'null'
+              format: date
+            sourceUpdateDate:
+              title: Source Update Date
+              description: Date when the data was last updated in the source system.
+              type:
+              - string
+              - 'null'
+              format: date
+        prefix:
+          title: Practitioner Name prefix
+          type: string
+          deprecated: true
+        firstName:
+          title: Practitioner First Name
+          type: string
+        caqhPrimaryEmail:
+          title: CAQH Primary Email
+          description: CAQH Primary Email of Practitioner.
+          type: string
+        middleName:
+          title: Practitioner Middle Name
+          type: string
+        lastName:
+          title: Practitioner Last Name
+          type: string
+        suffix:
+          title: Practitioner Name suffix
+          type: string
+        primaryEmail:
+          title: Primary Email
+          type: string
+        npi:
+          title: National Provider Identifier
+          type: string
+        externalId:
+          title: External Id
+          type: string
+        enrollmentStartDate:
+          title: Enrollment Start Date
+          description: Enrollment start date of Practitioner.
+          format: date
+          type: string
+        reimbursementId:
+          title: Reimbursement Id
+          type: string
+        supervisingPractitionerId:
+          title: Supervising Practitioner Id
+          type: string
+          description: The foreign key of the supervising practitioner.
+        caqhProviderId:
+          title: CAQH Provider Id
+          type: string
+        providerType:
+          title: Provider Type
+          type: array
+          items:
+            type: string
+          deprecated: true
+        practitionerType:
+          title: Practitioner Type
+          type: array
+          items:
+            type: string
+          deprecated: true
+        practitionerTypesToCredential:
+          title: Practitioner Types to Credential
+          description: The types of practitioners to credential.
+          type: array
+          items:
+            type: string
+        reviewCompleteDate:
+          title: Review Complete Date
+          description: Review completion date of the Practitioner.
+          format: date
+          type: string
+        statesToCredential:
+          title: States to Credential
+          description: The states to credential.
+          type: array
+          items:
+            type: string
+        practitionerRoles:
+          title: Practitioner Roles
+          type: array
+          items:
+            type: string
+        practitionerRolesMap:
+          title: Practitioner Roles Map
+          description: Map of practitioner role key to effective/termination dates.
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: false
+            properties:
+              effectiveDate:
+                type: string
+                format: date
+                description: The effective date for the role.
+              terminationDate:
+                type: string
+                format: date
+                description: The termination date for the role.
+        practitionerSpecializedTraining:
+          title: Practitioner Specialized Training
+          type: array
+          items:
+            type: string
+        lineOfBusiness:
+          title: Line of Business
+          description: The line of business associated with the practitioner.
+          type: array
+          items:
+            type: string
+        providerId:
+          title: Provider Id
+          type: string
+        dateOfBirth:
+          title: Date of Birth
+          type: string
+          format: date
+        ssn:
+          title: Social Security Number
+          type:
+          - string
+          - 'null'
+        gender:
+          title: Gender
+          type: string
+        race:
+          title: Race
+          description: Provider's race.
+          type:
+          - string
+          - 'null'
+        ethnicity:
+          title: Ethnicity
+          description: Provider's ethnicity.
+          type:
+          - string
+          - 'null'
+        providerCreatedDate:
+          title: Provider Created Date
+          type: string
+          format: date
+          deprecated: true
+        npdbDatabankSubjectId:
+          title: NPDB Data Bank Subject Id
+          type: string
+        npdbDcn:
+          title: NPDB Dcn
+          type: string
+        isDeceased:
+          title: Is Deceased?
+          type:
+          - boolean
+          - 'null'
+          deprecated: true
+        deceasedDate:
+          title: Deceased Date
+          type: string
+          format: date
+          deprecated: true
+        deceasedExplanation:
+          title: Deceased Explanation
+          type: string
+          deprecated: true
+        lastCredentialedDate:
+          title: Last Credentialed Date
+          description: Date of the last credentialing.
+          type:
+          - string
+          - 'null'
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        lastCredentialingDate:
+          title: Last Credentialing Date
+          description: Date of the last credentialing (alternative field name).
+          type:
+          - string
+          - 'null'
+          format: date
+        nextCredentialingDate:
+          title: Next Credentialing Date
+          description: Date of the next credentialing due.
+          type:
+          - string
+          - 'null'
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        initialCredentialingDate:
+          title: Initial Credentialing Date
+          description: Date of the initial credentialing.
+          type:
+          - string
+          - 'null'
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        dataAcquireDate:
+          title: Data Acquire Date
+          description: Date of data acquire.
+          format: date
+          type:
+          - string
+          - 'null'
+        sourceUpdateDate:
+          title: Source Update Date
+          description: Date when source was last updated.
+          format: date
+          type:
+          - string
+          - 'null'
+        emails:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                title: Email Address
+                type: string
+                format: email
+              emailType:
+                title: Type of Email
+                type: string
+              source:
+                title: Source
+                type: string
+                description: The source of the email.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+            additionalProperties: false
+        userDefinedFields:
+          title: User Defined Fields
+          type: object
+          description: User Defined Fields for the practitioner.
+          additionalProperties: true
+        delegationStatus:
+          type: string
+          enum:
+          - Delegated
+          - Direct
+          description: The delegation status of the practitioner.
+        jurisdictionOfInterest:
+          type: string
+          description: The jurisdiction of interest for the practitioner.
+        businessPurpose:
+          title: Practitioner business purpose
+          type: object
+          additionalProperties: false
+          properties:
+            isForCredentialing:
+              type: object
+              description: States if Practitioner is enabled for credentialing.
+              properties:
+                value:
+                  type: boolean
+                  description: States if Practitioner is enabled for credentialing.
+                reason:
+                  type: string
+                  description: The reason for the credentialing status.
+            isForMonitoring:
+              type: object
+              description: States if Practitioner is enabled for monitoring.
+              properties:
+                value:
+                  type: boolean
+                  description: States if Practitioner is enabled for monitoring.
+                reason:
+                  type: string
+                  description: The reason for the monitoring status.
+        phoneNumbers:
+          type: array
+          items:
+            type: object
+            properties:
+              phoneNumber:
+                title: Phone Number
+                type: string
+                format: phone
+              faxNumber:
+                title: Fax Number
+                type: string
+              type:
+                title: Type
+                type: string
+              source:
+                title: Source
+                type: string
+                description: The source of the phone number.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+            additionalProperties: false
+        addresses:
+          title: Practitioner Addresses
+          description: A list of addresses associated with the practitioner.
+          type: array
+          items:
+            type: object
+            properties:
+              address1:
+                title: Address Line 1
+                type: string
+              address2:
+                title: Address Line 2
+                type: string
+              city:
+                title: City
+                type: string
+              state:
+                title: State
+                type: string
+              country:
+                title: Country
+                type: string
+              zipcode:
+                title: Zipcode
+                type: string
+              source:
+                title: Source
+                type: string
+                description: The source of the address.
+              type:
+                title: Type
+                type: string
+                description: The type of address.
+              diagnosticPrivilege:
+                type:
+                - boolean
+                - 'null'
+                description: Indicates whether the NY license has diagnostic privilege. Applicable only to NY state licenses.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+            additionalProperties: false
+        licenses:
+          type: array
+          description: State Licenses
+          items:
+            type: object
+            properties:
+              expiration:
+                type: string
+                format: date
+                description: The expiration date of the license.
+              issueDate:
+                type: string
+                format: date
+                description: The issue date of the license.
+              licenseNumber:
+                type: string
+                description: The license number.
+              state:
+                type: string
+                description: The state that issued the license.
+              licenseType:
+                type: string
+                description: The specific type or category of the license (e.g., Medical, DEA).
+              practitionerType:
+                type: string
+                description: The specific practitioner type for the licenseType internal to certifyOS (e.g., DDS, CDS, MD).
+              specialty:
+                type: string
+                description: The area of practice or medical field (e.g., Cardiology, Pediatrics)
+              licenseStatus:
+                type: string
+                description: The current status of the license (e.g., Active, Expired).
+              licenseSource:
+                type: string
+                description: The source from which the license information was obtained.
+              reportDate:
+                type: string
+                format: date
+                description: The date the license information was reported or verified.
+              licenseNumberVariations:
+                type: string
+                description: Any known variations of the license number.
+              flaggedDate:
+                type: string
+                format: date
+                description: The date the license was flagged.
+              dataSource:
+                type: string
+                description: The data source of the license information.
+              url:
+                type: string
+                description: The URL to the license information.
+              boardActionFlag:
+                type:
+                - boolean
+                - 'null'
+                description: Board Action Flag to indicate whether there is an active action by the board on this provider license.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the license.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the license was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the license.
+              scraperScreenshotUrl:
+                type: string
+                description: The screenshot URL from the scraper
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        medicaid:
+          title: Practitioner Medicaid
+          type: array
+          items:
+            type: object
+            properties:
+              state:
+                title: State
+                type: string
+                deprecated: true
+              medicaidNumber:
+                title: Medicaid Number
+                type: string
+              medicaidState:
+                title: Medicaid State
+                type: string
+              cdsNumber:
+                title: CDS Number
+                type: string
+                deprecated: true
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+            additionalProperties: false
+        malpracticeInsurances:
+          type: array
+          items:
+            type: object
+            properties:
+              carrierName:
+                description: Malpractice Insurance Carrier Name
+                type: string
+              expiryDate:
+                description: Malpractice Insurance Policy Expiry Date
+                type: string
+                format: date
+              effectiveDate:
+                description: Malpractice Insurance Policy Effective Date
+                type: string
+                format: date
+              flaggedDate:
+                description: The date the malpractice insurance was flagged.
+                title: Flagged Date
+                type: string
+                format: date
+              source:
+                description: Malpractice Insurance Policy Source
+                type: string
+              status:
+                description: Malpractice Insurance Policy Status (i.e. Active, Expired)
+                type: string
+              policyNumber:
+                description: Malpractice Insurance Policy Number
+                type: string
+              aggregateCoverageAmount:
+                description: Malpractice Insurance Policy Aggregate Coverage Amount
+                type: string
+              occurrenceCoverageAmount:
+                description: Malpractice Insurance Policy Occurrence Coverage Amount
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              type:
+                type: string
+                description: The type of malpractice insurance.
+              unlimitedCoverage:
+                type:
+                - boolean
+                - 'null'
+                description: Whether the policy has unlimited coverage.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the malpractice insurance.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        malpracticeInsurance:
+          type: array
+          deprecated: true
+          items:
+            type: object
+            properties:
+              carrierName:
+                description: Malpractice Insurance Carrier Name
+                type: string
+              expiryDate:
+                description: Malpractice Insurance Policy Expiry Date
+                type: string
+                format: date
+              effectiveDate:
+                description: Malpractice Insurance Policy Effective Date
+                type: string
+                format: date
+              source:
+                description: Malpractice Insurance Policy Source
+                type: string
+              status:
+                description: Malpractice Insurance Policy Status (i.e. Active, Expired)
+                type: string
+              policyNumber:
+                description: Malpractice Insurance Policy Number
+                type: string
+              aggregateCoverageAmount:
+                description: Malpractice Insurance Policy Aggregate Coverage Amount
+                type: string
+              occurrenceCoverageAmount:
+                description: Malpractice Insurance Policy Occurrence Coverage Amount
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              type:
+                type: string
+                description: The type of malpractice insurance.
+              unlimitedCoverage:
+                type:
+                - boolean
+                - 'null'
+                description: Whether the policy has unlimited coverage.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the malpractice insurance.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        supportingDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/attachment'
+        boardCertifications:
+          type: array
+          items:
+            title: CorePractitionerdatabaseschemaBoardCertificationsInner
+            type: object
+            properties:
+              abmsId:
+                type:
+                - string
+                - 'null'
+                description: The ABMS ID of the board certification.
+              certificateId:
+                type: string
+              certifyingBoardName:
+                type: string
+              isPrimary:
+                type: boolean
+              certificateType:
+                type: string
+              durationType:
+                type: string
+              expireDate:
+                type: string
+                format: date
+                deprecated: true
+                description: Deprecated in favor of `expirationDate`. The date the board certification expires.
+              expirationDate:
+                type: string
+                format: date
+              issueDate:
+                type: string
+                format: date
+              reverificationDate:
+                title: Reverification Date
+                description: The date the board certification was reverified.
+                type: string
+                format: date
+              speciality:
+                type: string
+              subspeciality:
+                type: string
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              moc:
+                type: string
+              status:
+                type: string
+              occuranceType:
+                type: string
+              recordType:
+                type: string
+              reportDate:
+                type: string
+                format: date
+                description: The date the board certification was reported.
+              flaggedDate:
+                type: string
+                format: date
+                description: The date the board certification was flagged.
+              source:
+                type: string
+                description: The source of the board certification information.
+              city:
+                type:
+                - string
+                - 'null'
+              state:
+                type:
+                - string
+                - 'null'
+              zipCode:
+                type:
+                - string
+                - 'null'
+              country:
+                type:
+                - string
+                - 'null'
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the board certification.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        hospitalAffiliations:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              specialty:
+                type: string
+              state:
+                type: string
+              type:
+                type: string
+              isPrimary:
+                type:
+                - boolean
+                - 'null'
+              source:
+                type: string
+              startDate:
+                type: string
+                format: date
+              endDate:
+                type: string
+                format: date
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              status:
+                type: string
+                description: The status of the hospital affiliation.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the hospital affiliation.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        sanctions:
+          type: array
+          items:
+            type: object
+            properties:
+              dateOfReport:
+                type: string
+                format: date
+                description: The date the sanction was reported.
+              sanctionType:
+                type: string
+                description: The type of sanction (e.g. License Suspension, License Revocation, etc.).
+              typeOfAction:
+                type: string
+                description: The type of action taken as a result of the sanction (e.g. Suspension, Revocation, etc.).
+              verifiedBy:
+                type: string
+              data:
+                type: string
+                description: The data associated with the sanction. (needs definition from source)
+              flaggedDate:
+                type: string
+                format: date
+                description: The date the sanction was flagged.
+              sanctionStartDate:
+                type: string
+                format: date
+                description: The date the sanction started.
+              exclusionInitiatedBy:
+                type: string
+                description: The sanction initiator.
+              source:
+                type: string
+                description: The source of the sanction information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              url:
+                title: Sanctions URL
+                description: URL of Sanctions
+                type: string
+              attachments:
+                type: array
+                description: Supporting documents for the sanction.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the sanction was verified.
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        sanctionsLineage:
+          title: Sanctions Lineage
+          description: Lineage information for sanctions, keyed by source ID. Used to indicate when the data was last fetched.
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              fileUrl:
+                type: string
+                description: The file URL associated with the sanction lineage.
+              sourceType:
+                type: string
+                description: The type of source for the sanction lineage.
+              sanctionType:
+                type: string
+                description: The type of sanction.
+              typeOfAction:
+                type: string
+                description: The type of action taken as a result of the sanction (e.g. Suspension, Revocation, etc.).
+              sourceName:
+                type: string
+                description: The name of the source for the sanction lineage.
+            additionalProperties: false
+        workHistoryGaps:
+          type: array
+          items:
+            type: object
+            properties:
+              explanation:
+                type: string
+                description: The explanation for the work history gap.
+              gapStartDate:
+                type: string
+                format: date
+                description: The start date of the work history gap.
+              gapEndDate:
+                type: string
+                format: date
+                description: The end date of the work history gap.
+              verifiedDate:
+                type: string
+                format: date
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        disclosureQuestions:
+          type: array
+          items:
+            type: object
+            properties:
+              explanation:
+                type: string
+                description: The explanation for the disclosure question answer.
+              question:
+                type: string
+                description: The question being answered.
+              answer:
+                deprecated: true
+                type: string
+                description: The answer to the disclosure question.
+              answerFlag:
+                type: boolean
+                description: Whether the flag is true (Yes) or false (No).
+              disclosureDate:
+                type: string
+                format: date
+                description: Date of the disclosure
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        nppes:
+          type: array
+          deprecated: true
+          items:
+            type: object
+            properties:
+              npi:
+                type: string
+                description: The National Provider Identifier (NPI) assigned to the practitioner.
+              active:
+                type:
+                - boolean
+                - 'null'
+                description: Whether the practitioner's NPPES record is active.
+              addresses:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    address1:
+                      type: string
+                    addressPurpose:
+                      type: string
+                    addressType:
+                      type: string
+                    city:
+                      type: string
+                    countryCode:
+                      type: string
+                    countryName:
+                      type: string
+                    faxNumber:
+                      type: string
+                    postalCode:
+                      type: string
+                    state:
+                      type: string
+                    telephoneNumber:
+                      type: string
+              certificationDate:
+                type: string
+                format: date
+                description: The date the practitioner was certified.
+              createdBy:
+                type: string
+              createdByName:
+                type: string
+              credential:
+                type: string
+                description: The credential the practitioner is certified in.
+              enumerationDate:
+                type: string
+                format: date
+                description: The date the practitioner was enumerated.
+              enumerationType:
+                type: string
+                description: The type of enumeration (e.g. Initial, Renewal, etc.).
+              firstName:
+                type: string
+                description: The first name of the practitioner.
+              gender:
+                type: string
+                description: The gender of the practitioner.
+              id:
+                type: string
+                description: The unique identifier for the practitioner.
+              identifiers:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    type:
+                      type: string
+                    state:
+                      type: string
+                    issuer:
+                      type: string
+              lastName:
+                type: string
+              lastUpdatedAt:
+                type: string
+                format: date
+              middleName:
+                type: string
+              organizationId:
+                type: string
+              otherNames:
+                type: array
+              prefix:
+                type: string
+              providerId:
+                type: string
+              status:
+                type: string
+              suffix:
+                type: string
+              taxonomies:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    code:
+                      type: string
+                    desc:
+                      type: string
+                    license:
+                      type: string
+                    primary:
+                      type:
+                      - boolean
+                      - 'null'
+                    state:
+                      type: string
+                    taxonomyGroup:
+                      type: string
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              verifiedAt:
+                title: Nppes Verified Date
+                description: Nppes verification date.
+                type: string
+                format: date
+              verifiedBy:
+                title: Nppes Verified Person
+                description: The user who verified the Nppes information.
+                type: string
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        practiceLocations:
+          type: array
+          items:
+            type: object
+            properties:
+              address1:
+                type: string
+              address2:
+                type: string
+              address3:
+                type: string
+              address4:
+                type: string
+              city:
+                type: string
+              county:
+                type: string
+              country:
+                type: string
+                description: The country of the practice location.
+              state:
+                type: string
+              zipcode:
+                type: string
+              healthcareServiceName:
+                type: string
+              faxNumber:
+                type: string
+              telephoneNumber:
+                type: string
+              tin:
+                type: string
+                description: Tax Identification Number for the practice location.
+              npi:
+                type: string
+                description: National Provider Identifier for the practice location.
+              startDate:
+                type: string
+                format: date
+                description: The start date at this practice location.
+              phoneCoverage24x7:
+                type:
+                - boolean
+                - 'null'
+                description: Whether the practice location provides 24/7 coverage.
+              totalLocationHours:
+                type: number
+                description: Total hours of operation for the practice location (e.g. 100.00)
+              locationHours:
+                type: array
+                description: Hours of operation for each day of the week.
+                items:
+                  type: object
+                  properties:
+                    dayOfWeek:
+                      type: string
+                      description: Day of the week.
+                      enum:
+                      - Monday
+                      - Tuesday
+                      - Wednesday
+                      - Thursday
+                      - Friday
+                      - Saturday
+                      - Sunday
+                    startHours:
+                      type:
+                      - string
+                      - 'null'
+                      description: Start time in HH:MM format (e.g., 09:00).
+                    endHours:
+                      type:
+                      - string
+                      - 'null'
+                      description: End time in HH:MM format (e.g., 17:00).
+              drawingBlood:
+                type:
+                - boolean
+                - 'null'
+                description: Whether the practice location provides blood drawing services.
+              laboratoryServices:
+                type:
+                - boolean
+                - 'null'
+                description: Whether the practice location provides laboratory services.
+              cliaNumber:
+                type: string
+                description: Clinical Laboratory Improvement Amendments (CLIA) number.
+              cliaExpirationDate:
+                type: string
+                format: date
+                description: The date the CLIA certificate expires.
+              source:
+                type: string
+                description: The source of the practice location information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the practice location.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the practice location was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the practice location.
+              locationAccessibility:
+                type: object
+                additionalProperties: false
+                properties:
+                  adaAccessibilityFlag:
+                    type: boolean
+                  handicappedAccessFlag:
+                    type: boolean
+                  parkingAccessFlag:
+                    type: boolean
+                  restroomAccessFlag:
+                    type: boolean
+                  otherDisabilityServicesFlag:
+                    type: boolean
+                  ttyAccessFlag:
+                    type: boolean
+                  aslAccessFlag:
+                    type: boolean
+                  impairmentServicesFlag:
+                    type: boolean
+                  publicTransportationAccessFlag:
+                    type: boolean
+                  busAccessFlag:
+                    type: boolean
+                  subwayAccessFlag:
+                    type: boolean
+                  trainAccessFlag:
+                    type: boolean
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        languages:
+          type: array
+          items:
+            type: object
+            properties:
+              language:
+                type: string
+                description: The language the practitioner is proficient in.
+              isPrimary:
+                description: Whether the language is the primary language of the practitioner.
+                type:
+                - boolean
+                - 'null'
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        licensureActions:
+          type: array
+          deprecated: true
+          items:
+            type: object
+            properties:
+              licenseNumber:
+                type: string
+                description: The license number.
+              details:
+                type: string
+                description: The details of the licensure action. What happened and the result of the action.
+              state:
+                type: string
+                description: The state that issued the licensure action.
+              lastActionDate:
+                type: string
+                format: date
+                description: The date the licensure action was last taken.
+              reportDate:
+                type: string
+                format: date
+                description: The date the licensure action was reported.
+              source:
+                type: string
+                description: The source of the licensure action.
+              actionType:
+                type: string
+                description: The type of action taken as a result of the licensure action (i.e. suspension, revocation, etc.).
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              createdDate:
+                type: string
+                format: date
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the licensure action.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              flaggedDate:
+                title: Flagged Date
+                description: The date the licensure actions was flagged.
+                type: string
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              url:
+                title: Licensure Actions URL
+                description: URL of the licensure actions.
+                type: string
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        dea:
+          type: array
+          items:
+            type: object
+            properties:
+              expireDate:
+                type: string
+                format: date
+                description: Deprecated in favor of `expirationDate`. The date the DEA license expires.
+                deprecated: true
+              expirationDate:
+                type: string
+                format: date
+                description: The date the DEA license expires.
+              affiliation:
+                type: string
+                description: The affiliation of the practitioner.
+              deaNumber:
+                deprecated: true
+                type: string
+                description: The DEA number of the practitioner.
+              number:
+                type: string
+                description: The DEA number of the practitioner.
+              cdsLicenseNumber:
+                deprecated: true
+                type: string
+                description: The CDS License Number of the practitioner.
+              state:
+                type: string
+                description: The state that issued the DEA license.
+              providerType:
+                type: string
+                description: The type of provider (i.e. MD, DO, NP, PA, etc.).
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              source:
+                type: string
+              type:
+                type: string
+                deprecated: true
+                enum:
+                - DEA
+                - CDS
+              status:
+                type: string
+              reportDate:
+                type: string
+                format: date
+                description: The date the DEA information was reported.
+              flaggedDate:
+                type: string
+                format: date
+                description: The date the DEA information was flagged.
+              url:
+                type: string
+                description: The URL to the DEA information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the DEA.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        cds:
+          type: array
+          items:
+            type: object
+            properties:
+              expireDate:
+                type: string
+                format: date
+                deprecated: true
+                description: Deprecated in favor of `expirationDate`. The date the CDS license expires.
+              expirationDate:
+                type: string
+                format: date
+                description: The date the CDS license expires.
+              number:
+                type: string
+                description: The CDS License Number
+              state:
+                type: string
+                description: The state that issued the CDS license.
+              providerType:
+                type: string
+                description: The type of provider (i.e. MD, DO, NP, PA, etc.).
+                deprecated: true
+              verifiedBy:
+                type: string
+              verifiedDate:
+                type: string
+                format: date
+              source:
+                type: string
+              status:
+                type: string
+              reportDate:
+                type: string
+                format: date
+                description: The date the CDS information was reported.
+              flaggedDate:
+                type: string
+                format: date
+                description: The date the CDS information was flagged.
+              url:
+                type: string
+                description: The URL to the CDS information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the CDS.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        cmsSpecialties:
+          type: array
+          items:
+            type: object
+            properties:
+              cmsTypeCode:
+                type: string
+              cmsTypeName:
+                type: string
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        npdbReports:
+          type: array
+          items:
+            type: object
+            properties:
+              ssn:
+                type: string
+                description: The ssn of the practitioner.
+              birthdate:
+                type: string
+                format: date
+                description: The birthdate of the practitioner.
+              flaggedDate:
+                title: Flagged Date
+                description: The date the NPDB reports was flagged.
+                type: string
+                format: date
+              licensureField:
+                type: string
+                description: The licensure field of the practitioner.
+              reportDate:
+                type: string
+                format: date
+                description: The date the NPDB report was reported.
+              processDate:
+                type: string
+                format: date
+                description: The date the NPDB report was processed by Certify.
+              verifiedBy:
+                type: string
+              data:
+                type: object
+                description: The data associated with the NPDB report.
+              verifiedDate:
+                type: string
+                format: date
+              typeOfAction:
+                type: string
+                description: Whether there was a report found or not.
+              createdDate:
+                type: string
+                format: date
+              deceased:
+                type: string
+                description: Whether the practitioner is deceased.
+              paymentAmount:
+                type: string
+                description: The amount of the payment.
+              paymentDate:
+                type: string
+                format: date
+                description: The date the payment was made.
+              patientAge:
+                type: string
+                description: The age of the patient.
+              patientGender:
+                type: string
+                description: The gender of the patient.
+              patientType:
+                type: string
+                description: The type of patient (i.e. adult, child, etc.).
+              medicalConditionDescription:
+                type: string
+                description: The description of the medical condition.
+              procedureDescription:
+                type: string
+                description: The description of the procedure.
+              allegationsDescription:
+                type: string
+                description: The description of the allegations.
+              allegationNature:
+                type: string
+                description: The nature of the allegation.
+              specificAllegation:
+                type: string
+                description: The specific allegation.
+              specificAllegationDate:
+                type: string
+                format: date
+                description: The date the specific allegation was made.
+              outcome:
+                type: string
+                description: The outcome of the NPDB report.
+              source:
+                type: string
+                description: The source of the NPDB report.
+              reportType:
+                type: string
+                description: The type of report (i.e. report, notice, etc.).
+              firstName:
+                type: string
+                description: The first name of the practitioner.
+              lastName:
+                type: string
+                description: The last name of the practitioner.
+              middleName:
+                type: string
+                description: The middle name of the practitioner.
+              gender:
+                type: string
+                description: The gender of the practitioner.
+              npi:
+                type: string
+                description: The National Provider Identifier (NPI) assigned to the practitioner.
+              homeAddress:
+                type: string
+                description: The home address of the practitioner.
+              homeCity:
+                type: string
+                description: The home city of the practitioner.
+              homeState:
+                type: string
+                description: The home state of the practitioner.
+              homeZip:
+                type: string
+                description: The home zip code of the practitioner.
+              dcn:
+                type: string
+                description: The DEA number of the practitioner.
+              reportDCN:
+                type:
+                - string
+                - 'null'
+                description: The reportDCN of NPDB report.
+              notes:
+                type:
+                - array
+                - 'null'
+                description: The notes of the NPDB report.
+                items:
+                  type: string
+              maintainedUnder:
+                type:
+                - object
+                - 'null'
+                properties:
+                  statute:
+                    type: array
+                    description: The statute of the NPDB report.
+                    items:
+                      type: string
+              correctedFields:
+                type:
+                - array
+                - 'null'
+                description: The corrected fields of the NPDB report.
+                items:
+                  type: string
+              previousDCN:
+                type:
+                - string
+                - 'null'
+                description: The previous DCN of NPDB report.
+              previousTransaction:
+                type:
+                - string
+                - 'null'
+                description: The previous transaction type of NPDB report.
+              databankSubjectId:
+                type: string
+                minLength: 1
+                description: The unique identifier for the subject within the National Practitioner Data Bank (NPDB).
+              otherName:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: false
+                  required:
+                  - firstName
+                  - lastName
+                  properties:
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+              certification:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: The certification verified by
+                  title:
+                    type: string
+                    description: The title of the person who certified the report.
+                  phone:
+                    type: object
+                    properties:
+                      number:
+                        type: string
+                        description: The phone number associated with the certification.
+                  date:
+                    type: string
+                    format: date
+              submitter:
+                type: object
+                properties:
+                  entityDBID:
+                    type: string
+                    description: The database ID of the submitting entity.
+                  agentDBID:
+                    type: string
+                    description: The database ID of the agent acting on behalf of the entity.
+                  vendorID:
+                    type: string
+                    description: The ID of the vendor used for submission.
+              enrollmentStatus:
+                type: object
+                properties:
+                  dataBank:
+                    type: string
+                    description: The databank associated with the enrollment status.
+                  status:
+                    type: string
+                    description: The enrollment status.
+                  statusCode:
+                    type: string
+                    description: The code for the enrollment status.
+                  section1128e:
+                    type: boolean
+                    description: Enrollment status related to Section 1128E of the Social Security Act.
+                  section1921:
+                    type: boolean
+                    description: Enrollment status related to Section 1921 of the Social Security Act.
+                  titleIV:
+                    type: boolean
+                    description: Enrollment status related to Title IV of the Social Security Act.
+                  startDate:
+                    type: string
+                    format: date
+                  endDate:
+                    type: string
+                    format: date
+              transactionTypeCode:
+                type:
+                - string
+                - 'null'
+                description: The transaction type code of the NPDB report.
+              transactionType:
+                type:
+                - string
+                - 'null'
+                description: The transaction type of the NPDB report.
+              recentChangeDate:
+                type:
+                - string
+                - 'null'
+                format: date
+                description: The date of the most recent change to the NPDB report.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the NPDB report.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        educationTraining:
+          type: array
+          description: The education or training of the practitioner. This includes all medical school, residencies, fellowships and continuing medical education received by the practitioner.
+          items:
+            type: object
+            properties:
+              startDate:
+                type: string
+                format: date
+                description: The start date of the education or training.
+              endDate:
+                type: string
+                format: date
+                description: The end date of the education or training.
+              type:
+                type: string
+                description: The type of education or training.
+              degree:
+                type: string
+                description: The degree received from the education or training.
+              speciality:
+                type: string
+                description: The specialty of the education or training.
+              subspecialty:
+                type: string
+                description: The subspecialty of the education or training.
+              institution:
+                type: string
+                description: The institution that provided the education or training.
+              licensingBoardReference:
+                type: string
+                description: The reference to the licensing board.
+              verifiedBy:
+                type: string
+                description: The person who verified the education or training.
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the education or training was verified.
+              status:
+                type: string
+                description: The status of the education or training.
+              source:
+                type: string
+                description: The source of the education or training information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the education or training.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        residency:
+          type: array
+          description: Residency information for the practitioner.
+          items:
+            type: object
+            properties:
+              schoolName:
+                type: string
+                description: The name of the school or institution where the residency was completed.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+            additionalProperties: false
+        education:
+          type: array
+          description: Education information for the practitioner (alternative to educationTraining).
+          items:
+            type: object
+            properties:
+              toDate:
+                type: string
+                format: date
+                description: The end date of the education.
+              schoolName:
+                type: string
+                description: The name of the school or institution.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+            additionalProperties: false
+        cliaCertificates:
+          type: array
+          items:
+            type: object
+            properties:
+              certificateNumber:
+                type: string
+                description: The certificate number of the CLIA certificate.
+              expirationDate:
+                type: string
+                format: date
+                description: The expiration date of the CLIA certificate.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        medicare:
+          type: array
+          items:
+            type: object
+            properties:
+              medicareNumber:
+                type: string
+                description: The Medicare number of the practitioner.
+              medicareState:
+                type: string
+                description: The state that issued the Medicare number.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        xRayLicenses:
+          type: array
+          items:
+            type: object
+            properties:
+              licenseNumber:
+                type: string
+                description: The license number of the X-Ray license.
+              expirationDate:
+                type: string
+                format: date
+                description: The expiration date of the X-Ray license.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        specialties:
+          type: array
+          description: Specialties of the practitioner.
+          items:
+            type: object
+            properties:
+              specialty:
+                type: string
+                description: The specialty of the practitioner.
+              subspecialty:
+                type: string
+                description: The subspecialty of the practitioner.
+              primarySpecialty:
+                type:
+                - boolean
+                - 'null'
+                description: Whether this is the primary specialty.
+              source:
+                type: string
+                description: The source of the specialty information.
+              type:
+                type: string
+                description: The type of specialty.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the specialty.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the specialty was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the specialty.
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        appVerifications:
+          type: array
+          description: Application verifications for the practitioner.
+          items:
+            type: object
+            properties:
+              verificationType:
+                type: string
+                description: The type of verification.
+              explanation:
+                type: string
+                description: Explanation of the verification.
+              source:
+                type: string
+                description: The source of the verification.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the app verification.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the verification was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the verification.
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        professionalIds:
+          type: array
+          description: Professional IDs for the practitioner.
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                description: The type of professional ID.
+              number:
+                type: string
+                description: The professional ID number.
+              state:
+                type: string
+                description: The state that issued the professional ID.
+              issueDate:
+                type: string
+                format: date
+                description: The issue date of the professional ID.
+              expirationDate:
+                type: string
+                format: date
+                description: The expiration date of the professional ID.
+              source:
+                type: string
+                description: The source of the professional ID information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the professional ID.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the professional ID was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the professional ID.
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        siteVisits:
+          type: array
+          description: Site visits for the practitioner.
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+                description: The date of the site visit.
+              grade:
+                type: string
+                description: The grade of the site visit.
+              source:
+                type: string
+                description: The source of the site visit information.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the site visit.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the site visit was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the site visit.
+              dataAcquireDate:
+                title: Data Acquire Date
+                description: Date the data was acquired from the source.
+                type:
+                - string
+                - 'null'
+                format: date
+              sourceUpdateDate:
+                title: Source Update Date
+                description: Date when the data was last updated in the source system.
+                type:
+                - string
+                - 'null'
+                format: date
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        performanceIndicators:
+          type: array
+          description: Performance indicators for the practitioner.
+          items:
+            type: object
+            properties:
+              totalComplaints:
+                type: integer
+                description: Total number of complaints (e.g. 10)
+              clinicalComplaints:
+                type: integer
+                description: Number of clinical complaints (e.g. 10)
+              serviceComplaints:
+                type: integer
+                description: Number of service complaints (e.g. 10)
+              benefitsComplaints:
+                type: integer
+                description: Number of benefits complaints (e.g. 10)
+              claimComplaints:
+                type: integer
+                description: Number of claim complaints (e.g. 10)
+              accessIssueComplaints:
+                type: integer
+                description: Number of access issue complaints (e.g. 10)
+              reportDate:
+                type: string
+                format: date
+                description: The date the performance indicator was reported.
+              createdAt:
+                type: string
+                format: date
+                description: The date the record was created.
+              createdBy:
+                type: string
+                description: The user who created the record.
+              updatedAt:
+                type: string
+                format: date
+                description: The date the record was last updated.
+              updatedBy:
+                type: string
+                description: The user who last updated the record.
+              attachments:
+                type: array
+                description: Supporting documents for the performance indicator.
+                items:
+                  $ref: '#/components/schemas/attachment'
+              verifiedDate:
+                type: string
+                format: date
+                description: The date the performance indicator was verified.
+              verifiedBy:
+                type: string
+                description: The user who verified the performance indicator.
+              credWorkflowRecordOrigin:
+                type: string
+                description: Indicate how this record was added/edited within the credentialing workflow.
+        aggregateCoverageAmount:
+          type: string
+          description: Malpractice aggregate coverage amount
+        annualFWATraining:
+          type: boolean
+          description: Whether annual Fraud, Waste, and Abuse training has been completed
+        attestationDate:
+          type: string
+          description: Council for Affordable Quality Healthcare Attestation Date
+          format: date
+        carrierName:
+          type: string
+          description: Malpractice carrier name
+        cdsExempt:
+          type:
+          - string
+          - boolean
+          description: Whether practitioner is exempt from controlled substance number requirements
+        cdsExemptState:
+          type: string
+          description: State for controlled substance number exemption
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        cdsWaiver:
+          type:
+          - string
+          - boolean
+          description: Whether practitioner has controlled substance number waiver
+        cdsWaiverState:
+          type: string
+          description: State for controlled substance number waiver
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        certificateId:
+          type: string
+          description: Board certification number for primary specialty
+        certificateNumber:
+          type: string
+          description: CLIA Certificate Number
+        certifyingBoardName:
+          type: string
+          description: Board certification name for primary specialty
+        cmsTypeCode:
+          type: string
+          description: Provider's CMS type code
+        cmsTypeName:
+          type: string
+          description: Provider's CMS type description
+        credentialingType:
+          type: string
+          description: Type of credentialing (I = Initial, R = Recredentialing)
+          enum:
+          - I
+          - R
+        criticalIncidentTraining:
+          type: boolean
+          description: Whether critical incident training has been completed
+        culturalCompetency:
+          type:
+          - string
+          - boolean
+          description: Whether cultural competency training has been completed
+        deaExempt:
+          type:
+          - string
+          - boolean
+          description: Whether practitioner is exempt from DEA requirements
+        deaExemptState:
+          type: string
+          description: State for DEA exemption
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        deaWaiver:
+          type:
+          - string
+          - boolean
+          description: Whether practitioner has DEA waiver
+        deaWaiverState:
+          type: string
+          description: State for DEA waiver
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        degree:
+          type: string
+          description: Degree obtained from education
+          enum:
+          - AA
+          - ABA
+          - ACNP
+          - ACU
+          - ADC
+          - APN
+          - APN-CNP
+          - APRN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CD
+          - CDS
+          - CNS
+          - CP
+          - CphT
+          - CRNA
+          - CSP
+          - CSW
+          - DC
+          - DDS
+          - DMD
+          - DO
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LBHC
+          - LLMSW
+          - LMFT
+          - LMSW
+          - LN
+          - LP
+          - LPC
+          - LPCC
+          - LPN
+          - LPT
+          - LVN
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PA-C
+          - PC
+          - PCC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PsyD
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SAC
+          - SA-C
+          - SLP
+          - WHNP
+          - RDN
+          - LCSW
+          - SW
+          - LMHC
+          - CPsyD
+          - LactCon
+          - CTRS
+          - AAS
+          - BA
+          - BS
+          - BHS
+          - BSN
+          - CNM
+          - CRNP
+          - DAOM
+          - DNP
+          - DNS
+          - DPT
+          - EDD
+          - FNP
+          - MAC
+          - MBA
+          - MBBC
+          - MBBCh
+          - MBBch-BAO
+          - MBBS
+          - MBCHB
+          - MEd
+          - MHS
+          - MMS
+          - MPA
+          - MPT
+          - MPH
+          - MS
+          - MS-ANP
+          - MSAH
+          - MSCP
+          - MSHS
+          - MSN
+          - MSN-FNP
+          - MSAP
+          - MSP
+          - MSPT
+          - MSEd
+          - MSW
+          - MD/MPH
+          - OTD
+          - PNP
+          - PMHNP
+        disclosureQuestion:
+          type: string
+          description: Disclosure question for practitioner
+        durationType:
+          type:
+          - string
+          - boolean
+          description: Board certification duration type for primary specialty
+        ecfmgNumber:
+          type: string
+          description: ECFMG (Educational Commission for Foreign Medical Graduates) number
+        educationType:
+          type: string
+          description: Type of education
+        effectiveDate:
+          type: string
+          description: Effective date for the practitioner role
+          format: date
+        endDate:
+          type: string
+          description: End date for primary hospital affiliation
+          format: date
+        epsdtDate:
+          type: string
+          description: Date of EPSDT certification
+          format: date
+        epsdtState:
+          type: string
+          description: State for EPSDT certification
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        epsdtStatus:
+          type: string
+          description: Early and Periodic Screening, Diagnostic and Treatment status
+          enum:
+          - Certified
+          - Not Certified
+        expiration:
+          type: string
+          description: State License Expiration Date
+          format: date
+        expirationDate:
+          type: string
+          description: CLIA Certificate Expiration Date
+          format: date
+        expireDate:
+          type: string
+          description: DEA Expiration Date
+          format: date
+        expiryDate:
+          type: string
+          description: Malpractice expiry date
+          format: date
+        fromDate:
+          type: string
+          description: Start date of education
+          format: date
+        initialAppointmentDate:
+          type: string
+          description: Date of the initial appointment
+          format: date
+        issueDate:
+          type: string
+          description: Board certification issue date for primary specialty
+          format: date
+        language:
+          type: string
+          description: Primary language of the practitioner
+          enum:
+          - Abkhaz
+          - Afar
+          - Afrikaans
+          - Akan
+          - Albanian
+          - Amharic
+          - Arabic
+          - Aragonese
+          - Aramaic
+          - Armenian
+          - Assamese
+          - Avaric
+          - Avestan
+          - Aymara
+          - Azerbaijani
+          - Bambara
+          - Bashkir
+          - Basque
+          - Belarusian
+          - Bemba
+          - Bengali
+          - Bihari
+          - Bislama
+          - Bosnian
+          - Breton
+          - Bulgarian
+          - Burmese
+          - Cantonese
+          - Castilian
+          - Catalan - Valencian
+          - Cebuano
+          - Chamorro
+          - Chechen
+          - Chichewa - Chewa - Nyanja
+          - Chinese
+          - Chuvash
+          - Cornish
+          - Corsican
+          - Cree
+          - Croatian
+          - Czech
+          - Danish
+          - Divehi - Dhivehi - Maldivian
+          - Dutch
+          - Dzongkha
+          - English
+          - Esperanto
+          - Estonian
+          - Ethiopian
+          - Ewe
+          - Faroese
+          - Fijian
+          - Finnish
+          - French
+          - Fula - Fulah - Pulaar - Pular
+          - Galician
+          - Ganda
+          - Georgian
+          - German
+          - Greek (modern)
+          - Greek
+          - Guaraní
+          - Gujarati
+          - Haitian Creole
+          - Hausa
+          - Hebrew
+          - Herero
+          - Hindi
+          - Hiri Motu
+          - Hungarian
+          - Icelandic
+          - Ido
+          - Igbo
+          - Indonesian
+          - Interlingua
+          - Interlingue
+          - Inuktitut
+          - Inupiaq
+          - Irish
+          - Italian
+          - Jamaican Patois
+          - Japanese
+          - Javanese
+          - Kalaallisut - Greenlandic
+          - Kannada
+          - Kanuri
+          - Kashmiri
+          - Kazakh
+          - Khmer
+          - Kikuyu - Gikuyu
+          - Kinyarwanda
+          - Kirundi
+          - Komi
+          - Konkani
+          - Kongo
+          - Korean
+          - Kurdish
+          - Kwanyama - Kuanyama
+          - Kyrgyz
+          - Lao
+          - Latin
+          - Latvian
+          - Limburgish - Limburgan - Limburger
+          - Lingala
+          - Lithuanian
+          - Luba-katanga
+          - Luxembourgish - Letzeburgesch
+          - Macedonian
+          - Malagasy
+          - Malay
+          - Malayalam
+          - Maltese
+          - Mandarin Chinese
+          - Manx
+          - Māori
+          - Marathi (marāṭhī)
+          - Marshallese
+          - Mongolian
+          - Nauru
+          - Navajo, Navaho
+          - Ndonga
+          - Nepali
+          - North Ndebele
+          - Northern Sami
+          - Norwegian
+          - Norwegian Bokmål
+          - Norwegian Nynorsk
+          - Nuosu
+          - Occitan
+          - Ojibwe, Ojibwa
+          - Old Church Slavonic - Church Slavonic - Old Bulgarian
+          - Oriya
+          - Oromo
+          - Ossetian - Ossetic
+          - Other
+          - Pāli
+          - Punjabi
+          - Pashto - Pushto
+          - Persian (Farsi)
+          - Polish
+          - Portuguese
+          - Quechua
+          - Romanian
+          - Romansh
+          - Russian
+          - Samoan
+          - Sango
+          - Sanskrit (saṁskṛta)
+          - Sardinian
+          - Scottish Gaelic - Gaelic
+          - Serbian
+          - Shona
+          - Sindhi
+          - Singhalese
+          - Slovak
+          - Somali
+          - South Azerbaijani
+          - South Ndebele
+          - Southern Sotho
+          - Spanish
+          - Sundanese
+          - Swahili
+          - Swati
+          - Swedish
+          - Tagalog
+          - Tahitian
+          - Tajik
+          - Tamil
+          - Tatar
+          - Telugu
+          - Thai
+          - Tibetan
+          - Tigrinya
+          - Tonga (tonga Islands)
+          - Tsonga
+          - Tswana
+          - Turkish
+          - Turkmen
+          - Twi
+          - Ukrainian
+          - Urdu
+          - Uyghur - Uighur
+          - Uzbek
+          - Venda
+          - Vietnamese
+          - Volapük
+          - Walloon
+          - Welsh
+          - Western Frisian
+          - Wolof
+          - Xhosa
+          - Yiddish
+          - Yoruba
+          - Zhuang - Chuang
+          - Zulu
+          - American Sign Language (ASL)
+          - Not Disclosed
+          - Not Known
+        lastAppointmentDate:
+          type: string
+          description: Date of the last appointment
+          format: date
+        licenseNumber:
+          type: string
+          description: State License Number
+        licenseType:
+          type: string
+          description: State License Type
+        medicaidNumber:
+          type: string
+          description: Practitioner's Medicaid identifier
+          pattern: ^[a-zA-Z0-9]{5,20}$
+        medicaidState:
+          type: string
+          description: State of Medicaid ID
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        medicareState:
+          type: string
+          description: State of Medicare ID
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        modelOfCareTraining:
+          type: boolean
+          description: Whether model of care training has been completed
+        name:
+          type: string
+          description: Primary hospital affiliation of the practitioner
+        nextAppointmentDate:
+          type: string
+          description: Date of the next appointment
+          format: date
+        number:
+          type: string
+          description: Drug Enforcement Administration number
+          pattern: ^[A-Z][A-Z9]\d{7,8}$
+        occurrenceCoverageAmount:
+          type: string
+          description: Malpractice occurrence coverage amount
+        onStaff:
+          type: string
+          description: Whether the practitioner is on staff
+          enum:
+          - Y
+          - N
+        penultimateCredentialingDate:
+          type: string
+          description: Date of the penultimate credentialing
+          format: date
+        policyNumber:
+          type: string
+          description: Malpractice insurance policy number
+        practitionerChangeEffectiveDate:
+          type: string
+          description: Effective date of practitioner change
+          format: date
+        recredApprovalDate:
+          type: string
+          description: Date of the recredentialing approval
+          format: date
+        reimbursementCode:
+          type: string
+          description: Reimbursement code of the practitioner
+        schoolName:
+          type: string
+          description: Name of the educational institution
+        secondaryEmail:
+          type: string
+          description: Secondary email address for the practitioner
+          format: email
+        specialty:
+          type: string
+          description: Specialty of internship
+        startDate:
+          type: string
+          description: Appointment date for primary hospital affiliation
+          format: date
+        state:
+          type: string
+          description: State License Issuing State (State Abbreviation code)
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+        status:
+          type: string
+          description: Status for primary hospital affiliation
+        supervisingProviderType:
+          type: string
+          description: Type of supervising healthcare provider
+          enum:
+          - AA
+          - ABA
+          - ACNP
+          - ACU
+          - ADC
+          - APN
+          - APN-CNP
+          - APRN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CD
+          - CDS
+          - CNS
+          - CP
+          - CphT
+          - CRNA
+          - CSP
+          - CSW
+          - DC
+          - DDS
+          - DMD
+          - DO
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LBHC
+          - LLMSW
+          - LMFT
+          - LMSW
+          - LN
+          - LP
+          - LPC
+          - LPCC
+          - LPN
+          - LPT
+          - LVN
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PA-C
+          - PC
+          - PCC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PsyD
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SAC
+          - SA-C
+          - SLP
+          - WHNP
+          - RDN
+          - LCSW
+          - SW
+          - LMHC
+          - CPsyD
+          - LactCon
+          - CTRS
+          - MPH
+          - MS
+        telemedicineAvailable:
+          type: string
+          description: Indicates if telemedicine services are available
+        telemedicineURL:
+          type: string
+          description: URL for telemedicine practitioners
+          format: uri
+        tempPrivilegeDate:
+          type: string
+          description: Date of the temporary privilege
+          format: date
+        terminationDate:
+          type: string
+          description: Termination date for the practitioner role
+          format: date
+        toDate:
+          type: string
+          description: End date of education
+          format: date
+        type:
+          type: string
+          description: Appointment type for primary hospital affiliation
+        udfContractEntityType:
+          type: string
+          description: Contract entity type of the practitioner
+        udfContractedThrough:
+          type: string
+          description: Indicates through whom/which entity the practitioner is contracted
+        udfFluorideVarnish:
+          type: string
+          description: Fluoride varnish status
+        udfFluorideVarnishVerifDate:
+          type: string
+          description: Fluoride varnish verification date
+          format: date
+        udfMedstarSpecialty:
+          type: string
+          description: UDF field for Medstar specialty
+        udfMedstarTitle:
+          type: string
+          description: Medstar professional title (e.g. MD, DO, CRNP). Supports multiple values via valueArrayGrouping.
+          enum:
+          - MD
+          - CNM
+          - CRNP
+          - DMD
+          - AUD
+          - PA-C
+          - SLP
+          - PsyD
+          - DPM
+          - DC
+          - DO
+          - OT
+          - RD
+          - DDS
+          - LCSW-C
+          - LICSW
+          - LPC
+          - BCBA
+          - LCSW
+          - CRNA
+          - OD
+          - DNP
+          - PHD
+          - LCPC
+          - LMFT
+          - ACU
+          - CPNP
+          - PT
+          - LDN
+          - LN
+          - MGC
+          - FNP
+          - EDD
+          - BCaBA
+          - CLD
+          - CAC
+          - LAc
+          - MFT
+          - MSW
+          - CD
+        udfNewRecords:
+          type: string
+          description: UDF field for new records
+        udfNotes:
+          type: string
+          description: UDF field for notes
+        udfOrgNpi:
+          type: string
+          description: Org NPI of the practitioner
+        udfPractitionerDirectoryGrouping:
+          type: string
+          description: Practitioner directory grouping of the practitioner
+        udfProviderLinkedToMoreThanOneContract:
+          type: string
+          description: UDF field indicating if provider is linked to multiple contracts
+        udfRosterSourceFileID:
+          type: string
+          description: Roster source file id of the practitioner
+        udfStaffStatus:
+          type: string
+          description: Staff status of the practitioner
+        udfTiopaComments:
+          type: string
+          description: TIOPA comments for the practitioner
+        udfTooltipDescription:
+          type: string
+          description: UDF field for tooltip description
+        udfTooltipHeader:
+          type: string
+          description: UDF field for tooltip header
+        udfUSTHCreationDate:
+          type: string
+          description: USTH creation date of the practitioner
+          format: date
+        udfUSTHModifiedDate:
+          type: string
+          description: Modified date of the practitioner
+          format: date
+        udfUSTHVersion:
+          type: string
+          description: USTH version of the practitioner
+        udfUSTHVersionDate:
+          type: string
+          description: USTH version date of the practitioner
+          format: date
+        udfVBCAttribution:
+          type: string
+          description: VBC attribution of the practitioner
+        udfZingProviderGroupName:
+          type: string
+          description: Zing provider group name of the practitioner
+        udfZingProviderValueBasedGroupRef:
+          type: string
+          description: Zing provider value based group ref of the practitioner
+        udfZingSupplierLinkId:
+          type: string
+          description: Zing supplier link id of the practitioner
+        udf_MMO_Commercial:
+          type: string
+          description: MMO commercial of the practitioner
+        udf_MMO_DecisionDate:
+          type: string
+          description: MMO decision date of the practitioner
+          format: date
+        udf_MMO_Exchange:
+          type: string
+          description: MMO exchange of the practitioner
+        udf_MMO_Medicare:
+          type: string
+          description: MMO medicare of the practitioner
+        udf_Paramount_Commercial:
+          type: string
+          description: Paramount commercial of the practitioner
+        udf_Paramount_DecisionDate:
+          type: string
+          description: Paramount decision date of the practitioner
+          format: date
+        udf_Paramount_Exchange:
+          type: string
+          description: Paramount exchange of the practitioner
+        udf_Paramount_Medicare:
+          type: string
+          description: Paramount medicare of the practitioner
+        udfRecordId:
+          type: string
+          description: Record id of the practitioner
+      unevaluatedProperties: false
+    FlagWithHistoryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantProviderId:
+          type: string
+        flagTypeId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        originMonitoringWorkflowId:
+          type: string
+        hash:
+          type: string
+        flagType:
+          $ref: '#/components/schemas/FlagTypeResponse'
+        histories:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
+    UploadMonitoringWorkflowAttachmentResponse:
+      description: Response containing the uploaded attachment metadata
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+          examples:
+          - Attachment uploaded successfully
+        attachment:
+          description: The uploaded attachment metadata
+          type: object
+          $ref: '#/components/schemas/MonitoringWorkflowAttachment'
+    PipelineName:
+      type: string
+      enum:
+      - CAQH
+      - NPDB
+      - CREDENTIALING_WORKFLOW
+    MonitoringWorkflowResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantPractitionerId:
+          type: string
+        tenantId:
+          type: string
+        certifyPractitionerId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        newFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagWithTypeResponse'
+        allFlags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagWithTypeResponse'
+        flagsWithHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagWithHistoryResponse'
+        otherWorkflows:
+          type: object
+          additionalProperties:
+            type: string
+    MonitoringWorkflowResponse.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/api-contracts/response/MonitoringWorkflowResponse.schema.json
+      title: MonitoringWorkflowResponse
+      description: 'Defines the structure for monitoring workflow response data, extending the base schema with system-computed fields.
+
+
+        Computed fields are automatically derived by the system and returned as read-only values. They should not be included when creating or updating records.'
+      allOf:
+      - $ref: '#/components/schemas/MonitoringWorkflow.schema'
+      - type: object
+        properties:
+          monitoringStatus:
+            type: string
+            description: Current status of the monitoring workflow.
+            enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - OUTREACH_IN_PROGRESS
+            - DATA_MISSING
+            - NO_ACTION_REQUIRED
+            - CERTIFYOS_REVIEW_COMPLETE
+            example: IN_PROGRESS
+            readOnly: true
+          monitoringStatusLastUpdatedDate:
+            type:
+            - string
+            - 'null'
+            format: date-time
+            description: Date when monitoring status was last updated.
+            example: '2024-01-15T10:30:00Z'
+            readOnly: true
+      unevaluatedProperties: false
+    MonitoringWorkflowAttachment:
+      description: Attachment metadata for monitoring workflow row
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Creation timestamp
+          examples:
+          - '2024-01-15T10:30:00Z'
+        fileType:
+          type: string
+          description: Document file type
+          examples:
+          - DEA Certificate
+        fileUrl:
+          type: string
+          description: GCS file URL for file retrieval
+          examples:
+          - monitoring-workflow-attachments/workflow-123/dea/1729771200000_dea-certificate.pdf
+        originalFileName:
+          type: string
+          description: Original file name
+          examples:
+          - dea-certificate.pdf
+        expirationDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Expiration date
+          examples:
+          - '2025-12-31'
+          default: '9999-12-31'
+        createdBy:
+          type: string
+          description: User who created the record
+      required:
+      - fileType
+      - fileUrl
+      - originalFileName
+    UnassignmentResult:
+      type: object
+      description: Result of an individual unassignment operation
+      properties:
+        workflowId:
+          type: string
+          description: ID of the monitoring workflow
+          examples:
+          - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+        error:
+          type: string
+          description: Error message if unassignment failed
+    UpdateMonitoringWorkflowStatusRequest:
+      description: Request to update monitoring workflow status
+      type: object
+      required:
+      - workflowStatus
+      - description
+      properties:
+        workflowStatus:
+          type: string
+          description: The new workflow status
+          examples:
+          - IN_PROGRESS
+          pattern: \S
+        description:
+          type: string
+          description: Description for the timeline event
+          examples:
+          - Monitoring workflow status changed to IN_PROGRESS
+          pattern: \S
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    BulkAssignMonitoringWorkflowRequest:
+      description: Request to assign multiple monitoring workflows
+      type: object
+      properties:
+        workflowIds:
+          type: array
+          items:
+            type: string
+          description: List of monitoring workflow IDs to assign. Either workflowIds or filter must be provided.
+          examples:
+          - - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+            - 55d9fb86-26b2-5801-b1ee-240169e2f97e
+        assignTo:
+          type: array
+          items:
+            type: string
+          description: List of user IDs to assign workflows to. Workflows will be evenly distributed across these users
+          examples:
+          - - user_123456
+            - user_789012
+          minItems: 1
+        filter:
+          type: string
+          description: Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs when workflowIds is not provided. See GET /monitoring-workflows endpoint documentation for filter format.
+          examples:
+          - '{"data.monitoringStatus":{"eq":"PENDING"}}'
+      required:
+      - assignTo
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    BulkAssignMonitoringWorkflowResponse:
+      description: Response containing results of bulk assignment of monitoring workflows
+      type: object
+      properties:
+        successful:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentResult2'
+          description: List of successful assignments
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentResult2'
+          description: List of failed assignments with error details
+        totalProcessed:
+          type: integer
+          format: int32
+          description: Total number of workflows processed
+        successCount:
+          type: integer
+          format: int32
+          description: Number of successful assignments
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of failed assignments
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

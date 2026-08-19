@@ -1,0 +1,187 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "CertifyOS Providers API"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "providers",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Export Provider Directory",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/providers/export/provider-directory",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerIds",
+                "value": "",
+                "type": "query",
+                "description": "Provider ids to be filtered in comma separated strings within the array."
+              },
+              {
+                "name": "includeInactiveProviders",
+                "value": "",
+                "type": "query",
+                "description": "Whether to include Inactive Providers"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Triggers an export workflow for the provider directory. The export will include provider details based on the provided filters. The result is typically a CSV or similar file, and the export is processed asynchronously."
+        },
+        {
+          "info": {
+            "name": "Export HSD Report",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/providers/export/hsd-report",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerIds",
+                "value": "",
+                "type": "query",
+                "description": "Provider ids to be filtered in comma separated strings within the array."
+              },
+              {
+                "name": "includeInactiveProviders",
+                "value": "",
+                "type": "query",
+                "description": "Whether to include Inactive Providers"
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Triggers an export workflow for the HSD (Health Service Delivery) report. The export will include provider details based on the provided filters. The result is typically a CSV or similar file, and the export is processed asynchronously."
+        },
+        {
+          "info": {
+            "name": "Upload Supporting Document",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/providers/:id/supporting-documents",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "fileType",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "state",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "\n    Uploads a supporting document for a provider by ID. This endpoint accepts a multipart/form-data request with a file and metadata.\n\n    - The uploaded document is associated with the provider and saved in the system.\n    - Only valid files and supported document metadata will be processed.\n    - Returns a confirmation once the document is uploaded successfully.\n\n    Authorization:\n    - Requires an Bearer access token.\n\n    Possible Errors:\n    - `400 Bad Request`: If the file or metadata is"
+        },
+        {
+          "info": {
+            "name": "Get all credentialing workflow timelines for a provider",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/providers/:providerId/credentialing-workflow-timelines",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of credentialing workflow timeline records for the specified provider within \n    the organization. Each record contains credentialing status, cycle, dates, and related metadata."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,229 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS V2/provider With Groups API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: v2/provider-with-groups
+paths:
+  /v2/provider-with-groups:
+    post:
+      operationId: ProviderWithGroupsV2Controller_create
+      summary: Create Provider With Groups
+      description: Add a provider to the organization
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProviderWithGroupDtoV2'
+      responses:
+        '201':
+          description: The record has been successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider_id:
+                    type: string
+                    example: sfas12345
+                  is_created:
+                    type: boolean
+                    example: false
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/provider-with-groups
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    CreateProviderWithGroupDtoV2:
+      type: object
+      properties:
+        first_name:
+          type: string
+          description: First name of the Provider
+        middle_name:
+          type: string
+          default: ''
+          description: Middle name of the Provider
+        last_name:
+          type: string
+          description: Last name of the Provider
+        degree:
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
+          type: string
+          description: Type of provider
+        npi:
+          type: string
+          default: ''
+          description: 'NPI of the Provider '
+        states:
+          type: string
+          description: States in which Provider will provide care to patients/enrollees
+        caqh_provider_id:
+          type: string
+          default: ''
+          description: CAQH ID of the Provider
+        last_credentialed_date:
+          format: date-time
+          type: string
+          description: Date Provider was last credentialed
+        next_credentialing_date:
+          format: date-time
+          type: string
+          description: 'Date by which Provider needs to be recredentialed '
+        external_id:
+          type: string
+          description: Client’s ID for the provider
+        primary_email:
+          type: string
+          description: Provider’s email address
+          example: string@string.com
+        gender:
+          type: string
+          enum:
+          - M
+          - F
+          - U
+          description: Provider's gender
+        dob:
+          format: date-time
+          type: string
+          description: Provider’s date of birth
+        groups:
+          description: Groups within the Org with which the provider is associated
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateProviderV2GroupDto'
+      required:
+      - first_name
+      - last_name
+      - degree
+      - states
+    CreateProviderV2GroupDto:
+      type: object
+      properties:
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        location_name:
+          type: string
+          description: Name of group location
+        external_group_id:
+          type: string
+          description: Client's ID for the group
+      required:
+      - group_name
+      - group_npi
+      - group_tin
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

@@ -1,0 +1,261 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Tenant Configuration API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Tenant Configuration
+  description: Endpoints for managing tenant configurations.
+paths:
+  /tenant-configurations:
+    get:
+      summary: Get All Tenant Configurations
+      description: Returns all tenant configurations for the specified tenant. This endpoint fetches all configuration types associated with the tenant.
+      operationId: getAllTenantConfigurations
+      tags:
+      - Tenant Configuration
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Tenant configurations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantConfigurationListResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /tenant-configurations/by-configuration-type/{configurationTypeId}:
+    post:
+      summary: Update Tenant Configuration by Type
+      description: Creates or updates a tenant configuration based on configurationTypeId path parameter.
+      operationId: updateTenantConfigurationByType
+      tags:
+      - Tenant Configuration
+      parameters:
+      - description: Configuration type ID
+        example: tenant-timezone-config
+        required: true
+        name: configurationTypeId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+        required: true
+      responses:
+        '200':
+          description: Tenant configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantTimezoneResponse'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    get:
+      summary: Get Tenant Configuration by Type
+      description: Returns the tenant configuration for the given configurationTypeId. For tenant-timezone-config, returns default timezone (America/New_York) when none is stored.
+      operationId: getTenantConfigurationByTypeId
+      tags:
+      - Tenant Configuration
+      parameters:
+      - description: Configuration type ID
+        example: tenant-timezone-config
+        required: true
+        name: configurationTypeId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Tenant configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantConfigurationItemDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '404':
+          description: No configuration found for the given type (non-timezone types only)
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    TenantTimezoneResponse:
+      description: Tenant timezone configuration response
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: Tenant ID this configuration belongs to
+        configurationTypeId:
+          type: string
+          description: Configuration type ID
+        timezone:
+          type: string
+          description: IANA timezone ID
+        timezoneAbbreviation:
+          type: string
+          description: Timezone abbreviation for the current date
+          examples:
+          - EST
+    TenantConfigurationItemDto:
+      description: A tenant configuration item
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the configuration
+        tenantId:
+          type: string
+          description: Tenant ID this configuration belongs to
+        namespace:
+          type: string
+          description: Namespace for the configuration
+        configurationTypeId:
+          type: string
+          description: Type identifier for the configuration
+        configuration:
+          description: Configuration data as JSON
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        updatedAt:
+          description: Timestamp when the configuration was last updated
+          type: string
+          $ref: '#/components/schemas/Instant'
+        createdAt:
+          description: Timestamp when the configuration was created
+          type: string
+          $ref: '#/components/schemas/Instant'
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    TenantConfigurationListResponseDto:
+      description: List of all tenant configurations for a tenant
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantConfigurationItemDto'
+          description: List of tenant configurations
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of tenant configurations
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

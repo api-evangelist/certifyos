@@ -1,0 +1,359 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Permission API
+  version: 1.0.0
+  description: 'Operations tagged Permission across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Permission
+  description: APIs for managing permissions
+paths:
+  /permissions:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get All Permissions
+      description: Returns all permissions from the database
+      operationId: getAllPermissions
+      tags:
+      - Permission
+      parameters:
+      - description: Page number for offset based pagination (0-based index). Defaults to 0 if not specified.
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Number of items per page. Defaults to 100 if not specified.
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '100'
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Permissions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionListResponseDto'
+        '401':
+          description: Authentication required
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+    post:
+      summary: Create Permission
+      description: Creates a new permission
+      operationId: createPermission
+      tags:
+      - Permission
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Permission created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /permissions/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update Permission
+      description: Updates an existing permission
+      operationId: updatePermission
+      tags:
+      - Permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Permission updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '404':
+          description: Permission not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+    get:
+      summary: Get Permission by ID
+      description: Retrieves a specific permission by its ID
+      operationId: getPermissionById
+      tags:
+      - Permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Permission retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '404':
+          description: Permission not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+    delete:
+      summary: Delete Permission
+      description: Deletes a permission by its ID
+      operationId: deletePermission
+      tags:
+      - Permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Permission deleted successfully
+        '400':
+          description: Bad Request
+          content: {}
+        '404':
+          description: Permission not found
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+      security:
+      - jwt: []
+components:
+  schemas:
+    PermissionUpdateRequest:
+      description: Request body for updating a permission
+      type: object
+      properties:
+        resource:
+          type: string
+          maxLength: 100
+          description: Resource name
+          examples:
+          - user
+        action:
+          type: string
+          maxLength: 100
+          description: Action name
+          examples:
+          - read
+        description:
+          type: string
+          maxLength: 500
+          description: Permission description
+          examples:
+          - Allows reading user profiles
+    PermissionResponseDto:
+      type: object
+      description: Permission information response
+      properties:
+        id:
+          type: string
+          description: Permission ID
+          examples:
+          - perm-123-456-789
+        resource:
+          type: string
+          description: Resource name
+          examples:
+          - user
+        action:
+          type: string
+          description: Action name
+          examples:
+          - read
+        description:
+          type: string
+          description: Permission description
+          examples:
+          - Allows reading user profiles
+        createdAt:
+          description: Creation timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          description: Last update timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+    PermissionListResponseDto:
+      description: Paginated list of permissions
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionResponseDto'
+          description: List of permissions
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of permissions
+        page:
+          type: integer
+          format: int32
+          description: Current page number
+        size:
+          type: integer
+          format: int32
+          description: Number of items per page
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+        hasPrevious:
+          type: boolean
+          description: Whether there is a previous page
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
+    PermissionCreateRequest:
+      description: Request body for creating a new permission
+      type: object
+      properties:
+        resource:
+          type: string
+          maxLength: 100
+          pattern: \S
+          description: The resource name (e.g., 'user', 'roster')
+          examples:
+          - user
+        action:
+          type: string
+          maxLength: 100
+          pattern: \S
+          description: The action name (e.g., 'read', 'create')
+          examples:
+          - read
+        description:
+          type: string
+          maxLength: 500
+          description: A brief description of the permission
+          examples:
+          - Allows reading user profiles
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

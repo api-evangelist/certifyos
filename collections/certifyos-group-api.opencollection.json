@@ -1,0 +1,720 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Group API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Group",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Find Group by filter criteria with pagination",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/groups",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "affiliation",
+                "value": "",
+                "type": "query",
+                "description": "Search by Affiliation"
+              },
+              {
+                "name": "name",
+                "value": "",
+                "type": "query",
+                "description": "Search by Group name"
+              },
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query",
+                "description": "Search by NPI"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number for offset-based pagination (0-based index). Defaults to 0 if not specified."
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Number of items per page in offset-based pagination. Defaults to 2 if not specified."
+              },
+              {
+                "name": "tin",
+                "value": "",
+                "type": "query",
+                "description": "Search by TIN"
+              },
+              {
+                "name": "type",
+                "value": "",
+                "type": "query",
+                "description": "Search by Type"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a paginated list of all Groups. Supports both offset-based (page/size) pagination."
+        },
+        {
+          "info": {
+            "name": "Create a new group",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "parentHealthcareOrgId",
+                "value": "parent-org-123",
+                "type": "query",
+                "description": "Parent healthcare organization ID (optional)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new group for the request tenant. Supports associating multiple networks during creation."
+        },
+        {
+          "info": {
+            "name": "Associate a group location with networks",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups/locations/:locationId/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "locationId",
+                "value": "loc-123",
+                "type": "path",
+                "description": "Group Location ID (tenantGroupLocationId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates an existing group location with one or more networks."
+        },
+        {
+          "info": {
+            "name": "Update effective date for all group location network associations",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/groups/locations/:locationId/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "locationId",
+                "value": "tgl-123",
+                "type": "path",
+                "description": "Group Location ID (tenantGroupLocationId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective date for ALL network associations linked to the specified group location. All networks associated with the location will be updated. The effectiveDate is required and must be in YYYY-MM-DD format."
+        },
+        {
+          "info": {
+            "name": "Terminate a group location from networks",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/locations/:locationId/networks/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "locationId",
+                "value": "loc-123",
+                "type": "path",
+                "description": "Group Location ID (tenantGroupLocationId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminates a group location from one or more networks by updating TenantGroupLocationNetwork rows. Does not cascade to TenantGroupLocationPractitionerNetwork or other entities."
+        },
+        {
+          "info": {
+            "name": "Terminate a group location",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/locations/:locationId/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "locationId",
+                "value": "loc-123",
+                "type": "path",
+                "description": "Group Location ID (tenantGroupLocationId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminates a group location from a group. This cascades termination to all related relationships including networks, practitioners, and specialties. User consent must be confirmed before proceeding."
+        },
+        {
+          "info": {
+            "name": "Add new location to group",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups/:groupId/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "groupId",
+                "value": "group-123",
+                "type": "path",
+                "description": "Group ID (certifyGroupId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Adds a new location to a group following the roster ingestion pattern. Creates CoreLocation, GroupLocation, TenantGroupLocation, and optionally CoreEntityAddress and LocationEntityAddress entities."
+        },
+        {
+          "info": {
+            "name": "Update group location details",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/:groupId/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "groupId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the group (certify group ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates location details for multiple locations within a group following the roster ingestion pattern. Updates the data field of TenantGroupLocation entities."
+        },
+        {
+          "info": {
+            "name": "Update group network associations",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/:groupId/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "groupId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the group (certify group ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a group's network associations following the roster ingestion pattern. Associates a group with one or more networks, creating or updating TenantGroupNetwork relationships."
+        },
+        {
+          "info": {
+            "name": "Terminate group participation in networks",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/groups/:groupId/networks/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "groupId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the group (certify group ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminates TenantGroupNetwork for the group and cascades to TenantGroupPractitionerNetwork and TenantGroupLocationNetwork only (CP-28229). Does not modify core group, practitioner, or location membership rows."
+        },
+        {
+          "info": {
+            "name": "Get a group value by their ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/groups/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a single group by their ID"
+        },
+        {
+          "info": {
+            "name": "Update a group",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates an existing group based on the group ID."
+        },
+        {
+          "info": {
+            "name": "Associate practitioners with a group",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups/:id/practitioners",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "group-123",
+                "type": "path",
+                "description": "Group ID (tenantGroupId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates one or more practitioners with a group. Optionally associates practitioners with specific group locations."
+        },
+        {
+          "info": {
+            "name": "Get all the relationships of the group",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/groups/:id/relationships/all",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get all the relationships of the group"
+        },
+        {
+          "info": {
+            "name": "Add a specialty to a group",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups/:id/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Adds a new specialty to an existing group. Optionally can also add the specialty to a specific group location."
+        },
+        {
+          "info": {
+            "name": "Update a group specialty",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/:id/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective date and/or termination date of an existing group specialty."
+        },
+        {
+          "info": {
+            "name": "Batch add and update group specialties",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/groups/:id/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Adds new and/or updates existing group specialties in a single request. Updates modify existing TenantGroupSpecialty records while additions create new specialty associations."
+        },
+        {
+          "info": {
+            "name": "Terminate group specialties from network participation",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups/:id/specialties/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Group ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminates one or more specialties from a group for network participation. Applies effective-dated termination at group–network association; optionally at group-location and group-level. Previous state is preserved for audit."
+        },
+        {
+          "info": {
+            "name": "Upload a supporting document for a group",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/groups/:id/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "group-123",
+                "type": "path",
+                "description": "Group ID (certifyGroupId)"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Upload a supporting document (license, certificate, insurance, IRS form, etc.) for a group"
+        },
+        {
+          "info": {
+            "name": "Update a group (Legacy)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/groups/:sourceType/:crosswalkId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "crosswalkId",
+                "value": "1234567890",
+                "type": "path",
+                "description": "External identifier used to link records in the source system."
+              },
+              {
+                "name": "sourceType",
+                "value": "external",
+                "type": "path",
+                "description": "Source type identifier. Must exist in core_sources table."
+              },
+              {
+                "name": "parentHealthcareOrgId",
+                "value": "parent-org-123",
+                "type": "query",
+                "description": "Parent healthcare organization ID (optional)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "DEPRECATED: Updates an existing group based on the source type and crosswalk ID. Use PUT /groups/{id} instead. The sourceType parameter corresponds to the type of source system, while the crosswalkId is the unique identifier in that source system."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

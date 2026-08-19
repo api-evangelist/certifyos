@@ -1,0 +1,53 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Role Resource API
+  version: 1.0.0
+servers:
+- url: http://localhost:9001
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+tags:
+- name: Role Resource
+paths:
+  /roles:
+    get:
+      summary: Get All Roles
+      description: Returns all roles for the current tenant
+      operationId: getAllRoles
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Roles retrieved successfully
+          content:
+            application/json: {}
+        '400':
+          description: Missing tenant-id header
+          content:
+            application/json: {}
+        '401':
+          description: Authentication required
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+      tags:
+      - Role Resource
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

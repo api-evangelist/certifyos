@@ -1,0 +1,1744 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Practitioner API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Practitioner",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Find Practitioner by filter criteria with pagination",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners",
+            "headers": [
+              {
+                "name": "X-PII-View",
+                "value": ""
+              },
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "caqhProviderId",
+                "value": "",
+                "type": "query",
+                "description": "Search by Caqh Provider Id"
+              },
+              {
+                "name": "delegationStatus",
+                "value": "",
+                "type": "query",
+                "description": "Filter by delegation status (Direct or Delegated)"
+              },
+              {
+                "name": "externalId",
+                "value": "",
+                "type": "query",
+                "description": "Search by External Id"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query",
+                "description": "Filter criteria as JSON (must be URL encoded). Multiple filters are combined with AND logic.\n\n**Filterable Fields:**\n- `credentialingStatus` (String): Workflow status (eq, neq, in, nin, contains)\n- `data.lineOfBusiness` (Array): Line of business values (in, nin)\n- `data.userDefinedFields.*` (Any): User-defined fields with dot notation (eq, neq, in, nin, contains)\n- `data.*` (Any): Any data field (eq, neq, in, nin, contains, gt, gte, lt, lte)\n\n**Operations:**\n- String: `eq`, `neq`, `in`, `nin`, `contains`\n- Array: `in`, `nin` (use `in` for arrays, not `eq`)\n- Numeric/Date: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`\n\n**Examples:**\n```json\n{\"credentialingStatus\":{\"eq\":\"PSV_READY\"}}\n{\"credentialingStatus\":{\"in\":[\"PSV_READY\",\"PSV_COMPLETED\"]}}\n{\"data.lineOfBusiness\":{\"in\":[\"MEDICARE\",\"MEDICAID\"]}}\n{\"data.userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n{\"credentialingStatus\":{\"eq\":\"PSV_READY\"},\"data.lineOfBusiness\":{\"in\":[\"MEDICARE\"]}}\n```\n\n**Notes:**\n- Filter must be URL encoded when sent as query parameter\n- `tenantId` from header always takes precedence (cannot be overridden)\n- Credentialing status derived from latest workflow timeline event\n- String operations are case-sensitive\n"
+              },
+              {
+                "name": "firstName",
+                "value": "",
+                "type": "query",
+                "description": "Search by Practitioner First Name"
+              },
+              {
+                "name": "lastName",
+                "value": "",
+                "type": "query",
+                "description": "Search by Practitioner Last Name"
+              },
+              {
+                "name": "licensedStates",
+                "value": "",
+                "type": "query",
+                "description": "Filter by licensed states (comma-separated list of state codes)"
+              },
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query",
+                "description": "Search by NPI. May contain one or more values for bulk search (copy-paste): separate with comma, newline, tab, semicolon, or space. When one or more NPI values are provided via this parameter, the response includes optional identifiersSearched, matchedCount, notFoundCount, unmatchedIdentifiers. When the query parameter is omitted (standard list request), those fields are null."
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number for offset-based pagination (0-based index). Defaults to 0 if not specified."
+              },
+              {
+                "name": "practitionerRoles",
+                "value": "",
+                "type": "query",
+                "description": "Search by Practitioner Roles (comma-separated list)"
+              },
+              {
+                "name": "practitionerType",
+                "value": "",
+                "type": "query",
+                "description": "Search by Practitioner Type (comma-separated list)"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Number of items per page in offset-based pagination. Defaults to 2 if not specified."
+              },
+              {
+                "name": "statesToCredential",
+                "value": "",
+                "type": "query",
+                "description": "Filter by states to credential (comma-separated list of state codes)"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a paginated list of Practitioner based on filter criteria. Supports offset-based (page/size) pagination. Multiple filters are combined with AND logic."
+        },
+        {
+          "info": {
+            "name": "Create a new practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/practitioners",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new practitioner for the request tenant."
+        },
+        {
+          "info": {
+            "name": "Update effective date of a practitioner location network specialty at group level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/group-practitioner-location-network-specialties/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective date of a practitioner location network specialty association at the group level"
+        },
+        {
+          "info": {
+            "name": "Correct the specialty at the practitioner-location-network level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/group-practitioner-location-network-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Resolves the FK chain from TenantGroupPractitionerLocationNetworkSpecialty through GroupPractitionerLocationSpecialty to the parent TenantPractitionerSpecialty and replaces its tenant_specialty_id. Does not trigger termination events."
+        },
+        {
+          "info": {
+            "name": "Update effective date of a practitioner location specialty at group level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/group-practitioner-location-specialties/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective date of a practitioner location specialty association at the group level"
+        },
+        {
+          "info": {
+            "name": "Correct the specialty at the practitioner-location level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/group-practitioner-location-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Resolves the FK chain from GroupPractitionerLocationSpecialty to the parent TenantPractitionerSpecialty and replaces its tenant_specialty_id. Does not trigger termination events."
+        },
+        {
+          "info": {
+            "name": "Update effective date of a practitioner network participation specialty at group level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/group-practitioner-network-participation-specialties/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective date of a practitioner network participation specialty association at the group level"
+        },
+        {
+          "info": {
+            "name": "Update effective date of a practitioner specialty at group level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/group-practitioner-specialties/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective date of a practitioner specialty association at the group level"
+        },
+        {
+          "info": {
+            "name": "Correct a practitioner role key on a group-practitioner-location record",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/practitioner-locations/:id/roles/correct",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Renames an existing role key in practitionerRolesMap on a group_practitioner_location record (e.g., PCP -> Specialist) while preserving the inner map (effectiveDate, terminationDate). Does not trigger termination events or lifecycle changes."
+        },
+        {
+          "info": {
+            "name": "Remove a practitioner role at the location level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/practitioner-locations/:id/roles/remove",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Removes a role key from practitionerRolesMap on a group_practitioner_location record and all associated tenant_group_location_practitioner_network records for that location."
+        },
+        {
+          "info": {
+            "name": "Terminate a practitioner role at a network location assignment",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/practitioner-role-assignments/:id/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Sets the terminationDate on a single role entry inside practitionerRolesMap of a TenantGroupLocationPractitionerNetwork (TGLPN) record. Does not cascade to the parent TGLPN record status, TenantGroupPractitionerNetwork, or the practitioner's main termination. The response echoes tglpnId, role (canonical casing), and terminationDate only; terminationInformedDate and terminationReason are accepted and persisted but not returned. If the role's stored effectiveDate cannot be parsed as a valid ISO da"
+        },
+        {
+          "info": {
+            "name": "Update a tenant practitioner specialty",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/tenant-practitioner-specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates an existing tenant practitioner specialty record by ID"
+        },
+        {
+          "info": {
+            "name": "Correct the specialty on a tenant practitioner specialty record",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/tenant-practitioner-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces the tenant_specialty_id on a TenantPractitionerSpecialty record in data-correction mode. Does not trigger termination events or lifecycle changes."
+        },
+        {
+          "info": {
+            "name": "Terminate a tenant practitioner specialty with cascading support",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/tenant-practitioner-specialties/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminates a tenant practitioner specialty and optionally cascades the termination to related specialties at the group, location, and network levels."
+        },
+        {
+          "info": {
+            "name": "Terminate practitioner from network/location/group_locations",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Accepts terminationType and updates relevant records with termination details."
+        },
+        {
+          "info": {
+            "name": "Update effective dates for practitioner-group association",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:certifyPractitionerId/groups/:certifyGroupId/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyGroupId",
+                "value": "",
+                "type": "path",
+                "description": "Certify group ID"
+              },
+              {
+                "name": "certifyPractitionerId",
+                "value": "",
+                "type": "path",
+                "description": "Certify practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective start date and/or termination date for a practitioner-group association. Optionally cascades the date change to network participation based on the cascadeToNetworkParticipation flag. If terminationDate is provided, it must be after the effectiveDate."
+        },
+        {
+          "info": {
+            "name": "Get a practitioner value by their ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id",
+            "headers": [
+              {
+                "name": "X-PII-View",
+                "value": ""
+              },
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a single practitioner by their ID"
+        },
+        {
+          "info": {
+            "name": "Update a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates an existing practitioner based on the practitioner ID."
+        },
+        {
+          "info": {
+            "name": "Update or Delete board certifications for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/board-certifications",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update or Delete board certifications for a practitioner"
+        },
+        {
+          "info": {
+            "name": "Get core practitioner record by crosswalk ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id/core",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner crosswalk ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves the core practitioner record for the specified practitioner crosswalk ID from the tenant source."
+        },
+        {
+          "info": {
+            "name": "Update or Delete DEA records for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/dea",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update or Delete DEA records for a practitioner"
+        },
+        {
+          "info": {
+            "name": "Update or delete education and training records for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/education-training",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces practitioner operational-view educationTraining rows using create/update/delete actions. An empty JSON array clears the entire educationTraining list in Core Practitioner (full-array replace); for targeted removal, send explicit delete actions with stable row ids."
+        },
+        {
+          "info": {
+            "name": "Update practitioner facility associations",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/facilities",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "prac-123",
+                "type": "path",
+                "description": "Practitioner ID (certifyPractitionerId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a practitioner's facility associations following the roster ingestion pattern. Associates a practitioner with one or more facilities within a group, creating or updating TenantGroupPractitionerFacility relationships."
+        },
+        {
+          "info": {
+            "name": "Update or Delete licenses for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/licenses",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update or Delete licenses for a practitioner"
+        },
+        {
+          "info": {
+            "name": "Get all the networks that the practitioner belongs to",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns all the networks that the practitioner belongs to"
+        },
+        {
+          "info": {
+            "name": "Associate practitioner with a network",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/practitioners/:id/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner (certify practitioner ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates a practitioner with a network following the roster ingestion pattern. The network must belong to a group (groupId provided in request body). If the practitioner is not associated with the group, the group association will also happen simultaneously. Creates or updates a TenantGroupPractitionerNetwork relationship."
+        },
+        {
+          "info": {
+            "name": "Update practitioner network associations",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "prac-123",
+                "type": "path",
+                "description": "Practitioner ID (certifyPractitionerId)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a practitioner's network associations following the roster ingestion pattern. Associates a practitioner with one or more networks within a group, creating or updating TenantGroupPractitionerNetwork relationships."
+        },
+        {
+          "info": {
+            "name": "Update practitioner overview information",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/overview",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates practitioner overview information including basic details like name, NPI, and other core fields. "
+        },
+        {
+          "info": {
+            "name": "Get all the relationships of the practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id/relationships/all",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              },
+              {
+                "name": "transformed",
+                "value": "",
+                "type": "query",
+                "description": "Whether to return transformed response. When true, returns a flattened and deduplicated structure with organized arrays. When false (default), returns raw nested relationship data."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get all the relationships of the practitioner. When transformed=false (default), the response contains raw relationship data with a nested structure. When transformed=true, the response is restructured into a flattened format with deduplicated and organized data including networks, groups, locations, specialties, and related metadata."
+        },
+        {
+          "info": {
+            "name": "Get all the groups that the practitioner belongs to",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id/relationships/groups",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of all groups that the practitioner belongs to. Each group contains the group's operational value data including identifiers, core group attributes (name, NPI, TIN, active status, etc.), and metadata."
+        },
+        {
+          "info": {
+            "name": "Get all the locations that the practitioner belongs to",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id/relationships/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns all the locations that the practitioner belongs to"
+        },
+        {
+          "info": {
+            "name": "Get all the networks that the practitioner belongs to",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:id/relationships/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns all the networks that the practitioner belongs to"
+        },
+        {
+          "info": {
+            "name": "Update practitioner roles",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/roles",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "550e8400-e29b-41d4-a716-446655440000",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates practitioner roles at the core practitioner level and optionally at the group practitioner location level. Accepts an array of role updates. Each role is upserted (added if missing, updated if exists) in the practitionerRoles map."
+        },
+        {
+          "info": {
+            "name": "Correct a practitioner role key in data-correction mode",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/:id/roles/correct",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Renames an existing role key in practitionerRolesMap on the core_practitioner record (e.g., PCP -> Specialist) while preserving the inner map (effectiveDate, terminationDate). Does not trigger termination events or lifecycle changes."
+        },
+        {
+          "info": {
+            "name": "Remove a practitioner role at the core level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/:id/roles/remove",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Removes a role key from practitionerRolesMap on the core_practitioner record. The role key is set to null (and then stripped), so MDM survivorship will no longer include it in the Practitioner OV for the tenant source."
+        },
+        {
+          "info": {
+            "name": "Update practitioner SSN",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/ssn",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates practitioner Social Security Number. Requires special permission (PRACTITIONER_UPDATE_SSN)."
+        },
+        {
+          "info": {
+            "name": "Create a new supporting document for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/practitioners/:id/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "fileType",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "state",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "expirationDate",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create a new supporting document for a practitioner"
+        },
+        {
+          "info": {
+            "name": "Update or Delete a supporting document for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:id/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Practitioner ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update or Delete a supporting document for a practitioner"
+        },
+        {
+          "info": {
+            "name": "Get groups for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:practitionerId/groups",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner to get groups for"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves all groups associated with the specified practitioner."
+        },
+        {
+          "info": {
+            "name": "Associate practitioner with a group",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:practitionerId/groups/:groupId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "groupId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the group to associate the practitioner with"
+              },
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner to associate with the group"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates a practitioner with the specified group and returns the association details."
+        },
+        {
+          "info": {
+            "name": "Associate practitioner with group locations",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/practitioners/:practitionerId/groups/:groupId/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "groupId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the group"
+              },
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner (certify practitioner ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates a practitioner with one or more locations within a group following the roster ingestion pattern. Use this same endpoint to add new location associations or to edit existing ones (e.g. update group practice location NPI(s)). Creates or updates GroupPractitionerLocation relationships and optionally TenantGroupLocationPractitionerNetwork relationships for location-specific networks. Each location's locationData may include 'npi' as a single string or array of strings."
+        },
+        {
+          "info": {
+            "name": "List hospital affiliations for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:practitionerId/hospital-affiliations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns the practitioner's hospital affiliations as stored on the underlying CorePractitioner.data.hospitalAffiliations array. Source values are normalized to the canonical short labels (MANUAL, ROSTER, CAQH)."
+        },
+        {
+          "info": {
+            "name": "Create a hospital affiliation for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/practitioners/:practitionerId/hospital-affiliations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new hospital-affiliation entry on the practitioner record. The server assigns a stable UUID v4 and returns the full HospitalAffiliationResponse as the body. No Location header is set, matching the existing PractitionerResource POST convention."
+        },
+        {
+          "info": {
+            "name": "Partially update a hospital affiliation",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/practitioners/:practitionerId/hospital-affiliations/:affiliationId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "affiliationId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Applies a partial update to the affiliation identified by {affiliationId}. Fields that are absent from the request body are left unchanged. Returns the updated HospitalAffiliationResponse."
+        },
+        {
+          "info": {
+            "name": "Delete a hospital affiliation",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "http://localhost:9000/practitioners/:practitionerId/hospital-affiliations/:affiliationId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "affiliationId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Removes the affiliation identified by {affiliationId} from the practitioner record. Returns 204 No Content on success."
+        },
+        {
+          "info": {
+            "name": "Get locations for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:practitionerId/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner to get locations for"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves all locations associated with the specified practitioner."
+        },
+        {
+          "info": {
+            "name": "Update practitioner location associations",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:practitionerId/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner (certify practitioner ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a practitioner's location associations following the roster ingestion pattern. Use this same endpoint to create new location associations or to edit existing ones (e.g. update or replace group practice location NPI(s)). Associates a practitioner with one or more locations within a group, creating or updating GroupPractitionerLocation relationships. Each location's locationData may include 'npi' as a single string or array of strings; omitted fields are left unchanged when merging with ex"
+        },
+        {
+          "info": {
+            "name": "Update practitioner details at a location for a network or all networks",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:practitionerId/locations/:locationId/networks/:networkId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "locationId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the tenant group location"
+              },
+              {
+                "name": "networkId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the network"
+              },
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner (certify practitioner ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates practitioner details at a specific location for a specific network or all networks. If 'applyToAllNetworks' is true in the request, updates all networks the practitioner is linked to at this location. This updates the TenantGroupLocationPractitionerNetwork entity with location-network specific data such as effective dates, panel status, accepting new patients, practitioner role, specialty, languages, office hours, etc. Specialties are stored in TenantGroupLocationPractitionerNetworkSpeci"
+        },
+        {
+          "info": {
+            "name": "Update NPI and Location NPI Participation Date for a practitioner at a location-network",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/practitioners/:practitionerId/locations/:locationId/networks/:networkId/npi-par-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "locationId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the tenant group location"
+              },
+              {
+                "name": "networkId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the network"
+              },
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner (certify practitioner ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates only the NPI and/or Location NPI Participation Date (networkPractitionerEffectiveDate) for a practitioner at a specific location-network. All other TenantGroupLocationPractitionerNetwork data fields are preserved. Pass null for npi or npiParticipationDate to leave those values unchanged. NPI is a location-network attribute and is not editable at the practitioner-location level."
+        },
+        {
+          "info": {
+            "name": "Get specialties for a practitioner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/practitioners/:practitionerId/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner to get specialties for"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves all specialties associated with the specified practitioner."
+        },
+        {
+          "info": {
+            "name": "Associate a practitioner with a specialty",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/practitioners/:practitionerId/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the practitioner to associate with the specialty"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates a practitioner with the specified specialty and returns the association details. Practitioner-level specialty is always attempted first; group, location, and network levels are best-effort. On success (200), the response includes all successfully created specialties per level and a 'notCreated' list for any level that could not be created (e.g. missing dependencies), so clients can fix and retry. 4xx is returned only when practitioner-level creation fails."
+        },
+        {
+          "info": {
+            "name": "Permanently remove a practitioner specialty (hard delete with FK cascade)",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "http://localhost:9000/practitioners/:practitionerId/tenant-practitioner-specialties/:tpsId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "practitionerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "tpsId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Hard-deletes a TenantPractitionerSpecialty record and all dependent group_practitioner_location_specialties and tenant_group_practitioner_location_network_specialties rows in a single atomic Spanner transaction. The specialty must not be the primary specialty (isPrimary=true)."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,690 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Organization Outreach Settings Resource API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Organization Outreach Settings Resource
+paths:
+  /organizations/{organizationId}/outreach-settings:
+    get:
+      summary: Get all outreach settings for an organization
+      description: Returns all outreach settings configured for an organization, grouped by outreach type
+      operationId: getAllOutreachSettings
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Outreach settings retrieved successfully
+          content:
+            application/json: {}
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+  /organizations/{organizationId}/outreach-settings/cc-emails:
+    put:
+      summary: Update global outreach CC email addresses
+      description: Updates the global CC email addresses for all outreach types for an organization
+      operationId: updateOutreachCcEmailAddresses
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OutreachCcEmailAddressesRequest'
+        required: true
+      responses:
+        '200':
+          description: Global CC email addresses updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutreachCcEmailAddressesResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+    get:
+      summary: Get global outreach CC email addresses
+      description: Returns the global CC email addresses configured for all outreach types for an organization
+      operationId: getOutreachCcEmailAddresses
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Global CC email addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutreachCcEmailAddressesResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+  /organizations/{organizationId}/outreach-settings/{type}:
+    put:
+      summary: Update outreach settings for a specific type
+      description: Updates outreach settings for a specific outreach type. Settings for the type must already exist.
+      operationId: updateOutreachSettingsByType
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Outreach type
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OutreachSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Outreach settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutreachSettingsResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found or settings for type not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+    get:
+      summary: Get outreach settings for a specific type
+      description: Returns outreach settings for a specific outreach type (PRACTITIONER_CREDENTIALING, FACILITY_CREDENTIALING, or PRACTITIONER_MONITORING)
+      operationId: getOutreachSettingsByType
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Outreach type
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - description: Credentialing cycle (INITIAL or RECREDENTIALING)
+        required: false
+        name: credentialingCycle
+        in: query
+        schema:
+          type: string
+      - description: Credentialing workflow ID (alternative to credentialingCycle)
+        required: false
+        name: workflowId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Outreach settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutreachSettingsResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found or settings for type not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+    delete:
+      summary: Delete outreach settings for a specific type
+      description: Deletes outreach settings for a specific outreach type
+      operationId: deleteOutreachSettingsByType
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Outreach type
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Outreach settings deleted successfully
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found or settings for type not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+    post:
+      summary: Create or update outreach settings for a type
+      description: Creates or updates outreach settings for a specific outreach type. If settings for the type already exist, they will be replaced.
+      operationId: createOrUpdateOutreachSettings
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Outreach type
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OutreachSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Outreach settings created/updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutreachSettingsResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+  /organizations/{organizationId}/outreach-settings/{type}/email-composer-data:
+    get:
+      summary: Get email composer autopopulation data for credentialing workflows
+      description: Returns template settings, dynamic field values, and reason instructions needed to autopopulate the email composer for credentialing workflows. Supports both PRACTITIONER_CREDENTIALING and FACILITY_CREDENTIALING workflows for INITIAL and RECREDENTIALING cycles. This endpoint combines outreach settings with workflow data to provide all required information for the frontend. Accepts comma-separated reason IDs.
+      operationId: getEmailComposerAutopopulationData
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Outreach type
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - description: Comma-separated list of outreach reason IDs to get instructions for
+        example: reason1,reason2
+        name: reasonIds
+        in: query
+        schema:
+          type: string
+      - description: Credentialing workflow ID
+        required: true
+        name: workflowId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Email composer autopopulation data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailComposerAutopopulationResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Organization not found or workflow not found
+        '500':
+          description: Internal Server Error
+      tags:
+      - Organization Outreach Settings Resource
+      security:
+      - jwt: []
+components:
+  schemas:
+    OutreachType:
+      type: string
+      enum:
+      - PRACTITIONER_CREDENTIALING
+      - FACILITY_CREDENTIALING
+      - PRACTITIONER_MONITORING
+    OutreachSettingsResponse:
+      description: Response containing outreach settings for a specific outreach type
+      type: object
+      properties:
+        type:
+          description: Type of outreach
+          type: string
+          examples:
+          - PRACTITIONER_CREDENTIALING
+          $ref: '#/components/schemas/OutreachType'
+        credentialingCycle:
+          type: string
+          description: Credentialing cycle for which these template/reasons apply
+          examples:
+          - INITIAL
+        emailRecipientPreferences:
+          description: Email recipient preferences
+          type: object
+          $ref: '#/components/schemas/EmailRecipientPreferencesDto'
+        template:
+          description: Email template configuration
+          type: object
+          $ref: '#/components/schemas/OutreachTemplateDto'
+        outreachReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutreachReasonDto'
+          description: List of outreach reasons with instructions
+        smartOutreach:
+          description: Smart outreach automation settings
+          type: object
+          $ref: '#/components/schemas/SmartOutreachSettingsDto'
+    OutreachSettingsRequest:
+      description: Request to create or update outreach settings for a specific outreach type. The type is specified in the URL path, not in the request body.
+      type: object
+      properties:
+        credentialingCycle:
+          type: string
+          description: Credentialing cycle for which these settings apply
+          examples:
+          - INITIAL
+          enum:
+          - INITIAL
+          - RECREDENTIALING
+        emailRecipientPreferences:
+          description: Email recipient preferences
+          type: object
+          $ref: '#/components/schemas/EmailRecipientPreferencesDto'
+        template:
+          description: Email template configuration
+          type: object
+          $ref: '#/components/schemas/OutreachTemplateDto'
+        outreachReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutreachReasonDto'
+          description: List of outreach reasons with instructions
+        smartOutreach:
+          description: Smart outreach automation settings
+          type: object
+          $ref: '#/components/schemas/SmartOutreachSettingsDto'
+    OutreachTemplateDto:
+      type: object
+      description: Email template configuration for outreach
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: Template-specific CC email addresses
+          examples:
+          - - cc1@example.com
+            - cc2@example.com
+        subject:
+          type: string
+          description: Email subject line with placeholders
+          examples:
+          - 'Action Required: Update Needed for {{provider_name}} for {{client_name}} Credentialing - Notice #{{number_of_outreach_attempts}}'
+          pattern: \S
+        body:
+          type: string
+          description: Email body content with placeholders (supports HTML/rich text)
+          examples:
+          - Hi {{provider_name}}, {{provider_type}} (NPI = {{provider_npi}}),\n{{client_name}} has partnered with Certify for provider credentialing.
+          pattern: \S
+        logo:
+          description: Logo settings
+          type: object
+          $ref: '#/components/schemas/OutreachLogoDto'
+      required:
+      - subject
+      - body
+    EmailComposerAutopopulationResponse:
+      description: Response containing all data needed to autopopulate the email composer for Practitioner Initial workflow
+      type: object
+      properties:
+        subject:
+          type: string
+          description: Email subject line from template (may be empty if not configured)
+          examples:
+          - 'Action Required: Update Needed for {{provider_name}}'
+        body:
+          type: string
+          description: Email body/template from settings (may be empty if not configured)
+          examples:
+          - Hi {{provider_name}}, {{provider_type}} (NPI = {{provider_npi}})
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: CC email addresses (template-specific + global)
+          examples:
+          - - cc1@example.com
+            - cc2@example.com
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutreachReasonValueDto'
+          description: Array of selected outreach reasons with title and instruction, sorted by selection order
+          examples:
+          - - title: Missing License
+              instruction: Your state license is either missing or has expired.
+        emailConfiguration:
+          description: Email recipient preferences configuration
+          type: object
+          examples:
+          - primaryEmail: true
+            caqhPrimaryEmail: false
+            credentialingPrimaryContact: true
+            credentialingOfficeManager: false
+          $ref: '#/components/schemas/EmailRecipientPreferencesDto'
+        dynamicFields:
+          type: object
+          additionalProperties: {}
+          description: Map of dynamic field keys to their resolved values (can include strings, arrays, or objects)
+          examples:
+          - provider_name: Dr. John Smith, MD
+            provider_npi: '1234567890'
+            speciality: Internal Medicine
+            reasons:
+            - title: Missing License
+              instruction: Please provide...
+    OutreachReasonValueDto:
+      type: object
+      description: Outreach reason value with title and instruction
+      properties:
+        title:
+          type: string
+          description: Reason title
+          examples:
+          - Missing License
+        instruction:
+          type: string
+          description: Reason instruction
+          examples:
+          - Your state license is either missing or has expired.
+    OutreachCcEmailAddressesRequest:
+      description: Request to update global outreach CC email addresses
+      type: object
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: List of global CC email addresses for all outreach types
+          examples:
+          - - sunayana.kalekar@certifyos.com
+            - mail@certifyos.com
+    OutreachCcEmailAddressesResponse:
+      description: Response containing global outreach CC email addresses
+      type: object
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: List of global CC email addresses for all outreach types
+          examples:
+          - - sunayana.kalekar@certifyos.com
+            - mail@certifyos.com
+    OutreachLogoDto:
+      description: Logo settings for outreach email template
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether to include the logo in emails
+          examples:
+          - true
+        url:
+          type: string
+          description: Logo URL/address
+          examples:
+          - https://storage.googleapis.com/certifyos-public-assets/images/county-header-nevada.png
+        width:
+          type: string
+          description: Logo display width
+          examples:
+          - 100%
+    EmailRecipientPreferencesDto:
+      type: object
+      description: Email recipient preferences for outreach
+      properties:
+        primaryEmail:
+          type: boolean
+          description: Enable Primary Email recipient
+          examples:
+          - true
+        caqhPrimaryEmail:
+          type: boolean
+          description: Enable CAQH Primary Email recipient
+          examples:
+          - false
+        credentialingPrimaryContact:
+          type: boolean
+          description: Enable Credentialing Primary Contact recipient
+          examples:
+          - true
+        credentialingOfficeManager:
+          type: boolean
+          description: Enable Credentialing Office Manager recipient
+          examples:
+          - false
+    SmartOutreachSettingsDto:
+      type: object
+      description: Smart outreach automation settings
+      properties:
+        enabled:
+          type: boolean
+          description: Enable smart outreach automation
+          examples:
+          - false
+        businessDaysBetweenAttempts:
+          type: integer
+          format: int32
+          description: Business days between outreach attempts (display value, persisted as hours)
+          examples:
+          - 5
+          minimum: 1
+        maxAttemptsPerReason:
+          type: integer
+          format: int32
+          description: Maximum outreach attempts per reason
+          examples:
+          - 5
+          minimum: 1
+        recredCadenceDays:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Recredentialing cadence in days (null disables recred override)
+          examples:
+          - 2
+          minimum: 1
+        dryRunEnabled:
+          type: boolean
+          description: 'Dry run mode: evaluate exclusions without sending (per client)'
+          examples:
+          - false
+        caqhValidStatuses:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: CAQH provider_status values that qualify as a valid update and suppress outreach. Defaults to ["Reattestation", "Initial Application Complete"] when null or empty.
+    OutreachReasonDto:
+      description: Outreach reason with instruction
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the outreach reason
+          examples:
+          - reason-123e4567-e89b-12d3-a456-426614174000
+        reason:
+          type: string
+          description: Reason title
+          examples:
+          - Malpractice Insurance Missing
+          pattern: \S
+        instruction:
+          type: string
+          description: Instruction text
+          examples:
+          - Your state license is either missing or has expired.
+          pattern: \S
+      required:
+      - reason
+      - instruction
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

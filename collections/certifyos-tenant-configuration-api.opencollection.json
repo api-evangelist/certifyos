@@ -1,0 +1,101 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Tenant Configuration API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Tenant Configuration",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get All Tenant Configurations",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/tenant-configurations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns all tenant configurations for the specified tenant. This endpoint fetches all configuration types associated with the tenant."
+        },
+        {
+          "info": {
+            "name": "Get Tenant Configuration by Type",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/tenant-configurations/by-configuration-type/:configurationTypeId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "configurationTypeId",
+                "value": "tenant-timezone-config",
+                "type": "path",
+                "description": "Configuration type ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns the tenant configuration for the given configurationTypeId. For tenant-timezone-config, returns default timezone (America/New_York) when none is stored."
+        },
+        {
+          "info": {
+            "name": "Update Tenant Configuration by Type",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/tenant-configurations/by-configuration-type/:configurationTypeId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "configurationTypeId",
+                "value": "tenant-timezone-config",
+                "type": "path",
+                "description": "Configuration type ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates or updates a tenant configuration based on configurationTypeId path parameter."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,676 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "CertifyOS V2/provider API"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "v2/provider",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Retrieve all available information for a provider.",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "external_id",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "provider_id",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "includeCredentialingWorkflows",
+                "value": "",
+                "type": "query",
+                "description": "Include credentialing workflows with PSV url."
+              },
+              {
+                "name": "includeFullData",
+                "value": "",
+                "type": "query",
+                "description": "Include full data from every section."
+              },
+              {
+                "name": "signUrls",
+                "value": "",
+                "type": "query",
+                "description": "Sign Document URLs for immediate access."
+              },
+              {
+                "name": "includeVerified",
+                "value": "",
+                "type": "query",
+                "description": "Included VerifiedBy User info."
+              },
+              {
+                "name": "includeGroupInfo",
+                "value": "",
+                "type": "query",
+                "description": "Include group info."
+              },
+              {
+                "name": "includeSanctionItems",
+                "value": "",
+                "type": "query",
+                "description": "Include sanction items."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches comprehensive details about a provider, \n      including optional related data such as credentialing workflows, \n      all sections data (state-licenses, board certifications, dea, etc.), \n      signed URLs for supporting documents/ attachments, verifier info, group info, and \n      sanction items based on the provided query parameters."
+        },
+        {
+          "info": {
+            "name": "Create Provider",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/provider",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Add a provider to the organization"
+        },
+        {
+          "info": {
+            "name": "Fetch attested provider data",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/attested-data",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetch attested provider data"
+        },
+        {
+          "info": {
+            "name": "Save attested provider data",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/attested-data",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Save attested provider data"
+        },
+        {
+          "info": {
+            "name": "Upload Provider Attested Data Document",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/attested-data/documents",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": []
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Upload Provider Attested Data Document"
+        },
+        {
+          "info": {
+            "name": "Retrieve signed url of a given supporting-document id.",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/supporting-documents/:supportingDocumentId/signed-url",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "supportingDocumentId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves a signed URL for the specified supporting document ID associated with the provider. \n      The signed URL provides secure, temporary access to the document and remains valid for 10 minutes."
+        },
+        {
+          "info": {
+            "name": "Lists all provider survey responses in an organization",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/survey-responses",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "version",
+                "value": "",
+                "type": "query",
+                "description": "Version of the desired survey response"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Lists all provider survey responses in an organization"
+        },
+        {
+          "info": {
+            "name": "Lists all provider email outreaches in an organization",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/outreaches",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Lists all provider email outreaches in an organization"
+        },
+        {
+          "info": {
+            "name": "Retrieve CAQH data for a provider",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/caqh-data",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the provider whose CAQH data is to be retrieved."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns the CAQH (Council for Affordable Quality Healthcare) data for the specified provider. This data includes provider credentialing and demographic information as stored in CAQH."
+        },
+        {
+          "info": {
+            "name": "Creates a credentialing workflow for the provider.",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/credentialing-workflows",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Initiates a new credentialing workflow for the specified \n      provider. The workflow will automatically trigger the pipeline to \n      fetch the required provider information needed for credentialing."
+        },
+        {
+          "info": {
+            "name": "Retrieve signed URL for provider PSV PDF",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/psv/signed-url",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the provider whose PSV PDF signed URL is to be retrieved."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a signed URL for downloading the PSV (Primary Source Verification) PDF for the specified provider. The signed URL is time-limited and allows secure access to the PSV document."
+        },
+        {
+          "info": {
+            "name": "Retrieve groups/ org-entities for a provider.",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/groups",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches all the groups (org-entities) associated with a provider."
+        },
+        {
+          "info": {
+            "name": "Modify groups associated to a provider",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/groups",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Modifies the groups (org-entities) associated with a provider."
+        },
+        {
+          "info": {
+            "name": "Retrieve credentialing workflow timelines for a provider",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/credentialing-workflow-timelines",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the provider whose credentialing workflow timelines are being retrieved."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of credentialing workflow timeline records for the specified provider within the organization. Each record contains credentialing status, cycle, dates, and related metadata."
+        },
+        {
+          "info": {
+            "name": "Create Bulk Provider Professional IDs",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/professional-ids",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create multiple professional IDs for a provider"
+        },
+        {
+          "info": {
+            "name": "Get list of provider specialties",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/specialties",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves a list of specialties for the specified provider."
+        },
+        {
+          "info": {
+            "name": "Create provider specialties",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/specialties",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create a specialty with optional sub-specialties"
+        },
+        {
+          "info": {
+            "name": "Update provider specialty",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/specialties/:specialtyId",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "specialtyId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update specialty details with optional sub-specialties"
+        },
+        {
+          "info": {
+            "name": "Delete provider specialty",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://ng-api-production.certifyos.com/v2/provider/:providerId/specialties/:specialtyId",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "providerId",
+                "value": "",
+                "type": "path"
+              },
+              {
+                "name": "specialtyId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Deletes a specialty for the specified provider."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,297 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Directory API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Directory
+  description: APIs for directory operations
+paths:
+  /directory/{entityType}/exports:
+    post:
+      summary: Start a directory export job
+      description: "Starts an asynchronous directory export job for the specified entity type (practitioners or facilities).\n- The request body accepts an optional `responseFormat` field that determines the output format of the exported file.\n- Supported formats are `ndjson` (Newline Delimited JSON) and `csv` (Comma Separated Values), the default is `ndjson`.\n- Upon successful creation, the endpoint returns a job ID that can be used to check the status and retrieve the exported file.\n- Export requests are deduplicated within a 1-hour time window. Subsequent requests with the same\n  parameters within the same window will return the same job ID.\n- The export job is processed asynchronously and the status can be queried using the\n  `GET /directory/{entityType}/exports/{exportJobId}` endpoint.\n"
+      operationId: startDirectoryJob
+      tags:
+      - Directory
+      parameters:
+      - description: Entity type (practitioners or facilities)
+        example: practitioners
+        required: true
+        name: entityType
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Request body containing optional response format specification. The 'responseFormat' field accepts 'ndjson' (Newline Delimited JSON) or 'csv' (Comma Separated Values). If omitted, defaults to 'ndjson'. The format determines the output file type.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryRequest'
+        required: false
+      responses:
+        '200':
+          description: Directory export job successfully started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectoryResponse'
+        '400':
+          description: Bad Request - Invalid entity type or request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /directory/{entityType}/exports/{exportJobId}:
+    get:
+      summary: Get directory job status by entity type and job ID
+      description: "Retrieves the current status of a directory export job for the specified entity type and job ID.\n        The response includes the job status (`IN_PROGRESS`, `MAPPING`, `COMPLETED` or `FAILED`),\n        processing statistics (total rows, rows with data, failed rows) and a signed download URL\n        for the exported file. The signed URL is time-limited and provides secure access to the\n        file for 8 hours.\n         For CSV format exports, there is an additional mapping step to produce a flat file. The `fileUrl` is only present\n         when the job status is `COMPLETED` and the file is available for download.\n\nStatuses:\n- IN_PROGRESS: The job is in progress.\n- MAPPING: The job is formatting the data.\n- COMPLETED: The job is completed and the file is available for download.\n- FAILED: The job failed.\n"
+      operationId: getDirectoryJobStatus
+      tags:
+      - Directory
+      parameters:
+      - description: Entity type (practitioners or facilities)
+        example: practitioners
+        required: true
+        name: entityType
+        in: path
+        schema:
+          type: string
+      - description: Job ID
+        example: abc123def456
+        required: true
+        name: exportJobId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Directory job status successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectoryJobStatusResponse'
+        '400':
+          description: Bad Request - Invalid entity type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Directory job not found with the given entity type and job ID for tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    DirectoryResponse:
+      description: Response containing directory job information
+      type: object
+      properties:
+        exportJobId:
+          type: string
+          description: Unique identifier for the directory job
+          examples:
+          - job-123456
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant-123456
+        startedAt:
+          description: Timestamp when the directory job was started
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        entityType:
+          type: string
+          description: Entity type (practitioners or facilities)
+          examples:
+          - practitioners
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    JobStats:
+      type: object
+      description: Statistics for directory job processing
+      properties:
+        completed:
+          type: integer
+          format: int64
+          description: Number of completed items
+          examples:
+          - 100
+        total:
+          type: integer
+          format: int64
+          description: Total number of items to process
+          examples:
+          - 150
+        failed:
+          type: integer
+          format: int64
+          description: Number of failed items
+          examples:
+          - 5
+    DirectoryExportOutputFormat:
+      type: string
+      enum:
+      - ndjson
+      - csv
+    JobStatus:
+      type: string
+      enum:
+      - MAPPING
+      - IN_PROGRESS
+      - COMPLETED
+      - FAILED
+    DirectoryJobStatusResponse:
+      description: Response containing directory job status information
+      type: object
+      properties:
+        exportJobId:
+          type: string
+          description: Unique identifier for the directory job
+          examples:
+          - job-123456
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant-123456
+        entityType:
+          type: string
+          description: Entity type (practitioners or facilities)
+          examples:
+          - practitioners
+        status:
+          description: Current status of the job
+          type: string
+          examples:
+          - in_progress
+          $ref: '#/components/schemas/JobStatus'
+        stats:
+          description: Job processing statistics
+          type: object
+          $ref: '#/components/schemas/JobStats'
+        fileUrl:
+          type: string
+          description: URL to the exported file (only present when job is completed)
+          examples:
+          - https://storage.com/path/to/file.json
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    DirectoryRequest:
+      description: Request body for starting a directory export job
+      type: object
+      properties:
+        responseFormat:
+          description: 'Output format for the exported file. Supported values: `ndjson` (Newline Delimited JSON) or `csv` (Comma Separated Values), the default is `ndjson`. If not specified, defaults to ''ndjson''.'
+          type: string
+          examples:
+          - ndjson
+          enum:
+          - ndjson
+          - csv
+          $ref: '#/components/schemas/DirectoryExportOutputFormat'
+        templateId:
+          type: string
+          description: Optional egress template ID for template-driven export. When provided, the export uses the template's column mappings instead of the legacy pipeline.
+        mappingsCsvUrl:
+          type: string
+          description: Optional GCS URL to column mappings CSV for template pipeline
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

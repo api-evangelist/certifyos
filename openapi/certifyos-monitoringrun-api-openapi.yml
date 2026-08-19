@@ -1,0 +1,418 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Monitoring Run API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: MonitoringRun
+  description: APIs for managing monitoring runs
+paths:
+  /monitoring-runs:
+    get:
+      summary: Get monitoring workflow runs
+      description: Fetches monitoring workflow runs from DAL by date with pagination. Returns paginated results of monitoring workflow runs for the specified date.
+      operationId: getMonitoringWorkflowRuns
+      tags:
+      - MonitoringRun
+      parameters:
+      - description: Date in YYYY-MM-DD format to filter monitoring workflow runs. Defaults to current date if not provided.
+        example: '2025-01-15'
+        required: false
+        name: date
+        in: query
+        schema:
+          type: string
+      - description: Page number (0-based) for pagination. Defaults to 0.
+        example: 0
+        name: pageNumber
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Number of records per page. Defaults to 100.
+        example: 100
+        name: pageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '100'
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved monitoring workflow runs
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    post:
+      summary: Create a monitoring run
+      description: Triggers a monitoring run to process monitoring workflows for the previous month across all tenants. This endpoint is designed to be called by GCP Cloud Scheduler. If startDate and endDate are not provided, they will be calculated as the previous month. The processing happens in the background and the endpoint returns immediately with a 200 status code.
+      operationId: createMonitoringRun
+      tags:
+      - MonitoringRun
+      parameters:
+      - description: Tenant ID
+        required: false
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMonitoringRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Monitoring run request accepted and processing started in the background
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-runs/bq-snapshot:
+    get:
+      summary: Get monitoring workflow runs from BigQuery snapshot
+      description: Fetches monitoring workflow runs from a BigQuery daily snapshot table with pagination. Returns paginated results for the specified BigQuery table.
+      operationId: getMonitoringWorkflowRunsBqSnapshot
+      tags:
+      - MonitoringRun
+      parameters:
+      - description: Page number (0-based) for pagination. Defaults to 0.
+        example: 0
+        name: pageNumber
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Number of records per page. Defaults to 100.
+        example: 100
+        name: pageSize
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '100'
+      - description: BigQuery table name matching the pattern monitoring_workflow_YYYY-MM-DD.
+        example: monitoring_workflow_2025-01-15
+        required: true
+        name: tableName
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved monitoring workflow runs from BigQuery snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-runs/tenants/{tenantId}:
+    post:
+      summary: Create monitoring workflow runs from workflows
+      description: Creates monitoring workflow runs from workflows based on a monitoring run ID. This endpoint processes workflows in batches using pagination tokens. The monitoringRunId is required, and nextPageToken is optional for pagination.
+      operationId: createMonitoringWorkflowRunsFromWorkflows
+      tags:
+      - MonitoringRun
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenantId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMonitoringWorkflowRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully created monitoring workflow runs
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /monitoring-runs/{monitoringRunId}:
+    put:
+      summary: Update a monitoring run
+      description: Updates a monitoring run with runStatus, completedTenants, or additionalData. All fields are optional - only provided fields will be updated.
+      operationId: updateMonitoringRun
+      tags:
+      - MonitoringRun
+      parameters:
+      - description: Monitoring run ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        name: monitoringRunId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: false
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMonitoringRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated monitoring run
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    get:
+      summary: Get monitoring run by ID
+      description: Fetches a single monitoring run by its ID from the DAL.
+      operationId: getMonitoringRunById
+      tags:
+      - MonitoringRun
+      parameters:
+      - description: Monitoring run ID
+        example: 123e4567-e89b-12d3-a456-426614174000
+        required: true
+        name: monitoringRunId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      - description: User ID for service-to-service or unauthenticated calls
+        required: false
+        name: user-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved monitoring run
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Monitoring run not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    CreateMonitoringWorkflowRunRequest:
+      type: object
+      required:
+      - monitoringRunId
+      properties:
+        monitoringRunId:
+          type: string
+        nextPageToken:
+          type: string
+    UpdateMonitoringRunRequest:
+      description: Request to update a monitoring run
+      type: object
+      properties:
+        runStatus:
+          type: string
+          description: Status of the monitoring run
+          examples:
+          - in-progress
+        completedTenants:
+          type: integer
+          format: int32
+          description: Number of tenants that have completed processing
+          examples:
+          - 5
+        additionalData:
+          description: Additional data to be stored with the monitoring run
+          type: object
+          examples:
+          - key: value
+          $ref: '#/components/schemas/JsonNode'
+    CreateMonitoringRunRequest:
+      type: object
+      properties:
+        startDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        endDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

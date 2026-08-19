@@ -1,0 +1,51 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Npi Validation API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "NpiValidation",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Validate NPI",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/npi/validate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "entityType",
+                "value": "facility",
+                "type": "query",
+                "description": "Entity type of the NPI: practitioner, facility, or group. Case-insensitive. Defaults to PRACTITIONER when omitted. Returns 400 if an unrecognised value is supplied."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Validates the NPI format (Luhn checksum), then checks the CertifyOS DAL (sourceType=nppes) using the declared entity type to route to the correct core resource API. Falls back to the live NPPES public registry if not found. 'entityType' is an optional query parameter (case-insensitive); defaults to practitioner when omitted. Status VALID_FOUND_IN_NPPES_BUT_FAILED_CROSSWALK_CREATION indicates the NPI was found in NPPES but the DAL crosswalk upsert failed."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

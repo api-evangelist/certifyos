@@ -1,0 +1,466 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Tenant Specialty API
+  version: 1.0.0
+  description: 'Operations tagged Tenant Specialty across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Tenant Specialty
+  description: Endpoints for managing tenant-specific specialties.
+paths:
+  /tenant-specialties:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get all tenant specialties
+      description: Retrieves a list of all tenant specialties with optional filtering by name
+      operationId: getTenantSpecialties
+      tags:
+      - Tenant Specialty
+      parameters:
+      - description: Filter tenant specialties by name
+        example: Cardiology
+        in: query
+        name: name
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Successfully retrieved list of tenant specialties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    format: int64
+                  data:
+                    $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+                    type: array
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    post:
+      summary: Create a new tenant specialty
+      description: Creates a new tenant specialty
+      operationId: createTenantSpecialty
+      tags:
+      - Tenant Specialty
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantSpecialtyRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the tenant specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenantId:
+                    type: string
+                  specialtyId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /tenant-specialties/by-classification:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get tenant specialties by classification source and category
+      description: Retrieves tenant specialties filtered by classification source and category
+      operationId: getTenantSpecialtiesByClassification
+      tags:
+      - Tenant Specialty
+      parameters:
+      - description: Category to filter by
+        example: Individual
+        in: query
+        required: true
+        name: category
+        schema:
+          type: string
+      - description: Classification source to filter by
+        example: nucc
+        in: query
+        required: true
+        name: classificationSource
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Successfully retrieved tenant specialties by classification
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    format: int64
+                  data:
+                    $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+                    type: array
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /tenant-specialties/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update a tenant specialty
+      description: Updates an existing tenant specialty
+      operationId: updateTenantSpecialty
+      tags:
+      - Tenant Specialty
+      parameters:
+      - description: ID of the tenant specialty to update
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTenantSpecialtyRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the tenant specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenantId:
+                    type: string
+                  specialtyId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    get:
+      summary: Get tenant specialty by ID
+      description: Retrieves a single tenant specialty by its ID
+      operationId: getTenantSpecialty
+      tags:
+      - Tenant Specialty
+      parameters:
+      - description: ID of the tenant specialty to retrieve
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Successfully retrieved the tenant specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tenantId:
+                    type: string
+                  specialtyId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/TenantSpecialty.schema'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Tenant specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a tenant specialty
+      description: Deletes a tenant specialty by ID
+      operationId: deleteTenantSpecialty
+      tags:
+      - Tenant Specialty
+      parameters:
+      - description: ID of the tenant specialty to delete
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '204':
+          description: Successfully deleted the tenant specialty
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Tenant specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+components:
+  schemas:
+    TenantSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+      title: TenantSpecialty
+      description: Represents a specialty associated with a tenant.
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name for the specialty.
+          minLength: 1
+        description:
+          type: string
+          description: Detailed description of the specialty.
+        changeReason:
+          type: string
+          description: Reason for any change to the specialty.
+      required:
+      - displayName
+      additionalProperties: false
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    CreateTenantSpecialtyRequest:
+      type: object
+      properties:
+        specialtyId:
+          type: string
+        data:
+          $ref: '#/components/schemas/TenantSpecialty.schema'
+          type: object
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

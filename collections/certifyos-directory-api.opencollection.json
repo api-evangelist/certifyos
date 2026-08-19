@@ -1,0 +1,86 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Directory API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Directory",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Start a directory export job",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/directory/:entityType/exports",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "entityType",
+                "value": "practitioners",
+                "type": "path",
+                "description": "Entity type (practitioners or facilities)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Starts an asynchronous directory export job for the specified entity type (practitioners or facilities).\n- The request body accepts an optional `responseFormat` field that determines the output format of the exported file.\n- Supported formats are `ndjson` (Newline Delimited JSON) and `csv` (Comma Separated Values), the default is `ndjson`.\n- Upon successful creation, the endpoint returns a job ID that can be used to check the status and retrieve the exported file.\n- Export requests are deduplica"
+        },
+        {
+          "info": {
+            "name": "Get directory job status by entity type and job ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/directory/:entityType/exports/:exportJobId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "entityType",
+                "value": "practitioners",
+                "type": "path",
+                "description": "Entity type (practitioners or facilities)"
+              },
+              {
+                "name": "exportJobId",
+                "value": "abc123def456",
+                "type": "path",
+                "description": "Job ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves the current status of a directory export job for the specified entity type and job ID.\n        The response includes the job status (`IN_PROGRESS`, `MAPPING`, `COMPLETED` or `FAILED`),\n        processing statistics (total rows, rows with data, failed rows) and a signed download URL\n        for the exported file. The signed URL is time-limited and provides secure access to the\n        file for 8 hours.\n         For CSV format exports, there is an additional mapping step to produce a fla"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

@@ -1,0 +1,604 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS Flags API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: flags
+paths:
+  /flags:
+    get:
+      operationId: FlagsController_findAllFlags
+      summary: Get all provider flags
+      description: Returns a list of all provider flags for the given organization. Supports filtering by NPI, read status, and shared status.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      - name: npi
+        required: false
+        in: query
+        schema:
+          type: string
+      - name: read
+        required: false
+        in: query
+        schema:
+          type: boolean
+      - name: shared
+        required: false
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: List of all the provider flags for provider organization id
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+    patch:
+      operationId: FlagsController_deactivateFlagBulk
+      summary: Bulk deactivate (clear) flags
+      description: Deactivates (clears) multiple flags in bulk for the current user.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Array of flag objects to deactivate.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagPatchAllRequestDto'
+      responses:
+        '200':
+          description: The flag has been successfully cleared.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagPatchAllResponseDto'
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/{id}/deactivate:
+    patch:
+      operationId: FlagsController_deactivateFlag
+      summary: Deactivate (clear) a flag
+      description: Deactivates (clears) a specific flag by its ID.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the flag to deactivate.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+        '201':
+          description: The flag has been successfully cleared.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/{id}/activate:
+    patch:
+      operationId: FlagsController_activateFlag
+      summary: Activate (un-clear) a flag
+      description: Activates (un-clears) a specific flag by its ID.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the flag to activate.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+        '201':
+          description: The flag has been successfully un-cleared.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/webhook/{id}/mark-read:
+    patch:
+      operationId: FlagsController_moveToOutreachInProgressWebhook
+      summary: Mark flag as read via webhook
+      description: Marks a flag as read using a webhook event.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the flag to mark as read.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Optional reason for marking as read.
+        content:
+          application/json:
+            schema:
+              example:
+                reason: Reviewed via webhook
+              type: object
+      responses:
+        '204':
+          description: Updated.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/bulk-mark-read:
+    patch:
+      operationId: FlagsController_markReadBulk
+      summary: Bulk mark flags as read
+      description: Marks multiple flags as read for the current user. Returns 204 if all succeeded, 207 if some failed.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Payload containing flag IDs to mark as read and a reason.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagMarkReadAllRequestDto'
+      responses:
+        '204':
+          description: If all of the IDs marked as read successfully.
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+        '207':
+          description: If some of the IDs failed to be marked as read.
+          content:
+            application/json:
+              schema:
+                example:
+                - flagId: flag1
+                  error: Not found
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/{id}/mark-read:
+    patch:
+      operationId: FlagsController_markRead
+      summary: Mark a flag as read
+      description: Marks a specific flag as read for the current user.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the flag to mark as read.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Reason for marking the flag as read.
+        content:
+          application/json:
+            schema:
+              example:
+                reason: Flag reviewed by analyst
+              type: object
+      responses:
+        '200':
+          description: ''
+        '201':
+          description: The flag has been successfully marked read.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/{id}/mark-unread:
+    patch:
+      operationId: FlagsController_markUnread
+      summary: Mark a flag as unread
+      description: Marks a specific flag as unread for the current user.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the flag to mark as unread.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+        '201':
+          description: The flag has been successfully marked un-read.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/search:
+    get:
+      operationId: FlagsController_searchFlags
+      summary: Get Provider Flags
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      - name: npi
+        required: false
+        in: query
+        description: Provider NPI(s) (comma or dash separated)
+        schema:
+          type: string
+      - name: flagType
+        required: false
+        in: query
+        description: Type of flag
+        example: flagType1,flagType2,flagType3
+        schema:
+          type: array
+          items:
+            type: string
+      - name: firstName
+        required: false
+        in: query
+        description: First name
+        schema:
+          type: string
+      - name: lastName
+        required: false
+        in: query
+        description: Last name
+        schema:
+          type: string
+      - name: subCollectionName
+        required: false
+        in: query
+        description: Sub collection name
+        example: subCollection1,subCollection2,subCollection3
+        schema:
+          type: array
+          items:
+            type: string
+      - name: sharedToCredCommittee
+        required: false
+        in: query
+        description: Shared to cred committee (boolean)
+        schema:
+          type: boolean
+      - name: flagReadStatus
+        required: false
+        in: query
+        description: Flag read status (seen, unseen, all)
+        schema:
+          $ref: '#/components/schemas/ReadStatus'
+      - name: flaggedDateStart
+        required: false
+        in: query
+        description: Flagged date start (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: flaggedDateEnd
+        required: false
+        in: query
+        description: Flagged date end (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: expirationDateStart
+        required: false
+        in: query
+        description: Expiration date start (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: expirationDateEnd
+        required: false
+        in: query
+        description: Expiration date end (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: reportDateStart
+        required: false
+        in: query
+        description: Report date start (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: reportDateEnd
+        required: false
+        in: query
+        description: Report date end (ISO date)
+        schema:
+          format: date-time
+          type: string
+      responses:
+        '200':
+          description: List of provider flags based on advanced filter criteria
+          content:
+            application/json:
+              schema:
+                example:
+                  data:
+                  - flagId: flag1
+                    status: unseen
+                  meta:
+                    total: 1
+        '400':
+          description: Bad request if filter is invalid.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/bulk-mark-unread:
+    patch:
+      operationId: FlagsController_markUnreadBulk
+      summary: Bulk mark flags as unread
+      description: Marks multiple flags as unread for the current user. Returns 204 if all succeeded, 207 if some failed.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Payload containing flag IDs to mark as unread.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagMarkUnreadAllRequestDto'
+      responses:
+        '204':
+          description: If all of the IDs marked as unread successfully.
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+        '207':
+          description: If some of the IDs failed to be marked as unread.
+          content:
+            application/json:
+              schema:
+                example:
+                - flagId: flag1
+                  error: Not found
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+  /flags/{id}/mark-all-read-for-provider:
+    post:
+      operationId: FlagsController_markProviderReviewedAndApproved
+      summary: Mark all flags as read for a provider and approve
+      description: Marks all flags as read for a specific provider and marks the provider as approved.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the provider.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Reason for marking all as read and approving.
+        content:
+          application/json:
+            schema:
+              example:
+                reason: Provider reviewed and approved
+              type: object
+      responses:
+        '201':
+          description: ''
+        '204':
+          description: The Provider was successfully approved.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - flags
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    FlagMarkUnreadAllRequestDto:
+      type: object
+      properties:
+        flagIds:
+          type: array
+          items:
+            type: string
+      required:
+      - flagIds
+    ReadStatus:
+      type: string
+      enum:
+      - seen
+      - unseen
+      - all
+    FlagMarkReadAllRequestDto:
+      type: object
+      properties:
+        flagIds:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+      required:
+      - flagIds
+      - reason
+    FlagPatchAllResponseDto:
+      type: object
+      properties:
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagPatchResponseDto'
+      required:
+      - flags
+    FlagPatchResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        success:
+          type: boolean
+      required:
+      - id
+      - success
+    FlagPatchRequestDto:
+      type: object
+      properties:
+        id:
+          type: string
+        active:
+          type: boolean
+      required:
+      - id
+      - active
+    FlagPatchAllRequestDto:
+      type: object
+      properties:
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagPatchRequestDto'
+      required:
+      - flags
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

@@ -1,0 +1,338 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certifyos Roster API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Roster",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get all roster jobs",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "endAtId",
+                "value": "",
+                "type": "query",
+                "description": "End at document ID, for backward cursor-based pagination"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query",
+                "description": "Filter criteria. The filter parameter must be URL encoded when sent.\n\nExamples (before URL encoding):\n- - Filter by id: `{\"id\":{\"eq\":\"123\"}}`\nExample curl commands:\n```bash\n# Filter by id\ncurl -X GET '<BaseURL>/roster?filter=%7B%22id%22%3A%7B%22eq%22%3A%223%22%7D%7D'\n```\n\nAvailable filter operations:\n- eq: Equal to\n- neq: Not equal to\n- gt: Greater than\n- gte: Greater than or equal to\n- lt: Less than\n- lte: Less than or equal to\n- in: Value must be one of these (array)\n- nin: Value must not be any of these (array)\n- contains: String contains (case-sensitive, string fields only)\n\nNote: When using the filter parameter in a browser or code, make sure to properly URL encode the JSON string.\n"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number (0-based), for offset-based pagination"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Page size"
+              },
+              {
+                "name": "sortBy",
+                "value": "createdAt",
+                "type": "query",
+                "description": "Field to order by. Defaults to 'createdAt'."
+              },
+              {
+                "name": "sortDirection",
+                "value": "DESC",
+                "type": "query",
+                "description": "Order direction: ASC or DESC. Defaults to 'DESC'."
+              },
+              {
+                "name": "startAfterId",
+                "value": "",
+                "type": "query",
+                "description": "Start after document ID, for forward cursor-based pagination"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of all roster jobs for the tenant"
+        },
+        {
+          "info": {
+            "name": "Create a roster",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/roster",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "templateId",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "jobType",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "description",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "sheetName",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "mappings",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a roster with the provided payload."
+        },
+        {
+          "info": {
+            "name": "Republish roster event for validation or ingestion",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/roster/republish-event/:eventType",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "eventType",
+                "value": "",
+                "type": "path",
+                "description": "Event type: validation or ingestion"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Triggers either validation or ingestion request based on the event type"
+        },
+        {
+          "info": {
+            "name": "Get roster job by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Roster job ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a roster job for the given ID"
+        },
+        {
+          "info": {
+            "name": "Get effective JSON Schema for a roster job",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster/:id/schema",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Roster job ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns the same resolved schema used for validation: roster-specific schema when present, otherwise the template schema. Matches RosterSchemaService.getRosterSchema(rosterId, templateId)."
+        },
+        {
+          "info": {
+            "name": "Download failed roster records as CSV",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster/:rosterId/download-records",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster job ID to download records for"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Downloads all failed roster records for the given roster job as a CSV file"
+        },
+        {
+          "info": {
+            "name": "Approve or reject a roster import",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster/:rosterId/import",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster job ID"
+              },
+              {
+                "name": "action",
+                "value": "",
+                "type": "query",
+                "description": "Action to perform: 'approved' or 'rejected'"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Approves or rejects a roster import based on the action parameter"
+        },
+        {
+          "info": {
+            "name": "Reupload a corrected CSV file for an existing roster",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/roster/:rosterId/reupload",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Existing roster ID to reupload against"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "sheetName",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Reuploads a corrected CSV file for an existing roster ID. This replaces the file and restart processing for that roster."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

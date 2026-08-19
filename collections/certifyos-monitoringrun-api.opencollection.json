@@ -1,0 +1,224 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Monitoring Run API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "MonitoringRun",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get monitoring workflow runs",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-runs",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "date",
+                "value": "2025-01-15",
+                "type": "query",
+                "description": "Date in YYYY-MM-DD format to filter monitoring workflow runs. Defaults to current date if not provided."
+              },
+              {
+                "name": "pageNumber",
+                "value": "0",
+                "type": "query",
+                "description": "Page number (0-based) for pagination. Defaults to 0."
+              },
+              {
+                "name": "pageSize",
+                "value": "100",
+                "type": "query",
+                "description": "Number of records per page. Defaults to 100."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches monitoring workflow runs from DAL by date with pagination. Returns paginated results of monitoring workflow runs for the specified date."
+        },
+        {
+          "info": {
+            "name": "Create a monitoring run",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-runs",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Triggers a monitoring run to process monitoring workflows for the previous month across all tenants. This endpoint is designed to be called by GCP Cloud Scheduler. If startDate and endDate are not provided, they will be calculated as the previous month. The processing happens in the background and the endpoint returns immediately with a 200 status code."
+        },
+        {
+          "info": {
+            "name": "Get monitoring workflow runs from BigQuery snapshot",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-runs/bq-snapshot",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "pageNumber",
+                "value": "0",
+                "type": "query",
+                "description": "Page number (0-based) for pagination. Defaults to 0."
+              },
+              {
+                "name": "pageSize",
+                "value": "100",
+                "type": "query",
+                "description": "Number of records per page. Defaults to 100."
+              },
+              {
+                "name": "tableName",
+                "value": "monitoring_workflow_2025-01-15",
+                "type": "query",
+                "description": "BigQuery table name matching the pattern monitoring_workflow_YYYY-MM-DD."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches monitoring workflow runs from a BigQuery daily snapshot table with pagination. Returns paginated results for the specified BigQuery table."
+        },
+        {
+          "info": {
+            "name": "Create monitoring workflow runs from workflows",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-runs/tenants/:tenantId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "tenantId",
+                "value": "",
+                "type": "path",
+                "description": "Tenant ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates monitoring workflow runs from workflows based on a monitoring run ID. This endpoint processes workflows in batches using pagination tokens. The monitoringRunId is required, and nextPageToken is optional for pagination."
+        },
+        {
+          "info": {
+            "name": "Get monitoring run by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-runs/:monitoringRunId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              },
+              {
+                "name": "user-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "monitoringRunId",
+                "value": "123e4567-e89b-12d3-a456-426614174000",
+                "type": "path",
+                "description": "Monitoring run ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches a single monitoring run by its ID from the DAL."
+        },
+        {
+          "info": {
+            "name": "Update a monitoring run",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/monitoring-runs/:monitoringRunId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "monitoringRunId",
+                "value": "123e4567-e89b-12d3-a456-426614174000",
+                "type": "path",
+                "description": "Monitoring run ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a monitoring run with runStatus, completedTenants, or additionalData. All fields are optional - only provided fields will be updated."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

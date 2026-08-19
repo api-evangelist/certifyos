@@ -1,0 +1,665 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Webhook API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Webhook
+  description: APIs for managing webhook entities
+paths:
+  /webhooks:
+    get:
+      summary: Find Webhooks by filter criteria with pagination and sorting
+      description: Returns a paginated filtered list of all Webhooks based on the provided criteria. Supports both offset-based (page/size) and cursor-based (startAfter/endAt) pagination. Results can be sorted by any Webhook field using the order parameter.
+      operationId: webhookFindMany
+      tags:
+      - Webhook
+      parameters:
+      - description: End at document ID, for backward cursor-based pagination
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: 'Filter criteria. The filter parameter must be URL encoded when sent.
+
+
+          Examples (before URL encoding):
+
+
+          - Filter by tenant: `{"tenantId":{"eq":"tenant-123"}}`
+
+
+          - Filter by event type: `{"data.eventTypes":{"contains":"credential_workflow.status.changed"}}`
+
+
+          - Filter by active status: `{"data.isActive":{"eq":true}}`
+
+
+          - Combined filter: `{"tenantId":{"eq":"tenant-123"},"data.eventTypes":{"contains":"event.type"},"data.isActive":{"eq":true}}`
+
+
+          Example curl commands:
+
+
+          ```bash
+
+
+          # Filter by tenant and event type
+
+
+          curl -X GET ''http://localhost:8080/webhooks?filter=%7B%22tenantId%22%3A%7B%22eq%22%3A%22tenant-123%22%7D%2C%22data.eventTypes%22%3A%7B%22contains%22%3A%22credential_workflow.status.changed%22%7D%7D''
+
+
+          ```
+
+
+          Available filter operations:
+
+
+          - eq: Equal to
+
+
+          - neq: Not equal to
+
+
+          - in: Value must be one of these (array)
+
+
+          - nin: Value must not be any of these (array)
+
+
+          - contains: String contains (case-sensitive, string fields only) or array contains (for data.eventTypes)
+
+
+          Filterable fields:
+
+
+          - tenantId: Tenant identifier (String)
+
+
+          - data.eventTypes: Array of event types (Array - supports contains, eq, in)
+
+
+          - data.isActive: Whether the webhook is active (Boolean - supports eq, neq)
+
+
+          - data.webhookUrl: Webhook URL (String - optional)
+
+
+          Note: When using the filter parameter in a browser or code, make sure to properly URL encode the JSON string.
+
+
+          '
+        name: filter
+        schema:
+          type: string
+        in: query
+      - description: 'Sort criteria. The order parameter must be URL encoded when sent.
+
+
+          Example (before URL encoding):
+
+
+          - Sort by createdAt descending: `{"orderBy":"createdAt","orderByDirection":"DESC"}`
+
+
+          Example curl command:
+
+
+          ```bash
+
+
+          # Sort by createdAt descending
+
+
+          curl -X GET ''http://localhost:8080/webhooks?order=%7B%22orderBy%22%3A%22createdAt%22%2C%22orderByDirection%22%3A%22DESC%22%7D''
+
+
+          ```
+
+
+          Note: When using the order parameter in a browser or code, make sure to properly URL encode the JSON string.
+
+
+          '
+        name: order
+        schema:
+          type: string
+        in: query
+      - description: Page number (0-based), for offset-based pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Page size
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Start after document ID, for forward cursor-based pagination
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of Webhooks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetWebhooksResponse'
+        '400':
+          description: Invalid filter criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    post:
+      summary: Create a new webhook
+      description: 'Creates a new webhook subscription with the provided details. The webhook will receive events asynchronously when the specified event types occur.
+
+
+
+        **Available Event Types:**
+
+
+        - `credential_workflow.status.changed` - Triggered automatically when a credentialing workflow status changes (timeline event is created). See webhook-api-credential-workflow-events.md for detailed payload structure and documentation.
+
+
+        - `facility_credential_workflow.status.changed` - Triggered automatically when a facility credentialing workflow status changes (timeline event is created).
+
+
+
+        You can subscribe to multiple different event types in a single webhook.'
+      operationId: createWebhook
+      tags:
+      - Webhook
+      parameters:
+      - description: Tenant ID
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      requestBody:
+        description: Webhook creation request data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the webhook
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookResponse'
+        '400':
+          description: Invalid request data. Returns validation errors for deserialization failures (e.g., invalid enum values) or constraint violations (e.g., empty eventTypes, mixed event types, invalid URL format).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /webhooks/test/publish:
+    post:
+      summary: Trigger manual webhook event to registered subscriptions
+      description: "Triggers a manual webhook event for the specified event type. Publishes a lightweight event message to Pub/Sub. The consumer will look up active webhooks for the tenant and deliver the event to them asynchronously.\n\n\n**Schema Validation:**\n\nEach event type has a corresponding JSON Schema that defines the required structure for eventData. The eventData payload is validated against the schema for the specified eventType. Invalid payloads will return a 400 Bad Request with detailed validation error messages.\n\n\n**Supported Event Types and Schemas:**\n\n- `credential_workflow.status.changed` → https://schemas.certifyos.com/webhook-events/credential-workflow-status-changed.schema.json\n\n- `facility_credential_workflow.status.changed` → https://schemas.certifyos.com/webhook-events/facility-credential-workflow-status-changed.schema.json\n\n\n**What the webhook receiver will receive:**\n\n\n**HTTP Headers:**\n\n- `Content-Type: application/json`\n\n- `User-Agent: CertifyOS-Webhook-Delivery/1.0`\n\n- `Idempotency-Key: <SHA-256 hash>` - A unique key for deduplication (same key across retries)\n\n- Any custom headers configured in the webhook subscription\n\n\n**Request Body (JSON):**\n\n```json\n{\n  \"eventType\": \"credential_workflow.status.changed\",\n  \"timestamp\": \"2024-01-20T09:15:00Z\",\n  \"data\": { /* your eventData payload */ }\n}\n```\n\n\nThe `data` field contains the `eventData` from your request payload. The `timestamp` is automatically set to the current time when the event is delivered."
+      operationId: triggerManualWebhookEvent
+      tags:
+      - Webhook
+      parameters:
+      - description: Tenant ID
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      requestBody:
+        description: 'Manual webhook event data. Each event type has a corresponding JSON Schema that
+
+          validates the eventData payload structure.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualWebhookEventRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully published webhook event to Pub/Sub
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /webhooks/{id}:
+    delete:
+      summary: Delete a Webhook
+      description: Deletes a Webhook by their ID
+      operationId: webhookDelete
+      tags:
+      - Webhook
+      parameters:
+      - description: ID of Webhook to delete
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Webhook successfully deleted
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Webhook not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    WebhookEventType:
+      type: string
+      enum:
+      - credential_workflow.status.changed
+      - facility_credential_workflow.status.changed
+    WebhookRequest:
+      description: Request to create a new webhook
+      type: object
+      required:
+      - webhookUrl
+      - eventTypes
+      properties:
+        webhookUrl:
+          type: string
+          description: The URL where webhook events will be sent
+          examples:
+          - https://example.com/webhook
+          pattern: ^https?://[^\s]+$
+        eventTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookEventType'
+          description: 'List of event types that this webhook should receive. You can subscribe to multiple different event types in a single webhook.
+
+
+
+            **Available Event Types:**
+
+
+            - `credential_workflow.status.changed` - Triggered automatically when a credentialing workflow status changes (timeline event is created). See webhook-api-credential-workflow-events.md for detailed payload structure and documentation.
+
+
+            - `facility_credential_workflow.status.changed` - Triggered automatically when a facility credentialing workflow status changes.'
+          examples:
+          - - credential_workflow.status.changed
+            - facility_credential_workflow.status.changed
+          minItems: 1
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Custom headers to include in webhook requests
+          examples:
+          - Authorization: Bearer token
+            X-Custom-Header: custom-value
+        isActive:
+          type: boolean
+          description: Whether the webhook is active. Defaults to true if not provided
+          examples:
+          - true
+        oauthConfiguration:
+          description: 'Optional OAuth client-credentials configuration. When provided, a token is minted before each delivery and sent as Authorization: Bearer <token>.'
+          type: object
+          $ref: '#/components/schemas/WebhookOauthConfiguration'
+    WebhookOauthConfiguration:
+      description: 'OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.'
+      type: object
+      required:
+      - tokenUrl
+      - clientId
+      - clientSecret
+      properties:
+        tokenUrl:
+          type: string
+          description: OAuth token endpoint URL
+          examples:
+          - https://auth.example.com/oauth/token
+          pattern: ''
+        clientId:
+          type: string
+          description: OAuth client ID
+          pattern: \S
+        clientSecret:
+          type: string
+          description: OAuth client secret
+          pattern: \S
+        scope:
+          type: string
+          description: OAuth scope(s) to request, space-separated
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional headers to send with the token request
+        resource:
+          type: string
+          description: Resource to request
+          examples:
+          - resource
+    TriggerResponse:
+      description: Response for manual webhook event triggering
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        eventType:
+          description: Event type that was triggered
+          type: string
+          $ref: '#/components/schemas/WebhookEventType'
+    ManualWebhookEventRequest:
+      description: Request payload for manual webhook event triggering
+      type: object
+      required:
+      - eventType
+      - eventData
+      properties:
+        eventType:
+          description: 'Event type identifier. Each event type has a corresponding JSON Schema that defines
+
+            the required structure for eventData. See WebhookEventType enum for available event types.'
+          type: string
+          examples:
+          - credential_workflow.status.changed
+          $ref: '#/components/schemas/WebhookEventType'
+        eventData:
+          description: 'Event-specific payload data. Must conform to the JSON Schema for the specified eventType.
+
+            See the Supported Event Types and Schemas section above for the schema URL corresponding to each event type.
+
+            Invalid payloads will return a 400 Bad Request with detailed validation error messages.'
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    Webhook.data.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Webhook.data.schema.json
+      title: Webhook
+      description: Schema for webhook data payload
+      type: object
+      unevaluatedProperties: false
+      properties:
+        webhookUrl:
+          type: string
+          format: uri
+          description: The URL endpoint where webhook events will be sent
+          minLength: 1
+          maxLength: 2048
+          pattern: ^https?://
+        eventTypes:
+          type: array
+          description: List of event types that will trigger this webhook
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+            pattern: ^[a-z0-9._-]+$
+          uniqueItems: true
+          minItems: 0
+          maxItems: 100
+        headers:
+          anyOf:
+          - type: object
+            description: Custom HTTP headers to include in webhook requests
+            additionalProperties:
+              type: string
+            maxProperties: 50
+          - type: 'null'
+          description: Custom HTTP headers to include in webhook requests (optional)
+        isActive:
+          type: boolean
+          description: Whether the webhook is currently active and will receive events
+          default: true
+      required:
+      - webhookUrl
+      - eventTypes
+      - isActive
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    WebhookResponse:
+      type: object
+      description: Response containing a single webhook
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the webhook
+          examples:
+          - webhook-123
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant-123
+        data:
+          $ref: '#/components/schemas/Webhook.data.schema'
+          description: Webhook data
+          type: object
+        createdBy:
+          type: string
+          description: ID of the user who created the webhook
+          examples:
+          - user-123
+        updatedBy:
+          type: string
+          description: ID of the user who updated the webhook
+          examples:
+          - user-123
+        createdAt:
+          description: Timestamp of the webhook creation
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp of the webhook update
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    GetWebhooksResponse:
+      description: Response containing a paginated list of webhooks
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of webhooks
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookResponse'
+          description: Array of webhook records
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

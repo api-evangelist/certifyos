@@ -1,0 +1,971 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer User API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: User
+  description: Endpoints for managing users.
+paths:
+  /users:
+    get:
+      summary: Get All Users
+      description: Returns all users for the current tenant with optional filtering and pagination. If includeRoles is true, the response includes roles for each user. If includeRoles is false or not provided, only user objects are returned without roles.
+      operationId: getAllUsers
+      tags:
+      - User
+      parameters:
+      - description: End at ID for pagination
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: Filter string for querying users
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: If true, includes roles for each user in the response. When true, the response returns a roles field for each user. When false or not provided, the response returns only user objects without roles.
+        example: true
+        name: includeRoles
+        in: query
+        schema:
+          type: boolean
+      - description: Page number for pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Search string to find users by first name, last name, or email. If provided, returns users matching the search criteria.
+        example: john
+        name: searchUser
+        in: query
+        schema:
+          type: string
+      - description: Page size for pagination
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Start after ID for pagination
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Users retrieved successfully. When includeRoles is true, returns UserListResponseWithRolesDto containing users with their roles. When includeRoles is false or not provided, returns UserListResponseDto containing only user objects without roles.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/UserListResponseDto'
+                - $ref: '#/components/schemas/UserListResponseWithRolesDto'
+                description: Response varies based on includeRoles parameter. When includeRoles is false or not provided, returns UserListResponseDto. When includeRoles is true, returns UserListResponseWithRolesDto.
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read users
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    post:
+      summary: Create User
+      description: Creates a new user in both Auth0 and DAL with validation
+      operationId: createUser
+      tags:
+      - User
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+        required: true
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreationResponse'
+        '400':
+          description: Bad request - Invalid request data or missing required fields
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to create users
+        '409':
+          description: Conflict - A user with the specified email address already exists
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /users/analysts:
+    get:
+      summary: Get Analyst Users
+      description: Returns all analyst users for the current tenant
+      operationId: getAnalysts
+      tags:
+      - User
+      parameters:
+      - description: If true, includes only users who can be assigned to practitioner workflows
+        example: true
+        name: includeAssignable
+        in: query
+        schema:
+          type: boolean
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Analyst users retrieved successfully
+          content:
+            application/json: {}
+        '400':
+          description: Missing tenant-id header
+          content:
+            application/json: {}
+        '401':
+          description: Authentication required
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /users/facility-analysts:
+    get:
+      summary: Get Facility Analyst Users
+      description: Returns all facility analyst users for the current tenant
+      operationId: getFacilityAnalysts
+      tags:
+      - User
+      parameters:
+      - description: If true, includes only users who can be assigned to facility workflows
+        example: true
+        name: includeAssignable
+        in: query
+        schema:
+          type: boolean
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Facility analyst users retrieved successfully
+          content:
+            application/json: {}
+        '400':
+          description: Missing tenant-id header
+          content:
+            application/json: {}
+        '401':
+          description: Authentication required
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /users/invite:
+    post:
+      summary: Invite User
+      description: Invites a user to the organization.
+      operationId: inviteUser
+      tags:
+      - User
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteUserRequest'
+        required: true
+      responses:
+        '200':
+          description: User invited successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    description: user id of the invited user
+                description: user id of the invited user
+                examples:
+                - userId: user_123456
+        '400':
+          description: Bad Request - Malformed request body
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+      - jwt: []
+  /users/me:
+    get:
+      summary: Get User Profile
+      description: Returns user profile and permissions
+      operationId: getCurrentUser
+      tags:
+      - User
+      parameters:
+      - description: use "default" as tenant-id
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to access their profile
+      security:
+      - jwt: []
+  /users/me/permissions:
+    get:
+      summary: Get Current User Permissions
+      description: 'Returns the current authenticated user''s permissions organized by tenant and resource. Response format: {"tenant-id": {"resource-name": ["action1", "action2"]}}'
+      operationId: getCurrentUserPermissions
+      tags:
+      - User
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User permissions retrieved successfully. Returns a map where keys are tenant IDs and values are resource permission maps.
+          content:
+            application/json:
+              example:
+                tenant-123-mock:
+                  roster:
+                  - read
+                  - create
+                  - update
+                  role:
+                  - read
+              schema:
+                description: "Map of tenant IDs to resource permission maps.\n\nExample shape:\n```json\n{\n  \"tenant-123-mock\": {\n    \"roster\": [\"read\", \"create\", \"update\"],\n    \"role\": [\"read\"],\n    ...\n  },\n  \"tenant-456-mock\": {\n    ...\n  },\n  ...\n}\n```\n"
+                type: object
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to view permissions
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /users/{userId}:
+    put:
+      summary: Replace User
+      description: Replaces a user's details (full update - email address cannot be changed)
+      operationId: replaceUser
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+        required: true
+      responses:
+        '200':
+          description: User replaced successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to update users
+        '404':
+          description: User not found - The specified user ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    patch:
+      summary: Patch User
+      description: Partially updates a user's details (email address cannot be changed)
+      operationId: patchUser
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartialUpdateUserRequest'
+        required: true
+      responses:
+        '200':
+          description: User patched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to update users
+        '404':
+          description: User not found - The specified user ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    get:
+      summary: Get User by ID
+      description: Returns a specific user by their ID
+      operationId: getUserById
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read users
+        '404':
+          description: User not found - The specified user ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    delete:
+      summary: Delete User
+      description: Deletes a user from both Auth0 and DAL
+      operationId: deleteUser
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to delete users
+        '404':
+          description: User not found - The specified user ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /users/{userId}/permissions:
+    get:
+      summary: Get User Permissions
+      description: Returns permissions for a specific user
+      operationId: getUserPermissionsById
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User permissions retrieved successfully
+          content:
+            application/json:
+              example:
+                roster:
+                - read
+                - create
+                - update
+                role:
+                - read
+              schema:
+                description: "Returns a list of resources with their permissions.\n\nExample shape:\n```json\n{\n    \"roster\": [\"read\", \"create\", \"update\"],\n    \"role\": [\"read\"],\n    ...\n}\n```\n"
+                type: object
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read user permissions
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /users/{userId}/roles:
+    get:
+      summary: Get User Roles
+      description: Returns roles for a specific user
+      operationId: getUserRolesById
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User roles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRolesResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read user roles
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /users/{userId}/roles/bulk:
+    patch:
+      summary: Bulk Update User Roles
+      description: Adds and/or removes roles for a single user in one operation. Remove operations are processed before add operations.
+      operationId: bulkUpdateUserRoles
+      tags:
+      - User
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleBulkUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: User roles updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkRoleUpdateResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /users/{userId}/roles/{roleId}:
+    delete:
+      summary: Remove Role from User
+      description: Remove a specific role from a user
+      operationId: removeRoleFromUser
+      tags:
+      - User
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Role removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to remove roles from users
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    post:
+      summary: Update User Roles (Deprecated)
+      description: Add or remove roles for a specific user. Use PUT /users/{userId}/roles/{roleId} to assign a role or DELETE /users/{userId}/roles/{roleId} to remove a role
+      operationId: updateUserRoles
+      tags:
+      - User
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: User roles updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to update user roles
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+components:
+  schemas:
+    UserCreationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        auth0UserId:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
+    UserListResponseDto:
+      title: UserListResponseDto
+      description: Paginated list of users
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponseDto'
+          description: List of users
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of users
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    UserProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tenant'
+    BulkRoleUpdateResponse:
+      description: Response for bulk role update operation
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    UserResponseWithRolesDto:
+      type: object
+      description: User response with roles included
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleDetails'
+          description: List of roles assigned to the user
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    PartialUpdateUserRequest:
+      description: Request body for partially updating user details (email is not updatable)
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: User first name
+          examples:
+          - John
+          maxLength: 100
+        lastName:
+          type: string
+          description: User last name
+          examples:
+          - Doe
+          maxLength: 100
+    UserListResponseWithRolesDto:
+      title: UserListResponseWithRolesDto
+      description: Paginated list of users with roles
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponseWithRolesDto'
+          description: List of users with roles
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of users
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
+    UpdateUserRequest:
+      description: Request body for updating user details (full update - email is not updatable)
+      type: object
+      required:
+      - firstName
+      - lastName
+      properties:
+        firstName:
+          type: string
+          description: User first name
+          examples:
+          - John
+          pattern: \S
+          maxLength: 100
+        lastName:
+          type: string
+          description: User last name
+          examples:
+          - Doe
+          pattern: \S
+          maxLength: 100
+    UserResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+    CreateUserRequest:
+      description: Request body for creating a new user
+      type: object
+      required:
+      - email
+      - password
+      - firstName
+      - lastName
+      properties:
+        email:
+          type: string
+          description: User email address
+          examples:
+          - user@example.com
+          pattern: \S
+        password:
+          type: string
+          description: User password
+          examples:
+          - password123
+          pattern: \S
+          minLength: 8
+        firstName:
+          type: string
+          description: User first name
+          examples:
+          - John
+          pattern: \S
+          maxLength: 100
+        lastName:
+          type: string
+          description: User last name
+          examples:
+          - Doe
+          pattern: \S
+          maxLength: 100
+    UserRolesResponseDto:
+      description: User roles response containing list of roles
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleDetails1'
+          description: List of roles assigned to the user
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roles assigned to the user
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
+    InviteUserRequest:
+      description: Request body for inviting a new user
+      type: object
+      required:
+      - email
+      - firstName
+      - lastName
+      properties:
+        email:
+          type: string
+          description: User email address
+          examples:
+          - user@example.com
+          pattern: \S
+        firstName:
+          type: string
+          description: User first name
+          examples:
+          - John
+          pattern: \S
+          maxLength: 100
+        lastName:
+          type: string
+          description: User last name
+          examples:
+          - Doe
+          pattern: \S
+          maxLength: 100
+    UserRoleBulkUpdateRequest:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            type: string
+        remove:
+          type: array
+          items:
+            type: string
+    RoleDetails:
+      type: object
+      description: Role details with full role information
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedBy:
+          type: string
+    RoleDetails1:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tenantId:
+          type: string
+        roleId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

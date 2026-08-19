@@ -1,0 +1,599 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Specialty API
+  version: 1.0.0
+  description: 'Operations tagged Specialty across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Specialty
+  description: Endpoints for managing medical specialties.
+paths:
+  /specialties:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get all specialties
+      description: Retrieves a list of all specialties with optional filtering by name
+      operationId: getSpecialties
+      tags:
+      - Specialty
+      parameters:
+      - description: Filter specialties by name
+        example: Cardiology
+        in: query
+        name: name
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Successfully retrieved list of specialties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount:
+                    type: integer
+                    format: int64
+                  data:
+                    $ref: https://schemas.certifyos.com/entities/Specialty.schema.json
+                    type: object
+                $ref: '#/components/schemas/Specialty.schema'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    post:
+      summary: Create a new specialty
+      description: Creates a new specialty
+      operationId: createSpecialty
+      tags:
+      - Specialty
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialtyRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  nuccSpecialty:
+                    type: string
+                  abmsSpecialty:
+                    type: string
+                  hsdSpecialty:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/Specialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /specialties/nucc:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    post:
+      summary: Create a new NuccSpecialty
+      description: Creates a new NuccSpecialty
+      operationId: createNuccSpecialty
+      tags:
+      - Specialty
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNuccSpecialtyRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the NuccSpecialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    $ref: '#/components/schemas/Date'
+                  createdBy:
+                    type: string
+                  updatedAt:
+                    $ref: '#/components/schemas/Date'
+                  updatedBy:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/NuccSpecialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /specialties/nuccByTaxonomy/{taxonomyCode}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get NuccSpecialty by Taxonomy Code
+      description: Retrieves a NuccSpecialty by its taxonomy code
+      operationId: getNuccSpecialtyByTaxonomyCode
+      tags:
+      - Specialty
+      parameters:
+      - description: Taxonomy code of the NuccSpecialty to retrieve
+        in: path
+        required: true
+        name: taxonomyCode
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Successfully retrieved the NuccSpecialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  createdAt:
+                    $ref: '#/components/schemas/Date'
+                  createdBy:
+                    type: string
+                  updatedAt:
+                    $ref: '#/components/schemas/Date'
+                  updatedBy:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/NuccSpecialty.schema'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: NuccSpecialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /specialties/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update a specialty
+      description: Updates an existing specialty
+      operationId: updateSpecialty
+      tags:
+      - Specialty
+      parameters:
+      - description: ID of the specialty to update
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialtyRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  nuccSpecialty:
+                    type: string
+                  abmsSpecialty:
+                    type: string
+                  hsdSpecialty:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/Specialty.schema'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    get:
+      summary: Get specialty by ID
+      description: Retrieves a single specialty by its ID
+      operationId: getSpecialty
+      tags:
+      - Specialty
+      parameters:
+      - description: ID of the specialty to retrieve
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '200':
+          description: Successfully retrieved the specialty
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  nuccSpecialty:
+                    type: string
+                  abmsSpecialty:
+                    type: string
+                  hsdSpecialty:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/Specialty.schema'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a specialty
+      description: Deletes a specialty by ID
+      operationId: deleteSpecialty
+      tags:
+      - Specialty
+      parameters:
+      - description: ID of the specialty to delete
+        in: path
+        required: true
+        name: id
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      responses:
+        '204':
+          description: Successfully deleted the specialty
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Specialty not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    NuccSpecialtyCategory.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.schema.json
+      title: NUCC Specialty Category
+      description: Allowed categories for NUCC Specialty
+      type: string
+      enum:
+      - Individual
+      - Non-Individual
+    Date:
+      type: string
+      format: date
+    CreateSpecialtyRequest:
+      type: object
+      properties:
+        nuccSpecialtyId:
+          type: string
+        abmsSpecialtyId:
+          type: string
+        hsdSpecialtyId:
+          type: string
+        data:
+          $ref: '#/components/schemas/Specialty.schema'
+          type: object
+    NuccSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
+      title: NuccSpecialty
+      description: Represents the NUCC specialty information options for a healthcare provider.
+      type: object
+      properties:
+        classification:
+          type: string
+          description: The classification of the NUCC specialty
+          minLength: 1
+        specialization:
+          type:
+          - string
+          - 'null'
+          description: The specific specialization within the NUCC classification
+        category:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+          description: The category of the NUCC specialty (Individual or Non-individual)
+        displayName:
+          type: string
+          description: The human-readable name of the NUCC specialty
+          minLength: 1
+        specialtyNuccTaxonomyCode:
+          type: string
+          description: The NUCC taxonomy code associated with the specialty
+          minLength: 1
+      required:
+      - classification
+      - category
+      - specialtyNuccTaxonomyCode
+      - displayName
+      additionalProperties: false
+    Specialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Specialty.schema.json
+      title: Specialty
+      description: Represents the master specialty list, including custom specialties, to include crosswalk between NUCC, HSD, and ABMS Specialties.  References the entities for NUCC, HSD, and ABMS specialties.
+      type: object
+      properties:
+        name:
+          description: The name of the specialty.
+          type: string
+        classificationSource:
+          description: The source of the specialty classification (e.g., NUCC, HSD, ABMS).
+          type: string
+        subspecialtyName:
+          description: The subspecialty name of the specialty.
+          type: string
+        specialtyCategory:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+        taxonomyCode:
+          description: The taxonomy code associated with the specialty.
+          type: string
+        taxonomyDescription:
+          description: The description of the taxonomy code.
+          type: string
+      required:
+      - name
+      - classificationSource
+      - specialtyCategory
+      additionalProperties: false
+    CreateNuccSpecialtyRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NuccSpecialty.schema'
+          type: object
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

@@ -1,0 +1,464 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Form Submissions API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Form Submissions
+  description: APIs for managing form submissions
+paths:
+  /forms/submissions:
+    post:
+      summary: Create a new form submission
+      description: Creates a new form submission. When createPractitioner is true, also creates or links a practitioner (using data.practitionerData) and a portal crosswalk; returns the form submission response with certifyId and providerCreated. Form submission is created first; on failure the request fails without creating a practitioner.
+      operationId: createFormSubmission
+      tags:
+      - Form Submissions
+      parameters:
+      - description: When true, creates a facility; response includes certifyId and facilityCreated in addition to form submission data.
+        required: false
+        name: createFacility
+        in: query
+        schema:
+          type: boolean
+          default: false
+      - description: When true, creates a practitioner from data.practitionerData and a portal crosswalk; response includes certifyId and providerCreated in addition to form submission data.
+        required: false
+        name: createPractitioner
+        in: query
+        schema:
+          type: boolean
+          default: false
+      - description: Tenant (organization) identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+          pattern: ^(?!(?i)null$).+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFormSubmissionRequest'
+        required: true
+      responses:
+        '201':
+          description: Form submission created successfully. When createPractitioner is true, the response includes all form submission fields plus certifyId (tenant crosswalk identifier) and providerCreated (true if a new practitioner was created, false if the practitioner already existed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormSubmissionResponseDto'
+        '400':
+          description: 'Bad request: invalid or missing request body, or when createPractitioner is true: missing data, missing practitionerData, or practitionerData missing npi/externalId.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: 'Unauthorized: valid JWT is required.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: 'Forbidden: insufficient permissions.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: 'Internal server error: unexpected failure during form submission or practitioner/crosswalk operations.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /forms/submissions/{id}:
+    get:
+      summary: Get a form submission by ID
+      description: Retrieves a single form submission by its unique ID. The response includes organizationId (from tenant), flattened data fields, and standard form submission metadata. Requires tenant-id header and valid JWT.
+      operationId: getFormSubmission
+      tags:
+      - Form Submissions
+      parameters:
+      - description: Unique identifier of the form submission (UUID)
+        example: d453006f-30e2-4a01-841d-962579531c25
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant (organization) identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+          pattern: ^(?!(?i)null$).+
+      responses:
+        '200':
+          description: Form submission found. Returns the form submission with organizationId and flattened data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormSubmissionResponseDto'
+        '401':
+          description: 'Unauthorized: valid JWT is required.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: 'Forbidden: insufficient permissions.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: 'Not found: no form submission exists for the given ID within the tenant.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: 'Internal server error: unexpected failure while fetching the form submission.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /v2/forms/submissions:
+    post:
+      summary: Create a multi-tenant form submission (v2)
+      description: Creates a canonical form submission and fans out practitioner/facility crosswalk creation to multiple tenants in parallel. Returns per-tenant results with an aggregated status of success, partial_success, or failed. GCS document uploads are dispatched as Cloud Tasks asynchronously.
+      operationId: createMultiTenantFormSubmission
+      tags:
+      - Form Submissions
+      parameters:
+      - description: Owning tenant (organization) identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+          pattern: ^(?!(?i)null$).+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMultiTenantFormSubmissionRequest'
+        required: true
+      responses:
+        '201':
+          description: Canonical form submission created. Per-tenant results in tenantResults. HTTP 201 is returned even on partial_success or failed fan-out outcomes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultiTenantFormSubmissionResponse'
+        '400':
+          description: 'Bad request: validation failure (empty tenantIds, mutual exclusion, invalid URLs, etc.)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: 'Unauthorized: valid JWT is required.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: 'Forbidden: insufficient permissions.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: 'Internal server error: unexpected error.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: 'Bad gateway: the DAL returned a null, non-object, or id-less canonical submission response.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: 'Service unavailable: the v2 feature is currently disabled via kill switch.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    FormSubmissionResponseDto:
+      description: Form submission response
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the form submission
+          examples:
+          - d453006f-30e2-4a01-841d-962579531c25
+        organizationId:
+          type: string
+          description: The unique identifier for the client organization within Certify
+        mappedData:
+          description: The mapped responses for the form submission. The structure of this object is flexible and can vary based on the form and its fields.
+          examples:
+          - personalInformation:
+              lastName: Smith
+              firstName: Karen
+              middleName: Ann
+              suffix: Jr.
+              npi: 1010000226
+              caqhId: 12345678
+              dateOfBirth: '1961-04-26'
+              highmarkId: '123456789'
+              practitionerType: Medical Doctor
+              degree: Medical Doctor
+              primarySpecialty: Internal Medicine
+              primarySpecialtyRole: PCP
+              secondarySpecialty: Infectious Disease
+              secondarySpecialtyRole: Specialist
+              credentialingContactEmailAddress: credentialing@altoonaprimarycare.com
+              credentialingContactName: John Doe
+            primaryPracticeLocation:
+              buildingLocation: Altoona Medical Suites
+              groupNpi: 1010000655
+              addressLine1: Address Line 1
+              addressLine2: Address Line 2
+              city: Altoona
+              state: PA
+              zip: '16601'
+              zipExt: '1234'
+              county: Blair County
+              fips: '42013'
+            credentialingAddress:
+              sameAsPrimaryPracticeLocation: true
+              buildingLocation: Altoona Medical Suites
+              addressLine1: Address Line 1
+              addressLine2: Address Line 2
+              city: Altoona
+              state: PA
+              zip: '16601'
+              zipExt: '1234'
+              county: Blair County
+              fips: '42013'
+              phoneNumber: 555-555-5555
+              phoneExtension: '123'
+        submissionData:
+          description: The raw responses for the form submission. The structure of this object is flexible and can vary based on the form and its fields.
+          examples:
+          - {}
+        submissionPdf:
+          description: The PDF document of the form submission, if available
+          examples:
+          - {}
+        submittedBy:
+          description: The flexible data object containing the submitted by information
+          type: object
+          $ref: '#/components/schemas/FormSubmissionSubmittedByResponse'
+        form:
+          description: Information about the form associated with the submission
+          examples:
+          - {}
+        formVersionId:
+          type: string
+          description: The id of the version of the form used for this submission
+          examples:
+          - e4dea7d7-6023-4c64-b0f1-777dd0266a02
+        createdAt:
+          type: string
+          description: The date and time when the form submission was created
+          examples:
+          - '2025-01-01T12:00:00Z'
+        createdBy:
+          type: string
+          description: The identifier of the user or system that created the submission
+        updatedAt:
+          type: string
+          description: The date and time when the form submission was last updated
+          examples:
+          - '2025-01-01T12:00:00Z'
+    MultiTenantFormSubmissionResponse:
+      description: Response for a multi-tenant form submission
+      type: object
+      properties:
+        formSubmissionId:
+          type: string
+          description: Unique identifier of the canonical form submission record
+          examples:
+          - sub_a1b2c3d4
+        status:
+          type: string
+          description: 'Aggregated status across all tenants: success, partial_success, or failed'
+          examples:
+          - partial_success
+        tenantResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantSubmissionResult'
+          description: Per-tenant processing results
+        gcsUploadStarted:
+          type: boolean
+          description: Reserved for GCS document upload dispatch. Always false in this release; will reflect actual Cloud Task dispatch in a follow-up PR.
+          examples:
+          - false
+    TenantOptions:
+      description: Per-tenant options for multi-tenant form submission fan-out
+      type: object
+      properties:
+        createPractitioner:
+          type: boolean
+          description: When true, creates a tenant practitioner crosswalk in addition to the portal crosswalk. Requires practitionerData to be present in the request.
+          default: false
+        createFacility:
+          type: boolean
+          description: When true, creates a tenant facility crosswalk in addition to the portal crosswalk. Requires facilityData to be present in the request.
+          default: false
+    FormSubmissionSubmittedByResponse:
+      type: object
+      description: Information about who submitted the form
+      properties:
+        email:
+          type: string
+          description: The email of the user who submitted the form
+          examples:
+          - user@example.com
+        user:
+          description: The user information of the person who submitted the form
+          examples:
+          - {}
+    TenantSubmissionResult:
+      type: object
+      description: Result of processing a single tenant in a multi-tenant form submission
+      properties:
+        tenantId:
+          type: string
+          description: The tenant ID that was processed
+          examples:
+          - tenant_blue_cross
+        status:
+          type: string
+          description: 'Processing status for this tenant: success or failed'
+          examples:
+          - success
+        certifyId:
+          type: string
+          description: Tenant crosswalk certify ID, populated when a tenant crosswalk was created. Empty string when only a portal crosswalk was created.
+          examples:
+          - certify_pract_001
+        errorCode:
+          type:
+          - string
+          - 'null'
+          description: Error code when status is failed
+          examples:
+          - DOWNSTREAM_VALIDATION_ERROR
+        errorMessage:
+          type:
+          - string
+          - 'null'
+          description: Human-readable error detail when status is failed
+          examples:
+          - Missing required payer field
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    CreateFormSubmissionRequest:
+      description: Request payload for creating a form submission
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
+          examples:
+          - {}
+    CreateMultiTenantFormSubmissionRequest:
+      description: Request payload for creating a multi-tenant form submission
+      type: object
+      required:
+      - data
+      - tenantIds
+      properties:
+        data:
+          description: A flexible object for storing any data related to a form submission. May contain practitionerData or facilityData (but not both) as nested objects, plus submissionPdfUrl, supportingDocuments, and any other form fields.
+          examples:
+          - {}
+        tenantIds:
+          type: array
+          items:
+            type: string
+          description: List of tenant IDs to fan out to. Must contain at least one entry.
+          examples:
+          - - tenant_blue_cross
+            - tenant_presbyterian
+          minItems: 1
+        options:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/TenantOptions'
+          description: Per-tenant options controlling crosswalk creation. Keys are tenant IDs. Tenants absent from this map default to createPractitioner=false and createFacility=false.
+          examples:
+          - tenant_blue_cross:
+              createPractitioner: true
+              createFacility: false
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

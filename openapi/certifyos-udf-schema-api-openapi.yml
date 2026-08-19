@@ -1,0 +1,377 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer UDF Schema API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: UDF Schema
+  description: Endpoints for managing UDF schemas.
+paths:
+  /udf-schemas/entity-type/{entityType}:
+    get:
+      summary: Get UDF Schema by entity type (latest or specific version)
+      description: 'Retrieves the latest User Defined Fields (UDF) schema for a specific entity type within a tenant''s context.
+
+
+        UDF schemas define the structure and validation rules for custom fields that can be added to entities
+
+        such as practitioners, facilities, locations, and groups. This endpoint returns the schema for the
+
+        specified entity type. If a version is provided, it returns that specific version; otherwise, it
+
+        returns the most recent version.
+
+
+        **Supported Entity Types:**
+
+        - `practitioner` - Schema for practitioner entities
+
+
+        **Authentication & Authorization:**
+
+        - Requires a valid JWT token in the Authorization header
+
+        - Requires `READ_PROVIDER` permission for the specified tenant
+
+        - The user must be a member of the organization (tenant) to access its UDF schemas
+
+
+        **Request Headers:**
+
+        - `tenant-id` (required) - The ID of the tenant/organization
+
+        - `Authorization` (required) - Bearer token for authentication
+
+
+        **Query Parameters:**
+
+        - `version` (optional) - The version number of the schema to retrieve. If not provided, returns the latest version.
+
+
+        **Response:**
+
+        Returns a JSON object containing the UDF schema definition, including:
+
+        - Schema structure (JSON Schema format)
+
+        - Version information
+
+        - Entity type
+
+        - Tenant ID
+
+        '
+      operationId: udfSchemaFindLatestByEntityType
+      tags:
+      - UDF Schema
+      parameters:
+      - description: 'The entity type for which to retrieve the UDF schema.
+
+
+          Valid values:
+
+          - `practitioner` - For practitioner entities
+
+          - `facility` - For facility entities
+
+          - `location` - For location entities
+
+          - `group` - For group entities
+
+
+          The value is case-insensitive.
+
+          '
+        example: practitioner
+        in: path
+        required: true
+        name: entityType
+        schema:
+          type: string
+          pattern: \S
+      - description: 'Optional version number of the UDF schema to retrieve.
+
+          If not provided, returns the latest version of the schema for the specified entity type.
+
+          '
+        example: 1
+        in: query
+        required: false
+        name: version
+        schema:
+          type: integer
+          format: int32
+      - description: 'The tenant ID (organization ID) for which to retrieve the UDF schema.
+
+
+          This header is required and identifies the tenant/organization context.
+
+          The user must be a member of this organization to access its UDF schemas.
+
+          '
+        example: tenant-abc-123
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      responses:
+        '200':
+          description: UDF schema successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UdfSchemaResponse'
+        '400':
+          description: 'Bad Request - Invalid request parameters or validation error.
+
+
+            Common causes:
+
+            - Entity type is null or empty
+
+            - Invalid entity type value (must be one of: practitioner, facility, location, group)
+
+            - Invalid tenant-id header
+
+            '
+          content:
+            application/json:
+              example:
+                errors:
+                - httpStatus: 400
+                  reason: INVALID_ENTITY_TYPE
+                  title: Invalid entity type
+                  detail: Entity type cannot be null or empty
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: 'Unauthorized - Authentication required.
+
+
+            The request lacks valid authentication credentials. Include a valid JWT token in the Authorization header.
+
+            '
+          content:
+            application/json: {}
+        '403':
+          description: 'Forbidden - Insufficient permissions.
+
+
+            The authenticated user does not have the required `READ_PROVIDER` permission for the specified tenant,
+
+            or the user is not a member of the organization (tenant).
+
+            '
+          content:
+            application/json: {}
+        '404':
+          description: 'Not Found - UDF schema not found for the specified entity type.
+
+
+            No UDF schema exists for the given entity type within the tenant''s context. This may occur if:
+
+            - The entity type has not been configured with a UDF schema
+
+            - The schema was deleted or never created
+
+            '
+          content:
+            application/json:
+              example:
+                errors:
+                - httpStatus: 404
+                  reason: NOT_FOUND
+                  title: UDF schema not found
+                  detail: No UDF schema found for entity type 'practitioner'
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: 'Internal Server Error - An unexpected error occurred while processing the request.
+
+
+            This indicates a server-side error that prevented the request from being completed.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: 'Bad Gateway - The downstream service is unavailable or returned an error.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: 'Service Unavailable - The service is temporarily unavailable.
+
+
+            This may occur due to network connectivity issues or the downstream service being temporarily unavailable.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Date:
+      type: string
+      format: date
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    EntityType:
+      type: string
+      enum:
+      - practitioner
+      - facility
+      - location
+      - group
+      - group_practitioner_location
+      - tenant_group
+      - tenant_group_practitioners
+      - tenant_facility_location
+      - tenant_group_facility
+      - tenant_group_facility_location
+      - tenant_group_practitioner_network
+      - tenant_group_location_practitioner_network
+      - tenant_group_location
+      - tenant_group_network
+      - tenant_group_facility_network
+    UdfSchemaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        schema:
+          $ref: '#/components/schemas/JsonNode'
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

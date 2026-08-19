@@ -1,0 +1,417 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Egress Template API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: EgressTemplate
+  description: Operations for managing egress template configurations
+paths:
+  /api/v1/egress-templates:
+    get:
+      summary: List egress templates
+      description: Returns a list of egress templates for a tenant with optional filtering
+      operationId: listEgressTemplates
+      tags:
+      - EgressTemplate
+      parameters:
+      - description: Filter by entity type (practitioner, facility)
+        name: entityType
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Filter by status (active, inactive, draft)
+        name: status
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      - name: x-user-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of templates
+        '401':
+          description: Not Authorized
+        '403':
+          description: Not Allowed
+      security:
+      - jwt: []
+    post:
+      summary: Create a new egress template
+      description: Uploads a mapping CSV and metadata to create a new egress template. The CSV defines column mappings from system fields to output columns.
+      operationId: createEgressTemplate
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      - name: x-user-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                templateName:
+                  type: string
+                description:
+                  type: string
+                entityType:
+                  type: string
+                outputFormat:
+                  type: string
+                separator:
+                  type: string
+                rowExpansionKeys:
+                  type: string
+                status:
+                  type: string
+                extExportConfig:
+                  type: string
+                scheduleEnabled:
+                  type: boolean
+                scheduleFrequency:
+                  type: string
+                scheduleTime:
+                  type: string
+                scheduleDayOfWeek:
+                  type: integer
+                  format: int32
+                scheduleDayOfMonth:
+                  type: integer
+                  format: int32
+                scheduleCron:
+                  type: string
+                scheduleTimezone:
+                  type: string
+                metadata:
+                  type: string
+        required: true
+      responses:
+        '201':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressTemplateResponse'
+        '400':
+          description: Invalid input - CSV parsing errors or invalid metadata
+        '401':
+          description: Unauthorized
+        '403':
+          description: Not Allowed
+      security:
+      - jwt: []
+  /api/v1/egress-templates/{templateId}:
+    put:
+      summary: Update an egress template
+      description: Updates template metadata and/or mappings CSV. Auto-increments version.
+      operationId: updateEgressTemplate
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      - name: x-user-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                templateName:
+                  type: string
+                description:
+                  type: string
+                outputFormat:
+                  type: string
+                separator:
+                  type: string
+                rowExpansionKeys:
+                  type: string
+                status:
+                  type: string
+                extExportConfig:
+                  type: string
+                scheduleEnabled:
+                  type: boolean
+                scheduleFrequency:
+                  type: string
+                scheduleTime:
+                  type: string
+                scheduleDayOfWeek:
+                  type: integer
+                  format: int32
+                scheduleDayOfMonth:
+                  type: integer
+                  format: int32
+                scheduleCron:
+                  type: string
+                scheduleTimezone:
+                  type: string
+                metadata:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: Template updated successfully
+        '401':
+          description: Not Authorized
+        '403':
+          description: Not Allowed
+        '404':
+          description: Template not found
+      security:
+      - jwt: []
+    get:
+      summary: Get egress template by ID
+      description: Returns a single egress template with its metadata
+      operationId: getEgressTemplate
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      - name: x-user-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Template found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressTemplateResponse'
+        '401':
+          description: Not Authorized
+        '403':
+          description: Not Allowed
+        '404':
+          description: Template not found
+      security:
+      - jwt: []
+    delete:
+      summary: Delete an egress template
+      description: Soft-deletes a template by setting status to inactive
+      operationId: deleteEgressTemplate
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      - name: x-user-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Template deleted
+        '401':
+          description: Not Authorized
+        '403':
+          description: Not Allowed
+        '404':
+          description: Template not found
+      security:
+      - jwt: []
+components:
+  schemas:
+    EgressTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+        updatedBy:
+          type: string
+        templateName:
+          type: string
+        description:
+          type: string
+        entityType:
+          type: string
+        outputFormat:
+          type: string
+        separator:
+          type: string
+        status:
+          type: string
+        version:
+          type: integer
+          format: int32
+        mappingsCsvUrl:
+          type: string
+        rowExpansionKeys:
+          $ref: '#/components/schemas/JsonNode'
+        extExportConfig:
+          $ref: '#/components/schemas/JsonNode'
+        scheduleEnabled:
+          type: boolean
+        scheduleFrequency:
+          type: string
+        scheduleTime:
+          type: string
+        scheduleDayOfWeek:
+          type: integer
+          format: int32
+        scheduleDayOfMonth:
+          type: integer
+          format: int32
+        scheduleCron:
+          type: string
+        scheduleTimezone:
+          type: string
+        lastExportAt:
+          $ref: '#/components/schemas/Instant'
+        nextExportAt:
+          $ref: '#/components/schemas/Instant'
+        metadata:
+          $ref: '#/components/schemas/JsonNode'
+        bqExportEnabled:
+          type: boolean
+        bqTableName:
+          type: string
+        bqDataset:
+          type: string
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

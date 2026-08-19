@@ -1,0 +1,482 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Role API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Role
+  description: Endpoints for managing roles.
+paths:
+  /roles:
+    get:
+      summary: Get All Roles
+      description: Returns all roles for the current tenant
+      operationId: getAllRoles
+      tags:
+      - Role
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Roles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleListResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read roles
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    post:
+      summary: Create Role
+      description: Creates a new role
+      operationId: createRole
+      tags:
+      - Role
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleCreateRequest'
+        required: true
+      responses:
+        '201':
+          description: Role created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponseDto'
+        '400':
+          description: Bad request - Invalid request data or missing required fields
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to create roles
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /roles/{roleId}:
+    patch:
+      summary: Update Role
+      description: Updates an existing role
+      operationId: updateRole
+      tags:
+      - Role
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to update roles
+        '404':
+          description: Role not found - The specified role ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    get:
+      summary: Get Role by ID
+      description: Retrieves a specific role by its ID
+      operationId: getRoleById
+      tags:
+      - Role
+      parameters:
+      - description: ID of Role to fetch
+        required: true
+        name: roleId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Role retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read roles
+        '404':
+          description: Role not found - The specified role ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    delete:
+      summary: Delete Role
+      description: Deletes a role by its ID
+      operationId: deleteRole
+      tags:
+      - Role
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Role deleted successfully
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to delete roles
+        '404':
+          description: Role not found - The specified role ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /roles/{roleId}/permissions:
+    get:
+      summary: Get Role Permissions
+      description: Returns all permissions assigned to a role with permission details
+      operationId: getRolePermissions
+      tags:
+      - Role
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Permissions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to read role permissions
+        '404':
+          description: Role not found - The specified role ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+    post:
+      summary: Add Permissions to Role
+      description: Adds permissions to a role without removing existing ones
+      operationId: addRolePermissions
+      tags:
+      - Role
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RolePermissionAddRequest'
+        required: true
+      responses:
+        '200':
+          description: Permissions added successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad request - Invalid request data or missing required fields
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to update role permissions
+        '404':
+          description: Role not found - The specified role ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /roles/{roleId}/permissions/bulk:
+    patch:
+      summary: Bulk Update Role Permissions
+      description: Adds and/or removes permissions from a role in a single operation. Returns all permissions with details.
+      operationId: bulkUpdateRolePermissions
+      tags:
+      - Role
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RolePermissionBulkUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Permissions updated successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissionResponseDto'
+        '400':
+          description: Bad request - Invalid request data or missing required fields
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - User does not have the required permissions to update role permissions
+        '404':
+          description: Role not found - The specified role ID does not exist
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+components:
+  schemas:
+    RoleResponseDto:
+      type: object
+      description: Role information response
+      properties:
+        id:
+          type: string
+          description: Role ID
+          examples:
+          - role-123-456-789
+        name:
+          type: string
+          description: Role name
+          examples:
+          - Business Admin
+        tenantId:
+          type: string
+          description: Tenant ID
+          examples:
+          - tenant-123-456-789
+        description:
+          type: string
+          description: Role description
+          examples:
+          - Full access to all operations
+        createdAt:
+          description: Creation timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          description: Last update timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+          description: Created by
+          examples:
+          - user-123-456-789
+        updatedBy:
+          type: string
+          description: Updated by
+          examples:
+          - user-123-456-789
+    RoleUpdateRequest:
+      description: Request body for updating a role
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Role name
+          examples:
+          - Business Admin
+        description:
+          type: string
+          maxLength: 500
+          description: Role description
+          examples:
+          - Full access to all operations
+    RoleCreateRequest:
+      description: Request body for creating a new role
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Role name
+          examples:
+          - Business Admin
+        description:
+          type: string
+          maxLength: 500
+          description: Role description
+          examples:
+          - Full access to all operations
+    RolePermissionAddRequest:
+      type: object
+      properties:
+        permissionIds:
+          type: array
+          items:
+            type: string
+    PermissionResponseDto:
+      type: object
+      description: Permission information response
+      properties:
+        id:
+          type: string
+          description: Permission ID
+          examples:
+          - perm-123-456-789
+        resource:
+          type: string
+          description: Resource name
+          examples:
+          - user
+        action:
+          type: string
+          description: Action name
+          examples:
+          - read
+        description:
+          type: string
+          description: Permission description
+          examples:
+          - Allows reading user profiles
+        createdAt:
+          description: Creation timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          description: Last update timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+    RoleListResponseDto:
+      description: Paginated list of roles
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleResponseDto'
+          description: List of roles
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roles
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
+    RolePermissionBulkUpdateRequest:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            type: string
+        remove:
+          type: array
+          items:
+            type: string
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

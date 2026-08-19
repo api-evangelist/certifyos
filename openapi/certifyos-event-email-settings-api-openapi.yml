@@ -1,0 +1,755 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Event Email Settings API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Event Email Settings
+  description: Manage event email notification settings
+paths:
+  /organizations/{organizationId}/event-email-settings:
+    get:
+      summary: Get all event email settings
+      description: Retrieves all event email settings for all context and mode combinations
+      operationId: getAllEventEmailSettings
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Event email settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsConfigResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /organizations/{organizationId}/event-email-settings/{context}/cc-email:
+    post:
+      summary: Update context-level CC email
+      description: Updates the context-level CC email for event emails
+      operationId: updateEventEmailCcEmail
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailSettingsCcEmailRequest'
+        required: true
+      responses:
+        '200':
+          description: Event email CC updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /organizations/{organizationId}/event-email-settings/{context}/logo-settings:
+    post:
+      summary: Update context-level logo settings
+      description: Updates the context-level logo settings for event emails
+      operationId: updateEventEmailLogoSettings
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailSettingsLogoSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Event email logo settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /organizations/{organizationId}/event-email-settings/{context}/logo-url:
+    post:
+      summary: Update context-level logo URL
+      description: Updates the context-level logo URL for event emails
+      operationId: updateEventEmailLogoUrl
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailSettingsLogoUrlRequest'
+        required: true
+      responses:
+        '200':
+          description: Event email logo URL updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /organizations/{organizationId}/event-email-settings/{context}/mmo-outcome-filter:
+    put:
+      summary: Update MMO outcome filter
+      description: Selects primary MMO outcome(s) to send. When both approved and denied plan UDF outcomes are present for the same workflow event, both emails are sent to preserve dual-outcome delivery behavior. Omit or empty = both.
+      operationId: updateMmoOutcomeFilter
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailSettingsMmoOutcomeFilterRequest'
+        required: true
+      responses:
+        '200':
+          description: MMO outcome filter updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /organizations/{organizationId}/event-email-settings/{context}/recipient-preferences:
+    post:
+      summary: Update context-level recipient preferences
+      description: Updates the context-level recipient preferences for event emails
+      operationId: updateEventEmailRecipientPreferences
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailRecipientPreferencesRequest'
+        required: true
+      responses:
+        '200':
+          description: Event email recipient preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /organizations/{organizationId}/event-email-settings/{context}/{mode}:
+    put:
+      summary: Update event email settings
+      description: Updates event email settings for a specific context and mode (alias for POST)
+      operationId: updateEventEmailSettings
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Mode (credentialing or recredentialing)
+        required: true
+        schema:
+          enum:
+          - credentialing
+          - recredentialing
+        name: mode
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Event email settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+    get:
+      summary: Get event email settings for specific context and mode
+      description: Retrieves event email settings for a specific context (practitioner/facility) and mode (credentialing/recredentialing)
+      operationId: getEventEmailSettings
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Mode (credentialing or recredentialing)
+        required: true
+        schema:
+          enum:
+          - credentialing
+          - recredentialing
+        name: mode
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Event email settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Settings not found for this context/mode
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+    delete:
+      summary: Delete event email settings
+      description: Deletes event email settings for a specific context and mode
+      operationId: deleteEventEmailSettings
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Mode (credentialing or recredentialing)
+        required: true
+        schema:
+          enum:
+          - credentialing
+          - recredentialing
+        name: mode
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Event email settings deleted successfully
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+    post:
+      summary: Create or update event email settings
+      description: Creates or updates event email settings for a specific context and mode
+      operationId: createOrUpdateEventEmailSettings
+      tags:
+      - Event Email Settings
+      parameters:
+      - description: Context (practitioner or facility)
+        required: true
+        schema:
+          enum:
+          - practitioner
+          - facility
+        name: context
+        in: path
+      - description: Mode (credentialing or recredentialing)
+        required: true
+        schema:
+          enum:
+          - credentialing
+          - recredentialing
+        name: mode
+        in: path
+      - description: Organization ID
+        required: true
+        name: organizationId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEmailSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Event email settings created/updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEmailSettingsResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+components:
+  schemas:
+    EventEmailSettingsLogoSettingsRequest:
+      description: Request to update context-level logo settings for event emails
+      type: object
+      properties:
+        logoUrl:
+          type: string
+          description: Logo URL for this context
+        logoWidth:
+          type: string
+          description: Logo width for this context
+    EventEmailTypeSettingsDto:
+      type: object
+      description: Settings for a specific event email type
+      required:
+      - type
+      - template
+      - enabled
+      properties:
+        type:
+          type: string
+          description: Event email type
+          enum:
+          - initiated
+          - approved
+          - denied
+          - cancelled
+          - psvReady
+          pattern: \S
+        template:
+          description: Email template for this event type
+          type: object
+          $ref: '#/components/schemas/EventEmailTemplateDto'
+        enabled:
+          type: boolean
+          description: Whether this event email type is enabled
+    EventEmailRecipientPreferencesDto:
+      description: Recipient preferences for event emails
+      type: object
+      properties:
+        primaryEmail:
+          type: boolean
+          description: Send to primary email
+        caqhPrimaryEmail:
+          type: boolean
+          description: Send to CAQH primary email
+        credentialingPrimaryContact:
+          type: boolean
+          description: Send to credentialing primary contact
+        credentialingOfficeManager:
+          type: boolean
+          description: Send to credentialing office manager
+    EventEmailSettingsConfigResponse:
+      description: Event email settings configuration grouped by context and global settings
+      type: object
+      properties:
+        practitioner:
+          description: Practitioner event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        facility:
+          description: Facility event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        global:
+          description: Global event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailGlobalSettingsResponse'
+    EventEmailGlobalSettingsResponse:
+      description: Global event email settings applied across contexts
+      type: object
+      properties:
+        ccEmail:
+          type: string
+          description: Global CC email applied to all event emails
+    EventEmailSettingsLogoUrlRequest:
+      description: Request to update context-level logo URL for event emails
+      type: object
+      properties:
+        logoUrl:
+          type: string
+          description: Logo URL for this context
+    EventEmailSettingsContextResponse:
+      type: object
+      description: Event email settings grouped by mode for a context
+      properties:
+        ccEmail:
+          type: string
+          description: Global CC email for this context
+        logoUrl:
+          type: string
+          description: Logo URL for this context
+        logoWidth:
+          type: string
+          description: Logo width for this context
+        credentialing:
+          description: Credentialing event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailSettingsModeResponse'
+        recredentialing:
+          description: Recredentialing event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailSettingsModeResponse'
+        mmoOutcomeFilter:
+          type: array
+          items:
+            type: string
+          description: 'MMO outcome filter: primary outcomes to send for. When the workflow has both approved and denied plan UDFs, the complementary outcome email is also sent (e.g. filter Positive still sends denied plans email if present, and filter Negative still sends approved plans email if present). Null or empty = no restriction.'
+    EventEmailSettingsRequest:
+      description: Request to create or update event email settings. Context and mode are specified in the URL path.
+      type: object
+      required:
+      - recipientPreferences
+      - typeSettings
+      properties:
+        recipientPreferences:
+          description: Recipient preferences for event emails
+          type: object
+          $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+        ccEmail:
+          type: string
+          description: Global CC email applied to all event emails for this context and mode
+        typeSettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventEmailTypeSettingsDto'
+          description: Settings for each event type (should include all 5 types)
+    EventEmailSettingsCcEmailRequest:
+      description: Request to update context-level CC email for event emails
+      type: object
+      properties:
+        ccEmail:
+          type: string
+          description: CC email for this context
+    EventEmailSettingsMmoOutcomeFilterRequest:
+      description: Request to update MMO outcome filter. Filter values define primary outcomes. If both approved and denied plan outcomes are present for a workflow event, both emails are still sent. Omit or empty = both.
+      type: object
+      properties:
+        mmoOutcomeFilter:
+          type: array
+          items:
+            type: string
+          description: 'Primary outcome(s): "Positive" and/or "Negative". Null or empty = both.'
+    EventEmailTemplateDto:
+      type: object
+      description: Event email template with subject and body
+      required:
+      - subject
+      - bodyHtml
+      properties:
+        subject:
+          type: string
+          description: Email subject line
+        bodyHtml:
+          type: string
+          description: Email body HTML content
+    EventEmailSettingsModeResponse:
+      type: object
+      description: Event email settings for a specific context/mode
+      required:
+      - recipientPreferences
+      - typeSettings
+      properties:
+        recipientPreferences:
+          description: Recipient preferences
+          type: object
+          $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+        typeSettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventEmailTypeSettingsDto'
+          description: Settings for each event type
+    EventEmailRecipientPreferencesRequest:
+      description: Request to update context-level recipient preferences for event emails.
+      type: object
+      required:
+      - recipientPreferences
+      properties:
+        recipientPreferences:
+          description: Recipient preferences for event emails
+          type: object
+          $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+    EventEmailSettingsResponse:
+      description: Event email settings response
+      type: object
+      required:
+      - context
+      - mode
+      - recipientPreferences
+      - typeSettings
+      properties:
+        context:
+          type: string
+          description: Context (practitioner or facility)
+          enum:
+          - practitioner
+          - facility
+        mode:
+          type: string
+          description: Mode (credentialing or recredentialing)
+          enum:
+          - credentialing
+          - recredentialing
+        recipientPreferences:
+          description: Recipient preferences
+          type: object
+          $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+        ccEmail:
+          type: string
+          description: Global CC email applied to all event emails for this context and mode
+        logoUrl:
+          type: string
+          description: Logo URL applied to all event emails for this context and mode
+        logoWidth:
+          type: string
+          description: Logo width applied to all event emails for this context and mode
+        typeSettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventEmailTypeSettingsDto'
+          description: Settings for each event type
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

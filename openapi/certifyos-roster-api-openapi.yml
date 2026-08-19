@@ -1,0 +1,704 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Roster API
+  version: 1.0.0
+  description: 'Operations tagged Roster across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Roster
+  description: APIs for managing roster file uploads and processing
+paths:
+  /roster:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get all roster jobs
+      description: Returns a list of all roster jobs for the tenant
+      operationId: getAllRosters
+      tags:
+      - Roster
+      parameters:
+      - description: End at document ID, for backward cursor-based pagination
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: 'Filter criteria. The filter parameter must be URL encoded when sent.
+
+
+          Examples (before URL encoding):
+
+          - - Filter by id: `{"id":{"eq":"123"}}`
+
+          Example curl commands:
+
+          ```bash
+
+          # Filter by id
+
+          curl -X GET ''<BaseURL>/roster?filter=%7B%22id%22%3A%7B%22eq%22%3A%223%22%7D%7D''
+
+          ```
+
+
+          Available filter operations:
+
+          - eq: Equal to
+
+          - neq: Not equal to
+
+          - gt: Greater than
+
+          - gte: Greater than or equal to
+
+          - lt: Less than
+
+          - lte: Less than or equal to
+
+          - in: Value must be one of these (array)
+
+          - nin: Value must not be any of these (array)
+
+          - contains: String contains (case-sensitive, string fields only)
+
+
+          Note: When using the filter parameter in a browser or code, make sure to properly URL encode the JSON string.
+
+          '
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: Page number (0-based), for offset-based pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Page size
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Field to order by. Defaults to 'createdAt'.
+        example: createdAt
+        name: sortBy
+        in: query
+        schema:
+          type: string
+          default: createdAt
+      - description: 'Order direction: ASC or DESC. Defaults to ''DESC''.'
+        example: DESC
+        name: sortDirection
+        in: query
+        schema:
+          type: string
+          default: DESC
+      - description: Start after document ID, for forward cursor-based pagination
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID for source type generation
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of roster jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResponse1'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+      - jwt: []
+    post:
+      summary: Create a roster
+      description: Creates a roster with the provided payload.
+      operationId: createRoster
+      tags:
+      - Roster
+      parameters:
+      - description: Tenant ID for source type generation
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                templateId:
+                  type: string
+                jobType:
+                  type: string
+                description:
+                  type: string
+                sheetName:
+                  type: string
+                mappings:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: Roster created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterResponse'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Template not found or not configured for tenant
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /roster/republish-event/{eventType}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Republish roster event for validation or ingestion
+      description: Triggers either validation or ingestion request based on the event type
+      operationId: republishRosterEvent
+      tags:
+      - Roster
+      parameters:
+      - description: 'Event type: validation or ingestion'
+        required: true
+        name: eventType
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Payload containing rosterId, tenantId, and userId
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+      responses:
+        '200':
+          description: Event republished successfully
+          content:
+            application/json: {}
+        '400':
+          description: Invalid request payload or event type
+        '401':
+          description: Unauthorized - Authentication required
+      security:
+      - jwt: []
+  /roster/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get roster job by ID
+      description: Returns a roster job for the given ID
+      operationId: getRosterById
+      tags:
+      - Roster
+      parameters:
+      - description: Roster job ID
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Roster job found
+          content:
+            application/json: {}
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /roster/{id}/schema:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get effective JSON Schema for a roster job
+      description: 'Returns the same resolved schema used for validation: roster-specific schema when present, otherwise the template schema. Matches RosterSchemaService.getRosterSchema(rosterId, templateId).'
+      operationId: getRosterEffectiveSchema
+      tags:
+      - Roster
+      parameters:
+      - description: Roster job ID
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: JSON Schema document used for row validation
+          content:
+            application/json: {}
+        '400':
+          description: Roster has no template ID
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /roster/{rosterId}/download-records:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Download failed roster records as CSV
+      description: Downloads all failed roster records for the given roster job as a CSV file
+      operationId: downloadRosterRecordsCsv
+      tags:
+      - Roster
+      parameters:
+      - description: Roster job ID to download records for
+        required: true
+        name: rosterId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: false
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+          default: public-user
+      responses:
+        '200':
+          description: CSV file containing failed roster records
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Signed URL for downloading the CSV file from GCS
+                examples:
+                - https://storage.googleapis.com/bucket/roster-exports/123/123-rosterFileFAILED.csv
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job or failed records not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /roster/{rosterId}/import:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Approve or reject a roster import
+      description: Approves or rejects a roster import based on the action parameter
+      operationId: approveRejectRosterImport
+      tags:
+      - Roster
+      parameters:
+      - description: Roster job ID
+        required: true
+        name: rosterId
+        in: path
+        schema:
+          type: string
+      - description: 'Action to perform: ''approved'' or ''rejected'''
+        required: true
+        name: action
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Roster import action completed successfully
+          content:
+            application/json: {}
+        '400':
+          description: Invalid action parameter
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Roster job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Invalid roster status for approval/rejection
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /roster/{rosterId}/reupload:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Reupload a corrected CSV file for an existing roster
+      description: Reuploads a corrected CSV file for an existing roster ID. This replaces the file and restart processing for that roster.
+      operationId: reuploadCsvFile
+      tags:
+      - Roster
+      parameters:
+      - description: Existing roster ID to reupload against
+        required: true
+        name: rosterId
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID for source type generation
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                sheetName:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: File reuploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterReuploadResponse'
+        '400':
+          description: Invalid input (missing file)
+        '404':
+          description: Roster not found
+        '409':
+          description: Cannot reupload to completed roster
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    RosterReuploadResponse:
+      type: object
+      properties:
+        rosterId:
+          type: string
+        path:
+          type: string
+        filename:
+          type: string
+        bucketName:
+          type: string
+        message:
+          type: string
+    Date:
+      type: string
+      format: date
+    PagedResponse1:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    RosterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        templateId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        invalidCount:
+          type: integer
+          format: int64
+        validCount:
+          type: integer
+          format: int64
+        completedCount:
+          type: integer
+          format: int64
+        failedCount:
+          type: integer
+          format: int64
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

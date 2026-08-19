@@ -1,0 +1,5645 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS V2/provider API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: v2/provider
+paths:
+  /v2/provider:
+    post:
+      operationId: ProviderV2Controller_create
+      summary: Create Provider
+      description: Add a provider to the organization
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProviderDtoV2'
+      responses:
+        '201':
+          description: The record has been successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider_id:
+                    type: string
+                    example: sfas12345
+                  is_created:
+                    type: boolean
+                    example: false
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+    get:
+      operationId: ProviderV2Controller_findOne
+      summary: Retrieve all available information for a provider.
+      description: "Fetches comprehensive details about a provider, \n      including optional related data such as credentialing workflows, \n      all sections data (state-licenses, board certifications, dea, etc.), \n      signed URLs for supporting documents/ attachments, verifier info, group info, and \n      sanction items based on the provided query parameters."
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: npi
+        required: false
+        in: query
+        schema:
+          type: string
+      - name: external_id
+        required: false
+        in: query
+        schema:
+          type: string
+      - name: provider_id
+        required: false
+        in: query
+        schema:
+          type: string
+      - name: includeCredentialingWorkflows
+        required: true
+        in: query
+        description: Include credentialing workflows with PSV url.
+        schema:
+          default: true
+          type: boolean
+      - name: includeFullData
+        required: true
+        in: query
+        description: Include full data from every section.
+        schema:
+          default: true
+          type: boolean
+      - name: signUrls
+        required: true
+        in: query
+        description: Sign Document URLs for immediate access.
+        schema:
+          default: true
+          type: boolean
+      - name: includeVerified
+        required: true
+        in: query
+        description: Included VerifiedBy User info.
+        schema:
+          default: true
+          type: boolean
+      - name: includeGroupInfo
+        required: true
+        in: query
+        description: Include group info.
+        schema:
+          default: false
+          type: boolean
+      - name: includeSanctionItems
+        required: true
+        in: query
+        description: Include sanction items.
+        schema:
+          default: false
+          type: boolean
+      responses:
+        '200':
+          description: Provider Details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderV2ResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Provider was not found
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/attested-data:
+    post:
+      operationId: ProviderV2Controller_createAttestedProviderData
+      summary: Save attested provider data
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAttestedProviderDataDto'
+      responses:
+        '201':
+          description: The record has been successfully created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+    get:
+      operationId: ProviderV2Controller_getttestedProviderData
+      summary: Fetch attested provider data
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAttestedProviderDataDto'
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/attested-data/documents:
+    post:
+      operationId: ProviderV2Controller_uploadProviderDocuments
+      summary: Upload Provider Attested Data Document
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateAttestedProviderDocumentDto'
+      responses:
+        '201':
+          description: The record has been successfully created.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/supporting-documents/{supportingDocumentId}/signed-url:
+    get:
+      operationId: ProviderV2Controller_getDocumentSignedUrl
+      summary: Retrieve signed url of a given supporting-document id.
+      description: "Retrieves a signed URL for the specified supporting document ID associated with the provider. \n      The signed URL provides secure, temporary access to the document and remains valid for 10 minutes."
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: supportingDocumentId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Signed URL
+          content:
+            application/json:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: "Signed URL was not found because of the following reasons:\n\n      1. Provider was not found.\n\n      2. Supporting document with the id was not found."
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/survey-responses:
+    get:
+      operationId: ProviderV2Controller_findAllSurveyResponses
+      summary: Lists all provider survey responses in an organization
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      - name: version
+        required: false
+        in: query
+        description: Version of the desired survey response
+        schema:
+          type: number
+      responses:
+        '200':
+          description: Survey responses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                  count:
+                    type: number
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/outreaches:
+    get:
+      operationId: ProviderV2Controller_findAllOutreaches
+      summary: Lists all provider email outreaches in an organization
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      responses:
+        '200':
+          description: List of provider email outreaches
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderOutreachResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/caqh-data:
+    get:
+      operationId: ProviderV2Controller_findProviderCaqhData
+      summary: Retrieve CAQH data for a provider
+      description: Returns the CAQH (Council for Affordable Quality Healthcare) data for the specified provider. This data includes provider credentialing and demographic information as stored in CAQH.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        description: The unique identifier of the provider whose CAQH data is to be retrieved.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: CAQH Data for the provider.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  practitionerInformation:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      caqhProviderId:
+                        type: integer
+                      firstName:
+                        type: string
+                      middleName:
+                        type: string
+                      lastName:
+                        type: string
+                      suffix:
+                        type: string
+                      gender:
+                        type: string
+                      birthDate:
+                        type: string
+                        format: date-time
+                      ssn:
+                        type: string
+                      personalEmail:
+                        type: string
+                      personalFaxNumber:
+                        type: string
+                      primaryEmail:
+                        type: string
+                      ethnicity:
+                        type: string
+                      raceEthnicity:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            raceEthnicityLevel1:
+                              type: string
+                            raceEthnicityLevel2:
+                              type: array
+                              items:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  raceEthnicityLevel2Name:
+                                    type: string
+                      languagesSpoken:
+                        type: array
+                        items:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            name:
+                              type: string
+                      birthCountry:
+                        type: string
+                      primaryPracticeState:
+                        type: string
+                      otherPracticeState:
+                        type: array
+                        items:
+                          type: string
+                      mailingAddress:
+                        type: object
+                        additionalProperties: false
+                        properties:
+                          address1:
+                            type: string
+                          address2:
+                            type: string
+                          city:
+                            type: string
+                          state:
+                            type: string
+                          zipCode:
+                            type: string
+                          country:
+                            type: string
+                      homePhoneNumber:
+                        type: string
+                      practiceSetting:
+                        type: string
+                      citizenshipCountry:
+                        type: string
+                      workPermitStatus:
+                        type: string
+                      usWorkEligibleFlag:
+                        type: boolean
+                      visaNumber:
+                        type: string
+                      practitionerType:
+                        type: object
+                        additionalProperties: false
+                        properties:
+                          name:
+                            type: string
+                      homeAddress:
+                        type: object
+                        additionalProperties: false
+                        properties:
+                          address1:
+                            type: string
+                          address2:
+                            type: string
+                          city:
+                            type: string
+                          state:
+                            type: string
+                          zipCode:
+                            type: string
+                          country:
+                            type: string
+                  practitionerProfileDetail:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      practitionerStatus:
+                        type: object
+                        additionalProperties: false
+                        properties:
+                          name:
+                            type: string
+                      lastAttestationDate:
+                        type: string
+                        format: date-time
+                      attestId:
+                        type: string
+                      practitionerStatusDate:
+                        type: string
+                        format: date-time
+                  healthPlanPractitionerDetail:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      proViewRosteredOnDate:
+                        type: string
+                        format: date-time
+                      practitionerAuthorizationFlag:
+                        type: boolean
+                      practitionerAuthorizationDate:
+                        type: string
+                        format: date-time
+                      practitionerLastRecredentialDate:
+                        type: string
+                        format: date-time
+                      practitionerNextRecredentialDate:
+                        type: string
+                        format: date-time
+                  practitionerProfessionalId:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        practitionerLicense:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              licenseState:
+                                type: string
+                              licenseNumber:
+                                type: string
+                              issueDate:
+                                type: string
+                                format: date-time
+                              expirationDate:
+                                type: string
+                                format: date-time
+                              currentlyPracticeInStateFlag:
+                                type: boolean
+                              licenseCategory:
+                                type: string
+                              licenseType:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              licenseStatus:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                        practitionerNpi:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            npiNumber:
+                              type: string
+                            npiValidatedFlag:
+                              type: boolean
+                            npiAvailableFlag:
+                              type: boolean
+                        practitionerCds:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              cdsNumber:
+                                type: string
+                              cdsState:
+                                type: string
+                              issueDate:
+                                type: string
+                                format: date-time
+                              expirationDate:
+                                type: string
+                                format: date-time
+                        practitionerDea:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              deaNumber:
+                                type: string
+                              deaState:
+                                type: string
+                              issueDate:
+                                type: string
+                                format: date-time
+                              expirationDate:
+                                type: string
+                                format: date-time
+                              deaLicenseUnlimitedFlag:
+                                type: boolean
+                              deaApplicationSubmitDate:
+                                type: string
+                                format: date-time
+                        practitionerMedicare:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              medicareNumber:
+                                type: string
+                              medicareState:
+                                type: string
+                        practitionerMedicaid:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              medicaidNumber:
+                                type: string
+                              medicaidState:
+                                type: string
+                        practitionerEcfmg:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              ecfmgNumber:
+                                type: string
+                              ecfmgIssueDate:
+                                type: string
+                                format: date-time
+                              ecfmgExpirationDate:
+                                type: string
+                                format: date-time
+                        ecfmgAvailableFlag:
+                          type: boolean
+                        upinAvailableFlag:
+                          type: boolean
+                        upin:
+                          type: string
+                        deaAvailableFlag:
+                          type: boolean
+                        medicareParticipationFlag:
+                          type: boolean
+                        medicaidParticipationFlag:
+                          type: boolean
+                        modifiedAt:
+                          type: string
+                          format: date-time
+                        createdAt:
+                          type: string
+                          format: date-time
+                  practitionerEducation:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        graduateType:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            name:
+                              type: string
+                        professionalSchoolFlag:
+                          type: boolean
+                        practitionerProfessionalSchool:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              institutionName:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              degree:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              address:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  address1:
+                                    type: string
+                                  address2:
+                                    type: string
+                                  city:
+                                    type: string
+                                  state:
+                                    type: string
+                                  zipCode:
+                                    type: string
+                                  country:
+                                    type: string
+                              institutionPhoneNumber:
+                                type: string
+                              certificateAwarded:
+                                type: string
+                              startDate:
+                                type: string
+                                format: date-time
+                              endDate:
+                                type: string
+                                format: date-time
+                              completionFlag:
+                                type: boolean
+                              completionDate:
+                                type: string
+                                format: date-time
+                              incompleteReason:
+                                type: string
+                  practitionerSpecialExperienceAndTraining:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      adolescents:
+                        type: boolean
+                      angerManagement:
+                        type: boolean
+                      anxiety:
+                        type: boolean
+                      attentionDeficitHyperactivityDisorder:
+                        type: boolean
+                      autismSpectrumDisorders:
+                        type: boolean
+                      bipolarDisorder:
+                        type: boolean
+                      blindnessOrVisualImpairment:
+                        type: boolean
+                      children:
+                        type: boolean
+                      childWelfare:
+                        type: boolean
+                      chronicIllness:
+                        type: boolean
+                      cooccurringDisorders:
+                        type: boolean
+                      createdAt:
+                        type: string
+                        format: date-time
+                      deafness:
+                        type: boolean
+                      depression:
+                        type: boolean
+                      dialecticalBehavioralTherapy:
+                        type: boolean
+                      genderIdentityDisorder:
+                        type: boolean
+                      genderNonConformity:
+                        type: boolean
+                      geriatricBehavioralHealth:
+                        type: boolean
+                      groupTherapy:
+                        type: boolean
+                      hivAIDS:
+                        type: boolean
+                      homelessness:
+                        type: boolean
+                      lesbianGayBisexual:
+                        type: boolean
+                      marriageAndFamilyTherapy:
+                        type: boolean
+                      medicalIllnessAndTherapy:
+                        type: boolean
+                      medicationManagementAndTherapy:
+                        type: boolean
+                      militaryVeterans:
+                        type: boolean
+                      modifiedAt:
+                        type: string
+                        format: date-time
+                      neuropsychologicalTestingAdolescents:
+                        type: boolean
+                      neuropsychologicalTestingChildren:
+                        type: boolean
+                      obsessiveCompulsiveDisorder:
+                        type: boolean
+                      other:
+                        type: string
+                      peopleWithDisabilities:
+                        type: boolean
+                      physicalDisabilities:
+                        type: boolean
+                      playTherapy:
+                        type: boolean
+                      postpartumDepressionAndOrPsychosis:
+                        type: boolean
+                      psychologicalTestingAdolescents:
+                        type: boolean
+                      psychologicalTestingChildren:
+                        type: boolean
+                      resourceAuthorization:
+                        type: object
+                        additionalProperties: false
+                        properties:
+                          message:
+                            type: string
+                          resource:
+                            type: string
+                          statusCode:
+                            type: string
+                      seriousMentalIllness:
+                        type: boolean
+                      sleepDisorders:
+                        type: boolean
+                      substanceAbuse:
+                        type: boolean
+                      transgender:
+                        type: boolean
+                      trauma:
+                        type: boolean
+                  practitionerTraining:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        practitionerOtherTraining:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              otherTrainingSpecialty:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                        practitionerPreceptorshipFlag:
+                          type: boolean
+                        practitionerFellowship:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              institutionName:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              affiliatedUniversity:
+                                type: string
+                              startDate:
+                                type: string
+                                format: date-time
+                              endDate:
+                                type: string
+                                format: date-time
+                              fellowshipProgramType:
+                                type: string
+                              department:
+                                type: string
+                              fellowshipSpecialty:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                        practitionerResidency:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              institutionName:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              affiliatedUniversity:
+                                type: string
+                              startDate:
+                                type: string
+                                format: date-time
+                              endDate:
+                                type: string
+                                format: date-time
+                              residencyProgramType:
+                                type: string
+                              department:
+                                type: string
+                              residencySpecialty:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                  practitionerSpecialty:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        otherSpecialty:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              abmsListedFlag:
+                                type: boolean
+                              boardCertifiedFlag:
+                                type: boolean
+                              certificateExpirationDate:
+                                type: string
+                                format: date-time
+                              certificationAppliedDate:
+                                type: string
+                                format: date-time
+                              certificationNumber:
+                                type: string
+                              failedBoardExamAttempts:
+                                type: integer
+                              failedBoardExamBoardName:
+                                type: string
+                              failedBoardExamDate:
+                                type: string
+                                format: date-time
+                              failedBoardExamExplanation:
+                                type: string
+                              failedBoardExamFlag:
+                                type: boolean
+                              initialCertificationDate:
+                                type: string
+                                format: date-time
+                              lastRecertificationDate:
+                                type: string
+                                format: date-time
+                              listedUnderHMOFlag:
+                                type: boolean
+                              listedUnderPOSFlag:
+                                type: boolean
+                              listedUnderPPOFlag:
+                                type: boolean
+                              listInDirectoryFlag:
+                                type: boolean
+                              notBoardCertifiedSpecialtyDetails:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    admissibilityExpirationDate:
+                                      type: string
+                                      format: date-time
+                                    applicationFormState:
+                                      type: string
+                                    applyCertificationFlag:
+                                      type: boolean
+                                    examAcceptedFlag:
+                                      type: boolean
+                                    examName:
+                                      type: string
+                                    examTakenDate:
+                                      type: string
+                                      format: date-time
+                                    futureBoardExamDate:
+                                      type: string
+                                      format: date-time
+                                    futureBoardOralExamDate:
+                                      type: string
+                                      format: date-time
+                                    futureBoardWrittenExamDate:
+                                      type: string
+                                      format: date-time
+                                    intendApplyCertificationDate:
+                                      type: string
+                                      format: date-time
+                                    intendApplyCertificationFlag:
+                                      type: boolean
+                                    intendingBoardFlag:
+                                      type: boolean
+                                    noCertificationExplanation:
+                                      type: string
+                                    nonCertifiedStatus:
+                                      type: string
+                                    notEligibleBoardFlag:
+                                      type: boolean
+                                    notIntendingBoardFlag:
+                                      type: boolean
+                                    partialExamFlag:
+                                      type: boolean
+                                    resourceAuthorization:
+                                      type: object
+                                      additionalProperties: false
+                                      properties:
+                                        message:
+                                          type: string
+                                        resource:
+                                          type: string
+                                        statusCode:
+                                          type: string
+                                    resultsPendingFlag:
+                                      type: boolean
+                                    resultsPendingSpecialtyBoardName:
+                                      type: string
+                                    specialtyStatus:
+                                      type: string
+                                    statusDate:
+                                      type: string
+                                      format: date-time
+                                    statusExpirationDate:
+                                      type: string
+                                      format: date-time
+                              primarySpecialtyFlag:
+                                type: boolean
+                              province:
+                                type: string
+                              recertifiedFlag:
+                                type: boolean
+                              specialtyBoardAddress:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  address1:
+                                    type: string
+                                  address2:
+                                    type: string
+                                  city:
+                                    type: string
+                                  state:
+                                    type: string
+                                  zipCode:
+                                    type: string
+                                  country:
+                                    type: string
+                              specialtyBoardName:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              specialtyName:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              specialtyNuccTaxonomyCode:
+                                type: string
+                              specialtyType:
+                                type: string
+                              subSpecialtyName:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                        practitionerSpecialtyFlag:
+                          type: boolean
+                        primarySpecialty:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            specialtyType:
+                              type: string
+                            primarySpecialtyFlag:
+                              type: boolean
+                            specialtyName:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                name:
+                                  type: string
+                            subSpecialtyName:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                name:
+                                  type: string
+                            specialtyBoardName:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                name:
+                                  type: string
+                            certificationNumber:
+                              type: string
+                            initialCertificationDate:
+                              type: string
+                              format: date-time
+                            certificateExpirationDate:
+                              type: string
+                              format: date-time
+                            recertifiedFlag:
+                              type: boolean
+                            specialtyNuccTaxonomyCode:
+                              type: string
+                        secondarySpecialty:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            specialtyType:
+                              type: string
+                            primarySpecialtyFlag:
+                              type: boolean
+                            specialtyName:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                name:
+                                  type: string
+                            subSpecialtyName:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                name:
+                                  type: string
+                            specialtyBoardName:
+                              type: object
+                              additionalProperties: false
+                              properties:
+                                name:
+                                  type: string
+                            certificationNumber:
+                              type: string
+                            initialCertificationDate:
+                              type: string
+                              format: date-time
+                            certificateExpirationDate:
+                              type: string
+                              format: date-time
+                            recertifiedFlag:
+                              type: boolean
+                            specialtyNuccTaxonomyCode:
+                              type: string
+                  practitionerAffiliation:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        hospitalAffiliation:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            admittingPrivilegeFlag:
+                              type: boolean
+                            admittingPrivilege:
+                              type: array
+                              items:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  practitionerCredentialingContact:
+                                    type: array
+                                    items:
+                                      type: object
+                                      additionalProperties: false
+                                      properties:
+                                        credentialingContactFirstName:
+                                          type: string
+                                        credentialingContactMiddleName:
+                                          type: string
+                                        credentialingContactLastName:
+                                          type: string
+                                        credentialingContactAddress:
+                                          type: object
+                                          additionalProperties: false
+                                          properties:
+                                            address1:
+                                              type: string
+                                            address2:
+                                              type: string
+                                            city:
+                                              type: string
+                                            state:
+                                              type: string
+                                            zipCode:
+                                              type: string
+                                            country:
+                                              type: string
+                                        credentialingContactPhoneNumber:
+                                          type: string
+                                        credentialingContactTitle:
+                                          type: string
+                                        credentialingContactFaxNumber:
+                                          type: string
+                                        credentialingContactEmailAddress:
+                                          type: string
+                                        primaryCredentialingContactFlag:
+                                          type: boolean
+                                        credentialingContactAvailabilityHours:
+                                          type: string
+                                  institutionName:
+                                    type: object
+                                    additionalProperties: false
+                                    properties:
+                                      name:
+                                        type: string
+                                      nonAhaName:
+                                        type: string
+                                  address:
+                                    type: object
+                                    additionalProperties: false
+                                    properties:
+                                      address1:
+                                        type: string
+                                      address2:
+                                        type: string
+                                      city:
+                                        type: string
+                                      state:
+                                        type: string
+                                      country:
+                                        type: string
+                                      zipCode:
+                                        type: string
+                                  phoneNumber:
+                                    type: string
+                                  startDate:
+                                    type: string
+                                    format: date-time
+                                  endDate:
+                                    type: string
+                                    format: date-time
+                                  department:
+                                    type: string
+                                  admittingPrivilegeStatus:
+                                    type: string
+                            admittingArrangementFlag:
+                              type: boolean
+                            admittingArrangement:
+                              type: array
+                              items:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  ahaHospitalId:
+                                    type: string
+                                  phoneNumber:
+                                    type: string
+                                  startDate:
+                                    type: string
+                                    format: date-time
+                                  endDate:
+                                    type: string
+                                    format: date-time
+                                  admittingArrangementStatus:
+                                    type: string
+                            nonAdmittingAffiliationFlag:
+                              type: boolean
+                            nonAdmittingAffiliation:
+                              type: array
+                              items:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  ahaHospitalId:
+                                    type: string
+                                  institutionName:
+                                    type: object
+                                    additionalProperties: false
+                                    properties:
+                                      name:
+                                        type: string
+                                      nonAhaName:
+                                        type: string
+                                  address:
+                                    type: object
+                                    additionalProperties: false
+                                    properties:
+                                      address1:
+                                        type: string
+                                      address2:
+                                        type: string
+                                      city:
+                                        type: string
+                                      state:
+                                        type: string
+                                      country:
+                                        type: string
+                                      zipCode:
+                                        type: string
+                                  phoneNumber:
+                                    type: string
+                                  startDate:
+                                    type: string
+                                    format: date-time
+                                  endDate:
+                                    type: string
+                                    format: date-time
+                                  nonAdmittingAffiliationStatus:
+                                    type: string
+                  practitionerPracticeLocation:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        activeLocation:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              practiceLimitationFlag:
+                                type: boolean
+                              emailAddress:
+                                type: string
+                              practiceLimitation:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  ageLimitationFlag:
+                                    type: boolean
+                                  ageLimitationMaximum:
+                                    type: string
+                                  ageLimitationMinimum:
+                                    type: string
+                                  otherLimitation:
+                                    type: string
+                                  specialtyLimitationFlag:
+                                    type: boolean
+                                  specialtyLimitationDescription:
+                                    type: string
+                                  genderLimitationType:
+                                    type: string
+                              healthcareServiceName:
+                                type: string
+                              phoneCoverage24x7:
+                                type: boolean
+                              practitionerLocationDetail:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    practitionerStartDate:
+                                      type: string
+                                      format: date-time
+                              locationService:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  laboratoryServicesFlag:
+                                    type: boolean
+                                  drawingBloodFlag:
+                                    type: boolean
+                                  cliaCertificateNumber:
+                                    type: string
+                                  cliaExpirationDate:
+                                    type: string
+                                    format: date-time
+                              locationOfficeManager:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    officeManagerCredentialingContactFlag:
+                                      type: boolean
+                                    officeManagerEmailAddress:
+                                      type: string
+                                    officeManagerFaxNumber:
+                                      type: string
+                                    officeManagerFirstName:
+                                      type: string
+                                    officeManagerLastName:
+                                      type: string
+                                    officeManagerMiddleName:
+                                      type: string
+                                    officeManagerPhoneNumber:
+                                      type: string
+                                    primaryContactFlag:
+                                      type: boolean
+                              caqhLocationId:
+                                type: string
+                              officeType:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  name:
+                                    type: string
+                              standardizedLocationID:
+                                type: string
+                              parentOrganization:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  organizationTaxId:
+                                    type: array
+                                    items:
+                                      type: object
+                                      additionalProperties: false
+                                      properties:
+                                        taxIdNumber:
+                                          type: string
+                                  organizationId:
+                                    type: string
+                                  organizationName:
+                                    type: string
+                              healthcareServicePrimaryTaxID:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  taxIdNumber:
+                                    type: string
+                              healthcareServiceType2Npi:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    npiNumber:
+                                      type: string
+                              healthcareServiceTaxId:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    taxIdNumber:
+                                      type: string
+                                    taxIdType:
+                                      type: string
+                                    taxIdGroupName:
+                                      type: string
+                              locationType2Npi:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    npiNumber:
+                                      type: string
+                              locationTaxId:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    taxIdNumber:
+                                      type: string
+                              address:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  address1:
+                                    type: string
+                                  address2:
+                                    type: string
+                                  city:
+                                    type: string
+                                  state:
+                                    type: string
+                                  country:
+                                    type: string
+                                  zipCode:
+                                    type: string
+                              mailingAddress:
+                                type: object
+                                additionalProperties: false
+                                properties:
+                                  address1:
+                                    type: string
+                                  address2:
+                                    type: string
+                                  city:
+                                    type: string
+                                  state:
+                                    type: string
+                                  country:
+                                    type: string
+                                  zipCode:
+                                    type: string
+                              locationHours:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    dayOfweek:
+                                      type: string
+                                    startHours:
+                                      type: string
+                                    endHours:
+                                      type: string
+                                    createdAt:
+                                      type: string
+                                      format: date-time
+                                    modifiedAt:
+                                      type: string
+                                      format: date-time
+                              locationSpecialty:
+                                type: array
+                                items:
+                                  type: object
+                                  additionalProperties: false
+                                  properties:
+                                    specialty:
+                                      type: object
+                                      additionalProperties: false
+                                      properties:
+                                        name:
+                                          type: string
+                                    subSpecialty:
+                                      type: object
+                                      additionalProperties: false
+                                      properties:
+                                        name:
+                                          type: string
+                  practitionerEmploymentInformation:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        employerName:
+                          type: string
+                        startDate:
+                          type: string
+                          format: date-time
+                        endDate:
+                          type: string
+                          format: date-time
+                        department:
+                          type: string
+                        title:
+                          type: string
+                        employerPhoneNumber:
+                          type: string
+                        employerPhoneExtn:
+                          type: string
+                        employerFaxNumber:
+                          type: string
+                        employerEmailAddress:
+                          type: string
+                        employerAddress:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            address1:
+                              type: string
+                            address2:
+                              type: string
+                            city:
+                              type: string
+                            state:
+                              type: string
+                            zipCode:
+                              type: string
+                            country:
+                              type: string
+                  practitionerEmploymentGap:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        gapStartDate:
+                          type: string
+                          format: date-time
+                        gapEndDate:
+                          type: string
+                          format: date-time
+                        gapExplanation:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              gapExplanationName:
+                                type: string
+                  practitionerCertification:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        certificationName:
+                          type: string
+                        certificationType:
+                          type: string
+                        certificationState:
+                          type: string
+                        certificationNumber:
+                          type: string
+                        certificationObtainedDate:
+                          type: string
+                          format: date-time
+                        certificationExpirationDate:
+                          type: string
+                          format: date-time
+                  practitionerDocument:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        documentID:
+                          type: string
+                        documentName:
+                          type: string
+                        documentStatus:
+                          type: string
+                        documentType:
+                          type: string
+                  practitionerClinicalPractice:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      fullTimeFlag:
+                        type: boolean
+                  practitionerProfessionalLiabilityInsurance:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        insuranceCarrierName:
+                          type: string
+                        policyNumber:
+                          type: string
+                        renewalDate:
+                          type: string
+                          format: date-time
+                        occurrenceCoverageAmount:
+                          type: number
+                        aggregateCoverageAmount:
+                          type: number
+                        policyHolder:
+                          type: string
+                        pliCoverageType:
+                          type: object
+                          additionalProperties: false
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                        policyEffectiveDate:
+                          type: string
+                          format: date-time
+                        policyExpirationDate:
+                          type: string
+                          format: date-time
+                        policyCurrentEffectiveDate:
+                          type: string
+                          format: date-time
+                        individualCoverageFlag:
+                          type: boolean
+                        insuranceType:
+                          type: string
+                        unlimitedCoverageFlag:
+                          type: boolean
+                  providerId:
+                    type: string
+                  updatedAt:
+                    type: string
+                    format: date-time
+                  updatedBy:
+                    type: string
+                  updatedByName:
+                    type: string
+                  workflowSource:
+                    type: string
+                  practitionerDisclosure:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        disclosureQuestionDetail:
+                          type: string
+                        disclosureAnswerFlag:
+                          type: boolean
+                        disclosureAnswerDetail:
+                          type: string
+                        disclosureDate:
+                          type: string
+                          format: date-time
+                        practitionerAdverseAction:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              occurrenceExplanation:
+                                type: string
+                              actionDate:
+                                type: string
+                                format: date-time
+                        practitionerProfessionalLiabilityAction:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              carrierName:
+                                type: string
+                              policyNumber:
+                                type: string
+                              coverageStartDate:
+                                type: string
+                                format: date-time
+                              coverageEndDate:
+                                type: string
+                                format: date-time
+                        practitionerMedicareMedicaidSanctions:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: false
+                            properties:
+                              disciplinaryActions:
+                                type: string
+        '400':
+          description: Invalid input parameters.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '404':
+          description: No CAQH data found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/credentialing-workflows:
+    post:
+      operationId: ProviderV2Controller_createCredentialingWorkflow
+      summary: Creates a credentialing workflow for the provider.
+      description: "Initiates a new credentialing workflow for the specified \n      provider. The workflow will automatically trigger the pipeline to \n      fetch the required provider information needed for credentialing."
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Credentialing workflow ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  providerId:
+                    type: string
+        '201':
+          description: ''
+        '400':
+          description: "Bad request because of any of the following reasons:\n\n    1. Wrong parameters provided in the request.\n\n    2. Workflow exists in not complete state for the provider."
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Provider is not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/psv/signed-url:
+    get:
+      operationId: ProviderV2Controller_gePSVPdfSignedUrl
+      summary: Retrieve signed URL for provider PSV PDF
+      description: Returns a signed URL for downloading the PSV (Primary Source Verification) PDF for the specified provider. The signed URL is time-limited and allows secure access to the PSV document.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        description: The unique identifier of the provider whose PSV PDF signed URL is to be retrieved.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Signed URL for the provider PSV PDF.
+          content:
+            application/json:
+              schema:
+                example:
+                  signedUrl: https://storage.googleapis.com/bucket/psv.pdf?X-Goog-Signature=...
+        '400':
+          description: Invalid input parameters.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '404':
+          description: Provider or PSV PDF not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/groups:
+    put:
+      operationId: ProviderV2Controller_modifyProviderOrgEntities
+      summary: Modify groups associated to a provider
+      description: Modifies the groups (org-entities) associated with a provider.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateProviderV2GroupDto'
+      responses:
+        '200':
+          description: The record has been successfully updated.
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+    get:
+      operationId: ProviderV2Controller_getProviderGroups
+      summary: Retrieve groups/ org-entities for a provider.
+      description: Fetches all the groups (org-entities) associated with a provider.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Provider Groups.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderV2GroupsResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/credentialing-workflow-timelines:
+    get:
+      operationId: CredentialingWorkflowTimelineV2Controller_getCredentialingWorkflowTimelines
+      summary: Retrieve credentialing workflow timelines for a provider
+      description: Returns a list of credentialing workflow timeline records for the specified provider within the organization. Each record contains credentialing status, cycle, dates, and related metadata.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        description: The unique identifier of the provider whose credentialing workflow timelines are being retrieved.
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Credentialing workflow timelines
+          schema:
+            example:
+            - credentialingWorkflowId: workflow123
+              credentialingStatus: Active
+              credentialingCycle: Initial
+              providerId: provider456
+              organizationId: org789
+              orgEntity:
+                id: entity1
+                name: Group A
+              medicalDirectorId: md123
+              medicalDirectorName: Dr. Smith
+              receivedForCredentialingDate: '2024-01-01'
+              attestationDate: '2024-01-02'
+              initialCredentialingDate: '2024-01-03'
+              lastCredentialedDate: '2024-01-04'
+              psvCompleteDate: '2024-01-05'
+              credentialingDecisionDate: '2024-01-06'
+              nextCredentialingDate: '2025-01-01'
+              updatedAt: '2024-01-07'
+              updatedByName: Jane Doe
+              updatedBy: user123
+              createdAt: '2024-01-01'
+              createdBy: user456
+              createdByName: John Doe
+              decisionEnteredById: user789
+              decisionEnteredByName: Dr. Reviewer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CredentialingWorkflowTimelineV2ResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/professional-ids:
+    post:
+      operationId: ProfessionalIdsV2Controller_createMany
+      summary: Create Bulk Provider Professional IDs
+      description: Create multiple professional IDs for a provider
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfessionalIdsV2Dto'
+      responses:
+        '201':
+          description: Professional IDs created successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProfessionalIdResponseV2Dto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/specialties:
+    get:
+      operationId: SpecialtiesV2Controller_findAll
+      summary: Get list of provider specialties
+      description: Retrieves a list of specialties for the specified provider.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      responses:
+        '200':
+          description: List of specialties
+          content:
+            application/json:
+              schema:
+                example:
+                - id: string
+                  specialty_nucc_taxonomy_code: string
+                  name: string
+                  is_primary: true
+                  sub_specialties:
+                  - specialty_nucc_taxonomy_code: string
+                    name: string
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+    post:
+      operationId: SpecialtiesV2Controller_create
+      summary: Create provider specialties
+      description: Create a specialty with optional sub-specialties
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialtiesV2Dto'
+      responses:
+        '201':
+          description: Specialty created successfully.
+        '400':
+          description: Invalid request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+  /v2/provider/{providerId}/specialties/{specialtyId}:
+    patch:
+      operationId: SpecialtiesV2Controller_update
+      summary: Update provider specialty
+      description: Update specialty details with optional sub-specialties
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: specialtyId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpecialtiesV2Dto'
+      responses:
+        '204':
+          description: Updated.
+        '400':
+          description: Invalid request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+    delete:
+      operationId: SpecialtiesV2Controller_delete
+      summary: Delete provider specialty
+      description: Deletes a specialty for the specified provider.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: specialtyId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Deleted.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/provider
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    LiabilityInsurance:
+      type: object
+      properties:
+        carrier_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        policy_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        policy_expiration:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        occurence_amount:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        general_aggregate_amount:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+      required:
+      - carrier_name
+      - policy_number
+      - policy_expiration
+      - occurence_amount
+      - general_aggregate_amount
+      - document
+    ProfessionalIdResponseV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the professional ID
+        type:
+          enum:
+          - Medicare Number
+          - Medicaid Number
+          - ECFMG Number
+          - Foreign National Identification Number
+          - Unique Physician Identification Number
+          - CLIA
+          - DEA
+          type: string
+          description: Type of professional ID
+        number:
+          type: string
+          description: Professional ID number
+        issue_date:
+          type: string
+          description: Issue date of the professional ID
+        expiration_date:
+          type: string
+          description: Expiration date of the professional ID
+        notes:
+          type: string
+          description: Notes about the professional ID
+        state:
+          type: string
+          description: State associated with the professional ID
+        source:
+          type: string
+          description: Source of the professional ID
+      required:
+      - id
+      - type
+      - number
+    CreateAttestedProviderDocumentDto:
+      type: object
+      properties:
+        fileType:
+          type: string
+          description: Type of the file uploading
+        organizationId:
+          type: string
+          description: ID assigned to Client Organization
+        workflowId:
+          type: string
+          description: ID assigned to Workflow
+        file:
+          type: string
+          format: binary
+          description: Provider Document
+      required:
+      - fileType
+      - organizationId
+      - workflowId
+    LicenseDto:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of license (e.g., medical, nursing, etc.)
+        expiration:
+          type: string
+          description: Date the license expires
+          example: YYYY-MM-DD
+        issue_date:
+          type: string
+          description: Date the license was issued
+          example: YYYY-MM-DD
+        license_number:
+          type: string
+          description: Unique license number assigned by the issuing authority
+        state:
+          type: string
+          description: State or jurisdiction where the license is issued
+        status:
+          type: string
+          description: Current status of the license (e.g., active, expired, suspended)
+        id:
+          type: string
+          description: Unique identifier for the license record
+        license_type:
+          type: string
+          description: Type/category of the license (e.g., MD, RN, DO)
+        license_status:
+          type: string
+          description: Status of the license
+          enum:
+          - Active
+          - Expired
+          - Inactive
+          - Lapsed
+          - Limited
+          - Locum Tenens
+          - Military
+          - Probation
+          - Retired
+          - Revoked
+          - Surrendered
+          - Superseded
+          - Suspended
+          - Temporary
+        source:
+          type: string
+          description: Source from which the license information was obtained
+        report_date:
+          type: string
+          description: Date the license report was generated
+          example: YYYY-MM-DD
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the license
+        verified_date:
+          type: string
+          description: The date at which the license was verified.
+          example: YYYY-MM-DD
+        first_name:
+          type: string
+          description: First name of the license holder (if available)
+        last_name:
+          type: string
+          description: Last name of the license holder (if available)
+        middle_name:
+          type: string
+          description: Middle name of the license holder (if available)
+      required:
+      - type
+      - expiration
+      - issue_date
+      - license_number
+      - state
+      - status
+      - id
+      - license_type
+      - license_status
+      - source
+      - report_date
+      - verified_by
+      - verified_date
+    RaceEthnicityLevel2Dto:
+      type: object
+      properties:
+        raceEthnicityLevel2Name:
+          type: string
+        raceEthnicityLevel3:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceEthnicityLevel3Dto'
+      required:
+      - raceEthnicityLevel2Name
+      - raceEthnicityLevel3
+    EducationTrainingDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the education or training record
+        source:
+          type: string
+          description: Source from which the education training information was obtained (e.g., Application, Primary Source Verification)
+          enum:
+          - Verified through Licensing Board/Agency
+          - Verified through Board Certification
+          - Verified by Educational Institution
+          - Verified through the AMA
+          - Verified by Student Clearinghouse
+        type:
+          type: string
+          description: Type of education training.
+          enum:
+          - Fellowship
+          - Residency
+          - Professional
+          - Internship
+        degree:
+          type: string
+          description: Degree awarded
+          enum:
+          - Bachelor of Arts (BA)
+          - Bachelor of Accountancy (BAcc)
+          - Bachelor of Architecture (BArch)
+          - Bachelor of Business Administration (BBA)
+          - Bachelor of Commerce (BComm)
+          - Bachelor of Computer Science (BCS)
+          - Bachelor of Computer Application (BCA)
+          - Bachelor of Divinity (BDiv)
+          - Bachelor of Economics (BEc)
+          - Bachelor of Education (BEd)
+          - Bachelor of Engineering (BEng)
+          - Bachelor of Fine Arts (BFA)
+          - Bachelor of Laws (LLB)
+          - Bachelor of Letters (BLitt)
+          - Bachelor of Music (BM)
+          - Bachelor of Management Studies (BMS)
+          - Bachelor of Pharmacy (BPharm)
+          - Bachelor of Philosophy (BPhil)
+          - Bachelor of Science (BS)
+          - Bachelor of Science in Nursing (BSN)
+          - Bachelor of Social Work (BSW)
+          - Bachelor of Technology (BTech)
+          - Bachelor of Theology (BTh)
+          - Bachelor of Medicine, Bachelor of Surgery (MBBS)
+          - Bachelor of Civil Law (BCL)
+          - Licentiate in Sacred Theology (STL)
+          - Magister Juris (MJur)
+          - Master of Business Administration (MBA)
+          - Master of Counselling (MCouns)
+          - Master of Divinity (MDiv)
+          - Master of Education (MEd)
+          - Master of Engineering (MEng)
+          - Master of Family Therapy (MFT)
+          - Master of Fine Arts (MFA)
+          - Master of Health Science (MHS)
+          - Master of Laws (LLM)
+          - Master of Letters (MLitt)
+          - Master of Medicine (MMed)
+          - Master of Management Studies (MMS)
+          - Master of Philosophy (MPhil)
+          - Master of Physician Assistant Studies (MPAS)
+          - Master of Psychology (MPsych)
+          - Master of Public Administration (MPA)
+          - Master of Public Health (MPH)
+          - Master of Research (MRes)
+          - Master of Sacred Theology (STM)
+          - Master of Science (MS)
+          - Master of Science in Nursing (MSN)
+          - Master of Social Work (MSW)
+          - Master of Studies (MSt)
+          - Master of Surgery (ChM)
+          - Master of Technology (Mtech)
+          - Master of Art (MA)
+          - Master in Physician Assistant Studies (MSPA)
+          - Professional Science Masters (PSM)
+          - Doctor of Arts (DA)
+          - Doctor of Audiology (AuD)
+          - Doctor of Business Administration (DBA)
+          - Doctor of Canon Law (JCD)
+          - Doctor of Civil Law (DCL)
+          - Doctor of Clinical Psychology (DClinPsy)
+          - Doctor of Chiropractic (DC)
+          - Doctor of Dental Surgery (DDS)
+          - Doctor of Divinity (DDiv)
+          - Doctor of Education (EdD)
+          - Doctor of Juridical Science (JSD)
+          - Doctor of Letters (DLitt)
+          - Doctor of Medicine (MD)
+          - Doctor of Ministry (DMin)
+          - Doctor of Naturopathic Medicine (ND)
+          - Doctor of Nurse Practice (DNP)
+          - Doctor of Osteopathic Medicine (DO)
+          - Doctor of Pharmacy (DPharm)
+          - Doctor of Philosophy (PhD)
+          - Doctor of Physical Therapy (DPT)
+          - Doctor of Psychology (PsyD)
+          - Doctor of Science (DSc or ScD)
+          - Doctor of Social Work (DSW)
+          - Doctor of Theology (ThD)
+          - Doctor of Veterinary Medicine (DVM)
+          - Education Specialist degree (EdS)
+          - Juris Doctor (JD)
+          - Other Degree
+        specialty:
+          type: string
+          description: Specialty or field of study for the education training
+          enum:
+          - Acupuncture
+          - Acute Care
+          - Acute Care Nurse Practitioner
+          - Acute/Critical Care Nursing
+          - Addiction Medicine
+          - Addiction Psychology
+          - Administrative Medicine
+          - Adult Acute/Critical Care Nursing
+          - Adult-Gerontology Acute Care
+          - Adult-Gerontology Acute Care Clinical Nurse Specialist
+          - Adult-Gerontology Acute Care Nurse Practitioner
+          - Adult-Gerontology Clinical Nurse Specialist
+          - Adult-Gerontology Primary Care
+          - Adult-Gerontology Primary Care Nurse Practitioner
+          - Adult Health Clinical Nurse Specialist
+          - Adult Nurse Practitioner
+          - Adult Psychiatric-Mental Health
+          - Adult Psychiatric Mental Health Nurse Practitioner
+          - Advanced Certified Hospice and Palliative Nurse
+          - Advanced Diabetes Management
+          - Advanced Oncology Certified Nurse
+          - Aerospace Medicine
+          - Allergy and Immunology
+          - Ambulatory Care Nurse
+          - Anatomic Pathology
+          - Anatomic Pathology and Clinical Pathology
+          - Anatomic Pathology - General
+          - Anesthesiology
+          - Assistant Behavior Analyst
+          - Audiology
+          - Behavioral Analyst
+          - Board Certified Assistant Behavior Analyst
+          - Board Certified Behavior Analyst
+          - Board Certified Behavior Analyst - Doctoral
+          - Cardiac Medicine
+          - Cardiac Surgery
+          - Cardiac/Vascular Nurse
+          - Cardiology
+          - Cardiovascular and Thoracic Surgery
+          - Cardiothoracic Surgery
+          - Cardiovascular Computed Tomography
+          - Case Management
+          - Cataract Surgery
+          - Certified Diabetes Care and Education Specialist
+          - Certified Hand Therapist
+          - Certified Nurse Midwife
+          - Certified Pediatric Nurse
+          - Certified Registered Nurse Anesthetist
+          - Chiropractor
+          - Chiropractic Acupuncture
+          - Clinical Biochemical Genetics
+          - Clinical Child and Adolescent Psychology
+          - Clinical Cytogenetics
+          - Clinical Electrophysiologic Physical Therapist
+          - Clinical Genetics (MD)
+          - Clinical Genetics and Genomics (MD)
+          - Clinical Health Psychology
+          - Clinical Lipidology
+          - Clinical Mental Health Counselor
+          - Clinical Molecular Genetics
+          - Clinical Neurophysiology
+          - Clinical Nurse Specialist
+          - Clinical Nurse Specialist in Adult Psychiatric and Mental Health
+          - Clinical Nurse Specialist in Child and Adolescent Psychiatric and Mental Health
+          - Clinical Psychology
+          - Clinical Pathology/Laboratory Medicine
+          - Clinical Social Work
+          - Colon and Rectal Surgery
+          - Community Behavioral Health Clinician
+          - Counseling Psychology
+          - Couple and Family Psychology
+          - Dental
+          - Dental Public Health
+          - Dermatology
+          - Dermatology Nurse Practitioner
+          - Diabetes Care and Education
+          - Diagnostic Radiology
+          - Diagnostic Radiology with Special Competence in Nuclear Radiology
+          - DOULA
+          - Echocardiography
+          - Educational Commission for Foreign Medical Graduates
+          - Electrodiagnostic Medicine
+          - Electronic Fetal Monitoring
+          - Emergency Medicine
+          - Emergency Nurse Practitioner
+          - EMDR
+          - Endocrinology
+          - Endodontics
+          - Endovascular Medicine
+          - ENT/Otolaryngology
+          - Facial Plastic and Reconstructive Surgery
+          - Family Medicine
+          - Family Medicine, Geriatric Medicine
+          - Family Medicine, Obesity Medicine
+          - Family Nurse Practitioner
+          - Family Practice
+          - Focused Practice in Pediatric and Adolescent Gynecology - Obstetrics & Gynecology Designation
+          - Focused Practice in Metabolic Bariatric Surgery - Surgery Designation
+          - Focused Practice in Minimally Invasive Gynecologic Surgery - Obstetrics & Gynecology
+          - Foot and Ankle Surgery
+          - Foot Surgery
+          - Forensic Psychology
+          - Gastroenterology
+          - General Practice
+          - General Surgery
+          - Genetic Counseling
+          - Geriatrics
+          - Gerontological
+          - Gerontological Nurse Practitioner
+          - Gerontological Nutrition
+          - Gerontology
+          - Geropsychology
+          - Group Psychology
+          - Gynecology
+          - Histocompatibility and Immunogenetics
+          - HIV Specialist
+          - Infectious Diseases
+          - Inpatient Obstetric Nursing
+          - Internal Medicine
+          - Internal Medicine, Geriatric Medicine
+          - Internal Medicine, Obesity Medicine
+          - Interventional Radiology and Diagnostic Radiology
+          - Laboratory Genetics and Genomics
+          - Lactation Consultant (Registered Nurse)
+          - Limb Preservation and Salvage
+          - Lower Extremity Geriatric Medicine
+          - Massage Therapy
+          - Maternal Newborn Nursing
+          - Medical Physics (Diagnostic, Nuclear, Therapeutic)
+          - Medical Surgical Nurse
+          - Minimally Invasive Foot and Ankle Surgery
+          - National Certified Counselor (NCC)
+          - Naturopathic Medicine
+          - Neonatal Acute Care Clinical Nurse Specialist
+          - Neonatal Acute/Critical Care Nursing
+          - Neonatal Nurse Practitioner
+          - Nephrology
+          - Neurological Surgery
+          - Neurology
+          - Neurology with Special Qualification in Child Neurology
+          - Neuromusculoskeletal Medicine & OMM
+          - Neurophysiology-Neurology
+          - Nuclear Cardiology
+          - Nuclear Medicine
+          - Nurse Anesthetist
+          - Nurse Executive, Advanced
+          - Nurse Practitioner
+          - Obesity and Weight Management
+          - Obesity Medicine
+          - Obstetrics & Gynecology
+          - Obstetrics & Gynecology, Obesity Medicine
+          - Oculoplastics Surgery
+          - Occupational Medicine
+          - Occupational Therapist
+          - Occupational Therapist, Hand
+          - Oncology Clinical Nurse Specialist
+          - Oncology - Medical
+          - Oncology - Medical, Surgical
+          - Oncology Nurse Practitioner
+          - Oncology Nutrition
+          - Oncology - Radiation/Radiation Oncology
+          - Oncology - Surgical
+          - Ophthalmology
+          - Optometry
+          - Oral and Maxillofacial Surgery
+          - Organizational and Business Consulting Psychology
+          - Orofacial Pain
+          - Orthodontics
+          - Orthopaedic Physical Therapist
+          - Orthopaedic Surgery
+          - Orthopaedic Surgery of the Spine
+          - Osteopathic Manipulative Medicine (OMM)
+          - Otolaryngology
+          - Otolaryngology and Facial Plastic Surgery
+          - Otolaryngology - Head and Neck Surgery
+          - Pain Management
+          - Pain Medicine
+          - Pathology - Anatomic
+          - Pathology - Anatomic/Pathology - Clinical
+          - Pathology - Clinical
+          - Pediatric Acute Care Clinical Nurse Specialist
+          - Pediatric Acute/Critical Care Nursing
+          - Pediatric Critical Care Nutrition
+          - Pediatric Dentistry
+          - Pediatric Neurological Surgery
+          - Pediatric Nurse Practitioner - Acute Care
+          - Pediatric Nurse Practitioner - Primary Care
+          - Pediatric Nutrition
+          - Pediatric Primary Care
+          - Pediatrics
+          - 'Pediatrics: Developmental-Behavioral Pediatrics'
+          - Pediatrics, Obesity Medicine
+          - Peer Support Specialist
+          - Periodontics
+          - Pharmacist
+          - Physical Medicine and Rehabilitation
+          - Physical Therapist
+          - Physical Therapist, Hand
+          - Physical Therapy
+          - Physician Assistant
+          - Physiatry, Rehabilitative Medicine
+          - Plastic and Reconstructive Surgery
+          - Plastic Surgery
+          - Podiatric Medicine and Surgery Residency
+          - Podiatric Sports Medicine
+          - Podiatry
+          - Police and Public Safety Psychology
+          - Prevention and Treatment of Diabetic Foot Wounds and Diabetic Footwear
+          - Preventative Medicine
+          - Preventive Medicine, Obesity Medicine
+          - Primary Care
+          - Primary Care in Podiatric Medicine
+          - Primary Care - Nurse Practitioners
+          - Primary Care - Physician Assistants
+          - Proctology
+          - Progressive Care Nursing
+          - Prosthodontics
+          - Psychoanalytic and Psychodynamic Psychology
+          - Psychiatric-Mental Health
+          - Psychiatric Mental Health Nurse Practitioner
+          - Psychiatry
+          - Psychiatry & Neurology, Obesity Medicine
+          - 'Psychiatry: Child and Adolescent Psychiatry'
+          - 'Psychiatry: Geriatric Psychiatry'
+          - Psychiatry & Neurology
+          - Psychology
+          - Psychotherapy
+          - Public Health and General Preventive Medicine
+          - Pulmonology
+          - Radiation Oncology
+          - Radiologic Physics
+          - Radiology
+          - Reconstructive Rearfoot/Ankle Surgery
+          - Recreational Therapy
+          - Registered Behavior Technician
+          - Registered Dietitian Nutritionist
+          - Registered Physician in Neurovascular Interpretation (RPNI)
+          - Registered Physician in Vascular Interpretation(RPVI)
+          - Rehabilitation Psychology
+          - Renal Nutrition
+          - Retina Specialist
+          - Rheumatology
+          - School Nurse Practitioner
+          - School Psychology
+          - Serious Mental Illness Psychology
+          - Sleep Medicine
+          - Social Work
+          - Speech-Language Pathology
+          - Sports Dietetics
+          - Surgery
+          - Therapeutic Radiology
+          - Thoracic and Cardiac Surgery
+          - Thoracic Surgery
+          - Toxicology
+          - Urgent Care Medicine
+          - Urological Surgery
+          - Urology
+          - Vascular Medicine
+          - Vascular Surgery
+          - Venous and Lymphatic Medicine
+          - Women's Health Nurse Practitioner
+          - Wound Specialist
+        institution:
+          type: string
+          description: Name of the institution where the education training was completed
+        licensing_board_reference:
+          type: string
+          description: Reference or identifier from the licensing board, if applicable
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the education training
+        verified_date:
+          type: string
+          description: Date the education training was verified
+          example: YYYY-MM-DD
+      required:
+      - id
+      - source
+      - type
+      - degree
+      - specialty
+      - institution
+      - licensing_board_reference
+      - verified_by
+      - verified_date
+    CreateProfessionalIdV2Dto:
+      type: object
+      properties:
+        type:
+          enum:
+          - Medicare Number
+          - Medicaid Number
+          - ECFMG Number
+          - Foreign National Identification Number
+          - Unique Physician Identification Number
+          - CLIA
+          - DEA
+          type: string
+          description: Type of professional ID
+        number:
+          type: string
+          description: Professional ID number
+        issue_date:
+          format: date-time
+          type: string
+          description: Issue date of the professional ID
+        expiration_date:
+          format: date-time
+          type: string
+          description: Expiration date of the professional ID
+        notes:
+          type: string
+          description: Notes about the professional ID
+        state:
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          type: string
+          description: State associated with the professional ID
+        source:
+          type: string
+          description: Source of the professional ID
+      required:
+      - type
+      - number
+    Email:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        email:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - type
+      - email
+    CreateAttestedProviderDataDto:
+      type: object
+      properties:
+        purpose:
+          type: string
+        organization_id:
+          type: string
+        workflow_id:
+          type: string
+        date_complete:
+          format: date-time
+          type: string
+        attestation_metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttestationMetadata'
+        data_snapshot:
+          $ref: '#/components/schemas/DataSnapshot'
+        question:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+      required:
+      - purpose
+      - organization_id
+      - workflow_id
+      - date_complete
+      - attestation_metadata
+      - data_snapshot
+      - question
+    CreateProviderV2GroupDto:
+      type: object
+      properties:
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        location_name:
+          type: string
+          description: Name of group location
+        external_group_id:
+          type: string
+          description: Client's ID for the group
+      required:
+      - group_name
+      - group_npi
+      - group_tin
+    BoardCertificationDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the board certification record
+        certificate_id:
+          type: string
+          description: Certificate ID assigned by the certifying board
+        expire_date:
+          type: string
+          description: Date the certification expires
+          example: YYYY-MM-DD
+        issue_date:
+          type: string
+          description: Date the certification was issued
+          example: YYYY-MM-DD
+        specialty:
+          type: string
+          description: Specialty for which the certification was awarded
+          enum:
+          - Acupuncture
+          - Acute Care
+          - Acute Care Nurse Practitioner
+          - Acute/Critical Care Nursing
+          - Addiction Medicine
+          - Addiction Psychology
+          - Administrative Medicine
+          - Adult Acute/Critical Care Nursing
+          - Adult-Gerontology Acute Care
+          - Adult-Gerontology Acute Care Clinical Nurse Specialist
+          - Adult-Gerontology Acute Care Nurse Practitioner
+          - Adult-Gerontology Clinical Nurse Specialist
+          - Adult-Gerontology Primary Care
+          - Adult-Gerontology Primary Care Nurse Practitioner
+          - Adult Health Clinical Nurse Specialist
+          - Adult Nurse Practitioner
+          - Adult Psychiatric-Mental Health
+          - Adult Psychiatric Mental Health Nurse Practitioner
+          - Advanced Certified Hospice and Palliative Nurse
+          - Advanced Diabetes Management
+          - Advanced Oncology Certified Nurse
+          - Aerospace Medicine
+          - Allergy and Immunology
+          - Ambulatory Care Nurse
+          - Anatomic Pathology
+          - Anatomic Pathology and Clinical Pathology
+          - Anatomic Pathology - General
+          - Anesthesiology
+          - Assistant Behavior Analyst
+          - Audiology
+          - Behavioral Analyst
+          - Board Certified Assistant Behavior Analyst
+          - Board Certified Behavior Analyst
+          - Board Certified Behavior Analyst - Doctoral
+          - Cardiac Medicine
+          - Cardiac Surgery
+          - Cardiac/Vascular Nurse
+          - Cardiology
+          - Cardiovascular and Thoracic Surgery
+          - Cardiothoracic Surgery
+          - Cardiovascular Computed Tomography
+          - Case Management
+          - Cataract Surgery
+          - Certified Diabetes Care and Education Specialist
+          - Certified Hand Therapist
+          - Certified Nurse Midwife
+          - Certified Pediatric Nurse
+          - Certified Registered Nurse Anesthetist
+          - Chiropractor
+          - Chiropractic Acupuncture
+          - Clinical Biochemical Genetics
+          - Clinical Child and Adolescent Psychology
+          - Clinical Cytogenetics
+          - Clinical Electrophysiologic Physical Therapist
+          - Clinical Genetics (MD)
+          - Clinical Genetics and Genomics (MD)
+          - Clinical Health Psychology
+          - Clinical Lipidology
+          - Clinical Mental Health Counselor
+          - Clinical Molecular Genetics
+          - Clinical Neurophysiology
+          - Clinical Nurse Specialist
+          - Clinical Nurse Specialist in Adult Psychiatric and Mental Health
+          - Clinical Nurse Specialist in Child and Adolescent Psychiatric and Mental Health
+          - Clinical Psychology
+          - Clinical Pathology/Laboratory Medicine
+          - Clinical Social Work
+          - Colon and Rectal Surgery
+          - Community Behavioral Health Clinician
+          - Counseling Psychology
+          - Couple and Family Psychology
+          - Dental
+          - Dental Public Health
+          - Dermatology
+          - Dermatology Nurse Practitioner
+          - Diabetes Care and Education
+          - Diagnostic Radiology
+          - Diagnostic Radiology with Special Competence in Nuclear Radiology
+          - DOULA
+          - Echocardiography
+          - Educational Commission for Foreign Medical Graduates
+          - Electrodiagnostic Medicine
+          - Electronic Fetal Monitoring
+          - Emergency Medicine
+          - Emergency Nurse Practitioner
+          - EMDR
+          - Endocrinology
+          - Endodontics
+          - Endovascular Medicine
+          - ENT/Otolaryngology
+          - Facial Plastic and Reconstructive Surgery
+          - Family Medicine
+          - Family Medicine, Geriatric Medicine
+          - Family Medicine, Obesity Medicine
+          - Family Nurse Practitioner
+          - Family Practice
+          - Focused Practice in Pediatric and Adolescent Gynecology - Obstetrics & Gynecology Designation
+          - Focused Practice in Metabolic Bariatric Surgery - Surgery Designation
+          - Focused Practice in Minimally Invasive Gynecologic Surgery - Obstetrics & Gynecology
+          - Foot and Ankle Surgery
+          - Foot Surgery
+          - Forensic Psychology
+          - Gastroenterology
+          - General Practice
+          - General Surgery
+          - Genetic Counseling
+          - Geriatrics
+          - Gerontological
+          - Gerontological Nurse Practitioner
+          - Gerontological Nutrition
+          - Gerontology
+          - Geropsychology
+          - Group Psychology
+          - Gynecology
+          - Histocompatibility and Immunogenetics
+          - HIV Specialist
+          - Infectious Diseases
+          - Inpatient Obstetric Nursing
+          - Internal Medicine
+          - Internal Medicine, Geriatric Medicine
+          - Internal Medicine, Obesity Medicine
+          - Interventional Radiology and Diagnostic Radiology
+          - Laboratory Genetics and Genomics
+          - Lactation Consultant (Registered Nurse)
+          - Limb Preservation and Salvage
+          - Lower Extremity Geriatric Medicine
+          - Massage Therapy
+          - Maternal Newborn Nursing
+          - Medical Physics (Diagnostic, Nuclear, Therapeutic)
+          - Medical Surgical Nurse
+          - Minimally Invasive Foot and Ankle Surgery
+          - National Certified Counselor (NCC)
+          - Naturopathic Medicine
+          - Neonatal Acute Care Clinical Nurse Specialist
+          - Neonatal Acute/Critical Care Nursing
+          - Neonatal Nurse Practitioner
+          - Nephrology
+          - Neurological Surgery
+          - Neurology
+          - Neurology with Special Qualification in Child Neurology
+          - Neuromusculoskeletal Medicine & OMM
+          - Neurophysiology-Neurology
+          - Nuclear Cardiology
+          - Nuclear Medicine
+          - Nurse Anesthetist
+          - Nurse Executive, Advanced
+          - Nurse Practitioner
+          - Obesity and Weight Management
+          - Obesity Medicine
+          - Obstetrics & Gynecology
+          - Obstetrics & Gynecology, Obesity Medicine
+          - Oculoplastics Surgery
+          - Occupational Medicine
+          - Occupational Therapist
+          - Occupational Therapist, Hand
+          - Oncology Clinical Nurse Specialist
+          - Oncology - Medical
+          - Oncology - Medical, Surgical
+          - Oncology Nurse Practitioner
+          - Oncology Nutrition
+          - Oncology - Radiation/Radiation Oncology
+          - Oncology - Surgical
+          - Ophthalmology
+          - Optometry
+          - Oral and Maxillofacial Surgery
+          - Organizational and Business Consulting Psychology
+          - Orofacial Pain
+          - Orthodontics
+          - Orthopaedic Physical Therapist
+          - Orthopaedic Surgery
+          - Orthopaedic Surgery of the Spine
+          - Osteopathic Manipulative Medicine (OMM)
+          - Otolaryngology
+          - Otolaryngology and Facial Plastic Surgery
+          - Otolaryngology - Head and Neck Surgery
+          - Pain Management
+          - Pain Medicine
+          - Pathology - Anatomic
+          - Pathology - Anatomic/Pathology - Clinical
+          - Pathology - Clinical
+          - Pediatric Acute Care Clinical Nurse Specialist
+          - Pediatric Acute/Critical Care Nursing
+          - Pediatric Critical Care Nutrition
+          - Pediatric Dentistry
+          - Pediatric Neurological Surgery
+          - Pediatric Nurse Practitioner - Acute Care
+          - Pediatric Nurse Practitioner - Primary Care
+          - Pediatric Nutrition
+          - Pediatric Primary Care
+          - Pediatrics
+          - 'Pediatrics: Developmental-Behavioral Pediatrics'
+          - Pediatrics, Obesity Medicine
+          - Peer Support Specialist
+          - Periodontics
+          - Pharmacist
+          - Physical Medicine and Rehabilitation
+          - Physical Therapist
+          - Physical Therapist, Hand
+          - Physical Therapy
+          - Physician Assistant
+          - Physiatry, Rehabilitative Medicine
+          - Plastic and Reconstructive Surgery
+          - Plastic Surgery
+          - Podiatric Medicine and Surgery Residency
+          - Podiatric Sports Medicine
+          - Podiatry
+          - Police and Public Safety Psychology
+          - Prevention and Treatment of Diabetic Foot Wounds and Diabetic Footwear
+          - Preventative Medicine
+          - Preventive Medicine, Obesity Medicine
+          - Primary Care
+          - Primary Care in Podiatric Medicine
+          - Primary Care - Nurse Practitioners
+          - Primary Care - Physician Assistants
+          - Proctology
+          - Progressive Care Nursing
+          - Prosthodontics
+          - Psychoanalytic and Psychodynamic Psychology
+          - Psychiatric-Mental Health
+          - Psychiatric Mental Health Nurse Practitioner
+          - Psychiatry
+          - Psychiatry & Neurology, Obesity Medicine
+          - 'Psychiatry: Child and Adolescent Psychiatry'
+          - 'Psychiatry: Geriatric Psychiatry'
+          - Psychiatry & Neurology
+          - Psychology
+          - Psychotherapy
+          - Public Health and General Preventive Medicine
+          - Pulmonology
+          - Radiation Oncology
+          - Radiologic Physics
+          - Radiology
+          - Reconstructive Rearfoot/Ankle Surgery
+          - Recreational Therapy
+          - Registered Behavior Technician
+          - Registered Dietitian Nutritionist
+          - Registered Physician in Neurovascular Interpretation (RPNI)
+          - Registered Physician in Vascular Interpretation(RPVI)
+          - Rehabilitation Psychology
+          - Renal Nutrition
+          - Retina Specialist
+          - Rheumatology
+          - School Nurse Practitioner
+          - School Psychology
+          - Serious Mental Illness Psychology
+          - Sleep Medicine
+          - Social Work
+          - Speech-Language Pathology
+          - Sports Dietetics
+          - Surgery
+          - Therapeutic Radiology
+          - Thoracic and Cardiac Surgery
+          - Thoracic Surgery
+          - Toxicology
+          - Urgent Care Medicine
+          - Urological Surgery
+          - Urology
+          - Vascular Medicine
+          - Vascular Surgery
+          - Venous and Lymphatic Medicine
+          - Women's Health Nurse Practitioner
+          - Wound Specialist
+        subspecialty:
+          type: string
+          description: Subspecialty for which the certification was awarded
+          enum:
+          - None
+          - N/A
+          - Addiction Medicine
+          - Addiction Psychiatry
+          - Adolescent Medicine
+          - Adolescent Medicine (Family Medicine)
+          - Adolescent Medicine (Internal Medicine)
+          - Adolescent Medicine (Pediatrics)
+          - Adult Cardiac Anesthesiology
+          - Adult Congenital Heart Disease
+          - Adult and Pediatric Allergy and Immunology
+          - Adult Reconstructive Orthopaedic Surgery
+          - Advanced Heart Failure and Transplant
+          - Anesthesiology
+          - Anesthesiology Critical Care Medicine
+          - Angiography and Interventional Radiology
+          - Blood Banking/Transfusion Medicine
+          - Brain Injury Medicine
+          - Breast Surgery
+          - Cardiology
+          - Minimally Invasive & Robotic Surgery
+          - Cardiovascular Disease
+          - Child Abuse Pediatrics
+          - Child and Adolescent Psychiatry
+          - Child Neurology
+          - Child Psychiatry
+          - Clinical Cardiac Electrophysiology
+          - Clinical Child and Adolescent
+          - Clinical Informatics
+          - Clinical Neurophysiology
+          - Clinical and Laboratory Dermatological Immunology
+          - Complex Family Planning
+          - Complex General Surgical Oncology
+          - Complex Pediatric Otolaryngology
+          - Congenital Cardiac Surgery
+          - Consultation-Liaison Psychiatry
+          - Critical Care Medicine
+          - Critical Care Medicine (Anesthesiology)
+          - Critical Care Medicine (Internal Medicine)
+          - Critical Care Medicine (OB/GYN)
+          - Cytopathology
+          - Dermatology
+          - Dermatopathology
+          - Dermatopathology (Dermatology)
+          - Dermatopathology (Pathology)
+          - Developmental-Behavioral Pediatrics
+          - Diagnostic Laboratory Immunology
+          - Diagnostic Radiology
+          - Emergency Medical Services
+          - Emergency Medicine
+          - Endocrinology, Diabetes and Metabolism
+          - Epilepsy
+          - Family Medicine
+          - Female Pelvic Medicine and Reconstructive Surgery
+          - Focused Practice in Adult Complex Thyroid/Parathyroid Surgery - Surgery Designation
+          - Focused Practice in Advanced Emergency Medicine Ultrasonography - Emergency Medicine Designation
+          - Focused Practice in Hospital Medicine
+          - Focused Practice in Metabolic Bariatric Surgery
+          - Focused Practice in Minimally Invasive Gynecologic Surgery
+          - Forensic Psychiatry
+          - Foot Surgery
+          - Gastroenterology
+          - Geriatric Medicine
+          - Geriatric Medicine (Family Medicine)
+          - Geriatric Medicine (Internal Medicine)
+          - Geriatric Psychiatry
+          - Gynecologic Oncology
+          - Hand Surgery
+          - Health Care Administration Leadership and Management
+          - Hematology
+          - Hematopathology
+          - Hospice and Palliative Medicine
+          - Hospice and Palliative Medicine (Anesthesiology)
+          - Hospice and Palliative Medicine (Emergency Medicine)
+          - Hospice and Palliative Medicine (Family Medicine)
+          - Hospice and Palliative Medicine (Internal Medicine)
+          - Hospice and Palliative Medicine (OB/GYN)
+          - Hospice and Palliative Medicine (Pediatrics)
+          - Hospice and Palliative Medicine (Physical Medicine)
+          - Hospice and Palliative Medicine (Psychiatry and Neurology)
+          - Hospice and Palliative Medicine (Radiology)
+          - Hospice and Palliative Medicine (Surgery)
+          - Hospital Medicine
+          - Immunopathology
+          - Infectious Disease
+          - Internal Medicine
+          - Internal Medicine - Critical Care Medicine
+          - Interventional Cardiology
+          - Interventional Cardiology and Cardiovascular Disease
+          - Interventional Radiology and Diagnostic Radiology
+          - Maternal and Fetal Medicine
+          - Maternal-Fetal Medicine
+          - Medical Biochemical Genetics
+          - Medical Genetics
+          - Medical Oncology
+          - Medical Toxicology
+          - Medical Toxicology (Emergency Medicine)
+          - Medical Toxicology (Pediatrics)
+          - Medical Toxicology (Preventive Medicine)
+          - Metabolic and Bariatric Surgery
+          - Micrographic Dermatologic Surgery
+          - Mohs Micrographic Surgery
+          - Molecular Genetic Pathology
+          - Neonatal-Perinatal Medicine
+          - Nephrology
+          - Neurocritical Care
+          - Neurodevelopmental Disabilities
+          - Neurodevelopmental Disabilities (Pediatrics)
+          - Neurodevelopmental Disabilities (Psychiatry and Neurology)
+          - Neuromuscular Medicine
+          - Neuromuscular Medicine (Physical Medicine)
+          - Neuromuscular Medicine (Psychiatry and Neurology)
+          - Neuromusculoskeletal Medicine & OMM
+          - Neuropathology
+          - Neuroradiology
+          - Neurotology
+          - No Subspecialty (Allergy and Immunology)
+          - No Subspecialty (Anesthesiology)
+          - No Subspecialty (Colon and Rectal Surgery)
+          - No Subspecialty (Dermatology)
+          - No Subspecialty (Emergency Medicine)
+          - No Subspecialty (Family Medicine)
+          - No Subspecialty (Genetics)
+          - No Subspecialty (Internal Medicine)
+          - No Subspecialty (Neurological Surgery)
+          - No Subspecialty (Nuclear Medicine)
+          - No Subspecialty (OB/GYN)
+          - No Subspecialty (Ophthalmology)
+          - No Subspecialty (Orthopaedic Surgery)
+          - No Subspecialty (Otolaryngology)
+          - No Subspecialty (Pathology)
+          - No Subspecialty (Pediatrics)
+          - No Subspecialty (Physical Medicine)
+          - No Subspecialty (Plastic Surgery)
+          - No Subspecialty (Preventive Medicine)
+          - No Subspecialty (Psychiatry and Neurology)
+          - No Subspecialty (Radiology)
+          - No Subspecialty (Surgery)
+          - No Subspecialty (Thoracic Surgery)
+          - No Subspecialty (Urology)
+          - Nuclear Radiology
+          - Obstetrics & Gynecology
+          - Ophthalmology
+          - Optometry
+          - Orthopaedic Sports Medicine
+          - Osteopathic Manipulative Treatment
+          - Pain Medicine
+          - Pain Medicine (Anesthesiology)
+          - Pain Medicine (Physical Medicine)
+          - Pain Medicine (Psychiatry and Neurology)
+          - Pathology - Chemical
+          - Pathology - Forensic
+          - Pathology - Hematology
+          - Pathology - Medical Microbiology
+          - Pathology - Molecular Genetic
+          - Pathology - Pediatric
+          - Pediatric and Adolescent Gynecology
+          - Pediatric Anesthesiology
+          - Pediatric Cardiology
+          - Pediatric Critical Care Medicine
+          - Pediatric Critical Care Medicine (Pediatrics)
+          - Pediatric Dermatology
+          - Pediatric Emergency Medicine
+          - Pediatric Emergency Medicine (Emergency Medicine)
+          - Pediatric Emergency Medicine (Pediatrics)
+          - Pediatric Endocrinology
+          - Pediatric Gastroenterology
+          - Pediatric Hematology-Oncology
+          - Pediatric Hospital Medicine
+          - Pediatric Infectious Diseases
+          - Pediatric Neurological Surgery
+          - Pediatric Nephrology
+          - Pediatric Otolaryngology
+          - Pediatric Pulmonology
+          - Pediatric Radiology
+          - Pediatric Rehabilitation Medicine
+          - Pediatric Rheumatology
+          - Pediatric Surgery
+          - Pediatric Transplant Hepatology
+          - Pediatric Urology
+          - Pediatrics
+          - Plastic Surgery Within the Head and Neck (Otolaryngology)
+          - Plastic Surgery Within the Head and Neck (Plastic Surgery)
+          - Podiatry
+          - Psychiatry
+          - Psychosomatic Medicine
+          - Pulmonary Disease
+          - Radiation Oncology
+          - Reconstruction Rearfoot/Ankle Surgery
+          - Reproductive Endocrinology and Infertility
+          - Reproductive Endocrinology/Infertility
+          - Rheumatology
+          - Sleep Medicine
+          - Sleep Medicine (Family Medicine)
+          - Sleep Medicine (Internal Medicine)
+          - Sleep Medicine (Otolaryngology)
+          - Sleep Medicine (Pediatrics)
+          - Sleep Medicine (Psychiatry and Neurology)
+          - Spinal Cord Injury Medicine
+          - Spinal Surgery
+          - Sports Medicine
+          - Sports Medicine (Emergency Medicine)
+          - Sports Medicine (Family Medicine)
+          - Sports Medicine (Internal Medicine)
+          - Sports Medicine (Pediatrics)
+          - Sports Medicine (Physical Medicine)
+          - Surgery
+          - Surgery of the Hand
+          - Surgery of the Hand (Orthopaedic Surgery)
+          - Surgery of the Hand (Plastic Surgery)
+          - Surgery of the Hand (Surgery)
+          - Surgical Critical Care
+          - Therapeutic Radiology
+          - Transplant Hepatology
+          - Undersea and Hyperbaric Medicine
+          - Undersea and Hyperbaric Medicine (Emergency Medicine)
+          - Undersea and Hyperbaric Medicine (Preventive Medicine)
+          - Urogynecology and Reconstructive Pelvic Surgery
+          - Vascular and Interventional Radiology
+          - Vascular Neurology
+          - Vascular Surgery
+          - Neurophysiology-Neurology
+          - Allergy and Immunology
+          - Cardiovascular and Pulmonary
+          - Child and Adolescent Neurology
+          - Combined Medical Genetics and Genomics
+          - Correctional Medicine
+          - Dermatological Immunology/Diagnostic and Laboratory Immunology
+          - Endocrinology
+          - Forensic Pathology
+          - Geriatrics
+          - Hematology & Medical Oncology (Internal medicine)
+          - Minimally Invasive Gynecologic Surgery
+          - Neonatology
+          - Neurology
+          - Neurophysiology
+          - Occupational Medicine
+          - Oculoplastics Surgery
+          - Oncology
+          - Orthopaedics
+          - Otolaryngic Allergy
+          - Pain Management
+          - Pediatric and Adult Allergy and Immunology
+          - Pediatric Clinical Neuropsychology
+          - Pulmonary & Critical Care Medicine
+          - Sports
+          - Women's Health
+          - Wound Management
+          - Undersea Medicine
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the certification
+        verified_date:
+          type: string
+          description: Date the certification was verified
+          example: YYYY-MM-DD
+        moc:
+          type: string
+          description: Maintenance of Certification (MOC) status or details
+          enum:
+          - 'Yes'
+          - 'No'
+          - Not Required
+        status:
+          type: string
+          description: Current status of the board certification
+          enum:
+          - Certified
+          - Expired
+          - Not Certified
+        duration_type:
+          type: string
+          description: Type of duration for the certification
+          enum:
+          - Time-Limited
+          - Lifetime
+          - MOC
+      required:
+      - id
+      - certificate_id
+      - expire_date
+      - issue_date
+      - specialty
+      - subspecialty
+      - verified_by
+      - verified_date
+      - moc
+      - status
+      - duration_type
+    ProviderAddress:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        address_line_1:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        address_line_2:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        zip:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        city:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        country:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - type
+      - address_line_1
+      - zip
+      - city
+      - state
+      - country
+    RaceTypeDto:
+      type: object
+      properties:
+        raceEthnicityLevel1:
+          type: string
+        raceEthnicityLevel2:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceEthnicityLevel2Dto'
+      required:
+      - raceEthnicityLevel1
+      - raceEthnicityLevel2
+    SubSpecialtiesV2Dto:
+      type: object
+      properties:
+        specialty_nucc_taxonomy_code:
+          type: string
+          description: Nucc taxonomy code tied to this subspecialty
+        name:
+          type: string
+          description: Name of subspecialty tied to this taxonomy code
+      required:
+      - specialty_nucc_taxonomy_code
+      - name
+    HospitalAffiliationDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the affiliated hospital
+        specialty:
+          type: string
+          description: Specialty associated with the hospital affiliation
+          enum:
+          - Acupuncture
+          - Acute Care
+          - Acute Care Nurse Practitioner
+          - Acute/Critical Care Nursing
+          - Addiction Medicine
+          - Addiction Psychology
+          - Administrative Medicine
+          - Adult Acute/Critical Care Nursing
+          - Adult-Gerontology Acute Care
+          - Adult-Gerontology Acute Care Clinical Nurse Specialist
+          - Adult-Gerontology Acute Care Nurse Practitioner
+          - Adult-Gerontology Clinical Nurse Specialist
+          - Adult-Gerontology Primary Care
+          - Adult-Gerontology Primary Care Nurse Practitioner
+          - Adult Health Clinical Nurse Specialist
+          - Adult Nurse Practitioner
+          - Adult Psychiatric-Mental Health
+          - Adult Psychiatric Mental Health Nurse Practitioner
+          - Advanced Certified Hospice and Palliative Nurse
+          - Advanced Diabetes Management
+          - Advanced Oncology Certified Nurse
+          - Aerospace Medicine
+          - Allergy and Immunology
+          - Ambulatory Care Nurse
+          - Anatomic Pathology
+          - Anatomic Pathology and Clinical Pathology
+          - Anatomic Pathology - General
+          - Anesthesiology
+          - Assistant Behavior Analyst
+          - Audiology
+          - Behavioral Analyst
+          - Board Certified Assistant Behavior Analyst
+          - Board Certified Behavior Analyst
+          - Board Certified Behavior Analyst - Doctoral
+          - Cardiac Medicine
+          - Cardiac Surgery
+          - Cardiac/Vascular Nurse
+          - Cardiology
+          - Cardiovascular and Thoracic Surgery
+          - Cardiothoracic Surgery
+          - Cardiovascular Computed Tomography
+          - Case Management
+          - Cataract Surgery
+          - Certified Diabetes Care and Education Specialist
+          - Certified Hand Therapist
+          - Certified Nurse Midwife
+          - Certified Pediatric Nurse
+          - Certified Registered Nurse Anesthetist
+          - Chiropractor
+          - Chiropractic Acupuncture
+          - Clinical Biochemical Genetics
+          - Clinical Child and Adolescent Psychology
+          - Clinical Cytogenetics
+          - Clinical Electrophysiologic Physical Therapist
+          - Clinical Genetics (MD)
+          - Clinical Genetics and Genomics (MD)
+          - Clinical Health Psychology
+          - Clinical Lipidology
+          - Clinical Mental Health Counselor
+          - Clinical Molecular Genetics
+          - Clinical Neurophysiology
+          - Clinical Nurse Specialist
+          - Clinical Nurse Specialist in Adult Psychiatric and Mental Health
+          - Clinical Nurse Specialist in Child and Adolescent Psychiatric and Mental Health
+          - Clinical Psychology
+          - Clinical Pathology/Laboratory Medicine
+          - Clinical Social Work
+          - Colon and Rectal Surgery
+          - Community Behavioral Health Clinician
+          - Counseling Psychology
+          - Couple and Family Psychology
+          - Dental
+          - Dental Public Health
+          - Dermatology
+          - Dermatology Nurse Practitioner
+          - Diabetes Care and Education
+          - Diagnostic Radiology
+          - Diagnostic Radiology with Special Competence in Nuclear Radiology
+          - DOULA
+          - Echocardiography
+          - Educational Commission for Foreign Medical Graduates
+          - Electrodiagnostic Medicine
+          - Electronic Fetal Monitoring
+          - Emergency Medicine
+          - Emergency Nurse Practitioner
+          - EMDR
+          - Endocrinology
+          - Endodontics
+          - Endovascular Medicine
+          - ENT/Otolaryngology
+          - Facial Plastic and Reconstructive Surgery
+          - Family Medicine
+          - Family Medicine, Geriatric Medicine
+          - Family Medicine, Obesity Medicine
+          - Family Nurse Practitioner
+          - Family Practice
+          - Focused Practice in Pediatric and Adolescent Gynecology - Obstetrics & Gynecology Designation
+          - Focused Practice in Metabolic Bariatric Surgery - Surgery Designation
+          - Focused Practice in Minimally Invasive Gynecologic Surgery - Obstetrics & Gynecology
+          - Foot and Ankle Surgery
+          - Foot Surgery
+          - Forensic Psychology
+          - Gastroenterology
+          - General Practice
+          - General Surgery
+          - Genetic Counseling
+          - Geriatrics
+          - Gerontological
+          - Gerontological Nurse Practitioner
+          - Gerontological Nutrition
+          - Gerontology
+          - Geropsychology
+          - Group Psychology
+          - Gynecology
+          - Histocompatibility and Immunogenetics
+          - HIV Specialist
+          - Infectious Diseases
+          - Inpatient Obstetric Nursing
+          - Internal Medicine
+          - Internal Medicine, Geriatric Medicine
+          - Internal Medicine, Obesity Medicine
+          - Interventional Radiology and Diagnostic Radiology
+          - Laboratory Genetics and Genomics
+          - Lactation Consultant (Registered Nurse)
+          - Limb Preservation and Salvage
+          - Lower Extremity Geriatric Medicine
+          - Massage Therapy
+          - Maternal Newborn Nursing
+          - Medical Physics (Diagnostic, Nuclear, Therapeutic)
+          - Medical Surgical Nurse
+          - Minimally Invasive Foot and Ankle Surgery
+          - National Certified Counselor (NCC)
+          - Naturopathic Medicine
+          - Neonatal Acute Care Clinical Nurse Specialist
+          - Neonatal Acute/Critical Care Nursing
+          - Neonatal Nurse Practitioner
+          - Nephrology
+          - Neurological Surgery
+          - Neurology
+          - Neurology with Special Qualification in Child Neurology
+          - Neuromusculoskeletal Medicine & OMM
+          - Neurophysiology-Neurology
+          - Nuclear Cardiology
+          - Nuclear Medicine
+          - Nurse Anesthetist
+          - Nurse Executive, Advanced
+          - Nurse Practitioner
+          - Obesity and Weight Management
+          - Obesity Medicine
+          - Obstetrics & Gynecology
+          - Obstetrics & Gynecology, Obesity Medicine
+          - Oculoplastics Surgery
+          - Occupational Medicine
+          - Occupational Therapist
+          - Occupational Therapist, Hand
+          - Oncology Clinical Nurse Specialist
+          - Oncology - Medical
+          - Oncology - Medical, Surgical
+          - Oncology Nurse Practitioner
+          - Oncology Nutrition
+          - Oncology - Radiation/Radiation Oncology
+          - Oncology - Surgical
+          - Ophthalmology
+          - Optometry
+          - Oral and Maxillofacial Surgery
+          - Organizational and Business Consulting Psychology
+          - Orofacial Pain
+          - Orthodontics
+          - Orthopaedic Physical Therapist
+          - Orthopaedic Surgery
+          - Orthopaedic Surgery of the Spine
+          - Osteopathic Manipulative Medicine (OMM)
+          - Otolaryngology
+          - Otolaryngology and Facial Plastic Surgery
+          - Otolaryngology - Head and Neck Surgery
+          - Pain Management
+          - Pain Medicine
+          - Pathology - Anatomic
+          - Pathology - Anatomic/Pathology - Clinical
+          - Pathology - Clinical
+          - Pediatric Acute Care Clinical Nurse Specialist
+          - Pediatric Acute/Critical Care Nursing
+          - Pediatric Critical Care Nutrition
+          - Pediatric Dentistry
+          - Pediatric Neurological Surgery
+          - Pediatric Nurse Practitioner - Acute Care
+          - Pediatric Nurse Practitioner - Primary Care
+          - Pediatric Nutrition
+          - Pediatric Primary Care
+          - Pediatrics
+          - 'Pediatrics: Developmental-Behavioral Pediatrics'
+          - Pediatrics, Obesity Medicine
+          - Peer Support Specialist
+          - Periodontics
+          - Pharmacist
+          - Physical Medicine and Rehabilitation
+          - Physical Therapist
+          - Physical Therapist, Hand
+          - Physical Therapy
+          - Physician Assistant
+          - Physiatry, Rehabilitative Medicine
+          - Plastic and Reconstructive Surgery
+          - Plastic Surgery
+          - Podiatric Medicine and Surgery Residency
+          - Podiatric Sports Medicine
+          - Podiatry
+          - Police and Public Safety Psychology
+          - Prevention and Treatment of Diabetic Foot Wounds and Diabetic Footwear
+          - Preventative Medicine
+          - Preventive Medicine, Obesity Medicine
+          - Primary Care
+          - Primary Care in Podiatric Medicine
+          - Primary Care - Nurse Practitioners
+          - Primary Care - Physician Assistants
+          - Proctology
+          - Progressive Care Nursing
+          - Prosthodontics
+          - Psychoanalytic and Psychodynamic Psychology
+          - Psychiatric-Mental Health
+          - Psychiatric Mental Health Nurse Practitioner
+          - Psychiatry
+          - Psychiatry & Neurology, Obesity Medicine
+          - 'Psychiatry: Child and Adolescent Psychiatry'
+          - 'Psychiatry: Geriatric Psychiatry'
+          - Psychiatry & Neurology
+          - Psychology
+          - Psychotherapy
+          - Public Health and General Preventive Medicine
+          - Pulmonology
+          - Radiation Oncology
+          - Radiologic Physics
+          - Radiology
+          - Reconstructive Rearfoot/Ankle Surgery
+          - Recreational Therapy
+          - Registered Behavior Technician
+          - Registered Dietitian Nutritionist
+          - Registered Physician in Neurovascular Interpretation (RPNI)
+          - Registered Physician in Vascular Interpretation(RPVI)
+          - Rehabilitation Psychology
+          - Renal Nutrition
+          - Retina Specialist
+          - Rheumatology
+          - School Nurse Practitioner
+          - School Psychology
+          - Serious Mental Illness Psychology
+          - Sleep Medicine
+          - Social Work
+          - Speech-Language Pathology
+          - Sports Dietetics
+          - Surgery
+          - Therapeutic Radiology
+          - Thoracic and Cardiac Surgery
+          - Thoracic Surgery
+          - Toxicology
+          - Urgent Care Medicine
+          - Urological Surgery
+          - Urology
+          - Vascular Medicine
+          - Vascular Surgery
+          - Venous and Lymphatic Medicine
+          - Women's Health Nurse Practitioner
+          - Wound Specialist
+        state:
+          type: string
+          description: State where the hospital is located (if applicable)
+        type:
+          type: string
+          description: Type of hospital affiliation
+          enum:
+          - Hospital Privileges
+          - Hospital Admitting Arrangements
+          - Non-hospital Admitting Arrangements
+          - Exempt
+        source:
+          type: string
+          description: Source from which the hospital affiliation information was obtained (if applicable)
+          enum:
+          - Verified through Licensing Board
+          - Verified through Board Certification
+          - Verified by Provider Application
+          - Verified by Hospital Institution
+          - Verified through the American Medical Association (AMA)
+          - Verified by Other
+        start_date:
+          type: string
+          description: Date when the hospital affiliation started
+          example: YYYY-MM-DD
+        end_date:
+          format: date-time
+          type: string
+          description: Date when the hospital affiliation ended/ends
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the hospital affiliation
+        verified_date:
+          type: string
+          description: Date the hospital affiliation was verified
+          example: YYYY-MM-DD
+      required:
+      - name
+      - specialty
+      - type
+      - start_date
+      - end_date
+      - verified_by
+      - verified_date
+    CreateSpecialtiesV2Dto:
+      type: object
+      properties:
+        specialty_nucc_taxonomy_code:
+          type: string
+          description: Nucc taxonomy code tied to this specialty
+        name:
+          type: string
+          description: Name of specialty tied to this taxonomy code
+        is_primary:
+          type: boolean
+          description: Whether this specialty is the provider’s primary speciality; they can only have 1 primary specialty
+        sub_specialties:
+          default: []
+          description: Provider’s subspecialties that are tied to this specialty [array] (if there are no subspecialties, include the field, but just put empty [])
+          type: array
+          items:
+            $ref: '#/components/schemas/SubSpecialtiesV2Dto'
+      required:
+      - specialty_nucc_taxonomy_code
+      - name
+      - is_primary
+      - sub_specialties
+    BaseSanctionItemResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        npi:
+          type: string
+          description: National Provider Identifier (NPI)
+        address1:
+          type: string
+        address2:
+          type: string
+        address3:
+          type: string
+        address4:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip_code:
+          type: string
+        source:
+          type: string
+        sanction_type:
+          type: string
+        middle_name:
+          type: string
+        full_name:
+          type: string
+        business_name:
+          type: string
+        country:
+          type: string
+        data_acquire_date:
+          type: string
+          example: YYYY-MM-DD
+        source_update_date:
+          type: string
+          example: YYYY-MM-DD
+        data_fetch_method:
+          type: string
+          example: YYYY-MM-DD
+        data_issuing_source:
+          type: string
+          example: YYYY-MM-DD
+        data_source_url:
+          type: string
+          example: YYYY-MM-DD
+        data_fetch_source:
+          type: string
+          example: YYYY-MM-DD
+        date_processed:
+          type: string
+          example: YYYY-MM-DD
+        processed_by:
+          type: string
+        start_date:
+          type: string
+          example: YYYY-MM-DD
+        end_date:
+          type: string
+          example: YYYY-MM-DD
+        license_jurisdiction:
+          type: string
+        organization_id:
+          type: string
+        provider_id:
+          type: string
+        created_by:
+          type: string
+        updated_by:
+          type: string
+        created_at:
+          type: string
+          example: YYYY-MM-DD
+        updated_at:
+          type: string
+          example: YYYY-MM-DD
+        created_by_name:
+          type: string
+        updated_by_name:
+          type: string
+        flag:
+          type: string
+        verified_by:
+          type: string
+        verified_at:
+          type: string
+          example: YYYY-MM-DD
+        action_source:
+          type: string
+      required:
+      - id
+      - source
+      - sanction_type
+    PracticeLocationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        provider_id:
+          type: string
+        organization_id:
+          type: string
+        name:
+          type: string
+        tin:
+          type: string
+        start_date:
+          type: string
+          example: YYYY-MM-DD
+        drawing_blood:
+          type: boolean
+        laboratory_services:
+          type: boolean
+        clia_number:
+          type: string
+        clia_expiration_date:
+          type: string
+          example: YYYY-MM-DD
+        address1:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        npi:
+          type: string
+        phoneCoverage24x7:
+          type: boolean
+        totalLocationHours:
+          type: number
+        locationHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationHourDto'
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - id
+      - provider_id
+      - organization_id
+      - name
+    NpdbDataDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the NPDB data.
+        type_of_action:
+          type: string
+          description: Type of action taken.
+          enum:
+          - No Action
+          - Medical Malpractice Payment
+          - Health Plan
+          - State Licensure/Certification
+          - Professional Society
+          - Exclusion/Debarment
+          - DEA/Federal Licensure
+          - Government Administrative
+          - Judgement/Conviction
+          - Clinical Privileges
+          - Peer Review Organization
+        report_date:
+          type: string
+          description: Date the report was created
+          example: YYYY-MM-DD
+        process_date:
+          type: string
+          description: Date the report was processed
+          example: YYYY-MM-DD
+        verified_by:
+          type: string
+          description: Name of the individual who verified the report
+        verified_date:
+          type: string
+          description: Date the report was verified
+          example: YYYY-MM-DD
+        created_date:
+          type: string
+          description: Date the report entry was created
+          example: YYYY-MM-DD
+        payment_date:
+          type: string
+          description: Date the payment was made (if applicable)
+          example: YYYY-MM-DD
+        specific_allegation_date:
+          type: string
+          description: Date of the specific allegation (if applicable)
+          example: YYYY-MM-DD
+        source:
+          type: string
+          description: Source of the report
+          enum:
+          - National Practitioner Data Bank
+        report_type:
+          type: string
+          description: Type of report (e.g., disciplinary, administrative)
+          enum:
+          - Adverse Action Report
+          - Medical Malpractice Payment Report
+          - No Report Found
+        first_name:
+          type: string
+          description: First name of the subject of the report
+        last_name:
+          type: string
+          description: Last name of the subject of the report
+        gender:
+          type: string
+          description: Gender of the subject
+        npi:
+          type: string
+          description: National Provider Identifier (NPI)
+        home_address:
+          type: string
+          description: Home address of the subject
+        home_city:
+          type: string
+          description: Home city of the subject
+        home_state:
+          type: string
+          description: Home state of the subject
+        home_zip:
+          type: string
+          description: Home ZIP code of the subject
+        dcn:
+          type: string
+          description: Document Control Number (DCN)
+        birth_date:
+          type: string
+          description: Birth date of the subject
+          example: '1980-05-21'
+        databank_subject_id:
+          type: string
+          description: Databank Subject ID, unique identifier from NPDB
+      required:
+      - id
+      - type_of_action
+      - report_date
+      - process_date
+      - verified_by
+      - verified_date
+      - created_date
+      - payment_date
+      - specific_allegation_date
+      - source
+      - report_type
+      - first_name
+      - last_name
+      - gender
+      - npi
+      - home_address
+      - home_city
+      - home_state
+      - home_zip
+      - dcn
+      - birth_date
+      - databank_subject_id
+    OutreachDataDto:
+      type: object
+      properties:
+        to:
+          example:
+          - string@string.com
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        numberOfAttachments:
+          type: number
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+      required:
+      - to
+      - reason
+      - subject
+      - body
+    MalpracticeInsuranceDto:
+      type: object
+      properties:
+        expiry_date:
+          type: string
+          description: Date when the malpractice insurance policy expires
+          example: YYYY-MM-DD
+        id:
+          type: string
+          description: Unique identifier for the malpractice insurance record
+        source:
+          type: string
+          description: Source from which the malpractice insurance information was obtained
+          enum:
+          - Copy of Insurance
+          - Application
+          - N/A
+        status:
+          type: string
+          description: Current status of the malpractice insurance policy
+          enum:
+          - active
+          - expired
+        policy_number:
+          type: string
+          description: Policy number of the malpractice insurance
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the malpractice insurance
+        verified_date:
+          type: string
+          description: Date the malpractice insurance was verified
+          example: YYYY-MM-DD
+        aggregate_coverage_amount:
+          type: number
+          description: Aggregate coverage amount of the malpractice insurance policy
+        occurrence_coverage_amount:
+          type: number
+          description: Occurrence coverage amount of the malpractice insurance policy
+        policyHolder:
+          type: string
+          description: Name of the policy holder for the malpractice insurance
+        pliCoverageType:
+          type: string
+          description: Type of Professional Liability Insurance (PLI) coverage
+        policyEffectiveDate:
+          type: string
+          description: Effective date of the malpractice insurance policy
+          example: YYYY-MM-DD
+        policyExpirationDate:
+          type: string
+          description: Expiration date of the malpractice insurance policy
+          example: YYYY-MM-DD
+        policyCurrentEffectiveDate:
+          type: string
+          description: Current effective date of the malpractice insurance policy
+          example: YYYY-MM-DD
+        individualCoverageFlag:
+          type: boolean
+          description: Indicates if the policy provides individual coverage (true/false)
+        insuranceType:
+          type: string
+          description: Type of insurance.
+      required:
+      - expiry_date
+      - id
+      - source
+      - status
+      - policy_number
+      - verified_by
+      - verified_date
+      - aggregate_coverage_amount
+      - occurrence_coverage_amount
+      - policyHolder
+      - pliCoverageType
+      - policyEffectiveDate
+      - policyExpirationDate
+      - policyCurrentEffectiveDate
+      - individualCoverageFlag
+      - insuranceType
+    ApplicationVerificationDto:
+      type: object
+      properties:
+        explanation:
+          type: string
+        id:
+          type: string
+        verification_type:
+          type: string
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - explanation
+      - id
+      - verification_type
+      - verified_by
+      - verified_date
+    CreateProviderDtoV2:
+      type: object
+      properties:
+        first_name:
+          type: string
+          description: First name of the Provider
+        middle_name:
+          type: string
+          default: ''
+          description: Middle name of the Provider
+        last_name:
+          type: string
+          description: Last name of the Provider
+        degree:
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
+          type: string
+          description: Type of provider
+        npi:
+          type: string
+          default: ''
+          description: NPI of the Provider
+        states:
+          type: string
+          description: States in which Provider will provide care to patients/enrollees
+        caqh_provider_id:
+          type: string
+          default: ''
+          description: CAQH ID of the Provider
+        last_credentialed_date:
+          format: date-time
+          type: string
+          description: Date Provider was last credentialed
+        next_credentialing_date:
+          format: date-time
+          type: string
+          description: Date by which Provider needs to be recredentialed
+        initial_credentialing_date:
+          format: date-time
+          type: string
+          description: Date by which Provider was initially credentialed.
+        external_id:
+          type: string
+          description: Client’s ID for the provider
+        primary_email:
+          type: string
+          description: Provider’s email address
+          example: string@string.com
+        gender:
+          type: string
+          enum:
+          - M
+          - F
+          - U
+          description: Provider Gender
+        dob:
+          format: date-time
+          type: string
+          description: Provider’s date of birth
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        location_name:
+          type: string
+          description: Name of group location
+        external_group_id:
+          type: string
+          description: Client’s ID for the group
+        is_pcp:
+          type: boolean
+          description: Indicates whether the provider is a Primary Care Provider (PCP).
+        is_specialist:
+          type: boolean
+          description: Indicates whether the provider is a specialist.
+        accepts_new_patients:
+          type: boolean
+          description: Indicates whether the provider is currently accepting new patients.
+        accepts_new_medicare_patients:
+          type: boolean
+          description: Indicates whether the provider accepts new Medicare patients.
+      required:
+      - first_name
+      - last_name
+      - degree
+      - states
+    ProviderOutreachDto:
+      type: object
+      properties:
+        provider_id:
+          type: string
+        organization_id:
+          type: string
+        workflow_id:
+          type: string
+        outreach_correspondence_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/OutreachDataDto'
+        created_at:
+          type: string
+        created_by_name:
+          type: string
+        id:
+          type: string
+        latest_event:
+          type: string
+        outreach_correspondence:
+          type: string
+        status_code:
+          type: number
+        sg_message_id:
+          type: string
+      required:
+      - provider_id
+      - organization_id
+      - workflow_id
+      - data
+      - created_at
+      - created_by_name
+      - id
+    ProviderV2Dto:
+      type: object
+      properties:
+        provider_sanctions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderSanctionsDto'
+        malpractice_insurance:
+          type: array
+          items:
+            $ref: '#/components/schemas/MalpracticeInsuranceDto'
+        npdb_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NpdbDataDto'
+        performance_indicator:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformanceIndicatorDto'
+        application_verification:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationVerificationDto'
+        board_certifications_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoardCertificationDto'
+        credentialing_timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialingTimelineDto'
+        education_training:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationTrainingDto'
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenseDto'
+        deas:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeaDto'
+        hospital_affiliations:
+          type: array
+          items:
+            $ref: '#/components/schemas/HospitalAffiliationDto'
+        licensure_actions:
+          $ref: '#/components/schemas/LicensureActionsDto'
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        npi:
+          type: string
+        provider_type:
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
+          type: string
+          description: Type of provider
+        caqh_provider_id:
+          type: string
+        provider_id:
+          type: string
+        status:
+          type: string
+          description: Current status of the provider
+          enum:
+          - Terminated
+          - Active
+          - Denied
+          - New
+          - In Progress
+        organization_id:
+          type: string
+        file_type:
+          type: string
+          description: File type classification of the credentialing workflow
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+        psv_url:
+          type: string
+        dob:
+          type: string
+        gender:
+          type: string
+          description: Gender of the provider
+          enum:
+          - Male
+          - Female
+          - Not Listed/Unknown
+        verified_by:
+          type: string
+        monitoring_status:
+          type: string
+          description: Current monitoring status of the provider
+          enum:
+          - In Progress
+          - Data Missing
+          - Outreach in Progress
+          - Reviewed by CertifyOS
+          - No action required
+        last_monitoring_date:
+          type: string
+          example: YYYY-MM-DD
+        provider_created_date:
+          type: string
+          example: YYYY-MM-DD
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+        file_completion_date:
+          type: string
+          example: YYYY-MM-DD
+        file_status:
+          type: string
+        race:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceTypeDto'
+        ethnicity:
+          type: string
+          description: Ethnicity of the provider
+          enum:
+          - White
+          - American Indian or Alaska Native
+          - Hispanic and Latino Americans
+          - Pacific Islander
+          - Asian
+          - Black or African American
+          - Hawaiian
+          - Mixed Ethnicity
+          - Other
+        other_languages:
+          type: array
+          items:
+            type: string
+        supporting_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportingDocumentV2Dto'
+        external_id:
+          type: string
+        professional_ids:
+          description: Professional IDs associated with the provider
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfessionalIdV2Dto'
+        practitioner_medicaid:
+          $ref: '#/components/schemas/PractitionerMedicaidDto'
+        practitioner_practice_location:
+          $ref: '#/components/schemas/PractitionerPracticeActiveLocationDto'
+        practice_location:
+          description: Practice locations associated with the provider
+          type: array
+          items:
+            $ref: '#/components/schemas/PracticeLocationDto'
+        credentialing_status:
+          type: string
+          description: Credentialing status of the provider
+          enum:
+          - Not sent to credentialing
+          - Not Started
+          - In Progress
+          - Recredentialing in progress
+          - Data missing
+          - Outreach in progress
+          - PSV Complete
+          - PSV ready
+          - Hold for Cred Comm
+          - Tabled
+          - Cred approved
+          - Cred denied
+          - Provider Terminated
+          - Withdrawn/Cancelled
+          - Credentialing restarted
+          - PSV complete by CertifyOS
+        credentialing_cycle:
+          type: string
+          description: Credentialing cycle of the provider
+          enum:
+          - Initial
+          - Recredentialing
+        states:
+          type: array
+          items:
+            type: string
+        assigned_states:
+          type: array
+          items:
+            type: string
+        sanction_items:
+          description: Sanction items associated with the provider
+          type: array
+          items:
+            $ref: '#/components/schemas/BaseSanctionItemResponseDto'
+        isPCP:
+          type: boolean
+        isSpecialist:
+          type: boolean
+        acceptsNewPatients:
+          type: boolean
+        acceptsNewMedicarePatients:
+          type: boolean
+        primaryEmail:
+          type: string
+      required:
+      - provider_sanctions
+      - malpractice_insurance
+      - npdb_data
+      - performance_indicator
+      - application_verification
+      - board_certifications_data
+      - credentialing_timeline
+      - education_training
+      - licenses
+      - deas
+      - hospital_affiliations
+      - licensure_actions
+      - first_name
+      - middle_name
+      - last_name
+      - npi
+      - provider_type
+      - caqh_provider_id
+      - provider_id
+      - status
+      - organization_id
+      - file_type
+      - psv_url
+      - dob
+      - gender
+      - verified_by
+      - monitoring_status
+      - last_monitoring_date
+      - provider_created_date
+      - verified_date
+      - file_completion_date
+      - file_status
+      - race
+      - ethnicity
+      - other_languages
+      - supporting_documents
+      - external_id
+      - professional_ids
+      - practitioner_medicaid
+      - practitioner_practice_location
+      - practice_location
+      - sanction_items
+    LicensureActionsDto:
+      type: object
+      properties:
+        date_of_last_action:
+          type: string
+        date_of_report:
+          type: string
+        details:
+          type: string
+        state:
+          type: string
+        type_of_action:
+          type: string
+        id:
+          type: string
+      required:
+      - date_of_last_action
+      - date_of_report
+      - details
+      - state
+      - type_of_action
+      - id
+    CredentialingWorkflowTimelineV2ResponseDto:
+      type: object
+      properties:
+        credentialingWorkflowId:
+          type: string
+        credentialingStatus:
+          type: string
+        credentialingCycle:
+          type: string
+        providerId:
+          type: string
+        organizationId:
+          type: string
+        orgEntity:
+          $ref: '#/components/schemas/CredentialingWorkflowOrgEntityTypeDto'
+        medicalDirectorId:
+          type: string
+        medicalDirectorName:
+          type: string
+        receivedForCredentialingDate:
+          type: string
+        attestationDate:
+          type: string
+        initialCredentialingDate:
+          type: string
+        lastCredentialedDate:
+          type: string
+        psvCompleteDate:
+          type: string
+        credentialingDecisionDate:
+          type: string
+        nextCredentialingDate:
+          type: string
+        updatedAt:
+          type: string
+        updatedByName:
+          type: string
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        decisionEnteredById:
+          type: string
+        decisionEnteredByName:
+          type: string
+      required:
+      - credentialingWorkflowId
+      - credentialingStatus
+      - credentialingCycle
+      - providerId
+      - organizationId
+      - orgEntity
+      - medicalDirectorId
+      - medicalDirectorName
+      - receivedForCredentialingDate
+      - attestationDate
+      - initialCredentialingDate
+      - lastCredentialedDate
+      - psvCompleteDate
+      - credentialingDecisionDate
+      - nextCredentialingDate
+      - updatedAt
+      - updatedByName
+      - updatedBy
+      - createdAt
+      - createdBy
+      - createdByName
+      - decisionEnteredById
+      - decisionEnteredByName
+    ProviderOutreachResponseDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderOutreachDto'
+        count:
+          type: number
+          example: 10
+      required:
+      - data
+      - count
+    Question:
+      type: object
+      properties:
+        question_text:
+          type: string
+        question_response:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionResponse'
+      required:
+      - question_text
+      - question_response
+    DeaDto:
+      type: object
+      properties:
+        expire_date:
+          type: string
+          example: YYYY-MM-DD
+        dea_number:
+          type: string
+        id:
+          type: string
+        state:
+          type: string
+        status:
+          type: string
+          description: Current status of the DEA registration
+          enum:
+          - Active
+          - Inactive
+        provider_type:
+          type: string
+          description: Type of provider
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+        source:
+          type: string
+        type:
+          type: string
+          description: Type of controlled substance registration
+          enum:
+          - DEA
+          - CDS
+      required:
+      - expire_date
+      - dea_number
+      - id
+      - state
+      - status
+      - provider_type
+      - verified_by
+      - verified_date
+      - source
+      - type
+    DocumentInfo:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        url:
+          type: string
+      required:
+      - type
+      - url
+    Education:
+      type: object
+      properties:
+        institution_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        degree:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+        start_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        graduation_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        end_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - institution_name
+      - degree
+      - start_date
+      - graduation_date
+      - end_date
+    FieldValueWithDescription:
+      type: object
+      properties:
+        value:
+          type: string
+        description:
+          type: string
+      required:
+      - value
+      - description
+    PractitionerPracticeActiveLocationDto:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/CaqhAddressDto'
+        healthcareServiceName:
+          type: string
+      required:
+      - address
+      - healthcareServiceName
+    SupportingDocumentV2Dto:
+      type: object
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        file_type:
+          type: string
+        file_url:
+          type: string
+        original_file_name:
+          type: string
+        id:
+          type: string
+      required:
+      - created_at
+      - file_type
+      - file_url
+      - original_file_name
+      - id
+    QuestionResponse:
+      type: object
+      properties:
+        response_text:
+          type: string
+      required:
+      - response_text
+    DEA:
+      type: object
+      properties:
+        dea_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+        issue_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        expiration_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        renewal_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - dea_number
+      - state
+      - document
+      - issue_date
+      - expiration_date
+      - renewal_date
+    ProviderV2GroupsResponseDto:
+      type: object
+      properties:
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        external_group_id:
+          type: string
+          description: Client's ID for the group
+        id:
+          type: string
+      required:
+      - group_name
+      - group_npi
+      - group_tin
+      - id
+    PerformanceIndicatorDto:
+      type: object
+      properties:
+        access_issue:
+          type: string
+        benefits:
+          type: string
+        claims:
+          type: string
+        clinical:
+          type: string
+        complaints:
+          type: string
+        id:
+          type: string
+        service:
+          type: string
+      required:
+      - access_issue
+      - benefits
+      - claims
+      - clinical
+      - complaints
+      - id
+      - service
+    OtherName:
+      type: object
+      properties:
+        first_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        middle_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        last_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        suffix_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        name_type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - first_name
+      - last_name
+      - name_type
+    ProviderV2ResponseDto:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProviderV2Dto'
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+    PractitionerMedicaidDto:
+      type: object
+      properties:
+        medicaidNumber:
+          type: string
+        medicaidState:
+          type: string
+      required:
+      - medicaidNumber
+      - medicaidState
+    ProfessionalIdV2Dto:
+      type: object
+      properties:
+        type:
+          enum:
+          - Medicare Number
+          - Medicaid Number
+          - ECFMG Number
+          - Foreign National Identification Number
+          - Unique Physician Identification Number
+          - CLIA
+          - DEA
+          type: string
+          description: Type of professional ID
+        number:
+          type: string
+          description: Professional ID number
+        issue_date:
+          type: string
+          description: Issue date of the professional ID
+        expiration_date:
+          type: string
+          description: Expiration date of the professional ID
+        note:
+          type: string
+          description: Notes about the professional ID
+        state:
+          type: string
+          description: State associated with the professional ID
+        source:
+          type: string
+          description: Source of the professional ID
+      required:
+      - type
+      - number
+      - issue_date
+      - expiration_date
+    License:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        license_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        issuing_board:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+        expiration_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        issue_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        renewal_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - type
+      - state
+      - license_number
+      - issuing_board
+      - document
+      - expiration_date
+      - issue_date
+      - renewal_date
+    CredentialingWorkflowOrgEntityTypeDto:
+      type: object
+      properties:
+        id:
+          type: string
+          default: null
+        name:
+          type: string
+          default: null
+      required:
+      - id
+    DataSnapshot:
+      type: object
+      properties:
+        first_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        middle_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        last_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        suffix_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        npi:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        other_name:
+          type: array
+          items:
+            $ref: '#/components/schemas/OtherName'
+        email:
+          type: array
+          items:
+            $ref: '#/components/schemas/Email'
+        caqh_id:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        provider_type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+        speciality_board_certification:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialityBoardCertificate'
+        dea:
+          type: array
+          items:
+            $ref: '#/components/schemas/DEA'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderAddress'
+        dob:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        gender:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        sex:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        ssn:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentInfo'
+        employment_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmploymentHistory'
+        liability_insurance:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiabilityInsurance'
+      required:
+      - first_name
+      - middle_name
+      - last_name
+      - suffix_name
+      - npi
+      - other_name
+      - email
+      - caqh_id
+      - provider_type
+      - education
+      - licenses
+      - speciality_board_certification
+      - dea
+      - addresses
+      - dob
+      - gender
+      - sex
+      - ssn
+      - document
+      - employment_history
+      - liability_insurance
+    ProviderSanctionsDto:
+      type: object
+      properties:
+        date_of_report:
+          type: string
+          description: Date the sanction report was issued
+          example: YYYY-MM-DD
+        id:
+          type: string
+          description: Unique identifier for the provider sanction record
+        sanction_type:
+          type: string
+          description: Type of sanction applied to the provider
+          enum:
+          - OIG
+          - GSA/SAM/OFAC
+          - OFAC
+          - MOO
+          - OMIG
+          - State Exclusion List
+          - Preclusion List Check
+        type_of_action:
+          type: string
+          description: Type of action taken against the provider
+          enum:
+          - No Match Found
+          - Match Found
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the sanction
+        data:
+          type: string
+          description: Additional data or details related to the sanction
+        verified_date:
+          type: string
+          description: Date the sanction was verified
+          example: YYYY-MM-DD
+      required:
+      - date_of_report
+      - id
+      - sanction_type
+      - type_of_action
+      - verified_by
+      - data
+      - verified_date
+    RaceEthnicityLevel3Dto:
+      type: object
+      properties:
+        raceEthnicityLevel3Name:
+          type: string
+      required:
+      - raceEthnicityLevel3Name
+    Attachment:
+      type: object
+      properties:
+        content:
+          type: string
+        disposition:
+          type: string
+        filename:
+          type: string
+        type:
+          type: string
+    SpecialityBoardCertificate:
+      type: object
+      properties:
+        specialty:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        sub_specialty:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        board_certified:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        certifying_board:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        cert_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+        issue_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        renewal_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        expiration_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - specialty
+      - sub_specialty
+      - board_certified
+      - certifying_board
+      - cert_number
+      - document
+      - issue_date
+      - renewal_date
+      - expiration_date
+    EmploymentHistory:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        employer:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        title:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        speciality:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        start_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        end_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        address_line_1:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        address_line_2:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        country:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        city:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        zip:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        gap_explanation:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - type
+      - employer
+      - title
+      - speciality
+      - start_date
+      - end_date
+      - address_line_1
+      - address_line_2
+      - country
+      - city
+      - state
+      - zip
+      - gap_explanation
+    LocationHourDto:
+      type: object
+      properties:
+        dayOfweek:
+          type: string
+        endHours:
+          type: string
+        startHours:
+          type: string
+    AttestationMetadata:
+      type: object
+      properties:
+        attestation_language:
+          type: string
+        attestation_signature_image:
+          type: string
+        attestation_name:
+          type: string
+        date_attested:
+          format: date-time
+          type: string
+    CreateProfessionalIdsV2Dto:
+      type: object
+      properties:
+        professional_ids:
+          description: Array of professional IDs to create
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateProfessionalIdV2Dto'
+      required:
+      - professional_ids
+    CredentialingTimelineDto:
+      type: object
+      properties:
+        medical_director:
+          type: string
+        attestation_date:
+          type: string
+          example: YYYY-MM-DD
+        initial_credentialing_date:
+          type: string
+          example: YYYY-MM-DD
+        last_credentialed_date:
+          type: string
+          example: YYYY-MM-DD
+        psv_complete_date:
+          type: string
+          example: YYYY-MM-DD
+        credentialing_decision_date:
+          type: string
+          example: YYYY-MM-DD
+        next_credentialing_date:
+          type: string
+          example: YYYY-MM-DD
+        received_for_credentialing_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - medical_director
+      - attestation_date
+      - last_credentialed_date
+      - psv_complete_date
+      - credentialing_decision_date
+      - next_credentialing_date
+      - received_for_credentialing_date
+    CaqhAddressDto:
+      type: object
+      properties:
+        address1:
+          type: string
+        address2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zipCode:
+          type: string
+        country:
+          type: string
+      required:
+      - address1
+      - address2
+      - city
+      - state
+      - zipCode
+      - country
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

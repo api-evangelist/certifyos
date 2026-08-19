@@ -1,0 +1,603 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Network API
+  version: 1.0.0
+  description: 'Operations tagged Network across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Network
+  description: APIs for managing network entities
+paths:
+  /networks:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get all networks
+      description: Returns a list of networks for the provided tenant. The networks are returned sorted by creation date, with the most recent networks appearing first.
+      operationId: getNetworks
+      tags:
+      - Network
+      parameters:
+      - description: Page number for offset-based pagination (0-based index). Defaults to 0 if not specified.
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+      - description: Number of items per page in offset-based pagination. Defaults to 10 if not specified.
+        in: query
+        name: size
+        schema:
+          type: integer
+          format: int32
+      - description: The tenant identifier.
+        in: header
+        name: tenant-id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Returned if the request is successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllNetworksResponse'
+        '400':
+          description: Returned if the request is invalid. `tenant-id` and `user-id` headers are required.
+        '401':
+          description: Returned if the request is unauthorized. Authentication required.
+        '403':
+          description: Returned if the request is forbidden. Insufficient permissions.
+        '500':
+          description: Returned if the request is an internal server error.
+        '502':
+          description: Returned if the request is a bad gateway. Downstream service error.
+        '503':
+          description: Returned if the request is a service unavailable. Network connectivity issues.
+      security:
+      - jwt: []
+    post:
+      summary: Create a new network
+      description: Creates a new network with the provided details
+      operationId: createNetwork
+      tags:
+      - Network
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetworkRequest'
+        required: true
+      responses:
+        '201':
+          description: Network created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse.schema'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /networks/practitioners/effective-date:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update effective date of a practitioner in a group for a network
+      description: Updates the effective date of a practitioner in a group for a network. This updates the effectiveDate in the TenantGroupPractitionerNetwork table.
+      operationId: updatePractitionerEffectiveDateInGroupForNetwork
+      tags:
+      - Network
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupPractitionerNetworkEffectiveDateRequest'
+        required: true
+      responses:
+        '200':
+          description: Practitioner effective date in group for network successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JsonNode'
+        '400':
+          description: Invalid request body or missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '404':
+          description: TenantGroupPractitionerNetwork not found for the provided networkId and tenantGroupPractitionerId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error during request processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /networks/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update a new network
+      description: Updates a new network with the provided details
+      operationId: updateNetwork
+      tags:
+      - Network
+      parameters:
+      - description: Network ID
+        example: '1234567890'
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNetworkRequest'
+        required: true
+      responses:
+        '200':
+          description: Network updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse.schema'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    get:
+      summary: Get a network by id
+      description: Get a network by id
+      operationId: findNetworkById
+      tags:
+      - Network
+      parameters:
+      - description: Network ID
+        example: '1234567890'
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Network fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkResponse.schema'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a new network
+      description: Deletes a network with the given id
+      operationId: deleteNetwork
+      tags:
+      - Network
+      parameters:
+      - description: Network ID
+        example: '1234567890'
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Network deleted successfully
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /networks/{networkId}/groups/{groupId}/practitioners/{practitionerId}/specialties/{specialtyId}/dates:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update practitioner specialty effective/termination dates in group for network
+      description: Updates the effectiveDate and/or terminationDate in the TenantGroupPractitionerNetworkSpecialty relationship identified by networkId, groupId, practitionerId, and specialtyId.
+      operationId: updatePractitionerSpecialtyDatesInGroupForNetwork
+      tags:
+      - Network
+      parameters:
+      - description: Group ID (certify/core group id)
+        in: path
+        required: true
+        name: groupId
+        schema:
+          type: string
+      - description: Network ID (certify/core network id)
+        in: path
+        required: true
+        name: networkId
+        schema:
+          type: string
+      - description: Practitioner ID
+        in: path
+        required: true
+        name: practitionerId
+        schema:
+          type: string
+      - description: Specialty ID (certify/core specialty id)
+        in: path
+        required: true
+        name: specialtyId
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupNetworkSpecialtyDatesRequest'
+        required: true
+      responses:
+        '200':
+          description: Group specialty dates in group for network successfully updated
+          content:
+            application/json:
+              schema:
+                description: 'Response with success flag, e.g. {"success": true}'
+        '400':
+          description: Invalid request body or missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '404':
+          description: TenantGroupPractitionerNetworkSpecialty not found for the provided networkId, groupId, practitionerId, and specialtyId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error during request processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    CreateNetworkRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Network.schema'
+          type: object
+    NetworkResponse.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/api-contracts/response/NetworkResponse.schema.json
+      title: NetworkResponse
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            contractId:
+              type: string
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    UpdateGroupNetworkSpecialtyDatesRequest:
+      type: object
+      required:
+      - effectiveDate
+      properties:
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        terminationDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        applyToAllAssociatedNetworksAndPlans:
+          type: boolean
+        applyToAllAssociatedLocations:
+          type: boolean
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    UpdateGroupPractitionerNetworkEffectiveDateRequest:
+      type: object
+      required:
+      - networkId
+      - tenantGroupPractitionerId
+      - effectiveDate
+      properties:
+        networkId:
+          type: string
+          pattern: \S
+        tenantGroupPractitionerId:
+          type: string
+          pattern: \S
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    Network.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Network.schema.json
+      title: Network
+      description: Represents collection of health care providers associated with a plan through a contract.
+      type: object
+      properties:
+        name:
+          description: The name of the network.
+          type: string
+        contractId:
+          description: The identifier of the associated contract.
+          type: string
+    GetAllNetworksResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkResponse.schema'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

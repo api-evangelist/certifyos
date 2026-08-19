@@ -1,0 +1,111 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Send Grid Webhook Resource API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Send Grid Webhook Resource",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Handle email delivery status events from SendGrid Event Webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/outreach/sendgrid/webhook/email-status",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Receives email delivery status events (delivered, bounced, opened, clicked, etc.) from SendGrid's Event Webhook. This is a public endpoint that does not require authentication."
+        },
+        {
+          "info": {
+            "name": "Handle incoming email from SendGrid Inbound Parse Webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/outreach/sendgrid/webhook/incoming-parse",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "to",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "from",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "subject",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "text",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "html",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "headers",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "emailId",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "outreachId",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "tenantId",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "workflowId",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "docs": "Receives and processes incoming emails forwarded by SendGrid's Inbound Parse Webhook. This is a public endpoint that does not require authentication."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

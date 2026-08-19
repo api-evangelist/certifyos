@@ -1,0 +1,156 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Webhook API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Webhook",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Find Webhooks by filter criteria with pagination and sorting",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/webhooks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "endAtId",
+                "value": "",
+                "type": "query",
+                "description": "End at document ID, for backward cursor-based pagination"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query",
+                "description": "Filter criteria. The filter parameter must be URL encoded when sent.\n\nExamples (before URL encoding):\n\n- Filter by tenant: `{\"tenantId\":{\"eq\":\"tenant-123\"}}`\n\n- Filter by event type: `{\"data.eventTypes\":{\"contains\":\"credential_workflow.status.changed\"}}`\n\n- Filter by active status: `{\"data.isActive\":{\"eq\":true}}`\n\n- Combined filter: `{\"tenantId\":{\"eq\":\"tenant-123\"},\"data.eventTypes\":{\"contains\":\"event.type\"},\"data.isActive\":{\"eq\":true}}`\n\nExample curl commands:\n\n```bash\n\n# Filter by tenant and event type\n\ncurl -X GET 'http://localhost:8080/webhooks?filter=%7B%22tenantId%22%3A%7B%22eq%22%3A%22tenant-123%22%7D%2C%22data.eventTypes%22%3A%7B%22contains%22%3A%22credential_workflow.status.changed%22%7D%7D'\n\n```\n\nAvailable filter operations:\n\n- eq: Equal to\n\n- neq: Not equal to\n\n- in: Value must be one of these (array)\n\n- nin: Value must not be any of these (array)\n\n- contains: String contains (case-sensitive, string fields only) or array contains (for data.eventTypes)\n\nFilterable fields:\n\n- tenantId: Tenant identifier (String)\n\n- data.eventTypes: Array of event types (Array - supports contains, eq, in)\n\n- data.isActive: Whether the webhook is active (Boolean - supports eq, neq)\n\n- data.webhookUrl: Webhook URL (String - optional)\n\nNote: When using the filter parameter in a browser or code, make sure to properly URL encode the JSON string.\n\n"
+              },
+              {
+                "name": "order",
+                "value": "",
+                "type": "query",
+                "description": "Sort criteria. The order parameter must be URL encoded when sent.\n\nExample (before URL encoding):\n\n- Sort by createdAt descending: `{\"orderBy\":\"createdAt\",\"orderByDirection\":\"DESC\"}`\n\nExample curl command:\n\n```bash\n\n# Sort by createdAt descending\n\ncurl -X GET 'http://localhost:8080/webhooks?order=%7B%22orderBy%22%3A%22createdAt%22%2C%22orderByDirection%22%3A%22DESC%22%7D'\n\n```\n\nNote: When using the order parameter in a browser or code, make sure to properly URL encode the JSON string.\n\n"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number (0-based), for offset-based pagination"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Page size"
+              },
+              {
+                "name": "startAfterId",
+                "value": "",
+                "type": "query",
+                "description": "Start after document ID, for forward cursor-based pagination"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a paginated filtered list of all Webhooks based on the provided criteria. Supports both offset-based (page/size) and cursor-based (startAfter/endAt) pagination. Results can be sorted by any Webhook field using the order parameter."
+        },
+        {
+          "info": {
+            "name": "Create a new webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/webhooks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new webhook subscription with the provided details. The webhook will receive events asynchronously when the specified event types occur.\n\n\n**Available Event Types:**\n\n- `credential_workflow.status.changed` - Triggered automatically when a credentialing workflow status changes (timeline event is created). See webhook-api-credential-workflow-events.md for detailed payload structure and documentation.\n\n- `facility_credential_workflow.status.changed` - Triggered automatically when a facili"
+        },
+        {
+          "info": {
+            "name": "Trigger manual webhook event to registered subscriptions",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/webhooks/test/publish",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Triggers a manual webhook event for the specified event type. Publishes a lightweight event message to Pub/Sub. The consumer will look up active webhooks for the tenant and deliver the event to them asynchronously.\n\n\n**Schema Validation:**\n\nEach event type has a corresponding JSON Schema that defines the required structure for eventData. The eventData payload is validated against the schema for the specified eventType. Invalid payloads will return a 400 Bad Request with detailed validation error"
+        },
+        {
+          "info": {
+            "name": "Delete a Webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "http://localhost:9000/webhooks/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of Webhook to delete"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Deletes a Webhook by their ID"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

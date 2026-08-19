@@ -1,0 +1,82 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Storage API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Storage",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Download file from GCS with custom filename",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/storage/download",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "fileName",
+                "value": "my-document.pdf",
+                "type": "query",
+                "description": "Optional custom filename for the download"
+              },
+              {
+                "name": "filePath",
+                "value": "supporting-documents/doc.pdf",
+                "type": "query",
+                "description": "GCS object path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Downloads a file from Google Cloud Storage and sets a custom filename for the download"
+        },
+        {
+          "info": {
+            "name": "Generate presigned URL for file download",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/storage/presigned-url",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "filePath",
+                "value": "supporting-documents/doc.pdf",
+                "type": "query",
+                "description": "GCS object path"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a time-limited presigned URL (1 hour expiry) for direct file download from GCS"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

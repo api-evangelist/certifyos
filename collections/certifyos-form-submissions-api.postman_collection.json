@@ -1,0 +1,1274 @@
+{
+  "item": [
+    {
+      "id": "42e18cb7-9b37-4cdf-8d95-11a1e5db0d0e",
+      "name": "Form Submissions",
+      "description": {
+        "content": "APIs for managing form submissions",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "91b18b4a-e140-41b1-9eaf-c8607e06c394",
+          "name": "Create a new form submission",
+          "request": {
+            "name": "Create a new form submission",
+            "description": {
+              "content": "Creates a new form submission. When createPractitioner is true, also creates or links a practitioner (using data.practitionerData) and a portal crosswalk; returns the form submission response with certifyId and providerCreated. Form submission is created first; on failure the request fails without creating a practitioner.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "forms",
+                "submissions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "createFacility",
+                  "value": "false",
+                  "description": "When true, creates a facility; response includes certifyId and facilityCreated in addition to form submission data."
+                },
+                {
+                  "disabled": false,
+                  "key": "createPractitioner",
+                  "value": "false",
+                  "description": "When true, creates a practitioner from data.practitionerData and a portal crosswalk; response includes certifyId and providerCreated in addition to form submission data."
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": "(Required) Tenant (organization) identifier",
+                "key": "tenant-id",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "3440f567-caa1-475a-96fa-74c2ad301e65",
+              "name": "Form submission created successfully. When createPractitioner is true, the response includes all form submission fields plus certifyId (tenant crosswalk identifier) and providerCreated (true if a new practitioner was created, false if the practitioner already existed).",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "createFacility",
+                      "value": "false"
+                    },
+                    {
+                      "key": "createPractitioner",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"organizationId\": \"string\",\n  \"mappedData\": {},\n  \"submissionData\": {},\n  \"submissionPdf\": {},\n  \"submittedBy\": {\n    \"email\": \"string\",\n    \"user\": {}\n  },\n  \"form\": {},\n  \"formVersionId\": \"string\",\n  \"createdAt\": \"string\",\n  \"createdBy\": \"string\",\n  \"updatedAt\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "13bdfd37-4140-4ff8-a4c0-36daf2a26dec",
+              "name": "Bad request: invalid or missing request body, or when createPractitioner is true: missing data, missing practitionerData, or practitionerData missing npi/externalId.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "createFacility",
+                      "value": "false"
+                    },
+                    {
+                      "key": "createPractitioner",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 6927,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 6339,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "67b1a6b9-dde4-46bd-a212-c5c8ac80dad9",
+              "name": "Unauthorized: valid JWT is required.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "createFacility",
+                      "value": "false"
+                    },
+                    {
+                      "key": "createPractitioner",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ad948d9e-d34f-4333-a00a-dc9ea34202f9",
+              "name": "Forbidden: insufficient permissions.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "createFacility",
+                      "value": "false"
+                    },
+                    {
+                      "key": "createPractitioner",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d266e869-502a-4551-ae87-5db2dee9c807",
+              "name": "Internal server error: unexpected failure during form submission or practitioner/crosswalk operations.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "createFacility",
+                      "value": "false"
+                    },
+                    {
+                      "key": "createPractitioner",
+                      "value": "false"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "b01ff430-720c-4a01-b863-9efda5e55de7",
+          "name": "Get a form submission by ID",
+          "request": {
+            "name": "Get a form submission by ID",
+            "description": {
+              "content": "Retrieves a single form submission by its unique ID. The response includes organizationId (from tenant), flattened data fields, and standard form submission metadata. Requires tenant-id header and valid JWT.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "forms",
+                "submissions",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "id",
+                  "description": "(Required) Unique identifier of the form submission (UUID)"
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": "(Required) Tenant (organization) identifier",
+                "key": "tenant-id",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "bfa9a48b-100d-4178-96a0-168aaf026389",
+              "name": "Form submission found. Returns the form submission with organizationId and flattened data.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) Unique identifier of the form submission (UUID)"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"organizationId\": \"string\",\n  \"mappedData\": {},\n  \"submissionData\": {},\n  \"submissionPdf\": {},\n  \"submittedBy\": {\n    \"email\": \"string\",\n    \"user\": {}\n  },\n  \"form\": {},\n  \"formVersionId\": \"string\",\n  \"createdAt\": \"string\",\n  \"createdBy\": \"string\",\n  \"updatedAt\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d202e0fa-cc13-4c12-b38d-6f7fd1e21edc",
+              "name": "Unauthorized: valid JWT is required.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) Unique identifier of the form submission (UUID)"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f1a79a54-e920-424f-8d0e-3cc429213b6c",
+              "name": "Forbidden: insufficient permissions.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) Unique identifier of the form submission (UUID)"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b57e644a-ab08-48b5-88b1-9f1db7680820",
+              "name": "Not found: no form submission exists for the given ID within the tenant.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) Unique identifier of the form submission (UUID)"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "cc72bdb2-f780-45d3-ac2d-e1579a460c5c",
+              "name": "Internal server error: unexpected failure while fetching the form submission.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "forms",
+                    "submissions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) Unique identifier of the form submission (UUID)"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "31def644-dad7-48ed-b64b-f1a4f6defbed",
+          "name": "Create a multi-tenant form submission (v2)",
+          "request": {
+            "name": "Create a multi-tenant form submission (v2)",
+            "description": {
+              "content": "Creates a canonical form submission and fans out practitioner/facility crosswalk creation to multiple tenants in parallel. Returns per-tenant results with an aggregated status of success, partial_success, or failed. GCS document uploads are dispatched as Cloud Tasks asynchronously.",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "v2",
+                "forms",
+                "submissions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": "(Required) Owning tenant (organization) identifier",
+                "key": "tenant-id",
+                "value": "<string>"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "dc288144-4223-4f4f-ae45-5d575314293f",
+              "name": "Canonical form submission created. Per-tenant results in tenantResults. HTTP 201 is returned even on partial_success or failed fan-out outcomes.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"formSubmissionId\": \"string\",\n  \"status\": \"string\",\n  \"tenantResults\": [\n    {\n      \"tenantId\": \"string\",\n      \"status\": \"string\",\n      \"certifyId\": \"string\",\n      \"errorCode\": \"string\",\n      \"errorMessage\": \"string\"\n    },\n    {\n      \"tenantId\": \"string\",\n      \"status\": \"string\",\n      \"certifyId\": \"string\",\n      \"errorCode\": null,\n      \"errorMessage\": \"string\"\n    }\n  ],\n  \"gcsUploadStarted\": false\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "013ff9d3-849a-4b2b-a0ab-5fb3aa98ff22",
+              "name": "Bad request: validation failure (empty tenantIds, mutual exclusion, invalid URLs, etc.)",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "89cdb67b-1a99-4e5d-918d-62e0e75bcbf3",
+              "name": "Unauthorized: valid JWT is required.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "feaebf40-7eaf-4e73-9e66-eb82f882982c",
+              "name": "Forbidden: insufficient permissions.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "3229ac76-7168-431b-94d5-e62094cd8345",
+              "name": "Internal server error: unexpected error.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "98fad0ad-7b1b-428c-a6af-200f956be8e1",
+              "name": "Bad gateway: the DAL returned a null, non-object, or id-less canonical submission response.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Gateway",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "808675d8-1fa4-4655-9d2d-38b1632a4b73",
+              "name": "Service unavailable: the v2 feature is currently disabled via kill switch.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "v2",
+                    "forms",
+                    "submissions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) Owning tenant (organization) identifier",
+                    "key": "tenant-id",
+                    "value": "<string>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"data\": {},\n  \"tenantIds\": [\n    \"<string>\"\n  ],\n  \"options\": {\n    \"key_0\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_1\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_2\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    },\n    \"key_3\": {\n      \"createPractitioner\": false,\n      \"createFacility\": false\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 4678,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 9794,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://localhost:9000",
+      "key": "baseUrl"
+    }
+  ],
+  "info": {
+    "_postman_id": "ecbaedce-897b-4b2d-afe4-17831de5beea",
+    "name": "Certify API Layer Form Submissions API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "API for Certify application",
+      "type": "text/plain"
+    }
+  }
+}

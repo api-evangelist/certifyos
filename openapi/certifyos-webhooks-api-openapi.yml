@@ -1,0 +1,556 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Webhooks API
+  version: '1.0'
+  description: 'Operations tagged Webhooks across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-application-openapi.json. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: Webhooks
+  description: APIs for managing webhooks
+paths:
+  /webhooks/cloud-deliver:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    post:
+      summary: Cloud Task callback for webhook delivery
+      description: Called by Cloud Tasks to deliver a webhook event to a partner URL. The Cloud Tasks queue rate-limits dispatches to prevent exceeding partner rate limits.
+      operationId: webhookDeliveryCallback
+      tags:
+      - Webhooks
+      parameters:
+      - description: Tenant ID
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      - description: User ID for service-to-service calls
+        name: user-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JsonNode'
+        required: true
+      responses:
+        '200':
+          description: Webhook delivered successfully
+        '400':
+          description: Missing required fields in task payload
+        '502':
+          description: Webhook delivery failed - Cloud Tasks will retry
+  /v2/webhooks:
+    servers:
+    - url: https://ng-api-production.certifyos.com
+      description: Production
+    - url: https://ng-api-stg.certifyos.com/
+      description: Staging (Test Data)
+    get:
+      operationId: WebhooksController_fetchAll
+      summary: Retrieve all registered webhooks
+      description: Retrieve all webhooks registered for the organization, including basic configuration details. Sensitive information like oauth_configuration will be masked in the response.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of registered webhooks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookResponseDto'
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+      tags:
+      - Webhooks
+      security:
+      - BearerAuth: []
+    post:
+      operationId: WebhooksController_create
+      summary: Register Webhook (Credentialing Events)
+      description: Register a webhook for credentialing events of a provider. If headers are included, they will be sent with every request. If oauth_configuration is set, the token_url will be called with client_id and client_secret and a form urlencoded POST request to generate an access token. The response includes the webhook ID and configuration details.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhooksDto'
+      responses:
+        '201':
+          description: Webhook Created Successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWebhookResponseDto'
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Invalid request body
+                  errors:
+                  - url must be a valid URL
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+      tags:
+      - Webhooks
+      security:
+      - BearerAuth: []
+    delete:
+      operationId: WebhooksController_remove
+      summary: Remove Registered Webhook
+      description: Remove a previously registered webhook by providing its configuration.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveWebhooksDto'
+      responses:
+        '204':
+          description: Webhook deleted successfully.
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Invalid request body
+                  errors:
+                  - id is required
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '404':
+          description: Webhook or related resource not found.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Webhook not found
+      tags:
+      - Webhooks
+      security:
+      - BearerAuth: []
+  /v2/webhooks/{webhookId}/test-event:
+    servers:
+    - url: https://ng-api-production.certifyos.com
+      description: Production
+    - url: https://ng-api-stg.certifyos.com/
+      description: Staging (Test Data)
+    post:
+      operationId: WebhooksController_testWebhook
+      summary: Test a registered webhook
+      description: Send a test event to a registered webhook. This is useful for verifying that the webhook endpoint is reachable and correctly configured.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: webhookId
+        required: true
+        in: path
+        description: Webhook ID returned when registering a webhook
+        example: webhook_123
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWebhookTestEventDto'
+      responses:
+        '201':
+          description: Webhook test event sent successfully
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Test event sent successfully
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Invalid request body
+                  errors:
+                  - eventType is required
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '422':
+          description: The test event could not be sent using the webhook configuration.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Failed to send test event
+                  reason: Invalid endpoint
+      tags:
+      - Webhooks
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    WebhookResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the webhook registration
+        organization_id:
+          type: string
+          description: Unique identifier for the client organization
+        url:
+          type: string
+          description: Callback URL to which data should be posted
+          example: https://yourdomain.com/webhook-endpoint
+        event_types:
+          type: array
+          description: "Credentialing event(s) that should trigger a post.\n    \nValues:\n- IN_PROGRESS: Credentialing is in progress\n- PSV_COMPLETED: Primary source verification completed\n- CREDENTIALING_COMPLETED: Credentialing completed\n- PROVIDER_TERMINATED: Provider terminated\n- FACILITY_NOT_SENT_TO_CREDENTIALING: Facility not sent to credentialing\n- FACILITY_IN_PROGRESS: Facility credentialing in progress\n- FACILITY_DATA_MISSING: Facility data missing\n- FACILITY_OUTREACH_IN_PROGRESS: Facility outreach in progress\n- FACILITY_PSV_COMPLETE_BY_CERTIFYOS: Facility PSV complete by CertifyOS\n- FACILITY_CREDENTIALING_RESTARTED: Facility credentialing restarted\n- FACILITY_PSV_READY: Facility PSV ready\n- FACILITY_CRED_APPROVED: Facility credentialing approved\n- FACILITY_HOLD_FOR_CRED_COMM: Facility hold for credentialing committee\n- FACILITY_CRED_DENIED: Facility credentialing denied\n- FACILITY_TERMINATED: Facility terminated\n- FACILITY_RECREDENTIALING_IN_PROGRESS: Facility recredentialing in progress\n- FACILITY_TABLED: Facility tabled\n- FACILITY_WITHDRAWN_CANCELLED: Facility withdrawn or cancelled\n- FACILITY_NOT_STARTED: Facility credentialing not started\n- PROVIDER_NOT_SENT_TO_CREDENTIALING: Provider not sent to credentialing\n- PROVIDER_NOT_STARTED: Provider credentialing not started\n- PROVIDER_IN_PROGRESS: Provider credentialing in progress\n- PROVIDER_DATA_MISSING: Provider data missing\n- PROVIDER_OUTREACH_IN_PROGRESS: Provider outreach in progress\n- PROVIDER_PSV_COMPLETED: Provider PSV completed\n- PROVIDER_CREDENTIALING_RESTARTED: Provider credentialing restarted\n- PROVIDER_PSV_READY: Provider PSV ready\n- PROVIDER_CRED_APPROVED: Provider credentialing approved\n- PROVIDER_HOLD_FOR_CRED_COMM: Provider hold for credentialing committee\n- PROVIDER_CRED_DENIED: Provider credentialing denied\n- PROVIDER_RECREDENTIALING_IN_PROGRESS: Provider recredentialing in progress\n- PROVIDER_TABLED: Provider tabled\n- PROVIDER_WITHDRAWN_CANCELLED: Provider withdrawn or cancelled"
+          items:
+            type: string
+            enum:
+            - IN_PROGRESS
+            - PSV_COMPLETED
+            - CREDENTIALING_COMPLETED
+            - PROVIDER_TERMINATED
+            - FACILITY_NOT_SENT_TO_CREDENTIALING
+            - FACILITY_IN_PROGRESS
+            - FACILITY_DATA_MISSING
+            - FACILITY_OUTREACH_IN_PROGRESS
+            - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
+            - FACILITY_CREDENTIALING_RESTARTED
+            - FACILITY_PSV_READY
+            - FACILITY_CRED_APPROVED
+            - FACILITY_HOLD_FOR_CRED_COMM
+            - FACILITY_CRED_DENIED
+            - FACILITY_TERMINATED
+            - FACILITY_RECREDENTIALING_IN_PROGRESS
+            - FACILITY_TABLED
+            - FACILITY_WITHDRAWN_CANCELLED
+            - FACILITY_NOT_STARTED
+            - PROVIDER_NOT_SENT_TO_CREDENTIALING
+            - PROVIDER_NOT_STARTED
+            - PROVIDER_IN_PROGRESS
+            - PROVIDER_DATA_MISSING
+            - PROVIDER_OUTREACH_IN_PROGRESS
+            - PROVIDER_PSV_COMPLETED
+            - PROVIDER_CREDENTIALING_RESTARTED
+            - PROVIDER_PSV_READY
+            - PROVIDER_CRED_APPROVED
+            - PROVIDER_HOLD_FOR_CRED_COMM
+            - PROVIDER_CRED_DENIED
+            - PROVIDER_RECREDENTIALING_IN_PROGRESS
+            - PROVIDER_TABLED
+            - PROVIDER_WITHDRAWN_CANCELLED
+            - FORM_SUBMISSION_CREATED
+        description:
+          type: string
+          description: Title/description of the webhook being registered
+          example: Provider Created Webhook
+        headers:
+          type: object
+          description: Key-value pairs of custom static headers sent with the webhook requests (e.g., for API keys or tokens). These are masked in the response.
+          example:
+            X-Api-Key: '****'
+        oauth_configuration:
+          description: OAuth2 client credentials configuration for token-based authentication. These are masked in the response.
+          example:
+            client_id: my-client-id
+            client_secret: '****'
+            token_url: https://auth.example.com/oauth/token
+          allOf:
+          - $ref: '#/components/schemas/ClientCredentialsConfigurationDto'
+        created_at:
+          type: string
+          description: Timestamp when the webhook was created
+      required:
+      - id
+      - organization_id
+      - url
+      - event_types
+      - created_at
+    CreateWebhookTestEventDto:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message to include in the test event sent to the webhook
+        eventType:
+          enum:
+          - IN_PROGRESS
+          - PSV_COMPLETED
+          - CREDENTIALING_COMPLETED
+          - PROVIDER_TERMINATED
+          - FACILITY_NOT_SENT_TO_CREDENTIALING
+          - FACILITY_IN_PROGRESS
+          - FACILITY_DATA_MISSING
+          - FACILITY_OUTREACH_IN_PROGRESS
+          - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
+          - FACILITY_CREDENTIALING_RESTARTED
+          - FACILITY_PSV_READY
+          - FACILITY_CRED_APPROVED
+          - FACILITY_HOLD_FOR_CRED_COMM
+          - FACILITY_CRED_DENIED
+          - FACILITY_TERMINATED
+          - FACILITY_RECREDENTIALING_IN_PROGRESS
+          - FACILITY_TABLED
+          - FACILITY_WITHDRAWN_CANCELLED
+          - FACILITY_NOT_STARTED
+          - PROVIDER_NOT_SENT_TO_CREDENTIALING
+          - PROVIDER_NOT_STARTED
+          - PROVIDER_IN_PROGRESS
+          - PROVIDER_DATA_MISSING
+          - PROVIDER_OUTREACH_IN_PROGRESS
+          - PROVIDER_PSV_COMPLETED
+          - PROVIDER_CREDENTIALING_RESTARTED
+          - PROVIDER_PSV_READY
+          - PROVIDER_CRED_APPROVED
+          - PROVIDER_HOLD_FOR_CRED_COMM
+          - PROVIDER_CRED_DENIED
+          - PROVIDER_RECREDENTIALING_IN_PROGRESS
+          - PROVIDER_TABLED
+          - PROVIDER_WITHDRAWN_CANCELLED
+          - FORM_SUBMISSION_CREATED
+          type: string
+          description: Event type for the test event sent to the webhook
+      required:
+      - message
+      - eventType
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    CreateWebhookResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    ClientCredentialsConfigurationDto:
+      type: object
+      properties:
+        client_id:
+          type: string
+          description: Client ID for OAuth token exchange
+          example: my-client-id
+        client_secret:
+          type: string
+          description: Client secret for OAuth token exchange
+          example: my-client-secret
+        token_url:
+          type: string
+          description: URL for OAuth token exchange
+          example: https://auth.example.com/oauth/token
+        scope:
+          type: string
+          nullable: true
+          description: Scope for OAuth token exchange
+          example: resource.read
+        headers:
+          type: object
+          nullable: true
+          description: Key-value pairs of custom headers to send in the OAuth token exchange request to {token_url}.
+          example:
+            X-Domain-Name: example.com
+      required:
+      - client_id
+      - client_secret
+      - token_url
+    CreateWebhooksDto:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Callback URL to which data should be posted
+          example: https://yourdomain.com/webhook-endpoint
+        event_types:
+          type: array
+          description: "Webhook event(s) that should trigger a post.\n    \nValues:\n- IN_PROGRESS: Credentialing is in progress\n- PSV_COMPLETED: Primary source verification completed\n- CREDENTIALING_COMPLETED: Credentialing completed\n- PROVIDER_TERMINATED: Provider terminated\n- FACILITY_NOT_SENT_TO_CREDENTIALING: Facility not sent to credentialing\n- FACILITY_IN_PROGRESS: Facility credentialing in progress\n- FACILITY_DATA_MISSING: Facility data missing\n- FACILITY_OUTREACH_IN_PROGRESS: Facility outreach in progress\n- FACILITY_PSV_COMPLETE_BY_CERTIFYOS: Facility PSV complete by CertifyOS\n- FACILITY_CREDENTIALING_RESTARTED: Facility credentialing restarted\n- FACILITY_PSV_READY: Facility PSV ready\n- FACILITY_CRED_APPROVED: Facility credentialing approved\n- FACILITY_HOLD_FOR_CRED_COMM: Facility hold for credentialing committee\n- FACILITY_CRED_DENIED: Facility credentialing denied\n- FACILITY_TERMINATED: Facility terminated\n- FACILITY_RECREDENTIALING_IN_PROGRESS: Facility recredentialing in progress\n- FACILITY_TABLED: Facility tabled\n- FACILITY_WITHDRAWN_CANCELLED: Facility withdrawn or cancelled\n- FACILITY_NOT_STARTED: Facility credentialing not started\n- PROVIDER_NOT_SENT_TO_CREDENTIALING: Provider not sent to credentialing\n- PROVIDER_NOT_STARTED: Provider credentialing not started\n- PROVIDER_IN_PROGRESS: Provider credentialing in progress\n- PROVIDER_DATA_MISSING: Provider data missing\n- PROVIDER_OUTREACH_IN_PROGRESS: Provider outreach in progress\n- PROVIDER_PSV_COMPLETED: Provider PSV completed\n- PROVIDER_CREDENTIALING_RESTARTED: Provider credentialing restarted\n- PROVIDER_PSV_READY: Provider PSV ready\n- PROVIDER_CRED_APPROVED: Provider credentialing approved\n- PROVIDER_HOLD_FOR_CRED_COMM: Provider hold for credentialing committee\n- PROVIDER_CRED_DENIED: Provider credentialing denied\n- PROVIDER_RECREDENTIALING_IN_PROGRESS: Provider recredentialing in progress\n- PROVIDER_TABLED: Provider tabled\n- PROVIDER_WITHDRAWN_CANCELLED: Provider withdrawn or cancelled\n- FORM_SUBMISSION_CREATED: Form submission created"
+          items:
+            type: string
+            enum:
+            - IN_PROGRESS
+            - PSV_COMPLETED
+            - CREDENTIALING_COMPLETED
+            - PROVIDER_TERMINATED
+            - FACILITY_NOT_SENT_TO_CREDENTIALING
+            - FACILITY_IN_PROGRESS
+            - FACILITY_DATA_MISSING
+            - FACILITY_OUTREACH_IN_PROGRESS
+            - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
+            - FACILITY_CREDENTIALING_RESTARTED
+            - FACILITY_PSV_READY
+            - FACILITY_CRED_APPROVED
+            - FACILITY_HOLD_FOR_CRED_COMM
+            - FACILITY_CRED_DENIED
+            - FACILITY_TERMINATED
+            - FACILITY_RECREDENTIALING_IN_PROGRESS
+            - FACILITY_TABLED
+            - FACILITY_WITHDRAWN_CANCELLED
+            - FACILITY_NOT_STARTED
+            - PROVIDER_NOT_SENT_TO_CREDENTIALING
+            - PROVIDER_NOT_STARTED
+            - PROVIDER_IN_PROGRESS
+            - PROVIDER_DATA_MISSING
+            - PROVIDER_OUTREACH_IN_PROGRESS
+            - PROVIDER_PSV_COMPLETED
+            - PROVIDER_CREDENTIALING_RESTARTED
+            - PROVIDER_PSV_READY
+            - PROVIDER_CRED_APPROVED
+            - PROVIDER_HOLD_FOR_CRED_COMM
+            - PROVIDER_CRED_DENIED
+            - PROVIDER_RECREDENTIALING_IN_PROGRESS
+            - PROVIDER_TABLED
+            - PROVIDER_WITHDRAWN_CANCELLED
+            - FORM_SUBMISSION_CREATED
+        description:
+          type: string
+          description: Title/description of the webhook being registered
+          example: Provider Created Webhook
+        headers:
+          type: object
+          description: Key-value pairs of custom static headers sent with the webhook requests (e.g., for API keys or tokens). To send headers in the OAuth token exchange, set the oauth_configuration.headers property.
+          example:
+            X-Api-Key: abcdef123456
+        oauth_configuration:
+          description: OAuth2 client credentials configuration for token-based authentication.
+          example:
+            client_id: my-client-id
+            client_secret: my-client-secret
+            token_url: https://auth.example.com/oauth/token
+          allOf:
+          - $ref: '#/components/schemas/ClientCredentialsConfigurationDto'
+      required:
+      - url
+      - event_types
+    RemoveWebhooksDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID assigned to the Webhook
+      required:
+      - id
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-application-openapi.json

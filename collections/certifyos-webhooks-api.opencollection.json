@@ -1,0 +1,147 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certifyos Webhooks API",
+    "version": "1.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Webhooks",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Cloud Task callback for webhook delivery",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/webhooks/cloud-deliver",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              },
+              {
+                "name": "user-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Called by Cloud Tasks to deliver a webhook event to a partner URL. The Cloud Tasks queue rate-limits dispatches to prevent exceeding partner rate limits."
+        },
+        {
+          "info": {
+            "name": "Retrieve all registered webhooks",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/v2/webhooks",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieve all webhooks registered for the organization, including basic configuration details. Sensitive information like oauth_configuration will be masked in the response."
+        },
+        {
+          "info": {
+            "name": "Register Webhook (Credentialing Events)",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/v2/webhooks",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Register a webhook for credentialing events of a provider. If headers are included, they will be sent with every request. If oauth_configuration is set, the token_url will be called with client_id and client_secret and a form urlencoded POST request to generate an access token. The response includes the webhook ID and configuration details."
+        },
+        {
+          "info": {
+            "name": "Remove Registered Webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "http://localhost:9000/v2/webhooks",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Remove a previously registered webhook by providing its configuration."
+        },
+        {
+          "info": {
+            "name": "Test a registered webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/v2/webhooks/:webhookId/test-event",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "webhookId",
+                "value": "webhook_123",
+                "type": "path",
+                "description": "Webhook ID returned when registering a webhook"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Send a test event to a registered webhook. This is useful for verifying that the webhook endpoint is reachable and correctly configured."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

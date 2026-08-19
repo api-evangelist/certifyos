@@ -1,0 +1,359 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS Providers API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: providers
+paths:
+  /providers/export/provider-directory:
+    get:
+      operationId: ProvidersController_providerDirectoryExport
+      summary: Export Provider Directory
+      description: Triggers an export workflow for the provider directory. The export will include provider details based on the provided filters. The result is typically a CSV or similar file, and the export is processed asynchronously.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerIds
+        required: false
+        in: query
+        description: Provider ids to be filtered in comma separated strings within the array.
+        schema:
+          type: array
+          items:
+            type: string
+      - name: includeInactiveProviders
+        required: false
+        in: query
+        description: Whether to include Inactive Providers
+        schema:
+          type: boolean
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          type: number
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          type: number
+      responses:
+        '200':
+          description: Workflow Executed. The export process has been triggered successfully.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Workflow Executed
+        '400':
+          description: Invalid input parameters.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '500':
+          description: GENERATE_PSV_URL not set or other server error.
+      tags:
+      - providers
+      security:
+      - BearerAuth: []
+  /providers/export/hsd-report:
+    get:
+      operationId: ProvidersController_providerHsdReportExport
+      summary: Export HSD Report
+      description: Triggers an export workflow for the HSD (Health Service Delivery) report. The export will include provider details based on the provided filters. The result is typically a CSV or similar file, and the export is processed asynchronously.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerIds
+        required: false
+        in: query
+        description: Provider ids to be filtered in comma separated strings within the array.
+        schema:
+          type: array
+          items:
+            type: string
+      - name: includeInactiveProviders
+        required: false
+        in: query
+        description: Whether to include Inactive Providers
+        schema:
+          type: boolean
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          type: number
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          type: number
+      responses:
+        '200':
+          description: Workflow Executed. The export process has been triggered successfully.
+          content:
+            application/json:
+              schema:
+                example:
+                  message: Workflow Executed
+        '400':
+          description: Invalid input parameters.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '500':
+          description: GENERATE_PSV_URL not set or other server error.
+      tags:
+      - providers
+      security:
+      - BearerAuth: []
+  /providers/{id}/supporting-documents:
+    post:
+      operationId: SupportingDocumentsController_upload
+      summary: Upload Supporting Document
+      description: "\n    Uploads a supporting document for a provider by ID. This endpoint accepts a multipart/form-data request with a file and metadata.\n\n    - The uploaded document is associated with the provider and saved in the system.\n    - Only valid files and supported document metadata will be processed.\n    - Returns a confirmation once the document is uploaded successfully.\n\n    Authorization:\n    - Requires an Bearer access token.\n\n    Possible Errors:\n    - `400 Bad Request`: If the file or metadata is invalid.\n    - `404 Not Found`: If the provider with the given ID does not exist.\n    "
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Supporting Document upload request
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                fileType:
+                  type: string
+                state:
+                  type: string
+                  enum:
+                  - AK
+                  - AL
+                  - AR
+                  - AS
+                  - AZ
+                  - CA
+                  - CO
+                  - CT
+                  - DC
+                  - DE
+                  - FL
+                  - FM
+                  - GA
+                  - GU
+                  - HI
+                  - IA
+                  - ID
+                  - IL
+                  - IN
+                  - KS
+                  - KY
+                  - LA
+                  - MA
+                  - MD
+                  - ME
+                  - MH
+                  - MI
+                  - MN
+                  - MO
+                  - MP
+                  - MS
+                  - MT
+                  - NC
+                  - ND
+                  - NE
+                  - NH
+                  - NJ
+                  - NM
+                  - NV
+                  - NY
+                  - OH
+                  - OK
+                  - OR
+                  - PA
+                  - PR
+                  - PW
+                  - RI
+                  - SC
+                  - SD
+                  - TN
+                  - TX
+                  - UT
+                  - UM
+                  - VA
+                  - VI
+                  - VT
+                  - WA
+                  - WI
+                  - WV
+                  - WY
+              required:
+              - fileType
+      responses:
+        '201':
+          description: The supporting document was successfully uploaded.
+        '400':
+          description: Bad request. Invalid input or file.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Provider not found.
+      tags:
+      - providers
+      security:
+      - BearerAuth: []
+  /providers/{providerId}/credentialing-workflow-timelines:
+    get:
+      operationId: CredentialingWorkflowTimelineController_findAll
+      summary: Get all credentialing workflow timelines for a provider
+      description: "Returns a list of credentialing workflow timeline records for the specified provider within \n    the organization. Each record contains credentialing status, cycle, dates, and related metadata."
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Credentialing workflow timelines retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CredentialingWorkflowTimelineSubCollection'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - providers
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    CredentialingWorkflowTimelineSubCollection:
+      type: object
+      properties:
+        id:
+          type: string
+        decisionEnteredById:
+          type: string
+        decisionEnteredByName:
+          type: string
+        medicalDirectorId:
+          type: string
+        medicalDirectorName:
+          type: string
+        receivedForCredentialingDate:
+          format: date-time
+          type: string
+        attestationDate:
+          format: date-time
+          type: string
+        lastCredentialedDate:
+          format: date-time
+          type: string
+        lastCredentialedDateChangeReason:
+          type: string
+        psvCompleteDate:
+          format: date-time
+          type: string
+        credentialingDecisionDate:
+          format: date-time
+          type: string
+        nextCredentialingDate:
+          format: date-time
+          type: string
+        verificationDate:
+          format: date-time
+          type: string
+        verifierId:
+          type: string
+        initialCredentialingDate:
+          format: date-time
+          type: string
+        initialCredentialingDateChangeReason:
+          type: string
+        providerId:
+          type: string
+        organizationId:
+          type: string
+        orgEntity:
+          type: object
+        credentialingWorkflowId:
+          type:
+          - string
+          - 'null'
+        credentialingStatus:
+          type: string
+        credentialingCycle:
+          enum:
+          - Initial
+          - Recredentialing
+          type: string
+        credentialingStatusUpdatedAt:
+          format: date-time
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        updatedBy:
+          type: string
+        updatedByName:
+          type: string
+      required:
+      - id
+      - lastCredentialedDate
+      - initialCredentialingDate
+      - providerId
+      - organizationId
+      - orgEntity
+      - credentialingStatus
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

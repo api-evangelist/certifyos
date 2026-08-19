@@ -1,0 +1,105 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS V2/groups API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: v2/groups
+paths:
+  /v2/groups/{id}/associate-facilities:
+    post:
+      operationId: OrgEntitiesV2Controller_associateFacilityAsLocation
+      summary: Associate Facilities with a Group
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssociateFacilitiesV2Dto'
+      responses:
+        '201':
+          description: If all ids are associated successfully.
+        '207':
+          description: If some of the IDs failed to be associated.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: If org-entity with the id is not found.
+      tags:
+      - v2/groups
+      security:
+      - BearerAuth: []
+    delete:
+      operationId: OrgEntitiesV2Controller_disassociateFacilityFromLocation
+      summary: Dissociate Facilities From a Group
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssociateFacilitiesV2Dto'
+      responses:
+        '200':
+          description: If all ids are disassociated successfully.
+        '207':
+          description: If some of the IDs failed to be disassociated.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: If org-entity with the id is not found.
+      tags:
+      - v2/groups
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    AssociateFacilitiesV2Dto:
+      type: object
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssociateFacilityV2Dto'
+      required:
+      - list
+    AssociateFacilityV2Dto:
+      type: object
+      properties:
+        facilityId:
+          type: string
+      required:
+      - facilityId
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

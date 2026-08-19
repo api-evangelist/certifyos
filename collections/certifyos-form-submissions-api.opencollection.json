@@ -1,0 +1,111 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Form Submissions API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Form Submissions",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Create a new form submission",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/forms/submissions",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "createFacility",
+                "value": "",
+                "type": "query",
+                "description": "When true, creates a facility; response includes certifyId and facilityCreated in addition to form submission data."
+              },
+              {
+                "name": "createPractitioner",
+                "value": "",
+                "type": "query",
+                "description": "When true, creates a practitioner from data.practitionerData and a portal crosswalk; response includes certifyId and providerCreated in addition to form submission data."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new form submission. When createPractitioner is true, also creates or links a practitioner (using data.practitionerData) and a portal crosswalk; returns the form submission response with certifyId and providerCreated. Form submission is created first; on failure the request fails without creating a practitioner."
+        },
+        {
+          "info": {
+            "name": "Get a form submission by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/forms/submissions/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "d453006f-30e2-4a01-841d-962579531c25",
+                "type": "path",
+                "description": "Unique identifier of the form submission (UUID)"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves a single form submission by its unique ID. The response includes organizationId (from tenant), flattened data fields, and standard form submission metadata. Requires tenant-id header and valid JWT."
+        },
+        {
+          "info": {
+            "name": "Create a multi-tenant form submission (v2)",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/v2/forms/submissions",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a canonical form submission and fans out practitioner/facility crosswalk creation to multiple tenants in parallel. Returns per-tenant results with an aggregated status of success, partial_success, or failed. GCS document uploads are dispatched as Cloud Tasks asynchronously."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

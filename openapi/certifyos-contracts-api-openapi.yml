@@ -1,0 +1,479 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Contracts API
+  version: 1.0.0
+  description: 'Operations tagged Contracts across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Contracts
+  description: APIs for managing contracts entities
+paths:
+  /contracts:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Find Contract by filter criteria with pagination
+      description: Returns a paginated filtered list of all Contracts based on the provided criteria. Supports both offset-based (page/size) and cursor-based (startAfter/endAt) pagination.
+      operationId: contractsFindMany
+      tags:
+      - Contracts
+      parameters:
+      - description: End at document ID, for backward cursor-based pagination
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: Page number (0-based), for offset-based pagination
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Page size
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Start after document ID, for forward cursor-based pagination
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of Contracts found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedContractResponse'
+        '400':
+          description: Invalid filter criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+      - jwt: []
+    post:
+      summary: Create a new Contract
+      description: Creates a new Contract with the provided details
+      operationId: contractsCreate
+      tags:
+      - Contracts
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      responses:
+        '201':
+          description: Contract created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+      - jwt: []
+  /contracts/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update (replace) an existing Contract
+      description: Replace the data for an existing Contract
+      operationId: contractsReplace
+      tags:
+      - Contracts
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contract'
+        required: true
+      responses:
+        '200':
+          description: Contract updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '400':
+          description: Invalid Contract details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
+    get:
+      summary: Find a Contract by their ID
+      description: Returns a single Contract by their ID
+      operationId: contractsFindById
+      tags:
+      - Contracts
+      parameters:
+      - description: ID of Contract to fetch
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Contract found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a Contract
+      description: Deletes a Contract by their ID
+      operationId: contractsDelete
+      tags:
+      - Contracts
+      parameters:
+      - description: ID of Contract to delete
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Contract successfully deleted
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '404':
+          description: Contract not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
+components:
+  schemas:
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    ContractFinancialInfo:
+      type: object
+      properties:
+        feeSchedule:
+          type: string
+        additionalFeeSchedule:
+          type: string
+        contractPaymentType:
+          type: string
+        nonTypicalContractTerms:
+          type: string
+        providerRateCalculation:
+          type: string
+        rateLesserOfClaimAllowed:
+          type: boolean
+        sequestrationAllowed:
+          type: boolean
+        sharedSavings:
+          type: boolean
+        bonus:
+          type: boolean
+        claimSubmissionCycle:
+          type: string
+        snfCorporateChampionRate:
+          type: number
+        snfCapitationPartARate:
+          type: number
+        snfCapitationPartBRate:
+          type: number
+        snfCapitationBillAboveRate:
+          type: number
+        hasGssRate:
+          type: boolean
+        gssRateDetails:
+          type: string
+        gssMinimumMM:
+          type: integer
+          format: int32
+        gssTerm:
+          type: string
+        gssFrequency:
+          type: string
+        appPenalty:
+          type: string
+        telehealthNoShow:
+          type: string
+    ContractAdministrativeAndLegalInfo:
+      type: object
+      properties:
+        amendmentOnFile:
+          type: boolean
+        amendmentNumber:
+          type: string
+        practitionersTerminationNoticePeriod:
+          type: string
+        providersManualUpdatesNoticePeriod:
+          type: string
+        policyUpdateNotificationRequired:
+          type: boolean
+        claimFilingLimit:
+          type: string
+        reimbursementScheduleUpdateFrequency:
+          type: string
+        timelyPaymentCommitment:
+          type: integer
+          format: int32
+    ContractLifeCycleInfo:
+      type: object
+      properties:
+        contractEffectiveDate:
+          type: string
+        initialTermDate:
+          type: string
+        terminationInformedDate:
+          type: string
+        terminationDate:
+          type: string
+        billingEffectiveDate:
+          type: string
+        billingTerminationDate:
+          type: string
+    ContractGeneralInfo:
+      type: object
+      properties:
+        contractId:
+          type: string
+        contractName:
+          type: string
+        contractTemplate:
+          type: string
+        contractRate:
+          type: string
+        reimbursementCode:
+          type: string
+        contractType:
+          type: string
+        vbcAttribution:
+          type: string
+        contractStatus:
+          type: string
+        contractAgreementType:
+          type: string
+        groupId:
+          type: string
+        practitionerId:
+          type: string
+        networkId:
+          type: string
+        planId:
+          type: string
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+        planId:
+          type: string
+        networkId:
+          type: string
+        documentId:
+          type: string
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+        generalInfo:
+          $ref: '#/components/schemas/ContractGeneralInfo'
+        lifecycle:
+          $ref: '#/components/schemas/ContractLifeCycleInfo'
+        financial:
+          $ref: '#/components/schemas/ContractFinancialInfo'
+        administrativeAndLegal:
+          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
+        clinicalAndQuality:
+          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    PagedContractResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    ContractClinicalAndQualityInfo:
+      type: object
+      properties:
+        hasQualityProgram:
+          type: boolean
+        qualityProgramInitiatives:
+          type: string
+        averageStarsAndPmpmBonus:
+          type: string
+        hasMlrTarget:
+          type: boolean
+        mlrTargetDescription:
+          type: string
+        performanceReportingRequirements:
+          type: string
+        credentialingDelegation:
+          type: boolean
+        recredentialingInterval:
+          type: string
+        referralRequirements:
+          type: boolean
+        priorAuthorizationRequired:
+          type: boolean
+        panelSizeLimits:
+          type: string
+        providerRosterUpdateFrequency:
+          type: string
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

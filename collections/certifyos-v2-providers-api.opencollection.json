@@ -1,0 +1,293 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "CertifyOS V2/providers API"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "v2/providers",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Lists all providers in an organization",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/providers",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "file_type",
+                "value": "",
+                "type": "query",
+                "description": "File Type of the providers to filter by to be terminated."
+              },
+              {
+                "name": "flagged",
+                "value": "",
+                "type": "query",
+                "description": "Flagged providers will be terminated."
+              },
+              {
+                "name": "start_updated_at",
+                "value": "",
+                "type": "query",
+                "description": "Filter providers that are created or updated >= specified date."
+              },
+              {
+                "name": "end_updated_at",
+                "value": "",
+                "type": "query",
+                "description": "Filter providers that are created or updated < specified date."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches all the providers in the given organization, this endpoint is used to query for \n      all providers in the organization. The endpoint returns a list of providers with the \n      providerId and basic details. This endpoint supports filters for pagination (offset and limit), \n      file type, flagged status, and created or updated date ranges.\n      The practice location data response can be enabled on request, it is not returned by default."
+        },
+        {
+          "info": {
+            "name": "Create Providers",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/providers",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create providers (Bulk)"
+        },
+        {
+          "info": {
+            "name": "Batch practitioner data with licenses, DEA and CDS information",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/providers/licenses",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Number of records per request (default: 1000, max: 1000)"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Pagination cursor from previous response. Pass null to start from beginning."
+              },
+              {
+                "name": "cdsStatus",
+                "value": "Active",
+                "type": "query",
+                "description": "Filter CDS licenses by status. If provided, only CDS licenses matching this status will be returned. Common values: \"Active\", \"Inactive\", \"Expired\""
+              },
+              {
+                "name": "deaStatus",
+                "value": "Active",
+                "type": "query",
+                "description": "Filter DEA licenses by status. If provided, only DEA licenses matching this status will be returned. Common values: \"Active\", \"Inactive\", \"Expired\""
+              },
+              {
+                "name": "licenseStatus",
+                "value": "Active",
+                "type": "query",
+                "description": "Filter state licenses by status. If provided, only state licenses matching this status will be returned. Common values: \"Active\", \"Inactive\", \"Expired\", \"Suspended\""
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches practitioners with licenses, DEA and CDS data using cursor-based pagination.\n      This endpoint is designed for synchronizing practitioner data to downstream systems.\n      Returns base practitioner fields plus all licenses, DEA and CDS dashboard fields."
+        },
+        {
+          "info": {
+            "name": "Terminate providers",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/providers/terminate-providers",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminate providers."
+        },
+        {
+          "info": {
+            "name": "Unterminate providers",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/providers/unterminate-providers",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Unterminate providers"
+        },
+        {
+          "info": {
+            "name": "Updates provider data",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/providers/:id",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the information of a specific provider."
+        },
+        {
+          "info": {
+            "name": "Share multiple providers to Credentialing Committee.",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/v2/providers/bulk-share-to-cred-committee",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Share multiple providers to Credentialing Committee."
+        },
+        {
+          "info": {
+            "name": "Share provider to Credentialing Committee.",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/providers/:id/share-to-cred-committee",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Share provider to Credentialing Committee."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

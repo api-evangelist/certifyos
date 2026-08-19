@@ -1,0 +1,1136 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS V2/providers API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: v2/providers
+paths:
+  /v2/providers:
+    post:
+      operationId: ProvidersV2Controller_bulkCreate
+      summary: Create Providers
+      description: Create providers (Bulk)
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreateProviderDtoV2'
+      responses:
+        '201':
+          description: The records has been successfully created.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BulkCreateProviderResponseDtoV2'
+        '207':
+          description: If some of the records failed to be created.
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+    get:
+      operationId: ProvidersV2Controller_findAll
+      summary: Lists all providers in an organization
+      description: "Fetches all the providers in the given organization, this endpoint is used to query for \n      all providers in the organization. The endpoint returns a list of providers with the \n      providerId and basic details. This endpoint supports filters for pagination (offset and limit), \n      file type, flagged status, and created or updated date ranges.\n      The practice location data response can be enabled on request, it is not returned by default."
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      - name: file_type
+        required: false
+        in: query
+        description: File Type of the providers to filter by to be terminated.
+        schema:
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+          type: string
+      - name: flagged
+        required: false
+        in: query
+        description: Flagged providers will be terminated.
+        schema:
+          type: boolean
+      - name: start_updated_at
+        required: false
+        in: query
+        description: Filter providers that are created or updated >= specified date.
+        schema:
+          format: date-time
+          type: string
+      - name: end_updated_at
+        required: false
+        in: query
+        description: Filter providers that are created or updated < specified date.
+        schema:
+          format: date-time
+          type: string
+      responses:
+        '200':
+          description: List of providers.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderListV2ResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+  /v2/providers/licenses:
+    get:
+      operationId: ProvidersV2Controller_licenses
+      summary: Batch practitioner data with licenses, DEA and CDS information
+      description: "Fetches practitioners with licenses, DEA and CDS data using cursor-based pagination.\n      This endpoint is designed for synchronizing practitioner data to downstream systems.\n      Returns base practitioner fields plus all licenses, DEA and CDS dashboard fields."
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: size
+        required: false
+        in: query
+        description: 'Number of records per request (default: 1000, max: 1000)'
+        schema:
+          minimum: 1
+          maximum: 1000
+          default: 1000
+          type: number
+      - name: cursor
+        required: false
+        in: query
+        description: Pagination cursor from previous response. Pass null to start from beginning.
+        schema:
+          type: string
+      - name: cdsStatus
+        required: false
+        in: query
+        description: 'Filter CDS licenses by status. If provided, only CDS licenses matching this status will be returned. Common values: "Active", "Inactive", "Expired"'
+        example: Active
+        schema:
+          type: string
+      - name: deaStatus
+        required: false
+        in: query
+        description: 'Filter DEA licenses by status. If provided, only DEA licenses matching this status will be returned. Common values: "Active", "Inactive", "Expired"'
+        example: Active
+        schema:
+          type: string
+      - name: licenseStatus
+        required: false
+        in: query
+        description: 'Filter state licenses by status. If provided, only state licenses matching this status will be returned. Common values: "Active", "Inactive", "Expired", "Suspended"'
+        example: Active
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of practitioners with licenses, DEA and CDS data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PractitionerEgressResponseDto'
+        '400':
+          description: Bad request - invalid cursor or size parameter.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+  /v2/providers/terminate-providers:
+    patch:
+      operationId: ProvidersV2Controller_terminate
+      summary: Terminate providers
+      description: Terminate providers.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminateProviderV2Dto'
+      responses:
+        '204':
+          description: Providers successfully terminated.
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+        '207':
+          description: "Some providers couldn't be terminated. The response \n      includes each failed provider id followed by the reason of the failure."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    providerId:
+                      type: string
+                    reason:
+                      type: string
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+  /v2/providers/unterminate-providers:
+    patch:
+      operationId: ProvidersV2Controller_UnTerminate
+      summary: Unterminate providers
+      description: Unterminate providers
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnterminateProviderV2Dto'
+      responses:
+        '204':
+          description: Providers successfully unterminated.
+        '207':
+          description: "Some providers couldn't be unterminated. The response includes \n    each failed provider id followed by the reason of the failure."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    providerId:
+                      type: string
+                    reason:
+                      type: string
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+  /v2/providers/{id}:
+    patch:
+      operationId: ProvidersV2Controller_update
+      summary: Updates provider data
+      description: Updates the information of a specific provider.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProvidersDtoV2'
+      responses:
+        '200':
+          description: Provider data successfully updated.
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Provider or related resource not found.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+  /v2/providers/bulk-share-to-cred-committee:
+    post:
+      operationId: ProvidersV2Controller_shareBulkToCredCommittee
+      summary: Share multiple providers to Credentialing Committee.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareBulkProviderToCredCommDtoV2'
+      responses:
+        '204':
+          description: All providers shared to the cred committee successfully.
+        '207':
+          description: Some providers couldn't be shared to cred committee
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                    id:
+                      type: string
+                    reason:
+                      type: string
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+  /v2/providers/{id}/share-to-cred-committee:
+    patch:
+      operationId: ProvidersV2Controller_shareToCredCommittee
+      summary: Share provider to Credentialing Committee.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareProviderToCredCommDto'
+      responses:
+        '204':
+          description: Shared to the cred committee successfully.
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/providers
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    UnterminateProviderV2Dto:
+      type: object
+      properties:
+        provider_ids:
+          description: Provider ids to be unterminated in comma separated strings within the array.
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for the untermination.
+        filters:
+          description: Filters for Provider Un-Termination
+          allOf:
+          - $ref: '#/components/schemas/FilterProvidersV2Dto'
+      required:
+      - provider_ids
+      - reason
+      - filters
+    ShareProviderToCredCommDto:
+      type: object
+      properties:
+        reason:
+          type: string
+      required:
+      - reason
+    PractitionerLicenseDto:
+      type: object
+      properties:
+        state:
+          type: string
+        licenseNumber:
+          type: string
+        type:
+          type: string
+        licenseStatus:
+          type: string
+        issueDate:
+          format: date-time
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+        source:
+          type: string
+      required:
+      - state
+      - licenseNumber
+      - type
+      - licenseStatus
+      - expirationDate
+      - source
+    PractitionerEgressLinksDto:
+      type: object
+      properties:
+        self:
+          type: string
+          description: URL for the current page
+        next:
+          type:
+          - string
+          - 'null'
+          description: URL for the next page. Null when no more records exist.
+    ShareBulkProviderToCredCommDtoV2:
+      type: object
+      properties:
+        provider_ids:
+          description: Array of provider IDs to share to cred committee
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for sharing to cred committee
+      required:
+      - provider_ids
+      - reason
+    ProviderListV2ResponseDto:
+      type: object
+      properties:
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        npi:
+          type: string
+        degree:
+          type: string
+        provider_id:
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+        status:
+          type: string
+          description: Current status of the provider
+          enum:
+          - Terminated
+          - Active
+          - Denied
+          - New
+          - In Progress
+        credentialing_status:
+          type: string
+          description: Credentialing status of the provider
+          enum:
+          - Not sent to credentialing
+          - Not Started
+          - In Progress
+          - Recredentialing in progress
+          - Data missing
+          - Outreach in progress
+          - PSV Complete
+          - PSV ready
+          - Hold for Cred Comm
+          - Tabled
+          - Cred approved
+          - Cred denied
+          - Provider Terminated
+          - Withdrawn/Cancelled
+          - Credentialing restarted
+          - PSV complete by CertifyOS
+        credentialing_status_update_date:
+          type: string
+          example: YYYY-MM-DD
+        external_id:
+          type: string
+        gender:
+          type: string
+          description: Gender of the provider
+          enum:
+          - Male
+          - Female
+          - Not Listed/Unknown
+        primary_email:
+          type: string
+        caqh_primary_email:
+          type: string
+        dob:
+          type: string
+          example: YYYY-MM-DD
+        isHospitalBased:
+          type: boolean
+        practice_location:
+          description: Practice locations associated with the provider (enabled on request).
+          type: array
+          items:
+            $ref: '#/components/schemas/PracticeLocationDto'
+      required:
+      - first_name
+      - middle_name
+      - last_name
+      - npi
+      - degree
+      - provider_id
+      - created_at
+      - updated_at
+      - status
+      - credentialing_status
+      - credentialing_status_update_date
+      - external_id
+      - gender
+      - primary_email
+      - caqh_primary_email
+      - dob
+      - isHospitalBased
+      - practice_location
+    FilterProvidersV2Dto:
+      type: object
+      properties:
+        offset:
+          type: number
+          default: 0
+          minimum: 0
+          description: The starting index for pagination, specifying how many records to skip.
+        limit:
+          type: number
+          default: 10
+          description: The maximum number of records to retrieve in a single request.
+        file_type:
+          type: string
+          description: File Type of the providers to filter by to be terminated.
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+        flagged:
+          type: boolean
+          description: Flagged providers will be terminated.
+        start_updated_at:
+          format: date-time
+          type: string
+          description: Filter providers that are created or updated >= specified date.
+        end_updated_at:
+          format: date-time
+          type: string
+          description: Filter providers that are created or updated < specified date.
+    PractitionerEgressDto:
+      type: object
+      properties:
+        npi:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+        providerType:
+          type: string
+        status:
+          type: string
+        states:
+          type: array
+          items:
+            type: string
+        credentialingStatus:
+          type: string
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerLicenseDto'
+        deaData:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerDeaDto'
+        cdsData:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerDeaDto'
+      required:
+      - npi
+      - firstName
+      - lastName
+      - status
+      - credentialingStatus
+    PractitionerEgressResponseDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerEgressDto'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Cursor for next page. Null when no more records exist.
+        links:
+          description: Pagination links for navigation
+          allOf:
+          - $ref: '#/components/schemas/PractitionerEgressLinksDto'
+      required:
+      - data
+      - nextCursor
+      - links
+    BulkCreateProviderResponseDtoV2:
+      type: object
+      properties:
+        provider_id:
+          type: string
+        error:
+          $ref: '#/components/schemas/CreateProviderError'
+      required:
+      - error
+    UpdateProvidersDtoV2:
+      type: object
+      properties:
+        initial_credentialing_date:
+          format: date-time
+          type: string
+          description: Date by which Provider was initially credentialed.
+        external_id:
+          type: string
+          description: Client’s ID for the provider
+        primary_email:
+          type: string
+          description: Provider’s email address
+          example: string@string.com
+        gender:
+          type: string
+          enum:
+          - M
+          - F
+          - U
+          description: Provider Gender
+        dob:
+          format: date-time
+          type: string
+          description: Provider’s date of birth
+        is_pcp:
+          type: boolean
+          description: Indicates whether the provider is a Primary Care Provider (PCP).
+        is_specialist:
+          type: boolean
+          description: Indicates whether the provider is a specialist.
+        accepts_new_patients:
+          type: boolean
+          description: Indicates whether the provider is currently accepting new patients.
+        accepts_new_medicare_patients:
+          type: boolean
+          description: Indicates whether the provider accepts new Medicare patients.
+        assigned_states:
+          type: string
+          items:
+            type: string
+            enum:
+            - AK
+            - AL
+            - AR
+            - AS
+            - AZ
+            - CA
+            - CO
+            - CT
+            - DC
+            - DE
+            - FL
+            - FM
+            - GA
+            - GU
+            - HI
+            - IA
+            - ID
+            - IL
+            - IN
+            - KS
+            - KY
+            - LA
+            - MA
+            - MD
+            - ME
+            - MH
+            - MI
+            - MN
+            - MO
+            - MP
+            - MS
+            - MT
+            - NC
+            - ND
+            - NE
+            - NH
+            - NJ
+            - NM
+            - NV
+            - NY
+            - OH
+            - OK
+            - OR
+            - PA
+            - PR
+            - PW
+            - RI
+            - SC
+            - SD
+            - TN
+            - TX
+            - UT
+            - UM
+            - VA
+            - VI
+            - VT
+            - WA
+            - WI
+            - WV
+            - WY
+          description: Provider's assigned states
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+    PracticeLocationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        provider_id:
+          type: string
+        organization_id:
+          type: string
+        name:
+          type: string
+        tin:
+          type: string
+        start_date:
+          type: string
+          example: YYYY-MM-DD
+        drawing_blood:
+          type: boolean
+        laboratory_services:
+          type: boolean
+        clia_number:
+          type: string
+        clia_expiration_date:
+          type: string
+          example: YYYY-MM-DD
+        address1:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        npi:
+          type: string
+        phoneCoverage24x7:
+          type: boolean
+        totalLocationHours:
+          type: number
+        locationHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationHourDto'
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - id
+      - provider_id
+      - organization_id
+      - name
+    PractitionerDeaDto:
+      type: object
+      properties:
+        state:
+          type: string
+        licenseNumber:
+          type: string
+        type:
+          type: string
+        providerType:
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+        status:
+          type: string
+        source:
+          type: string
+        address1:
+          type: string
+        address2:
+          type: string
+        city:
+          type: string
+        zipCode:
+          type: string
+      required:
+      - state
+      - licenseNumber
+      - type
+      - providerType
+      - expirationDate
+      - status
+      - source
+    LocationHourDto:
+      type: object
+      properties:
+        dayOfweek:
+          type: string
+        endHours:
+          type: string
+        startHours:
+          type: string
+    TerminateProviderV2Dto:
+      type: object
+      properties:
+        provider_ids:
+          description: Provider ids to be terminated in comma separated strings within the array.
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for the termination.
+        filters:
+          description: Filters for Provider Termination
+          allOf:
+          - $ref: '#/components/schemas/FilterProvidersV2Dto'
+      required:
+      - provider_ids
+      - reason
+      - filters
+    CreateProviderDtoV2:
+      type: object
+      properties:
+        first_name:
+          type: string
+          description: First name of the Provider
+        middle_name:
+          type: string
+          default: ''
+          description: Middle name of the Provider
+        last_name:
+          type: string
+          description: Last name of the Provider
+        degree:
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
+          type: string
+          description: Type of provider
+        npi:
+          type: string
+          default: ''
+          description: NPI of the Provider
+        states:
+          type: string
+          description: States in which Provider will provide care to patients/enrollees
+        caqh_provider_id:
+          type: string
+          default: ''
+          description: CAQH ID of the Provider
+        last_credentialed_date:
+          format: date-time
+          type: string
+          description: Date Provider was last credentialed
+        next_credentialing_date:
+          format: date-time
+          type: string
+          description: Date by which Provider needs to be recredentialed
+        initial_credentialing_date:
+          format: date-time
+          type: string
+          description: Date by which Provider was initially credentialed.
+        external_id:
+          type: string
+          description: Client’s ID for the provider
+        primary_email:
+          type: string
+          description: Provider’s email address
+          example: string@string.com
+        gender:
+          type: string
+          enum:
+          - M
+          - F
+          - U
+          description: Provider Gender
+        dob:
+          format: date-time
+          type: string
+          description: Provider’s date of birth
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        location_name:
+          type: string
+          description: Name of group location
+        external_group_id:
+          type: string
+          description: Client’s ID for the group
+        is_pcp:
+          type: boolean
+          description: Indicates whether the provider is a Primary Care Provider (PCP).
+        is_specialist:
+          type: boolean
+          description: Indicates whether the provider is a specialist.
+        accepts_new_patients:
+          type: boolean
+          description: Indicates whether the provider is currently accepting new patients.
+        accepts_new_medicare_patients:
+          type: boolean
+          description: Indicates whether the provider accepts new Medicare patients.
+      required:
+      - first_name
+      - last_name
+      - degree
+      - states
+    CreateProviderError:
+      type: object
+      properties:
+        message:
+          type: string
+        name:
+          type: string
+        status:
+          type: number
+      required:
+      - message
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

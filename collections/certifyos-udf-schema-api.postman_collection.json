@@ -1,0 +1,610 @@
+{
+  "item": [
+    {
+      "id": "d16074af-89a6-4417-ba12-8a7175fc3c61",
+      "name": "UDF Schema",
+      "description": {
+        "content": "Endpoints for managing UDF schemas.",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "2b88ae9d-98b1-4da8-8e9a-1e033fa0144f",
+          "name": "Get UDF Schema by entity type (latest or specific version)",
+          "request": {
+            "name": "Get UDF Schema by entity type (latest or specific version)",
+            "description": {
+              "content": "Retrieves the latest User Defined Fields (UDF) schema for a specific entity type within a tenant's context.\n\nUDF schemas define the structure and validation rules for custom fields that can be added to entities\nsuch as practitioners, facilities, locations, and groups. This endpoint returns the schema for the\nspecified entity type. If a version is provided, it returns that specific version; otherwise, it\nreturns the most recent version.\n\n**Supported Entity Types:**\n- `practitioner` - Schema for practitioner entities\n\n**Authentication & Authorization:**\n- Requires a valid JWT token in the Authorization header\n- Requires `READ_PROVIDER` permission for the specified tenant\n- The user must be a member of the organization (tenant) to access its UDF schemas\n\n**Request Headers:**\n- `tenant-id` (required) - The ID of the tenant/organization\n- `Authorization` (required) - Bearer token for authentication\n\n**Query Parameters:**\n- `version` (optional) - The version number of the schema to retrieve. If not provided, returns the latest version.\n\n**Response:**\nReturns a JSON object containing the UDF schema definition, including:\n- Schema structure (JSON Schema format)\n- Version information\n- Entity type\n- Tenant ID\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "udf-schemas",
+                "entity-type",
+                ":entityType"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "version",
+                  "value": "<integer>",
+                  "description": "Optional version number of the UDF schema to retrieve.\nIf not provided, returns the latest version of the schema for the specified entity type.\n"
+                }
+              ],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "entityType",
+                  "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                }
+              ]
+            },
+            "header": [
+              {
+                "disabled": false,
+                "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                "key": "tenant-id",
+                "value": "<string>"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "id": "b75cd7e7-e1ae-4eae-980d-06e11cc58ad4",
+              "name": "UDF schema successfully retrieved",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"string\",\n  \"tenantId\": \"string\",\n  \"entityType\": \"tenant_group_facility\",\n  \"schema\": {\n    \"empty\": false,\n    \"valueNode\": false,\n    \"containerNode\": false,\n    \"missingNode\": false,\n    \"array\": true,\n    \"object\": true,\n    \"nodeType\": \"POJO\",\n    \"pojo\": true,\n    \"number\": true,\n    \"integralNumber\": true,\n    \"floatingPointNumber\": false,\n    \"short\": true,\n    \"int\": false,\n    \"long\": true,\n    \"float\": true,\n    \"double\": false,\n    \"bigDecimal\": true,\n    \"bigInteger\": true,\n    \"textual\": true,\n    \"boolean\": true,\n    \"null\": false,\n    \"binary\": true\n  },\n  \"version\": 9167,\n  \"createdAt\": \"1953-01-30\",\n  \"createdBy\": \"string\",\n  \"updatedAt\": \"1969-11-11\",\n  \"updatedBy\": \"string\"\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fb51a098-c283-4fa3-98e3-16456ad6ab76",
+              "name": "Bad Request - Invalid request parameters or validation error.\n\nCommon causes:\n- Entity type is null or empty\n- Invalid entity type value (must be one of: practitioner, facility, location, group)\n- Invalid tenant-id header\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 400,\n      \"reason\": \"INVALID_ENTITY_TYPE\",\n      \"title\": \"Invalid entity type\",\n      \"detail\": \"Entity type cannot be null or empty\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "bd689496-d321-4385-8811-70b1fcd6f47b",
+              "name": "Unauthorized - Authentication required.\n\nThe request lacks valid authentication credentials. Include a valid JWT token in the Authorization header.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "\"\"",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "3a586c73-09c5-40ef-b9d1-02f54f9413ee",
+              "name": "Forbidden - Insufficient permissions.\n\nThe authenticated user does not have the required `READ_PROVIDER` permission for the specified tenant,\nor the user is not a member of the organization (tenant).\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "\"\"",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "8ab01688-d1e8-496a-9c91-ccdf50d75a98",
+              "name": "Not Found - UDF schema not found for the specified entity type.\n\nNo UDF schema exists for the given entity type within the tenant's context. This may occur if:\n- The entity type has not been configured with a UDF schema\n- The schema was deleted or never created\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 404,\n      \"reason\": \"NOT_FOUND\",\n      \"title\": \"UDF schema not found\",\n      \"detail\": \"No UDF schema found for entity type 'practitioner'\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "47a07c88-e872-4d27-aef8-8db268a39e4b",
+              "name": "Internal Server Error - An unexpected error occurred while processing the request.\n\nThis indicates a server-side error that prevented the request from being completed.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 7682,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 5789,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c30d8922-a086-4a30-bd98-ac7af853e7b2",
+              "name": "Bad Gateway - The downstream service is unavailable or returned an error.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Gateway",
+              "code": 502,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 5014,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 2167,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "264fcc2a-4f26-4c75-9cc1-66910727741e",
+              "name": "Service Unavailable - The service is temporarily unavailable.\n\nThis may occur due to network connectivity issues or the downstream service being temporarily unavailable.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "udf-schemas",
+                    "entity-type",
+                    ":entityType"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "version",
+                      "value": "1"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "entityType",
+                      "description": "(Required) The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "disabled": false,
+                    "description": "(Required) The tenant ID (organization ID) for which to retrieve the UDF schema.\n\nThis header is required and identifies the tenant/organization context.\nThe user must be a member of this organization to access its UDF schemas.\n",
+                    "key": "tenant-id",
+                    "value": "tenant-abc-123"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"errors\": [\n    {\n      \"httpStatus\": 5014,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    },\n    {\n      \"httpStatus\": 2167,\n      \"reason\": \"string\",\n      \"title\": \"string\",\n      \"detail\": \"string\"\n    }\n  ]\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://localhost:9000",
+      "key": "baseUrl"
+    }
+  ],
+  "info": {
+    "_postman_id": "75bac261-98c7-4303-a1db-4a038d2a2703",
+    "name": "Certify API Layer UDF Schema API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "API for Certify application",
+      "type": "text/plain"
+    }
+  }
+}

@@ -1,0 +1,510 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Facility Note API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Facility Note
+  description: APIs for managing notes in facility credentialing workflows
+paths:
+  /facility-credentialing-workflows/{workflowId}/notes:
+    get:
+      summary: Get notes for a facility credentialing workflow
+      description: Retrieves a paginated list of notes for the specified facility credentialing workflow
+      operationId: getFacilityNotes
+      tags:
+      - Facility Note
+      parameters:
+      - description: ID of the facility credentialing workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: End at this note ID
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: Optional filter for notes
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: Sort order as JSON (e.g., '{"orderBy":"createdAt","orderByDirection":"DESC"}'). If not provided, defaults to sorting by createdAt DESC (newest first).
+        name: order
+        in: query
+        schema:
+          type: string
+      - description: Page number (1-based)
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '1'
+      - description: Page size
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Start after this note ID
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved notes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetNotesResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Facility credentialing workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    post:
+      summary: Create a note for a facility credentialing workflow
+      description: Creates a new note for the specified facility credentialing workflow
+      operationId: createFacilityNote
+      tags:
+      - Facility Note
+      parameters:
+      - description: ID of the facility credentialing workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Note data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+        required: true
+      responses:
+        '201':
+          description: Successfully created the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Facility credentialing workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /facility-credentialing-workflows/{workflowId}/notes/{noteId}:
+    put:
+      summary: Update a note
+      description: Updates an existing note for the specified facility credentialing workflow
+      operationId: updateFacilityNote
+      tags:
+      - Facility Note
+      parameters:
+      - description: ID of the note
+        in: path
+        required: true
+        name: noteId
+        schema:
+          type: string
+      - description: ID of the facility credentialing workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Updated note data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Note or facility credentialing workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    get:
+      summary: Get a note by ID
+      description: Retrieves a specific note by its ID for the specified facility credentialing workflow
+      operationId: getFacilityNoteById
+      tags:
+      - Facility Note
+      parameters:
+      - description: ID of the note
+        in: path
+        required: true
+        name: noteId
+        schema:
+          type: string
+      - description: ID of the facility credentialing workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Note or facility credentialing workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+    delete:
+      summary: Delete a note
+      description: Deletes an existing note for the specified facility credentialing workflow
+      operationId: deleteFacilityNote
+      tags:
+      - Facility Note
+      parameters:
+      - description: ID of the note
+        in: path
+        required: true
+        name: noteId
+        schema:
+          type: string
+      - description: ID of the facility credentialing workflow
+        in: path
+        required: true
+        name: workflowId
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Successfully deleted the note
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
+        '404':
+          description: Note or facility credentialing workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+components:
+  schemas:
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    CreateNoteRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    NoteData:
+      type: object
+      description: Note data containing message content
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: The message content of the note
+          examples:
+          - This is a note message
+    NoteResponse:
+      type: object
+      description: Response containing note information
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the note
+          examples:
+          - note_123456
+        workflowId:
+          type: string
+          description: ID of the associated credentialing workflow
+          examples:
+          - cw_123456
+        data:
+          description: Note data containing message
+          type: object
+          $ref: '#/components/schemas/NoteData'
+        createdBy:
+          type: string
+          description: ID of the user who created the note
+          examples:
+          - user_123456
+        createdByName:
+          type: string
+          description: Full name of the user who created the note
+          examples:
+          - John Doe
+        updatedBy:
+          type: string
+          description: ID of the user who last updated the note
+          examples:
+          - user_123456
+        updatedByName:
+          type: string
+          description: Full name of the user who last updated the note
+          examples:
+          - Jane Smith
+        createdAt:
+          description: Timestamp when the note was created
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp when the note was last updated
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    UpdateNoteRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    GetNotesResponse:
+      description: Response containing a paginated list of notes
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of notes matching the filter criteria
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteResponse'
+          description: Array of note records
+        links:
+          description: Pagination links for navigation
+          type: object
+          $ref: '#/components/schemas/PageLinks'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

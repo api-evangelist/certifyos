@@ -1,0 +1,294 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certifyos Roster Record API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "RosterRecord",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get all roster records",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster-records",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "endAtId",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "startAfterId",
+                "value": "",
+                "type": "query"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of all roster records for the tenant"
+        },
+        {
+          "info": {
+            "name": "Find many roster records",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster-records/find-many",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "startAfterId",
+                "value": "",
+                "type": "query"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of roster records for the tenant"
+        },
+        {
+          "info": {
+            "name": "Get paginated roster rows from Spanner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster-records/:rosterId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster ID to fetch rows for"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Cursor (row_id) from previous page's nextCursor"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Number of rows per page (default 50, max 1000)"
+              },
+              {
+                "name": "statuses",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated status filter (e.g. FAILED,COMPLETED)"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a cursor-based paginated list of roster rows. Use the nextCursor value from the response as the cursor parameter for the next page."
+        },
+        {
+          "info": {
+            "name": "Bulk save edits to failed roster rows",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/roster-records/:rosterId/draft",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates Spanner roster_rows in place for rows in VALIDATION_FAILED status. Each entry's rowData is merged into the stored row (partial patch of top-level keys); the same partial payload is appended to draftRows history. Marks the row as isDrafted and keeps status as VALIDATION_FAILED; recordKey must be the existing row_id."
+        },
+        {
+          "info": {
+            "name": "Get offset-paginated roster rows from Spanner",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/roster-records/:rosterId/paged",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster ID to fetch rows for"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Zero-based page number (default 0)"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Number of rows per page (default 50, max 1000)"
+              },
+              {
+                "name": "statuses",
+                "value": "",
+                "type": "query",
+                "description": "Comma-separated status filter (e.g. FAILED,COMPLETED)"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns an offset-based paginated list of roster rows with totalCount and totalPages."
+        },
+        {
+          "info": {
+            "name": "Request revalidation of draft roster rows (dispatch or pre-processing queue)",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/roster-records/:rosterId/revalidate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "If the user is an internal provider data admin, sets roster status to REVALIDATE and dispatches validation asynchronously (Pub/Sub or Cloud Run Job) so FAILED rows are re-run. Otherwise sets status to PRE_PROCESSING without validation dispatch. Disabled when roster.rows.draft-revalidation.enabled=false."
+        },
+        {
+          "info": {
+            "name": "Trigger AI-powered Smart Fix for validation errors",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/roster-records/:rosterId/smartfix",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "rosterId",
+                "value": "",
+                "type": "path",
+                "description": "Roster ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Fetches all VALIDATION_FAILED rows (max 2000), extracts eligible validation errors, and calls the Smart Fix service to suggest corrections. Returns suggestions for the frontend to review and apply. Disabled when roster.smart-fix.enabled=false."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

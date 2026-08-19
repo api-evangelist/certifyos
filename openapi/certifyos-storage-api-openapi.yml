@@ -1,0 +1,131 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Storage API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Storage
+  description: Cloud storage operations and file access management
+paths:
+  /storage/download:
+    get:
+      summary: Download file from GCS with custom filename
+      description: Downloads a file from Google Cloud Storage and sets a custom filename for the download
+      operationId: downloadFileFromGCS
+      tags:
+      - Storage
+      parameters:
+      - description: Optional custom filename for the download
+        example: my-document.pdf
+        name: fileName
+        in: query
+        schema:
+          type: string
+      - description: GCS object path
+        example: supporting-documents/doc.pdf
+        required: true
+        name: filePath
+        in: query
+        schema:
+          type: string
+          pattern: \S
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: File downloaded successfully
+          content: {}
+        '400':
+          description: Bad Request - Invalid file path
+        '401':
+          description: Unauthorized - Authentication required
+        '404':
+          description: File not found
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+  /storage/presigned-url:
+    get:
+      summary: Generate presigned URL for file download
+      description: Creates a time-limited presigned URL (1 hour expiry) for direct file download from GCS
+      operationId: generatePresignedUrl
+      tags:
+      - Storage
+      parameters:
+      - description: GCS object path
+        example: supporting-documents/doc.pdf
+        required: true
+        name: filePath
+        in: query
+        schema:
+          type: string
+          pattern: \S
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Presigned URL generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresignedUrlResponse'
+        '400':
+          description: Bad Request - Invalid file path
+        '401':
+          description: Unauthorized - Authentication required
+        '404':
+          description: File not found
+        '500':
+          description: Internal Server Error
+      security:
+      - jwt: []
+components:
+  schemas:
+    PresignedUrlResponse:
+      type: object
+      properties:
+        presignedUrl:
+          type: string
+          description: Presigned URL for downloading the file
+          examples:
+          - https://storage.googleapis.com/bucket/file.pdf?X-Goog-Signature=...
+        expiresInHours:
+          type: integer
+          format: int32
+          description: Number of hours until the URL expires
+          examples:
+          - 1
+        expiresAtTimestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp when the URL expires
+          examples:
+          - 1698412800000
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,76 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Auth Resource API
+  version: 1.0.0
+servers:
+- url: http://localhost:9001
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+tags:
+- name: Auth Resource
+paths:
+  /auth/login:
+    post:
+      summary: User Login
+      description: Authenticates a user with email and password and returns a JWT token
+      operationId: authenticateUser
+      requestBody:
+        description: User credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request
+        '401':
+          description: Authentication failed - Invalid credentials
+          content:
+            application/json: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json: {}
+      tags:
+      - Auth Resource
+      parameters:
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+components:
+  schemas:
+    LoginRequest:
+      description: Request body for user authentication
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          description: User email address
+          examples:
+          - user@example.com
+        password:
+          type: string
+          description: User password
+          examples:
+          - password
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

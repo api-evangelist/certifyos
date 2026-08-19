@@ -1,0 +1,742 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Monitoring Workflow API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "MonitoringWorkflow",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get monitoring workflows",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-workflows",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "endAtId",
+                "value": "",
+                "type": "query",
+                "description": "End at document ID, for backward cursor-based pagination"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query",
+                "description": "Filter criteria as JSON object (URL encoded)"
+              },
+              {
+                "name": "order",
+                "value": "",
+                "type": "query",
+                "description": "Sort order specification"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number (0-based), for offset-based pagination"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Page size"
+              },
+              {
+                "name": "startAfterId",
+                "value": "",
+                "type": "query",
+                "description": "Start after document ID, for forward cursor-based pagination"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves a list of monitoring workflows based on filter criteria"
+        },
+        {
+          "info": {
+            "name": "Create assignments for multiple monitoring workflows",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-workflows/assignments",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates assignments for multiple monitoring workflows in a single operation. Workflows are evenly distributed across the provided user IDs using round-robin distribution. Each workflow is processed independently, and results include both successful and failed assignments."
+        },
+        {
+          "info": {
+            "name": "Bulk update monitoring workflow status",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/monitoring-workflows/bulk/status",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the monitoring status of multiple workflows to the specified status"
+        },
+        {
+          "info": {
+            "name": "Unassign multiple monitoring workflows",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/monitoring-workflows/unassign",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Removes assignments from multiple monitoring workflows. Workflows can be specified by IDs or fetched using filter criteria."
+        },
+        {
+          "info": {
+            "name": "Get monitoring workflow by ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-workflows/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow to retrieve"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves a single monitoring workflow by its ID"
+        },
+        {
+          "info": {
+            "name": "Create assignment for a single monitoring workflow",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-workflows/:id/assignment",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow to assign"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Assigns a monitoring workflow to a specific user"
+        },
+        {
+          "info": {
+            "name": "Unassign a single monitoring workflow",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/monitoring-workflows/:id/unassign",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow to unassign"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Removes the assignment from a monitoring workflow"
+        },
+        {
+          "info": {
+            "name": "Upload attachment to monitoring workflow row",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/attachments",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "id",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "expirationDate",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Upload attachment to monitoring workflow row"
+        },
+        {
+          "info": {
+            "name": "Delete attachment from monitoring workflow row",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/attachments",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "",
+                "type": "path"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Delete attachment from monitoring workflow row"
+        },
+        {
+          "info": {
+            "name": "Get pipeline runs for a monitoring workflow",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/pipeline-runs",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Cursor for cursor-based pagination"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query",
+                "description": "Filter criteria. Example: {\"createdAt\":{\"gte\":\"2023-01-01T00:00:00Z\"}}"
+              },
+              {
+                "name": "includeSteps",
+                "value": "",
+                "type": "query",
+                "description": "Whether to include pipeline steps in the response"
+              },
+              {
+                "name": "order",
+                "value": "",
+                "type": "query",
+                "description": "Sort order. Example: {\"createdAt\":\"desc\"}"
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number (0-based), for offset-based pagination"
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Page size"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves pipeline runs for the specified monitoring workflow with optional filtering, pagination, and ordering."
+        },
+        {
+          "info": {
+            "name": "Trigger pipeline execution for monitoring workflow",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/pipeline-runs",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Triggers CAQH or NPDB pipeline execution for the specified monitoring workflow. Only CAQH and NPDB pipelines are supported."
+        },
+        {
+          "info": {
+            "name": "Get a specific pipeline run for a monitoring workflow",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/pipeline-runs/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the pipeline run"
+              },
+              {
+                "name": "workflowId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow"
+              },
+              {
+                "name": "includeSteps",
+                "value": "",
+                "type": "query",
+                "description": "Whether to include pipeline steps in the response"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves a specific pipeline run by ID for the specified monitoring workflow"
+        },
+        {
+          "info": {
+            "name": "Verify a record in a monitoring workflow section",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/records/:recordId/verify",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "recordId",
+                "value": "dea-0",
+                "type": "path",
+                "description": "Record identifier in format '{section}-{index}' (e.g., 'dea-0', 'licenses-1', 'boardCertifications-2')"
+              },
+              {
+                "name": "workflowId",
+                "value": "mw_1234567890",
+                "type": "path",
+                "description": "Monitoring workflow ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks a specific record as verified by setting verifiedBy (current user) and verifiedDate (current timestamp). The recordId format is '{section}-{index}' (e.g., 'dea-0', 'licenses-1'). This is an atomic operation that only modifies verification fields without affecting other data."
+        },
+        {
+          "info": {
+            "name": "Update monitoring workflow status",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/status",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "",
+                "type": "path",
+                "description": "ID of the monitoring workflow"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the monitoring status of a workflow to the specified status"
+        },
+        {
+          "info": {
+            "name": "Create a new supporting document for a monitoring workflow",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "mw_1234567890",
+                "type": "path",
+                "description": "Monitoring workflow ID"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "fileType",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "state",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "expirationDate",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Upload a new supporting document file for the specified monitoring workflow"
+        },
+        {
+          "info": {
+            "name": "Update supporting documents for a monitoring workflow using replace-all pattern",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "workflowId",
+                "value": "mw_1234567890",
+                "type": "path",
+                "description": "Monitoring workflow ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces the entire supporting documents array with the provided list (RESTful PUT semantics)."
+        },
+        {
+          "info": {
+            "name": "Create a new record in any monitoring workflow section",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/:sectionName",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "sectionName",
+                "value": "appVerifications",
+                "type": "path",
+                "description": "Section name. Available sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments"
+              },
+              {
+                "name": "workflowId",
+                "value": "UUID",
+                "type": "path",
+                "description": "Monitoring workflow ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Generic endpoint to create records in sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments"
+        },
+        {
+          "info": {
+            "name": "Update a single record in any monitoring workflow section",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/:sectionName/:recordId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "recordId",
+                "value": "appVerifications-0",
+                "type": "path",
+                "description": "Record identifier format: '{section}-{index}' (e.g., 'appVerifications-0')"
+              },
+              {
+                "name": "sectionName",
+                "value": "appVerifications",
+                "type": "path",
+                "description": "Section name. Available sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments"
+              },
+              {
+                "name": "workflowId",
+                "value": "mw_1234567890",
+                "type": "path",
+                "description": "Monitoring workflow ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Generic endpoint to update records by recordId format: '{section}-{index}'. Works for all CRUD-enabled sections."
+        },
+        {
+          "info": {
+            "name": "Delete a record from any monitoring workflow section",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "http://localhost:9000/monitoring-workflows/:workflowId/:sectionName/:recordId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "recordId",
+                "value": "appVerifications-0",
+                "type": "path",
+                "description": "Record identifier format: '{section}-{index}' (e.g., 'appVerifications-0')"
+              },
+              {
+                "name": "sectionName",
+                "value": "appVerifications",
+                "type": "path",
+                "description": "Section name. Available sections: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments"
+              },
+              {
+                "name": "workflowId",
+                "value": "mw_1234567890",
+                "type": "path",
+                "description": "Monitoring workflow ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Generic endpoint to delete records by recordId format: '{section}-{index}'. Works for all CRUD-enabled sections."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

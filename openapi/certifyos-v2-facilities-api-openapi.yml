@@ -1,0 +1,2298 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS V2/facilities API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: v2/facilities
+paths:
+  /v2/facilities/{facilityId}:
+    get:
+      operationId: FacilityV2Controller_findOne
+      summary: Retrieve all available information for a Facility. Supporting documents are URLs to the file.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: facilityId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Facility Details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityResponseV2Dto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Facility was not found.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+    patch:
+      operationId: FacilityV2Controller_update
+      summary: Update information for a facility.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: facilityId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFacilityDto'
+      responses:
+        '204':
+          description: Updated.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities:
+    get:
+      operationId: FacilityV2Controller_findAll
+      summary: List all Facilities.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      responses:
+        '200':
+          description: Paginated list of facilities.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFacilityV2ResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+    post:
+      operationId: FacilityV2Controller_create
+      summary: Add a facility.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFacilityDto'
+      responses:
+        '201':
+          description: The record has been successfully created.
+        '400':
+          description: Bad request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities/terminate-facility:
+    patch:
+      operationId: FacilityV2Controller_terminate
+      summary: Terminate Facilities (Bulk)
+      description: Terminates the facility.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminateFacilityV2Dto'
+      responses:
+        '204':
+          description: Facility successfully terminated.
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+        '207':
+          description: Some facility couldn't be terminated. The response includes each failed id followed by the reason of the failure.
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities/unterminate-facility:
+    patch:
+      operationId: FacilityV2Controller_unterminate
+      summary: Unterminate Facilities (Bulk)
+      description: Unterminates the facility
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnterminateFacilityV2Dto'
+      responses:
+        '204':
+          description: Facility successfully unterminated.
+        '207':
+          description: Some facilities couldn't be unterminated. The response includes each failed id followed by the reason of the failure.
+        '400':
+          description: Bad request because the wrong parameters are provided in the request body.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities/{facilityId}/psv/signed-url:
+    get:
+      operationId: FacilityV2Controller_getDocumentSignedUrl
+      summary: Retrieve signed PSV url of a given facility.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: facilityId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities/{facilityId}/groups:
+    get:
+      operationId: FacilityV2Controller_getFacilityGroups
+      summary: Retrieve groups/org-entities for a facility.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: facilityId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Facility Groups.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FacilityGroupsResponseDto'
+        '400':
+          description: Bad request because the wrong parameters are provided in the request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Facility or related resource was not found.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities/{facilityId}/credentialing-workflow-timelines:
+    get:
+      operationId: FacilityV2Controller_getCredentialingWorkflowTimeline
+      summary: Retrieve credentialing workflow timeline for a facility.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: facilityId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Credentialing workflow timeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityCredentialingWorkflowTimelineV2ResponseDto'
+        '400':
+          description: Bad request because the wrong parameters are provided in the request.
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Facility or related resource was not found.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+  /v2/facilities/{facilityId}/outreaches:
+    get:
+      operationId: FacilityV2Controller_findAllOutreaches
+      summary: Lists outreaches for a facility
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: facilityId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      responses:
+        '200':
+          description: List outreaches for a facility
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFacilityOutreachResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+      tags:
+      - v2/facilities
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    PracticeLicenseV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+        state:
+          type: string
+          description: US state or territory where practice license is issued
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          example: CA
+        expirationDate:
+          format: date-time
+          type: string
+        type:
+          type: string
+          description: Type of practice license
+          enum:
+          - State License
+          - Business Permit
+          - Occupational License
+          - Medical gas permit
+          example: State License
+        status:
+          type: string
+          description: Current status of the practice license
+          enum:
+          - Active
+          - Inactive
+          - Expired
+          - Retired
+          - Revoked
+          - Lapsed
+          - Probation
+          - Surrendered
+          - Suspended
+          example: Active
+        license:
+          type: string
+        source:
+          type: string
+          description: Source of practice license verification
+        verified_by:
+          type: string
+          description: Name of the person who verified this practice license information
+        verified_date:
+          type: string
+          description: Date when this practice license information was verified
+          example: YYYY-MM-DD
+        issueDate:
+          format: date-time
+          type: string
+      required:
+      - id
+      - state
+      - expirationDate
+      - type
+      - status
+      - license
+      - source
+      - verified_by
+      - verified_date
+      - issueDate
+    FacilityResponseV2Dto:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 128
+          description: Legal name of the facility
+        dba:
+          type: string
+          description: Doing Business As (DBA) name or trade name of the facility
+        type:
+          type: string
+          description: Type of facility
+          example: Ambulatory Surgery Centers
+        tin:
+          type: string
+          description: Tax Identification Number (TIN) for the facility
+        medicareNumber:
+          type: string
+        medicaidNumber:
+          type: string
+        address:
+          type: string
+          description: Street address of the facility (Line 1)
+        city:
+          type: string
+          description: City where the facility is located
+          example: Saint George
+        zipcode:
+          type: string
+          description: ZIP code of the facility location
+          example: '90210'
+        contactName:
+          type: string
+          description: Name of the primary contact person for the facility
+        contactPhone:
+          type: string
+          description: Primary contact phone number for the facility
+          example: '8000001234'
+        contactEmail:
+          type: string
+          description: Primary contact email address for the facility (email format)
+        contactFax:
+          type: string
+          description: Contact fax number for the facility (optional)
+          example: '8000001234'
+        state:
+          type: string
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          description: State where the facility is located (2-letter state code)
+          example: CA
+        fileType:
+          type: string
+          description: File processing status for the facility record
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+          example: Clean
+        npi:
+          type: string
+          description: National Provider Identifier (NPI) - 10-digit identifier
+        externalId:
+          type: string
+          description: External identifier for the facility from external systems
+          example: V2222L00000
+        skipOnSiteReview:
+          type: boolean
+        stateLicenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityStateLicenseDto'
+        facilitySupportingDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilitySupportingDocumentDto'
+        accreditations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccreditationDto'
+        siteVisits:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnSiteReviewDto'
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CertificationsDto'
+        npdb:
+          type: array
+          items:
+            $ref: '#/components/schemas/NpdbDto'
+        sanctions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanctionsDto'
+        perfIndicator:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityPerformanceIndicatorDto'
+        liabilityInsurances:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsuranceDto'
+        lastCredentialingDate:
+          format: date
+          type: string
+          description: Date the facility was last credentialed
+        nextCredentialingDate:
+          format: date
+          type: string
+          description: Date when the facility is due for re-credentialing
+        facilitySpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateSpecialtiesDto'
+        facilityPrimarySpecialty:
+          $ref: '#/components/schemas/CreateSpecialtiesDto'
+        facilityHsdSpecialty:
+          $ref: '#/components/schemas/HsdSpecialty'
+        appVerifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppVerificationDto'
+        medicareStarRatings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicareStarRatingDto'
+        linesOfBusiness:
+          items:
+            type: array
+          type: array
+        organizationId:
+          type: string
+        contractEntity:
+          type: string
+        credentialingStartDate:
+          format: date
+          type: string
+          description: Date the facility was received for credentialing
+        attestationDate:
+          format: date
+          type: string
+          description: Date when facility attestation was completed
+        psvCompleteDate:
+          format: date-time
+          type: string
+        credentialingDecisionDate:
+          format: date-time
+          type: string
+        medicalDirectorId:
+          type: string
+        medicalDirectorName:
+          type: string
+        id:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+          example: YYYY-MM-DD
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+          example: YYYY-MM-DD
+        updatedBy:
+          type: string
+        updatedByName:
+          type: string
+        surveyResponse:
+          type: array
+          items:
+            type: object
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityProviderV2Dto'
+        practiceLicense:
+          type: array
+          items:
+            $ref: '#/components/schemas/PracticeLicenseV2Dto'
+        businessLicense:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessLicenseV2Dto'
+        onsiteReviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnSiteReviewDto'
+        licensureActions:
+          type: array
+          items:
+            type: object
+        deas:
+          type: array
+          items:
+            $ref: '#/components/schemas/DEADto'
+        credentialingStatus:
+          type: string
+          description: Current credentialing status of the facility
+          enum:
+          - Not sent to credentialing
+          - Not Started
+          - In Progress
+          - Data missing
+          - Outreach in progress
+          - PSV complete by CertifyOS
+          - Credentialing restarted
+          - PSV ready
+          - Cred approved
+          - Hold for Cred Comm
+          - Cred denied
+          - Facility Terminated
+          - Recredentialing in progress
+          - Tabled
+          - Withdrawn/Cancelled
+          example: In Progress
+        timelines:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineV2Dto'
+      required:
+      - name
+      - dba
+      - type
+      - tin
+      - address
+      - city
+      - zipcode
+      - contactName
+      - contactPhone
+      - contactEmail
+      - contactFax
+      - state
+      - skipOnSiteReview
+      - stateLicenses
+      - facilitySupportingDocuments
+      - accreditations
+      - siteVisits
+      - certifications
+      - npdb
+      - sanctions
+      - perfIndicator
+      - liabilityInsurances
+      - lastCredentialingDate
+      - nextCredentialingDate
+      - medicareStarRatings
+      - organizationId
+      - contractEntity
+      - credentialingStartDate
+      - attestationDate
+      - psvCompleteDate
+      - credentialingDecisionDate
+      - medicalDirectorId
+      - medicalDirectorName
+      - id
+      - createdAt
+      - createdBy
+      - createdByName
+      - updatedAt
+      - updatedBy
+      - updatedByName
+      - surveyResponse
+      - providers
+      - practiceLicense
+      - businessLicense
+      - onsiteReviews
+      - licensureActions
+      - deas
+      - credentialingStatus
+      - timelines
+    UpdateFacilityDto:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 128
+          description: Legal name of the facility
+        dba:
+          type: string
+          description: Doing Business As (DBA) name or trade name of the facility
+        type:
+          type: string
+          description: Type of facility
+          example: Ambulatory Surgery Centers
+        tin:
+          type: string
+          description: Tax Identification Number (TIN) for the facility
+        medicareNumber:
+          type: string
+        medicaidNumber:
+          type: string
+        address:
+          type: string
+          description: Street address of the facility (Line 1)
+        city:
+          type: string
+          description: City where the facility is located
+          example: Saint George
+        zipcode:
+          type: string
+          description: ZIP code of the facility location
+          example: '90210'
+        contactName:
+          type: string
+          description: Name of the primary contact person for the facility
+        contactPhone:
+          type: string
+          description: Primary contact phone number for the facility
+          example: '8000001234'
+        contactEmail:
+          type: string
+          description: Primary contact email address for the facility (email format)
+        contactFax:
+          type: string
+          description: Contact fax number for the facility (optional)
+          example: '8000001234'
+        state:
+          type: string
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          description: State where the facility is located (2-letter state code)
+          example: CA
+        fileType:
+          type: string
+          description: File processing status for the facility record
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+          example: Clean
+        npi:
+          type: string
+          description: National Provider Identifier (NPI) - 10-digit identifier
+        externalId:
+          type: string
+          description: External identifier for the facility from external systems
+          example: V2222L00000
+        skipOnSiteReview:
+          type: boolean
+        stateLicenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityStateLicenseDto'
+        facilitySupportingDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilitySupportingDocumentDto'
+        accreditations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccreditationDto'
+        siteVisits:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnSiteReviewDto'
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CertificationsDto'
+        npdb:
+          type: array
+          items:
+            $ref: '#/components/schemas/NpdbDto'
+        sanctions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanctionsDto'
+        perfIndicator:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityPerformanceIndicatorDto'
+        liabilityInsurances:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsuranceDto'
+        lastCredentialingDate:
+          format: date-time
+          type: string
+        nextCredentialingDate:
+          format: date-time
+          type: string
+        facilitySpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateSpecialtiesDto'
+        facilityPrimarySpecialty:
+          $ref: '#/components/schemas/CreateSpecialtiesDto'
+        facilityHsdSpecialty:
+          $ref: '#/components/schemas/HsdSpecialty'
+        appVerifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppVerificationDto'
+        medicareStarRatings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicareStarRatingDto'
+        linesOfBusiness:
+          items:
+            type: string
+          type: array
+        credentialingStatus:
+          type: string
+        credentialingStartDate:
+          format: date-time
+          type: string
+        psvCompleteDate:
+          format: date-time
+          type: string
+        credentialingDecisionDate:
+          format: date-time
+          type: string
+        attestationDate:
+          format: date-time
+          type: string
+        medicalDirectorId:
+          type: string
+    FacilityOutreachResponseDto:
+      type: object
+      properties:
+        provider_id:
+          type: string
+        organization_id:
+          type: string
+        workflow_id:
+          type: string
+        outreach_correspondence_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/OutreachDataDto'
+        created_at:
+          type: string
+        created_by_name:
+          type: string
+        id:
+          type: string
+        latest_event:
+          type: string
+        outreach_correspondence:
+          type: string
+        status_code:
+          type: number
+        sg_message_id:
+          type: string
+      required:
+      - provider_id
+      - organization_id
+      - workflow_id
+      - data
+      - created_at
+      - created_by_name
+      - id
+    FacilitySupportingDocumentDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        name:
+          type: string
+        lastModified:
+          format: date-time
+          type: string
+        type:
+          type: string
+      required:
+      - name
+      - lastModified
+      - type
+    FilterFacilityV2Dto:
+      type: object
+      properties:
+        offset:
+          type: number
+          default: 0
+          minimum: 0
+          description: The starting index for pagination, specifying how many records to skip.
+        limit:
+          type: number
+          default: 10
+          description: The maximum number of records to retrieve in a single request.
+        file_type:
+          type: string
+          description: File Type of the facility to filter by to be terminated. (Effective only when no facility_ids are being passed and filters are used for query instead, but we need to pass the value in every case to make the api request)
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+        start_updated_at:
+          format: date-time
+          type: string
+          description: Filter facility that are created or updated >= specified date.
+        end_updated_at:
+          format: date-time
+          type: string
+          description: Filter providers that are created or updated < specified date.
+    TimelineV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+        enteredAt:
+          format: date-time
+          type: string
+        title:
+          type: string
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - id
+      - enteredAt
+      - title
+      - verified_by
+      - verified_date
+    SubSpecialtiesDto:
+      type: object
+      properties:
+        specialtyNuccTaxonomyCode:
+          type: string
+        name:
+          type: string
+      required:
+      - specialtyNuccTaxonomyCode
+      - name
+    CreateSpecialtiesDto:
+      type: object
+      properties:
+        specialtyNuccTaxonomyCode:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        id:
+          type: string
+        isPrimary:
+          type: boolean
+        specialtyBoardName:
+          type: string
+        source:
+          type: string
+        subSpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubSpecialtiesDto'
+      required:
+      - name
+    SanctionsDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        sanctionType:
+          type: string
+          description: Type of sanction applied
+          enum:
+          - OIG
+          - GSA/SAM/OFAC
+          - OFAC
+          - MOO
+          - OMIG
+          - State Exclusion List
+          - Preclusion List Check
+        source:
+          type: string
+        reportResults:
+          type: string
+          description: Result of the sanction check
+          enum:
+          - Match Found
+          - No Match Found
+      required:
+      - sanctionType
+      - source
+      - reportResults
+    HsdSpecialty:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+          - ''
+          - '001'
+          - '002'
+          - '003'
+          - '004'
+          - '005'
+          - '006'
+          - '007'
+          - 008
+          - '010'
+          - '011'
+          - '012'
+          - '013'
+          - '014'
+          - '015'
+          - '016'
+          - '017'
+          - 018
+          - 019
+          - '020'
+          - '021'
+          - '022'
+          - '023'
+          - '025'
+          - '026'
+          - '027'
+          - 028
+          - 029
+          - '030'
+          - '031'
+          - '033'
+          - '034'
+          - '035'
+          - '036'
+          - '037'
+          - '040'
+          - '041'
+          - '042'
+          - '043'
+          - '044'
+          - '045'
+          - '046'
+          - '047'
+          - 048
+          - 049
+          - '050'
+          - '051'
+          - '052'
+          - '057'
+        name:
+          type: string
+          enum:
+          - ''
+          - General Practice
+          - Family Practice
+          - Internal Medicine
+          - Geriatrics
+          - Primary Care - Physician Assistants
+          - Primary Care - Nurse Practitioners
+          - Allergy and Immunology
+          - Cardiology
+          - Chiropractor
+          - Dermatology
+          - Endocrinology
+          - ENT/Otolaryngology
+          - Gastroenterology
+          - General Surgery
+          - Gynecology, OB/GYN
+          - Infectious Diseases
+          - Nephrology
+          - Neurology
+          - Neurosurgery
+          - Oncology - Medical, Surgical
+          - Oncology - Radiation/Radiation Oncology
+          - Ophthalmology
+          - Orthopedic Surgery
+          - Physiatry, Rehabilitative Medicine
+          - Plastic Surgery
+          - Podiatry
+          - Psychiatry
+          - Pulmonology
+          - Rheumatology
+          - Urology
+          - Vascular Surgery
+          - Cardiothoracic Surgery
+          - Clinical Psychology
+          - Clinical Social Work
+          - Acute Inpatient Hospitals
+          - Cardiac Surgery Program
+          - Cardiac Catheterization Services
+          - Critical Care Services – Intensive Care Units (ICU)
+          - Outpatient Dialysis
+          - Surgical Services (Outpatient or ASC)
+          - Skilled Nursing Facilities
+          - Diagnostic Radiology
+          - Mammography
+          - Physical Therapy
+          - Occupational Therapy
+          - Speech Therapy
+          - Inpatient Psychiatric Facility Services
+          - Outpatient Infusion/Chemotherapy
+      required:
+      - code
+      - name
+    NpdbDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        applicable:
+          type: string
+          description: Whether NPDB check is applicable
+          enum:
+          - 'Yes'
+          - 'No'
+          - N/A
+          example: 'Yes'
+        source:
+          type: string
+        typeOfAction:
+          type: string
+          description: Type of NPDB action
+          enum:
+          - No Action
+          - Medical Malpractice Payment
+          - Health Plan
+          - State Licensure/Certification
+          - Professional Society
+          - Exclusion/Debarment
+          - DEA/Federal Licensure
+          - Government Administrative
+          - Judgement/Conviction
+          - Clinical Privileges
+          - Peer Review Organization
+          example: No Action
+        reportResults:
+          type: string
+          default: No Report Found
+          enum:
+          - Adverse Action Report
+          - Medical Malpractice Payment Report
+          - No Report Found
+          description: NPDB report results
+          example: No Report Found
+        reportDate:
+          format: date-time
+          type: string
+        processDate:
+          format: date-time
+          type: string
+      required:
+      - applicable
+      - source
+      - typeOfAction
+      - reportDate
+      - processDate
+    PaginatedFacilityV2ResponseDto:
+      type: object
+      properties:
+        data:
+          description: Array of facility objects
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityResponseV2Dto'
+        count:
+          type: number
+          description: Total number of facilities
+          example: 528
+        ids:
+          type:
+          - array
+          - 'null'
+          description: Array of specific facility IDs (when filtering)
+      required:
+      - data
+      - count
+    AccreditationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        accreditationBody:
+          type: string
+          default: ''
+        applicable:
+          type: string
+        status:
+          type: string
+          description: Accreditation status
+          enum:
+          - Accredited
+          - Not Accredited
+          example: Accredited
+        effectiveDate:
+          format: date-time
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+      required:
+      - accreditationBody
+      - applicable
+      - status
+      - effectiveDate
+    FacilityGroupsResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        group_name:
+          type: string
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        external_group_id:
+          type: string
+      required:
+      - id
+      - group_name
+      - group_npi
+      - group_tin
+    OutreachDataDto:
+      type: object
+      properties:
+        to:
+          example:
+          - string@string.com
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        numberOfAttachments:
+          type: number
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+      required:
+      - to
+      - reason
+      - subject
+      - body
+    UnterminateFacilityV2Dto:
+      type: object
+      properties:
+        facility_ids:
+          description: Facility ids to be unterminated in comma separated strings within the array.
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for the untermination.
+        filters:
+          description: Add Filters to the facility to be unterminated
+          allOf:
+          - $ref: '#/components/schemas/FilterFacilityV2Dto'
+      required:
+      - facility_ids
+      - reason
+      - filters
+    MedicareStarRatingDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        starRating:
+          type: string
+        reportDate:
+          format: date-time
+          type: string
+        source:
+          type: string
+    DEADto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        state:
+          type: string
+          description: State where DEA license is issued
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          example: CA
+        deaNumber:
+          type: string
+        providerType:
+          type: string
+        status:
+          type: string
+          description: Status of the DEA license
+          enum:
+          - Active
+          - Inactive
+          example: Active
+        source:
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+      required:
+      - state
+      - deaNumber
+      - providerType
+      - status
+      - source
+      - expirationDate
+    TerminateFacilityV2Dto:
+      type: object
+      properties:
+        facility_ids:
+          description: Facility ids to be terminated in comma separated strings within the array.
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for the termination.
+        filters:
+          description: Add Filters to the facility to be terminated
+          allOf:
+          - $ref: '#/components/schemas/FilterFacilityV2Dto'
+      required:
+      - facility_ids
+      - reason
+      - filters
+    AppVerificationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        explanation:
+          type: string
+        source:
+          type: string
+        verificationType:
+          type: string
+    FacilityStateLicenseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        licenseType:
+          type: string
+          description: Type of license
+          enum:
+          - State License
+          - Business Permit
+          - Occupational License
+          - Medical gas permit
+          example: State License
+        source:
+          type: string
+          description: Source of license verification (licensing authority)
+          example: Utah Department of Health and Human Services
+        licenseNumber:
+          type: string
+          description: License number issued by the licensing authority
+          example: F23-100000
+        status:
+          type: string
+          description: Status of the license (e.g., "Active", "Expired")
+          enum:
+          - Active
+          - Inactive
+          - Expired
+          - Retired
+          - Revoked
+          - Lapsed
+          - Probation
+          - Surrendered
+          - Suspended
+          example: Active
+        issueDate:
+          format: date
+          type: string
+          description: Date when the state license was issued
+        expirationDate:
+          format: date
+          type: string
+          description: Date when the state license expires
+      required:
+      - licenseType
+      - source
+      - licenseNumber
+      - status
+      - expirationDate
+    CreateFacilityDto:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 128
+          description: Legal name of the facility
+        dba:
+          type: string
+          description: Doing Business As (DBA) name or trade name of the facility
+        type:
+          type: string
+          description: Type of facility
+          example: Ambulatory Surgery Centers
+        tin:
+          type: string
+          description: Tax Identification Number (TIN) for the facility
+        medicareNumber:
+          type: string
+        medicaidNumber:
+          type: string
+        address:
+          type: string
+          description: Street address of the facility (Line 1)
+        city:
+          type: string
+          description: City where the facility is located
+          example: Saint George
+        zipcode:
+          type: string
+          description: ZIP code of the facility location
+          example: '90210'
+        contactName:
+          type: string
+          description: Name of the primary contact person for the facility
+        contactPhone:
+          type: string
+          description: Primary contact phone number for the facility
+          example: '8000001234'
+        contactEmail:
+          type: string
+          description: Primary contact email address for the facility (email format)
+        contactFax:
+          type: string
+          description: Contact fax number for the facility (optional)
+          example: '8000001234'
+        state:
+          type: string
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          description: State where the facility is located (2-letter state code)
+          example: CA
+        fileType:
+          type: string
+          description: File processing status for the facility record
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+          example: Clean
+        npi:
+          type: string
+          description: National Provider Identifier (NPI) - 10-digit identifier
+        externalId:
+          type: string
+          description: External identifier for the facility from external systems
+          example: V2222L00000
+        skipOnSiteReview:
+          type: boolean
+        stateLicenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityStateLicenseDto'
+        facilitySupportingDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilitySupportingDocumentDto'
+        accreditations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccreditationDto'
+        siteVisits:
+          type: array
+          items:
+            $ref: '#/components/schemas/OnSiteReviewDto'
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CertificationsDto'
+        npdb:
+          type: array
+          items:
+            $ref: '#/components/schemas/NpdbDto'
+        sanctions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SanctionsDto'
+        perfIndicator:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityPerformanceIndicatorDto'
+        liabilityInsurances:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsuranceDto'
+        lastCredentialingDate:
+          format: date-time
+          type: string
+        nextCredentialingDate:
+          format: date-time
+          type: string
+        facilitySpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateSpecialtiesDto'
+        facilityPrimarySpecialty:
+          $ref: '#/components/schemas/CreateSpecialtiesDto'
+        facilityHsdSpecialty:
+          $ref: '#/components/schemas/HsdSpecialty'
+        appVerifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppVerificationDto'
+        medicareStarRatings:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicareStarRatingDto'
+        linesOfBusiness:
+          items:
+            type: array
+          type: array
+      required:
+      - name
+      - dba
+      - type
+      - tin
+      - address
+      - city
+      - zipcode
+      - contactName
+      - contactPhone
+      - contactEmail
+      - contactFax
+      - state
+      - skipOnSiteReview
+      - stateLicenses
+      - facilitySupportingDocuments
+      - accreditations
+      - siteVisits
+      - certifications
+      - npdb
+      - sanctions
+      - perfIndicator
+      - liabilityInsurances
+      - medicareStarRatings
+    CertificationsDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        source:
+          type: string
+        types:
+          type: string
+        certificateType:
+          type: string
+          default: CLIA
+          enum:
+          - State Survey
+          - CLIA
+          - CMS
+          - CDS
+          - DEA
+          - N/A
+          description: Type of certification
+          example: CLIA
+        number:
+          type: string
+        issueDate:
+          format: date-time
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+    FacilityProviderV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+        npi:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          description: Provider type/credential
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CPsyD
+          - CphT
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DDS
+          - DMD
+          - DO
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - LactCon
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - RPSGT
+          - RT
+          - Rph
+          - SA
+          - SW
+          example: MD
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - id
+      - npi
+      - name
+      - type
+      - verified_by
+      - verified_date
+    OnSiteReviewDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        applicable:
+          type: string
+          description: Whether on-site review is applicable
+          enum:
+          - 'Yes'
+          - 'No'
+          - N/A
+          example: 'Yes'
+        source:
+          type: string
+        grade:
+          type: string
+      required:
+      - applicable
+      - source
+    PaginatedFacilityOutreachResponseDto:
+      type: object
+      properties:
+        data:
+          description: List of outreach records
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityOutreachResponseDto'
+        count:
+          type: number
+          example: 1
+          description: Total number of records
+      required:
+      - data
+      - count
+    FacilityCredentialingWorkflowTimelineV2ResponseDto:
+      type: object
+      properties:
+        facilityCredentialingWorkflowId:
+          type: string
+        credentialingStatus:
+          type: string
+        credentialingCycle:
+          type: string
+        facilityId:
+          type: string
+        organizationId:
+          type: string
+        medicalDirectorId:
+          type: string
+        medicalDirectorName:
+          type: string
+        receivedForCredentialingDate:
+          type: string
+        attestationDate:
+          type: string
+        lastCredentialedDate:
+          type: string
+        psvCompleteDate:
+          type: string
+        credentialingDecisionDate:
+          type: string
+        nextCredentialingDate:
+          type: string
+        updatedAt:
+          type: string
+        updatedByName:
+          type: string
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        decisionEnteredById:
+          type: string
+        decisionEnteredByName:
+          type: string
+        verifierId:
+          type: string
+      required:
+      - facilityId
+      - organizationId
+      - receivedForCredentialingDate
+      - lastCredentialedDate
+      - psvCompleteDate
+      - credentialingDecisionDate
+      - nextCredentialingDate
+      - updatedAt
+      - createdAt
+    InsuranceDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        policyNumber:
+          type: string
+          description: Insurance policy number
+        source:
+          type: string
+          description: Insurance carrier/company name
+        insuranceType:
+          type: string
+          description: Type of insurance
+          enum:
+          - General Liability
+          - Professional Liability
+          example: Professional Liability
+        expirationDate:
+          format: date
+          type: string
+          description: Date when the insurance policy expires
+      required:
+      - policyNumber
+      - source
+      - insuranceType
+      - expirationDate
+    Attachment:
+      type: object
+      properties:
+        content:
+          type: string
+        disposition:
+          type: string
+        filename:
+          type: string
+        type:
+          type: string
+    BusinessLicenseV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Business name as registered
+        entity:
+          type: string
+          description: Business entity type
+        city:
+          type: string
+        type:
+          type: string
+        incorporationDate:
+          type: string
+          description: Date when the business was incorporated
+          format: date
+        verified_by:
+          type: string
+          description: Name of the person who verified this business license information
+          example: John Doe
+        verified_date:
+          type: string
+          description: Date when this business license information was verified
+          example: YYYY-MM-DD
+      required:
+      - id
+      - name
+      - entity
+      - city
+      - type
+      - incorporationDate
+      - verified_by
+      - verified_date
+    FacilityPerformanceIndicatorDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        applicable:
+          type: string
+          description: Whether performance indicator is applicable
+          enum:
+          - 'Yes'
+          - 'No'
+          - N/A
+          example: 'Yes'
+        complaints:
+          type: string
+        clinical:
+          type: string
+        benefits:
+          type: string
+        claims:
+          type: string
+        accessIssues:
+          type: string
+      required:
+      - applicable
+      - complaints
+      - clinical
+      - benefits
+      - claims
+      - accessIssues
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

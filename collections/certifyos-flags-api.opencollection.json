@@ -1,0 +1,441 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "CertifyOS Flags API"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "flags",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get all provider flags",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/flags",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "read",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "shared",
+                "value": "",
+                "type": "query"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of all provider flags for the given organization. Supports filtering by NPI, read status, and shared status."
+        },
+        {
+          "info": {
+            "name": "Bulk deactivate (clear) flags",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Deactivates (clears) multiple flags in bulk for the current user."
+        },
+        {
+          "info": {
+            "name": "Deactivate (clear) a flag",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/:id/deactivate",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the flag to deactivate."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Deactivates (clears) a specific flag by its ID."
+        },
+        {
+          "info": {
+            "name": "Activate (un-clear) a flag",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/:id/activate",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the flag to activate."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Activates (un-clears) a specific flag by its ID."
+        },
+        {
+          "info": {
+            "name": "Mark flag as read via webhook",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/webhook/:id/mark-read",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the flag to mark as read."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks a flag as read using a webhook event."
+        },
+        {
+          "info": {
+            "name": "Bulk mark flags as read",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/bulk-mark-read",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks multiple flags as read for the current user. Returns 204 if all succeeded, 207 if some failed."
+        },
+        {
+          "info": {
+            "name": "Mark a flag as read",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/:id/mark-read",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the flag to mark as read."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks a specific flag as read for the current user."
+        },
+        {
+          "info": {
+            "name": "Mark a flag as unread",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/:id/mark-unread",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the flag to mark as unread."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks a specific flag as unread for the current user."
+        },
+        {
+          "info": {
+            "name": "Get Provider Flags",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/flags/search",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query",
+                "description": "Provider NPI(s) (comma or dash separated)"
+              },
+              {
+                "name": "flagType",
+                "value": "flagType1,flagType2,flagType3",
+                "type": "query",
+                "description": "Type of flag"
+              },
+              {
+                "name": "firstName",
+                "value": "",
+                "type": "query",
+                "description": "First name"
+              },
+              {
+                "name": "lastName",
+                "value": "",
+                "type": "query",
+                "description": "Last name"
+              },
+              {
+                "name": "subCollectionName",
+                "value": "subCollection1,subCollection2,subCollection3",
+                "type": "query",
+                "description": "Sub collection name"
+              },
+              {
+                "name": "sharedToCredCommittee",
+                "value": "",
+                "type": "query",
+                "description": "Shared to cred committee (boolean)"
+              },
+              {
+                "name": "flagReadStatus",
+                "value": "",
+                "type": "query",
+                "description": "Flag read status (seen, unseen, all)"
+              },
+              {
+                "name": "flaggedDateStart",
+                "value": "",
+                "type": "query",
+                "description": "Flagged date start (ISO date)"
+              },
+              {
+                "name": "flaggedDateEnd",
+                "value": "",
+                "type": "query",
+                "description": "Flagged date end (ISO date)"
+              },
+              {
+                "name": "expirationDateStart",
+                "value": "",
+                "type": "query",
+                "description": "Expiration date start (ISO date)"
+              },
+              {
+                "name": "expirationDateEnd",
+                "value": "",
+                "type": "query",
+                "description": "Expiration date end (ISO date)"
+              },
+              {
+                "name": "reportDateStart",
+                "value": "",
+                "type": "query",
+                "description": "Report date start (ISO date)"
+              },
+              {
+                "name": "reportDateEnd",
+                "value": "",
+                "type": "query",
+                "description": "Report date end (ISO date)"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get Provider Flags"
+        },
+        {
+          "info": {
+            "name": "Bulk mark flags as unread",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/flags/bulk-mark-unread",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks multiple flags as unread for the current user. Returns 204 if all succeeded, 207 if some failed."
+        },
+        {
+          "info": {
+            "name": "Mark all flags as read for a provider and approve",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://ng-api-production.certifyos.com/flags/:id/mark-all-read-for-provider",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the provider."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks all flags as read for a specific provider and marks the provider as approved."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

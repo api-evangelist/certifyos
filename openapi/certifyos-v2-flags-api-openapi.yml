@@ -1,0 +1,303 @@
+openapi: 3.2.0
+info:
+  title: CertifyOS V2/flags API
+  description: ''
+  contact: {}
+servers:
+- url: https://ng-api-production.certifyos.com
+  description: Production
+- url: https://ng-api-stg.certifyos.com/
+  description: Staging (Test Data)
+tags:
+- name: v2/flags
+paths:
+  /v2/flags:
+    get:
+      operationId: ProviderFlagsController_findFlags
+      summary: Find Flags For Provider
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: provider_id
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully fetched flags.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderFlagResponseDto'
+        '401':
+          description: Unauthorized if authorization token is not provided or invalid.
+        '403':
+          description: Forbidden if user access is not right.
+        '404':
+          description: Resource not found.
+      tags:
+      - v2/flags
+      security:
+      - BearerAuth: []
+  /v2/flags/bulk-mark-read:
+    patch:
+      operationId: FlagsV2Controller_markReadBulk
+      summary: Mark multiple flags as read
+      description: Marks a list of flags as read for the current user. Returns 204 if all succeeded, 207 if some failed.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: Payload containing flag IDs to mark as read and a reason.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlagMarkReadAllRequestV2Dto'
+      responses:
+        '204':
+          description: All flags marked as read successfully.
+          content:
+            application/json:
+              schema:
+                example:
+                  success: true
+        '207':
+          description: Some flags failed to be marked as read.
+          content:
+            application/json:
+              schema:
+                example:
+                - status: fullfilled
+                  id: flagId1
+                - status: rejected
+                  id: flagId2
+                  reason:
+                    status: 404
+                    name: NotFoundException
+                    message: provider-flags with id = flagId2 was not found
+        '400':
+          description: Bad request. Invalid input.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+      tags:
+      - v2/flags
+      security:
+      - BearerAuth: []
+  /v2/flags/{id}/mark-read:
+    patch:
+      operationId: FlagsV2Controller_markRead
+      summary: Mark a single flag as read
+      description: Marks a specific flag as read for the current user.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: id
+        required: true
+        in: path
+        description: The unique identifier of the flag to mark as read.
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The flag has been successfully marked read.
+        '400':
+          description: Bad request. Invalid input.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+        '404':
+          description: Flag not found.
+      tags:
+      - v2/flags
+      security:
+      - BearerAuth: []
+  /v2/flags/search:
+    get:
+      operationId: FlagsV2Controller_searchFlags
+      summary: Search provider flags
+      description: Returns a list of provider flags based on advanced filter criteria. Supports filtering by NPI, flag type, name, sub-collection, committee sharing, read status, and date ranges.
+      parameters:
+      - name: organization-id
+        in: header
+        schema:
+          type: string
+      - name: offset
+        required: false
+        in: query
+        description: The starting index for pagination, specifying how many records to skip.
+        schema:
+          minimum: 0
+          default: 0
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: The maximum number of records to retrieve in a single request.
+        schema:
+          default: 10
+          type: number
+      - name: npi
+        required: false
+        in: query
+        description: Provider NPI
+        schema:
+          type: string
+      - name: flag_type
+        required: false
+        in: query
+        description: Type of flag
+        example: flagType1,flagType2,flagType3
+        schema:
+          type: array
+          items:
+            type: string
+      - name: first_name
+        required: false
+        in: query
+        description: First name
+        schema:
+          type: string
+      - name: last_name
+        required: false
+        in: query
+        description: Last name
+        schema:
+          type: string
+      - name: sub_collection_name
+        required: false
+        in: query
+        description: Sub collection name
+        example: subCollection1,subCollection2,subCollection3
+        schema:
+          type: array
+          items:
+            type: string
+      - name: shared_to_cred_committee
+        required: false
+        in: query
+        description: Shared to cred committee (boolean)
+        schema:
+          type: boolean
+      - name: flagReadStatus
+        required: false
+        in: query
+        description: Flag read status (seen, unseen, all)
+        schema:
+          $ref: '#/components/schemas/ReadStatus'
+      - name: flagged_date_start
+        required: false
+        in: query
+        description: Flagged date start (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: flagged_date_end
+        required: false
+        in: query
+        description: Flagged date end (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: expiration_date_start
+        required: false
+        in: query
+        description: Expiration date start (ISO date)
+        schema:
+          format: date-time
+          type: string
+      - name: expiration_date_end
+        required: false
+        in: query
+        description: Expiration date end (ISO date)
+        schema:
+          format: date-time
+          type: string
+      responses:
+        '200':
+          description: List of provider flags based on advanced filter criteria
+          content:
+            application/json:
+              schema:
+                example:
+                  data:
+                  - flagId: flag1
+                    status: unseen
+                  meta:
+                    total: 1
+        '400':
+          description: Bad request if filter is invalid.
+        '401':
+          description: Authorization token is missing or invalid.
+        '403':
+          description: User does not have permission to access this resource.
+      tags:
+      - v2/flags
+      security:
+      - BearerAuth: []
+components:
+  schemas:
+    ReadStatus:
+      type: string
+      enum:
+      - seen
+      - unseen
+      - all
+    ProviderFlagResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        read:
+          type: boolean
+        active:
+          type: boolean
+        subCollectionName:
+          type: string
+        description:
+          type: string
+        actionSource:
+          type: string
+        createdAt:
+          type: string
+        flagType:
+          type: string
+      required:
+      - id
+      - read
+      - active
+      - subCollectionName
+      - description
+      - actionSource
+      - createdAt
+      - flagType
+    FlagMarkReadAllRequestV2Dto:
+      type: object
+      properties:
+        flag_ids:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          example: Reason while marking flag as read
+      required:
+      - flag_ids
+      - reason
+  securitySchemes:
+    BearerAuth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http

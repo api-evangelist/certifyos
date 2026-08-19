@@ -1,0 +1,53 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer UDF Schema API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "UDF Schema",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Get UDF Schema by entity type (latest or specific version)",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/udf-schemas/entity-type/:entityType",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": "tenant-abc-123"
+              }
+            ],
+            "params": [
+              {
+                "name": "entityType",
+                "value": "practitioner",
+                "type": "path",
+                "description": "The entity type for which to retrieve the UDF schema.\n\nValid values:\n- `practitioner` - For practitioner entities\n- `facility` - For facility entities\n- `location` - For location entities\n- `group` - For group entities\n\nThe value is case-insensitive.\n"
+              },
+              {
+                "name": "version",
+                "value": "1",
+                "type": "query",
+                "description": "Optional version number of the UDF schema to retrieve.\nIf not provided, returns the latest version of the schema for the specified entity type.\n"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Retrieves the latest User Defined Fields (UDF) schema for a specific entity type within a tenant's context.\n\nUDF schemas define the structure and validation rules for custom fields that can be added to entities\nsuch as practitioners, facilities, locations, and groups. This endpoint returns the schema for the\nspecified entity type. If a version is provided, it returns that specific version; otherwise, it\nreturns the most recent version.\n\n**Supported Entity Types:**\n- `practitioner` - Schema for p"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

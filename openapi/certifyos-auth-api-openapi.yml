@@ -1,0 +1,231 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Auth API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Auth
+  description: Authentication endpoints
+paths:
+  /auth/client-credentials:
+    post:
+      summary: Client Credentials Exchange
+      description: Performs OAuth2 client credentials grant flow and returns an access token. Uses configured audience.
+      operationId: clientCredentials
+      tags:
+      - Auth
+      parameters:
+      - description: use "default" as tenant-id
+        required: false
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Client credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientCredentialsRequest'
+        required: false
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientCredentialsResponse'
+        '400':
+          description: Bad request - Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication failed - Invalid client credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security: []
+  /auth/login:
+    post:
+      summary: User Login
+      description: Authenticates a user with email and password and returns a JWT token
+      operationId: authenticateUser
+      tags:
+      - Auth
+      parameters:
+      - description: use "default" as tenant-id
+        required: false
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: User credentials
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Bad request - Email and password are required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Authentication failed - Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security: []
+components:
+  schemas:
+    LoginRequest:
+      description: Request body for user authentication
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          description: User email address
+          examples:
+          - user@example.com
+        password:
+          type: string
+          description: User password
+          examples:
+          - password
+    ClientCredentialsRequest:
+      description: Request body for client credentials authentication
+      type: object
+      properties:
+        clientId:
+          type: string
+          description: Auth0 client ID. If not provided, uses configured client ID
+          examples:
+          - your-client-id
+        clientSecret:
+          type: string
+          description: Auth0 client secret. If not provided, uses configured client secret
+          examples:
+          - your-client-secret
+    ClientCredentialsResponse:
+      description: Response containing access token after successful client credentials exchange
+      type: object
+      required:
+      - accessToken
+      - expiresIn
+      - tokenType
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          examples:
+          - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresIn:
+          type: integer
+          format: int64
+          description: Token expiration time in seconds
+          examples:
+          - 86400
+        tokenType:
+          type: string
+          description: Token type
+          examples:
+          - Bearer
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    LoginResponse:
+      description: Response containing authentication tokens after successful login
+      type: object
+      required:
+      - accessToken
+      - expiresIn
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          examples:
+          - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresIn:
+          type: integer
+          format: int64
+          description: Token expiration time in seconds
+          examples:
+          - 86400
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,200 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "CertifyOS V2/flags API"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "v2/flags",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Find Flags For Provider",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/flags",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "provider_id",
+                "value": "",
+                "type": "query"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Find Flags For Provider"
+        },
+        {
+          "info": {
+            "name": "Mark multiple flags as read",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/flags/bulk-mark-read",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks a list of flags as read for the current user. Returns 204 if all succeeded, 207 if some failed."
+        },
+        {
+          "info": {
+            "name": "Mark a single flag as read",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://ng-api-production.certifyos.com/v2/flags/:id/mark-read",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The unique identifier of the flag to mark as read."
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Marks a specific flag as read for the current user."
+        },
+        {
+          "info": {
+            "name": "Search provider flags",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://ng-api-production.certifyos.com/v2/flags/search",
+            "headers": [
+              {
+                "name": "organization-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "offset",
+                "value": "",
+                "type": "query",
+                "description": "The starting index for pagination, specifying how many records to skip."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "The maximum number of records to retrieve in a single request."
+              },
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query",
+                "description": "Provider NPI"
+              },
+              {
+                "name": "flag_type",
+                "value": "flagType1,flagType2,flagType3",
+                "type": "query",
+                "description": "Type of flag"
+              },
+              {
+                "name": "first_name",
+                "value": "",
+                "type": "query",
+                "description": "First name"
+              },
+              {
+                "name": "last_name",
+                "value": "",
+                "type": "query",
+                "description": "Last name"
+              },
+              {
+                "name": "sub_collection_name",
+                "value": "subCollection1,subCollection2,subCollection3",
+                "type": "query",
+                "description": "Sub collection name"
+              },
+              {
+                "name": "shared_to_cred_committee",
+                "value": "",
+                "type": "query",
+                "description": "Shared to cred committee (boolean)"
+              },
+              {
+                "name": "flagReadStatus",
+                "value": "",
+                "type": "query",
+                "description": "Flag read status (seen, unseen, all)"
+              },
+              {
+                "name": "flagged_date_start",
+                "value": "",
+                "type": "query",
+                "description": "Flagged date start (ISO date)"
+              },
+              {
+                "name": "flagged_date_end",
+                "value": "",
+                "type": "query",
+                "description": "Flagged date end (ISO date)"
+              },
+              {
+                "name": "expiration_date_start",
+                "value": "",
+                "type": "query",
+                "description": "Expiration date start (ISO date)"
+              },
+              {
+                "name": "expiration_date_end",
+                "value": "",
+                "type": "query",
+                "description": "Expiration date end (ISO date)"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a list of provider flags based on advanced filter criteria. Supports filtering by NPI, flag type, name, sub-collection, committee sharing, read status, and date ranges."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

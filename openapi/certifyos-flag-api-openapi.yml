@@ -1,0 +1,310 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Flag API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Flag
+  description: APIs for managing flag entities
+paths:
+  /flags/update-status-bulk/{status}:
+    put:
+      summary: Bulk Update Flag Status
+      description: Updates the status of multiple flags to the specified value in a single operation. Each flag is evaluated independently against the per-transition permission and the state machine; flags that fail (closed, illegal transition, missing permission) are reported in the failed list rather than aborting the batch.
+      operationId: bulkUpdateFlagStatus
+      tags:
+      - Flag
+      parameters:
+      - description: The status to set for all flags (e.g., 'Closed', 'Open', 'seen')
+        example: Closed
+        required: true
+        name: status
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                flagIds:
+                  type: array
+                  items:
+                    type: string
+                comment:
+                  type: string
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkFlagStatusUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Bulk flag status update completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkFlagStatusUpdateResponse'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - Caller lacks any of the per-transition permissions required to use this endpoint
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+  /flags/{id}/update-status/{status}:
+    put:
+      summary: Update Flag Status
+      description: Updates a flag's status to the specified value (e.g., 'Closed', 'Open', 'seen', etc.). Optionally accepts a comment and file attachments. The caller must hold the per-transition permission for the specific source/target pair (see FlagStatusTransitionRules); closed flags cannot be transitioned.
+      operationId: updateFlagStatus
+      tags:
+      - Flag
+      parameters:
+      - description: ID of the flag to update
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: The status to set for the flag (e.g., 'Closed', 'Open', 'seen')
+        example: Closed
+        required: true
+        name: status
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Flag status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagResponse'
+        '400':
+          description: Bad request - Invalid request parameters or missing required headers
+        '401':
+          description: Authentication required - Valid authentication token is missing or invalid
+        '403':
+          description: Forbidden - Caller lacks the per-transition permission for this status change
+        '404':
+          description: Flag not found - The specified flag ID does not exist
+        '409':
+          description: Conflict - Transition not allowed (e.g. closed flag, or target unreachable from current status)
+        '500':
+          description: Internal server error - An unexpected error occurred while processing the request
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Date:
+      type: string
+      format: date
+    StatusUpdateResult:
+      type: object
+      description: Result of a single flag status update
+      properties:
+        flagId:
+          type: string
+          description: Flag ID that was processed
+          examples:
+          - flag-123
+        flagResponse:
+          description: Flag response if successful
+          type: object
+          $ref: '#/components/schemas/FlagResponse'
+        errorMessage:
+          type: string
+          description: Error message if the operation failed
+        errorCode:
+          type: string
+          description: Error code if the operation failed
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    FlagResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantProviderId:
+          type: string
+        flagTypeId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        originMonitoringWorkflowId:
+          type: string
+        hash:
+          type: string
+    BulkFlagStatusUpdateRequest:
+      description: Request to update status of multiple flags
+      type: object
+      required:
+      - flagIds
+      properties:
+        flagIds:
+          type: array
+          items:
+            type: string
+            pattern: \S
+          description: List of flag IDs to update
+          examples:
+          - - flag-123
+            - flag-456
+            - flag-789
+          minItems: 1
+    BulkFlagStatusUpdateResponse:
+      description: Response containing results of bulk flag status update operation
+      type: object
+      required:
+      - successful
+      - failed
+      - totalCount
+      - successCount
+      - failureCount
+      properties:
+        successful:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of successful status updates
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of failed status updates
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of flags processed
+          examples:
+          - 5
+        successCount:
+          type: integer
+          format: int32
+          description: Number of successful updates
+          examples:
+          - 4
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of failed updates
+          examples:
+          - 1
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

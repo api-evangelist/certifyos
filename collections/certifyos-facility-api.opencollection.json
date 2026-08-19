@@ -1,0 +1,898 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Facility API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Facility",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Find Facility by filter criteria with pagination",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/facilities",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "delegationStatus",
+                "value": "",
+                "type": "query",
+                "description": "Filter by delegation status (Direct or Delegated)"
+              },
+              {
+                "name": "externalId",
+                "value": "",
+                "type": "query",
+                "description": "Filter by external ID"
+              },
+              {
+                "name": "filter",
+                "value": "",
+                "type": "query",
+                "description": "Filter criteria as JSON (must be URL encoded). Multiple filters are combined with AND logic.\n\n**Filterable Fields:**\n\n**Credentialing Fields:**\n- `credentialingCycle` (String): Credentialing cycle type - `INITIAL` or `RECREDENTIALING` (eq, neq, in, nin, contains)\n- `nextCredentialingDate` (Date): Next credentialing date in ISO format `YYYY-MM-DD` (eq, neq, gt, gte, lt, lte, in, nin)\n- `credentialingStatus` (String): Current credentialing status (eq, neq, in, nin, contains)\n\n**User Defined Fields (UDFs):**\n- `userDefinedFields.*` (Dynamic): Any user-defined field stored in `data.userDefinedFields` object\n  - **Field Path Format**: Use `userDefinedFields.{fieldName}` or `userDefinedFields.{fieldName}.{subfield}` for nested fields\n  - **Important**: Clients should use only the `userDefinedFields.*` format (without `data.` prefix).\n    The backend automatically transforms `userDefinedFields.*` to `data.userDefinedFields.*` internally.\n  - **Supported Operations** (varies by field type):\n    - **String fields**: `eq`, `neq`, `in`, `nin`, `contains`\n    - **Numeric fields**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n    - **Array fields**: `eq`, `in` (checks if array contains the value)\n    - **Boolean fields**: `eq`, `neq`\n  - **Examples**: `userDefinedFields.market`, `userDefinedFields.location.region`\n\n**Other Data Fields:**\n- `data.*` (Any): Any data field (eq, neq, in, nin, contains, gt, gte, lt, lte)\n\n**Operations:**\n- **String**: `eq`, `neq`, `in`, `nin`, `contains`\n- **Date**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n- **Numeric**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n- **Array**: `eq`, `in` (checks if array contains the value)\n- **Boolean**: `eq`, `neq`\n\n**Examples:**\n\n**Credentialing Filters:**\n```json\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"}}\n{\"nextCredentialingDate\":{\"gte\":\"2025-01-01\"}}\n{\"credentialingStatus\":{\"eq\":\"CRED_APPROVED\"}}\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"},\"nextCredentialingDate\":{\"gte\":\"2025-01-01\",\"lte\":\"2025-12-31\"}}\n{\"credentialingStatus\":{\"in\":[\"CRED_APPROVED\",\"PSV_READY\"]},\"credentialingCycle\":{\"eq\":\"RECREDENTIALING\"}}\n```\n\n**User Defined Fields (UDFs):**\n```json\n{\"userDefinedFields.market\":{\"eq\":\"MARKET1\"}}\n{\"userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n{\"userDefinedFields.location.region\":{\"eq\":\"NORTH\"}}\n```\n**Note**: Clients must use the `userDefinedFields.*` format (without `data.` prefix).\nThe backend automatically transforms these to `data.userDefinedFields.*` internally.\n\n**Combined Filters:**\n```json\n{\"credentialingStatus\":{\"eq\":\"CRED_APPROVED\"},\"userDefinedFields.market\":{\"eq\":\"MARKET1\"}}\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"},\"nextCredentialingDate\":{\"gte\":\"2025-01-01\"},\"userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n```\n\n**Notes:**\n- Filter must be URL encoded when sent as query parameter\n- `tenantId` from header always takes precedence (cannot be overridden)\n- Credentialing fields are derived from the most recent CRED_APPROVED timeline event\n- Date format must be ISO 8601: `YYYY-MM-DD`\n- String operations are case-sensitive\n- UDF field names are case-sensitive - use exact field names as stored in your data\n- UDF fields are dynamically supported - any field under `userDefinedFields.*` can be filtered\n  (use `userDefinedFields.*` format, not `data.userDefinedFields.*`)\n- UDF nested fields are supported using dot notation: `userDefinedFields.parent.child`\n"
+              },
+              {
+                "name": "lineOfBusiness",
+                "value": "",
+                "type": "query",
+                "description": "Filter by line of business (comma-separated list, e.g., MEDICARE,MEDICAID)"
+              },
+              {
+                "name": "name",
+                "value": "",
+                "type": "query",
+                "description": "Filter by facility name"
+              },
+              {
+                "name": "npi",
+                "value": "",
+                "type": "query",
+                "description": "Filter by facility NPI. May contain one or more values for bulk search (copy-paste): separate with comma, newline, tab, semicolon, or space. When one or more NPI values are provided via this parameter, the response includes optional identifiersSearched, matchedCount, notFoundCount, unmatchedIdentifiers. When the query parameter is omitted (standard list request), those fields are null."
+              },
+              {
+                "name": "page",
+                "value": "",
+                "type": "query",
+                "description": "Page number for offset-based pagination (0-based index). Defaults to 0 if not specified."
+              },
+              {
+                "name": "size",
+                "value": "",
+                "type": "query",
+                "description": "Number of items per page in offset-based pagination. Defaults to 10 if not specified."
+              },
+              {
+                "name": "tin",
+                "value": "",
+                "type": "query",
+                "description": "Filter by facility TIN"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a paginated list of all Facilities. Supports both offset-based (page/size) pagination. Filtering by credentialingCycle, nextCredentialingDate, credentialingStatus, and User Defined Fields (UDFs) is supported through the filter parameter. UDF fields can be filtered using the path format: `data.userDefinedFields.{fieldName}` for simple fields or `data.userDefinedFields.{parent}.{child}` for nested fields."
+        },
+        {
+          "info": {
+            "name": "Create a new facility",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Upserts CoreFacility from payload and creates/updates TenantFacility for the tenant."
+        },
+        {
+          "info": {
+            "name": "Update a tenant facility specialty record",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/facilities/tenant-facility-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a TenantFacilitySpecialty record (Level 1) by replacing the tenant_specialty_id, updating the effective date, or both. At least one of newTenantSpecialtyId or effectiveDate must be provided. Does not trigger termination events or lifecycle changes."
+        },
+        {
+          "info": {
+            "name": "Correct the specialty at the group-facility-location level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/facilities/tenant-group-facility-location-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Resolves the FK chain from TenantGroupFacilityLocationSpecialty (Level 4) to the parent TenantGroupFacilitySpecialty (Level 3) and replaces its tenant_specialty_id. Does not trigger termination events."
+        },
+        {
+          "info": {
+            "name": "Correct the specialty at the group-facility-network level",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/facilities/tenant-group-facility-network-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Resolves the FK chain from TenantGroupFacilityNetworkSpecialty (Level 5) to the parent TenantGroupFacilitySpecialty (Level 3) and replaces its tenant_specialty_id. Does not trigger termination events."
+        },
+        {
+          "info": {
+            "name": "Correct the specialty on a group facility specialty record",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/facilities/tenant-group-facility-specialties/specialty",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces the tenant_specialty_id on a TenantGroupFacilitySpecialty record (Level 3) in data-correction mode. Cascades to Levels 4, 5, 6 via FK chain. Does not trigger termination events."
+        },
+        {
+          "info": {
+            "name": "Update effective dates for facility-group association",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:certifyFacilityId/groups/:certifyGroupId/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyFacilityId",
+                "value": "",
+                "type": "path",
+                "description": "Certify facility ID"
+              },
+              {
+                "name": "certifyGroupId",
+                "value": "",
+                "type": "path",
+                "description": "Certify group ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective start date and/or termination date for a facility-group association. Optionally cascades the date change to network participation based on the cascadeToNetworkParticipation flag. If terminationDate is provided, it must be after the effectiveDate. Mirrors the practitioner-group precedent endpoint with one deliberate divergence: the request body carries an optional changeReason field per facility-resource convention."
+        },
+        {
+          "info": {
+            "name": "Update effective dates for a single facility-group-network association",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:certifyFacilityId/groups/:certifyGroupId/networks/:networkId/effective-date",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyFacilityId",
+                "value": "",
+                "type": "path",
+                "description": "Certify facility ID"
+              },
+              {
+                "name": "certifyGroupId",
+                "value": "",
+                "type": "path",
+                "description": "Certify group ID"
+              },
+              {
+                "name": "networkId",
+                "value": "",
+                "type": "path",
+                "description": "Network ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the effective start date and/or termination date for a single TenantGroupFacilityNetwork (TGFN) leaf row independently of its parent TenantGroupFacility association. The service-layer enforces a cross-level invariant: the request effectiveDate cannot precede the parent facility-group effectiveDate. CP-28250 phase-2 / sub-task CP-28250-Phase2-BE."
+        },
+        {
+          "info": {
+            "name": "Add a location to a facility",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities/:certifyFacilityId/locations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyFacilityId",
+                "value": "",
+                "type": "path",
+                "description": "The certify facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Creates a new location and associates it with the specified facility."
+        },
+        {
+          "info": {
+            "name": "Update a facility location (simple CoreLocation fields)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:certifyFacilityId/locations/:certifyLocationId",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyFacilityId",
+                "value": "",
+                "type": "path",
+                "description": "The certify facility ID"
+              },
+              {
+                "name": "certifyLocationId",
+                "value": "",
+                "type": "path",
+                "description": "The certify location ID (CoreLocation)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates allowed CoreLocation fields for a location linked to the facility. Requires consentAcknowledged: true. Includes contacts, office hours, ADA, limitations, isPrimaryLocation (primary indicator), optional userDefinedFields (full replace of that object on CoreLocation data), and optional specialityDetails (same shape as add-location; syncs TenantFacilityLocationSpecialty via replace semantics). Location name and service address cannot be changed via this API (crosswalk safety). The authentic"
+        },
+        {
+          "info": {
+            "name": "Terminate a facility location (full or network-only)",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities/:certifyFacilityId/locations/:certifyLocationId/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyFacilityId",
+                "value": "",
+                "type": "path",
+                "description": "Certify facility ID"
+              },
+              {
+                "name": "certifyLocationId",
+                "value": "",
+                "type": "path",
+                "description": "Certify location ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Supports two modes controlled by which dates are provided in the request body: (1) Full termination — provide facilityTerminationDate to terminate the facility–location relationship and cascade to all network/plan participation records in one atomic batch. (2) Network-only termination — omit facilityTerminationDate and provide networkTerminationDate. Only network/plan participation records (TenantGroupLocationNetwork, TenantGroupLocationFacilityNetwork) are terminated; the facility–location reco"
+        },
+        {
+          "info": {
+            "name": "Preview facility location termination impact",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/facilities/:certifyFacilityId/locations/:certifyLocationId/termination-impact",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "certifyFacilityId",
+                "value": "",
+                "type": "path",
+                "description": "Certify facility ID"
+              },
+              {
+                "name": "certifyLocationId",
+                "value": "",
+                "type": "path",
+                "description": "Certify location ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns the location name, address summary, networks/plans the location participates in via the facility, and whether the location is already terminated."
+        },
+        {
+          "info": {
+            "name": "Get a facility by their ID",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/facilities/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Returns a single facility by their ID"
+        },
+        {
+          "info": {
+            "name": "Update a facility and its tenant association",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:id",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update a facility and its tenant association"
+        },
+        {
+          "info": {
+            "name": "Update accreditations for a facility (OV)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:id/accreditations",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces all accreditations for the given facility in the Operational View. Does not affect active credentialing workflow snapshots."
+        },
+        {
+          "info": {
+            "name": "Update certificates for a facility (OV)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:id/certificates",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces all certificates for the given facility in the Operational View. Does not affect active credentialing workflow snapshots."
+        },
+        {
+          "info": {
+            "name": "Update insurances for a facility (OV)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:id/insurances",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces all insurances for the given facility in the Operational View. Does not affect active credentialing workflow snapshots."
+        },
+        {
+          "info": {
+            "name": "Update licenses for a facility (OV)",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:id/licenses",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Replaces all licenses for the given facility in the Operational View. Does not affect active credentialing workflow snapshots."
+        },
+        {
+          "info": {
+            "name": "Associate facility with a network",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities/:id/networks",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the facility (certify facility ID)"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Associates a facility with a network following the roster ingestion pattern. The network must belong to a group (groupId provided in request body). If the facility is not associated with the group, the group association will also be created simultaneously. Validates that the network belongs to the specified group before creating the association. Creates or updates a TenantGroupFacilityNetwork relationship."
+        },
+        {
+          "info": {
+            "name": "Terminate a facility's participation in a network",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities/:id/networks/:networkId/terminate",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "fac-abc123",
+                "type": "path",
+                "description": "Certify facility ID"
+              },
+              {
+                "name": "networkId",
+                "value": "net-xyz789",
+                "type": "path",
+                "description": "Certify network ID to terminate participation in"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Terminates the facility's enrollment in the specified network from the given termination date. Cascades termination to all associated facility locations (TenantGroupLocationFacilityNetwork) and all facility-practitioners in that network (TenantGroupLocationPractitionerNetwork and TenantGroupPractitionerNetwork). The facility's location enrollments and practitioner associations are preserved — only their network participation is terminated. All operations are executed as a single atomic batch tra"
+        },
+        {
+          "info": {
+            "name": "Get all the relationships of the facility",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "http://localhost:9000/facilities/:id/relationships/all",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Get all the relationships of the facility"
+        },
+        {
+          "info": {
+            "name": "Add a specialty to a facility",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities/:id/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Adds a new specialty to an existing facility. Optionally cascades into facility location, group, group-location, and group-network specialty levels."
+        },
+        {
+          "info": {
+            "name": "Batch add and update facility specialties",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "http://localhost:9000/facilities/:id/specialties",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Applies multiple specialty updates and additions to a facility in a single request. Updates modify existing TenantFacilitySpecialty records (specialty FK, effective date, isPrimary). Additions create new specialty associations at the facility level."
+        },
+        {
+          "info": {
+            "name": "Create a new supporting document for a facility",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "http://localhost:9000/facilities/:id/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "file",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "fileType",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "state",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "expirationDate",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Create a new supporting document for a facility"
+        },
+        {
+          "info": {
+            "name": "Update or Delete a supporting document for a facility",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/facilities/:id/supporting-documents",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "1234567890",
+                "type": "path",
+                "description": "Facility ID"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Update or Delete a supporting document for a facility"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

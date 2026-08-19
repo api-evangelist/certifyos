@@ -1,0 +1,355 @@
+openapi: 3.2.0
+info:
+  title: Certifyos Plan API
+  version: 1.0.0
+  description: 'Operations tagged Plan across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: Plan
+  description: APIs for managing plan entities
+paths:
+  /plans:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      summary: Get all plans
+      description: Returns a list of plans for the provided tenant. The plans are returned sorted by creation date, with the most recent plans appearing first.
+      operationId: getPlans
+      tags:
+      - Plan
+      parameters:
+      - description: The tenant identifier.
+        in: header
+        name: tenant-id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Returned if the request is successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllPlansResponse'
+        '400':
+          description: Returned if the request is invalid. `tenant-id` and `user-id` headers are required.
+        '401':
+          description: Returned if the request is unauthorized. Authentication required.
+        '403':
+          description: Returned if the request is forbidden. Insufficient permissions.
+        '500':
+          description: Returned if the request is an internal server error.
+        '502':
+          description: Returned if the request is a bad gateway. Downstream service error.
+        '503':
+          description: Returned if the request is a service unavailable. Network connectivity issues.
+      security:
+      - jwt: []
+    post:
+      summary: Create a new plan
+      description: Creates a new plan with the provided details
+      operationId: createPlan
+      tags:
+      - Plan
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+        required: true
+      responses:
+        '201':
+          description: Plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /plans/{id}:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    put:
+      summary: Update an existing plan
+      description: Updates a plan identified by ID with the provided details
+      operationId: updatePlan
+      tags:
+      - Plan
+      parameters:
+      - description: Plan ID
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlanRequest'
+        required: true
+      responses:
+        '200':
+          description: Plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+components:
+  schemas:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    SourceSystem.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
+      title: Source System Enum
+      description: Specifies the origin system of a record.
+      type: string
+      enum:
+      - API
+      - File Upload
+    PlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        payerId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    Payer.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Payer.schema.json
+      title: Payer
+      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
+      type: object
+      properties:
+        name:
+          description: Name of the payer
+          type: string
+        category:
+          description: Type of payer
+          type: string
+        sourceSystem:
+          description: Origin of the record (e.g., API, File Upload)
+          $ref: '#/components/schemas/SourceSystem.schema'
+        changeReason:
+          description: Optional description of why a change was made
+          type: string
+      required:
+      - name
+    LineOfBusiness.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business associated with a healthcare plan.
+      type: string
+      enum:
+      - Medicare
+      - Medicaid
+      - Commercial
+    CreatePlanRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Plan.schema'
+          type: object
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    GetAllPlansResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
+    Plan.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Plan.schema.json
+      title: Plan
+      description: Represents a healthcare plan with business line, network type, and benefits information.
+      type: object
+      properties:
+        lineOfBusiness:
+          description: The line of business under which the plan operates (e.g., Commercial, Medicare, Medicaid).
+          $ref: '#/components/schemas/LineOfBusiness.schema'
+        networkType:
+          description: The type of network associated with the plan (e.g., HMO, PPO).
+          $ref: '#/components/schemas/NetworkType.schema'
+        benefits:
+          description: The benefits offered under the plan.
+          type: string
+        name:
+          description: The name of the plan.
+          type: string
+    NetworkType.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business and network type combination for a healthcare plan.
+      type: string
+      enum:
+      - Commercial - HMO
+      - Commercial - PPO
+      - Medicare - HMO
+      - Medicaid - HMO
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

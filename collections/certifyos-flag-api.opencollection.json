@@ -1,0 +1,101 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Certify API Layer Flag API",
+    "version": "1.0.0"
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Flag",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Bulk Update Flag Status",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/flags/update-status-bulk/:status",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "status",
+                "value": "Closed",
+                "type": "path",
+                "description": "The status to set for all flags (e.g., 'Closed', 'Open', 'seen')"
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates the status of multiple flags to the specified value in a single operation. Each flag is evaluated independently against the per-transition permission and the state machine; flags that fail (closed, illegal transition, missing permission) are reported in the failed list rather than aborting the batch."
+        },
+        {
+          "info": {
+            "name": "Update Flag Status",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "http://localhost:9000/flags/:id/update-status/:status",
+            "headers": [
+              {
+                "name": "tenant-id",
+                "value": ""
+              }
+            ],
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "ID of the flag to update"
+              },
+              {
+                "name": "status",
+                "value": "Closed",
+                "type": "path",
+                "description": "The status to set for the flag (e.g., 'Closed', 'Open', 'seen')"
+              }
+            ],
+            "body": {
+              "type": "multipart-form",
+              "data": [
+                {
+                  "name": "comment",
+                  "type": "text",
+                  "value": ""
+                },
+                {
+                  "name": "files",
+                  "type": "text",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "token": "{{bearerToken}}"
+            }
+          },
+          "docs": "Updates a flag's status to the specified value (e.g., 'Closed', 'Open', 'seen', etc.). Optionally accepts a comment and file attachments. The caller must hold the per-transition permission for the specific source/target pair (see FlagStatusTransitionRules); closed flags cannot be transitioned."
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

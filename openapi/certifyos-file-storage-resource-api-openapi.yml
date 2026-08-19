@@ -1,0 +1,193 @@
+openapi: 3.2.0
+info:
+  title: Certifyos File Storage Resource API
+  version: 1.0.0
+  description: 'Operations tagged File Storage Resource across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+- url: http://localhost:9001
+  description: Local Development Server
+tags:
+- name: File Storage Resource
+paths:
+  /file/download:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      operationId: downloadFile
+      parameters:
+      - name: path
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: File downloaded successfully
+          content:
+            text/csv: {}
+        '400':
+          description: Bad Request - Invalid file path
+          content:
+            text/csv: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            text/csv: {}
+        '404':
+          description: File not found
+          content:
+            text/csv: {}
+        '500':
+          description: Internal Server Error - File download failed
+          content:
+            text/csv: {}
+      security:
+      - jwt: []
+      summary: Download File
+      tags:
+      - File Storage Resource
+  /file/read:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    get:
+      operationId: readFile
+      parameters:
+      - name: path
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: File content parsed successfully
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request - Invalid file path
+          content:
+            application/json: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '404':
+          description: File not found
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - File processing failed
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+      summary: Read File
+      tags:
+      - File Storage Resource
+  /file/upload:
+    servers:
+    - url: http://localhost:9000
+      description: Local Development Server
+    - url: https://api-service.staging.certifyos.com
+      description: Staging Server
+    - url: https://api-service.internal.certifyos.com
+      description: Internal Server
+    - url: https://api-service.test.certifyos.com
+      description: Test Server
+    - url: https://api-service.demo.certifyos.com
+      description: Demo Server
+    - url: https://api-service.certifyos.com
+      description: Production Server
+    post:
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        '201':
+          description: File uploaded successfully
+          content: {}
+        '400':
+          description: Bad Request - No file uploaded
+          content: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content: {}
+        '415':
+          description: Unsupported Media Type - Invalid file type
+          content: {}
+        '500':
+          description: Internal Server Error - File upload failed
+          content: {}
+      security:
+      - jwt: []
+      summary: Upload Csv File
+      tags:
+      - File Storage Resource
+      parameters:
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
+x-refined-from:
+- certifyos-api-service-openapi.yml
+- certifyos-roster-service-openapi.yml

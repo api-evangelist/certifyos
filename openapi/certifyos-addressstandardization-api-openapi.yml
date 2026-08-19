@@ -1,0 +1,225 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Address Standardization API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AddressStandardization
+  description: Address standardization and validation preview (CP-28784)
+paths:
+  /addresses/standardize:
+    post:
+      summary: Standardize and validate an address
+      description: Returns the standardized address together with a confidence tier (HIGH/MEDIUM/LOW), a validation status (VALID/PARTIAL/INVALID), and enrichment data (ZIP+4, county, lat/long, timezone). Pass-through to the DAL address cleanser.
+      operationId: standardizeAddress
+      tags:
+      - AddressStandardization
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+        required: true
+      requestBody:
+        description: Address input to standardize
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandardizeAddressRequest'
+        required: true
+      responses:
+        '200':
+          description: Address standardized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardizeAddressResponse'
+        '204':
+          description: Address cleanser is disabled globally; no content returned
+        '400':
+          description: Invalid request payload
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Tenant header missing or insufficient permissions
+        '500':
+          description: Internal server error
+        '502':
+          description: Bad Gateway - DAL cleanser unavailable
+      security:
+      - jwt: []
+components:
+  schemas:
+    StandardizedAddress:
+      type: object
+      description: Standardized address components
+      properties:
+        addressLine1:
+          type: string
+          description: Standardized primary street line
+        addressLine2:
+          type: string
+          description: Standardized secondary street line
+        city:
+          type: string
+          description: Standardized city
+        county:
+          type: string
+          description: Standardized county
+        state:
+          type: string
+          description: Standardized state code
+        zip:
+          type: string
+          description: Standardized ZIP / postal code
+        zip4:
+          type: string
+          description: ZIP+4 extension, if available
+        country:
+          type: string
+          description: Country code
+        formattedAddress:
+          type: string
+          description: Pretty-printed single-line address
+    AddressConfidence:
+      type: string
+      enum:
+      - HIGH
+      - MEDIUM
+      - LOW
+    AddressEnrichment:
+      type: object
+      description: Enrichment values attached to the standardized address
+      properties:
+        zip4:
+          type: string
+          description: ZIP+4 extension, if available
+          examples:
+          - '1234'
+        county:
+          type: string
+          description: County name, if available
+          examples:
+          - New York County
+        latitude:
+          type: number
+          format: double
+          description: Latitude in decimal degrees, if available
+        longitude:
+          type: number
+          format: double
+          description: Longitude in decimal degrees, if available
+        stateFips:
+          type: string
+          description: 2-digit state FIPS code, if available
+          examples:
+          - '36'
+        countyFips:
+          type: string
+          description: 5-digit county FIPS code, if available
+          examples:
+          - '36061'
+        formattedAddress:
+          type: string
+          description: Pretty-printed single-line address, if available
+        timezone:
+          type: string
+          description: IANA timezone ID, if available; always null until timezone enrichment ships
+    StandardizeAddressResponse:
+      description: Standardized address with confidence, validation status, and enrichment data
+      type: object
+      properties:
+        standardizedAddress:
+          description: Normalized address components
+          type: object
+          $ref: '#/components/schemas/StandardizedAddress'
+        confidence:
+          description: How much the caller should trust the standardized address
+          type: string
+          examples:
+          - HIGH
+          $ref: '#/components/schemas/AddressConfidence'
+        validationStatus:
+          description: External validation status
+          type: string
+          examples:
+          - VALID
+          $ref: '#/components/schemas/AddressValidationStatus'
+        enrichment:
+          description: Enrichment values derived from the standardized address
+          type: object
+          $ref: '#/components/schemas/AddressEnrichment'
+    AddressValidationStatus:
+      type: string
+      enum:
+      - VALID
+      - PARTIAL
+      - INVALID
+    StandardizeAddressRequest:
+      description: Input address to be standardized and validated
+      type: object
+      required:
+      - addressLine1
+      properties:
+        addressLine1:
+          type: string
+          description: Primary street line
+          examples:
+          - 123 Main Street
+          pattern: \S
+        addressLine2:
+          type: string
+          description: Secondary street line (apt, suite, unit, floor)
+          examples:
+          - Suite 100
+        city:
+          type: string
+          description: City
+          examples:
+          - New York
+        county:
+          type: string
+          description: County
+          examples:
+          - New York County
+        state:
+          type: string
+          description: State / province code
+          examples:
+          - NY
+        zip:
+          type: string
+          description: ZIP / postal code (5 or 5+4, hyphen-separated)
+          examples:
+          - '10001'
+          pattern: \d{5}(?:-\d{4})?
+        country:
+          type: string
+          description: ISO country code
+          examples:
+          - US
+          default: US
+        addressType:
+          type: string
+          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
+          examples:
+          - billing
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT
