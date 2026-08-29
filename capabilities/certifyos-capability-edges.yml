@@ -1,0 +1,79 @@
+slug: certifyos
+provider: Certifyos
+generated_by: planning/capability-mapping/scripts/classify_capabilities.py
+model: claude-opus-5
+frame:
+- Software & Technology
+min_confidence: 0.7
+capability_model:
+  source: https://github.com/vincentmakes/turbo-ea-capabilities
+  license: CC-BY-4.0
+  attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
+    CC BY 4.0
+  notice: NOTICE
+edge_count: 6
+edges:
+- tag: Role
+  spec_file: certifyos-role-api-openapi.yml
+  capability_id: BC-620.20
+  capability_id_l1: BC-620
+  capability_name: Identity & Access Management
+  confidence: 0.82
+  evidence: GET /roles/{roleId}/permissions getRolePermissions 'Get Role Permissions'; POST /roles/{roleId}/permissions
+    'Add Permissions to Role'; schema 'RolePermissionBulkUpdateRequest'
+  reason: CRUD over roles and their permissions is role-based access control — identity and access management
+    plumbing for the application, not a healthcare business capability.
+- tag: User
+  spec_file: certifyos-user-api-openapi.yml
+  capability_id: BC-620.20
+  capability_id_l1: BC-620
+  capability_name: Identity & Access Management
+  confidence: 0.8
+  evidence: GET /users/me/permissions getCurrentUserPermissions Get Current User Permissions; schemas
+    RoleDetails, UserRolesResponseDto, UserRoleBulkUpdateRequest, InviteUserRequest
+  reason: Operations create, invite, patch and delete platform user accounts and read/bulk-update their
+    roles and permissions — classic identity and access administration rather than any healthcare-domain
+    function.
+- tag: Permission
+  spec_file: certifyos-permission-api-openapi.yml
+  capability_id: BC-620.20
+  capability_id_l1: BC-620
+  capability_name: Identity & Access Management
+  confidence: 0.78
+  evidence: GET /permissions getAllPermissions 'Get All Permissions'; POST /permissions createPermission;
+    schemas PermissionCreateRequest, PermissionResponseDto
+  reason: Lifecycle management of permission definitions used for authorisation within the platform —
+    access-rights administration, which is Identity & Access Management. Not full IAM (no user/role federation
+    shown here), hence 0.78.
+- tag: Tenant Configuration
+  spec_file: certifyos-tenant-configuration-api-openapi.yml
+  capability_id: BC-4230.20
+  capability_id_l1: BC-4230
+  capability_name: Tenant Configuration Management
+  confidence: 0.78
+  evidence: GET /tenant-configurations 'Get All Tenant Configurations'; POST /tenant-configurations/by-configuration-type/{configurationTypeId}
+    'Update Tenant Configuration by Type'; schema 'TenantTimezoneResponse'
+  reason: Read and update of per-tenant configuration settings above the shared product baseline in a
+    multi-tenant SaaS — squarely tenant configuration management.
+- tag: Webhook
+  spec_file: certifyos-webhook-api-openapi.yml
+  capability_id: BC-4270.80
+  capability_id_l1: BC-4270
+  capability_name: Webhook & Event Subscription Management
+  confidence: 0.75
+  evidence: POST /webhooks createWebhook Create a new webhook; POST /webhooks/test/publish Trigger manual
+    webhook event to registered subscriptions; schema WebhookEventType
+  reason: Registering, listing, testing and deleting outbound webhook subscriptions with event types is
+    precisely the outbound event-subscription surface of a developer platform. Mapped because the frame
+    carries an explicit capability for it, though it remains integration plumbing.
+- tag: Webhooks
+  spec_file: certifyos-webhooks-api-openapi.yml
+  capability_id: BC-4270.80
+  capability_id_l1: BC-4270
+  capability_name: Webhook & Event Subscription Management
+  confidence: 0.75
+  evidence: POST /v2/webhooks WebhooksController_create Register Webhook (Credentialing Events); POST
+    /v2/webhooks/{webhookId}/test-event Test a registered webhook
+  reason: Registration, retrieval, removal, test-firing and cloud-task delivery callback for outbound
+    webhooks — lifecycle and delivery reliability of event subscriptions, not the credentialing business
+    process itself.
