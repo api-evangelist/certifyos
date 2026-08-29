@@ -11,189 +11,236 @@ capability_model:
   attribution: Turbo EA Capabilities by Vincent Verdet — Turbo EA, https://github.com/vincentmakes/turbo-ea-capabilities,
     CC BY 4.0
   notice: NOTICE
-edge_count: 17
+edge_count: 23
 edges:
 - tag: CredentialingWorkflow
   spec_file: certifyos-credentialingworkflow-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
-  confidence: 0.95
-  evidence: POST /credentialing-workflows/bulk-create  Create credentialing workflows for multiple practitioners
-    (async); schemas GeneratePsvResponse, GenerateNpdbPdfResponse, MalpracticeInsuranceUpdateRequest,
-    LicenseUpdateRequest, DmfResponse
-  reason: Operations drive practitioner credentialing workflows with primary source verification (PSV),
-    NPDB, deceased-file checks, licence, education and malpractice insurance data — textbook initial and
-    ongoing practitioner credentialing.
+  confidence: 0.92
+  evidence: POST /credentialing-workflows/bulk-create  Create credentialing workflows for multiple practitioners;
+    schemas GeneratePsvResponse, GenerateNpdbPdfResponse, MalpracticeInsuranceUpdateRequest, LicenseUpdateRequest,
+    DmfResponse
+  reason: Operations orchestrate practitioner credentialing workflows including primary source verification
+    (PSV), NPDB, license, education/training, malpractice insurance and deceased-file checks — plainly
+    practitioner credentialing.
 - tag: credentialing-workflows
   spec_file: certifyos-credentialing-workflows-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
-  confidence: 0.93
-  evidence: GET /credentialing-workflows CredentialingWorkflowsController_findAll List of credentialing
-    workflows; POST /credentialing-workflows/{id}/notes Create Credentialing Note
-  reason: Operations run practitioner credentialing workflows including status transitions and credentialing
-    notes, directly realising Practitioner Credentialing.
+  confidence: 0.9
+  evidence: GET /credentialing-workflows 'List of credentialing workflows'; 'Create Credentialing Note';
+    CredentialingWorkflowTimelineSummaryDto
+  reason: Operations manage credentialing workflow state, notes and templates for providers — practitioner
+    credentialing lifecycle.
 - tag: v2/credentialing-workflows
   spec_file: certifyos-v2-credentialing-workflows-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
   confidence: 0.9
-  evidence: '"Approve Provider Credentialing Workflow", "Deny Provider Credentialing Workflow", "Get Outreach
-    Correspondences for a Provider Credentialing Workflow"'
-  reason: Operations drive the state machine of a provider credentialing workflow (approve/deny/table/cancel)
-    with outreach correspondence — squarely practitioner credentialing for a provider-data platform.
-- tag: v2/provider
-  spec_file: certifyos-v2-provider-api-openapi.yml
-  capability_id: BC-2890.10
-  capability_id_l1: BC-2890
-  capability_name: Practitioner Credentialing
-  confidence: 0.9
-  evidence: '"Creates a credentialing workflow for the provider.", "Retrieve CAQH data for a provider",
-    "Retrieve signed URL for provider PSV PDF", schemas NpdbDataDto, LicensureActionsDto'
-  reason: Provider record with attested data, CAQH, NPDB, licensure actions and primary-source-verification
-    documents plus credentialing workflow creation — practitioner credentialing including primary source
-    verification.
+  evidence: '''Approve Provider Credentialing Workflow''; ''Deny Provider Credentialing Workflow'''
+  reason: Explicit approve/deny/table decisions on provider credentialing workflows — credentialing decisioning.
 - tag: v2/providers
   spec_file: certifyos-v2-providers-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
   confidence: 0.88
-  evidence: '"Batch practitioner data with licenses, DEA and CDS information", "Share provider to Credentialing
-    Committee."'
-  reason: Bulk practitioner roster maintenance with licenses/DEA data and routing of providers to the
-    credentialing committee — practitioner credentialing operations.
-- tag: Credentialing Outreach Resource
-  spec_file: certifyos-credentialing-outreach-resource-api-openapi.yml
-  capability_id: BC-2890.10
-  capability_id_l1: BC-2890
-  capability_name: Practitioner Credentialing
-  confidence: 0.85
-  evidence: POST /credentialing-outreaches sendCredentialingOutreach  Send a new credentialing outreach
-    email; GET /credentialing-outreaches/workflow/{workflowId}  List all outreaches for a workflow
-  reason: Outreach correspondence conducted as part of a credentialing workflow — i.e. verification/follow-up
-    contact during practitioner credentialing, matching primary-source-verification outreach rather than
-    any generic marketing or support email capability.
+  evidence: '"Batch practitioner data with licenses, DEA and CDS information"; "Share provider to Credentialing
+    Committee."; schemas PractitionerLicenseDto, ShareProviderToCredCommDto'
+  reason: Operations create, update, terminate and share practitioner records — with licence/DEA data
+    and routing to the credentialing committee — which is practitioner credentialing within medical staff
+    & credentialing management, not generic party master data.
 - tag: FacilityCredentialingWorkflow
   spec_file: certifyos-facilitycredentialingworkflow-api-openapi.yml
   capability_id: BC-2890
   capability_id_l1: BC-2890
   capability_name: Medical Staff & Credentialing Management
   confidence: 0.85
-  evidence: POST /facility-credentialing-workflows/{id}/generate-psv  Generate PSV for facility credentialing
-    workflow; schemas FacilitySiteVisitUpdateRequest, FacilitySanctionUpdateRequest, UpdateCredentialingCycleRequest
-  reason: Credentialing workflow management for facilities including primary source verification, site
-    visits, sanctions and recredentialing cycle dates. Credentialing is unambiguous; L2 withheld because
-    listed sub-capabilities are practitioner-specific.
-- tag: Permission
-  spec_file: certifyos-permission-api-openapi.yml
-  capability_id: BC-620.20
-  capability_id_l1: BC-620
-  capability_name: Identity & Access Management
+  evidence: '"Create a facility credentialing workflow"; "Generate PSV for facility credentialing workflow";
+    schema FacilitySanctionUpdateRequest, FacilitySiteVisitUpdateRequest, UpdateCredentialingCycleRequest'
+  reason: 'Core credentialing case management: workflow creation, assignment, status change, primary source
+    verification (PSV) generation, sanction and site-visit review, credentialing cycle dates. Clearly
+    BC-2890; L2 left blank as the frame''s credentialing L2 is practitioner-scoped while this covers facilities.'
+- tag: v2/provider
+  spec_file: certifyos-v2-provider-api-openapi.yml
+  capability_id: BC-2890.10
+  capability_id_l1: BC-2890
+  capability_name: Practitioner Credentialing
   confidence: 0.85
-  evidence: GET /permissions getAllPermissions Get All Permissions; POST /permissions createPermission
-    Create Permission; PermissionCreateRequest
-  reason: Permission objects with full lifecycle CRUD are role-based access control primitives for the
-    platform, i.e. identity and access management plumbing, not a healthcare business capability.
+  evidence: '''Creates a credentialing workflow for the provider.''; ''Retrieve CAQH data for a provider'';
+    ''Retrieve signed URL for provider PSV PDF'''
+  reason: Provider record, attested data, CAQH data and PSV documents feeding credentialing — practitioner
+    credentialing including primary source verification.
 - tag: Role
   spec_file: certifyos-role-api-openapi.yml
   capability_id: BC-620.20
   capability_id_l1: BC-620
   capability_name: Identity & Access Management
-  confidence: 0.85
-  evidence: POST /roles/{roleId}/permissions addRolePermissions Add Permissions to Role; PATCH /roles/{roleId}/permissions/bulk
-    bulkUpdateRolePermissions
-  reason: Roles bound to permission sets are application RBAC administration — access management, not
-    clinical staff roles.
+  confidence: 0.82
+  evidence: POST /roles/{roleId}/permissions  "Add Permissions to Role"
+  reason: Role and role-permission administration — application RBAC, i.e. identity and access management
+    plumbing, not clinical practitioner roles.
+- tag: Credentialing Outreach Resource
+  spec_file: certifyos-credentialing-outreach-resource-api-openapi.yml
+  capability_id: BC-2890.10
+  capability_id_l1: BC-2890
+  capability_name: Practitioner Credentialing
+  confidence: 0.8
+  evidence: POST /credentialing-outreaches  sendCredentialingOutreach  Send a new credentialing outreach
+    email; GET /credentialing-outreaches/workflow/{workflowId}  List all outreaches for a workflow
+  reason: Outreach emails and replies attached to a credentialing workflow are the verification-chasing
+    step of practitioner credentialing, consistent with the vendor's stated credentialing business.
+- tag: Facility Credentialing Outreach Resource
+  spec_file: certifyos-facility-credentialing-outreach-resource-api-openapi.yml
+  capability_id: BC-2890
+  capability_id_l1: BC-2890
+  capability_name: Medical Staff & Credentialing Management
+  confidence: 0.8
+  evidence: POST /facility-credentialing-outreaches "Send a new facility credentialing outreach email";
+    "List all facility outreaches for a workflow"
+  reason: Explicitly credentialing outreach — chasing information/documents as part of a credentialing
+    workflow. Sits in Medical Staff & Credentialing Management; L2 withheld because BC-2890.10 is scoped
+    to practitioners while this is facility (organisational) credentialing.
 - tag: NpiValidation
   spec_file: certifyos-npivalidation-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
   confidence: 0.8
-  evidence: POST /npi/validate 'Validate NPI'; schemas NppesMappedProviderDetails, CorePractitionerdatabaseschemaSanctionsInner,
-    CorePractitionerdatabaseschemaNpdbReportsInner..., CorePractitionerdatabaseschemaMalpracticeInsuranceInner
-  reason: Validates a practitioner's NPI against NPPES and returns the practitioner's licence, sanction,
-    NPDB and malpractice-insurance record — classic primary-source verification underpinning practitioner
-    credentialing.
+  evidence: POST /npi/validate  "Validate NPI"; schemas NppesMappedProviderDetails, CorePractitionerdatabaseschemaSanctionsInner,
+    CorePractitionerdatabaseschemaNpdbReportsInner...
+  reason: Validates a practitioner's National Provider Identifier against NPPES and returns practitioner
+    data including sanctions and NPDB reports — primary source verification within practitioner credentialing.
+- tag: Permission
+  spec_file: certifyos-permission-api-openapi.yml
+  capability_id: BC-620.20
+  capability_id_l1: BC-620
+  capability_name: Identity & Access Management
+  confidence: 0.8
+  evidence: POST /permissions  "Create Permission"; schemas PermissionCreateRequest, PermissionResponseDto
+  reason: CRUD over application permissions — role-based access control primitives, i.e. identity and
+    access management for the platform, not a healthcare capability.
+- tag: v2/facility-credentialing-workflows
+  spec_file: certifyos-v2-facility-credentialing-workflows-api-openapi.yml
+  capability_id: BC-2890
+  capability_id_l1: BC-2890
+  capability_name: Medical Staff & Credentialing Management
+  confidence: 0.8
+  evidence: '''Approve Facility Credentialing Workflow''; ''Deny Facility Credentialing Workflow'''
+  reason: Credentialing approval/denial workflow, but for facilities rather than practitioners, so the
+    L1 credentialing capability is the honest level.
+- tag: MonitoringWorkflow
+  spec_file: certifyos-monitoringworkflow-api-openapi.yml
+  capability_id: BC-2890
+  capability_id_l1: BC-2890
+  capability_name: Medical Staff & Credentialing Management
+  confidence: 0.75
+  evidence: GET /monitoring-workflows getMonitoringWorkflows; schemas Practitioner.schema, FlagTypeResponse,
+    FlagWithHistoryResponse, MonitoringSupportingDocumentUpdateRequest
+  reason: Ongoing monitoring of practitioners with flags, supporting documents and assignment/triage workflow
+    — continuous sanction/licence monitoring, an ongoing credentialing activity for the medical staff.
+    L1 mapped; L2 withheld as evidence does not distinguish credentialing from peer-review or enrolment
+    sub-capabilities.
 - tag: Practitioner
   spec_file: certifyos-practitioner-api-openapi.yml
   capability_id: BC-2890
   capability_id_l1: BC-2890
   capability_name: Medical Staff & Credentialing Management
-  confidence: 0.8
-  evidence: POST /practitioners practitionerCreate Create a new practitioner; UpdatePractitionerNetworksRequest;
-    CorePractitionerdatabaseschemaNpdbReportsInner; CorePractitionerdatabaseschemaResidencyInner; PUT
-    /practitioners/practitioner-role-assignments/{id}/terminate Terminate a practitioner role at a network
-    location assignment
-  reason: Practitioner records carrying NPDB reports, residency, specialties, network participation and
-    role assignments are the substance of provider/medical-staff data and credentialing management. L2
-    left blank because the surface spans credentialing data, privileging-adjacent roles and payer-network
-    enrolment without settling on one.
-- tag: MonitoringWorkflow
-  spec_file: certifyos-monitoringworkflow-api-openapi.yml
-  capability_id: BC-2890.10
-  capability_id_l1: BC-2890
-  capability_name: Practitioner Credentialing
   confidence: 0.75
-  evidence: schemas MonitoringWorkflow.schema, Practitioner.schema, FlagTypeResponse, FlagWithHistoryResponse,
-    MonitoringSupportingDocumentUpdateRequest; 'Trigger pipeline execution for monitoring workflow'
-  reason: Case-management surface for continuous practitioner monitoring — assignment, status, supporting-document
-    attachments and flag history against Practitioner records — which is ongoing credentialing/primary-source
-    monitoring, not IT monitoring.
+  evidence: GET /practitioners  "Find Practitioner by filter criteria with pagination"; PUT /practitioners/practitioner-role-assignments/{id}/terminate  "Terminate
+    a practitioner role at a network location assignment"
+  reason: Core practitioner records with specialties, locations, network participation and role assignments,
+    plus credentialing data structures (Medicare, NPDB, sanctions, malpractice insurance). Clearly medical
+    staff / provider data and credentialing management; the surface spans credentialing, roster and enrolment
+    sub-areas so no single L2 is named.
 - tag: User
   spec_file: certifyos-user-api-openapi.yml
   capability_id: BC-620.20
   capability_id_l1: BC-620
   capability_name: Identity & Access Management
   confidence: 0.75
-  evidence: POST /users/invite inviteUser Invite User; GET /users/{userId}/permissions getUserPermissionsById
-    Get User Permissions; schemas UserRoleBulkUpdateRequest, RoleDetails
-  reason: 'Operations manage application user accounts, invitations, roles and permissions — identity
-    and access management. Not HR employee records: the objects are platform users with roles and permissions.'
-- tag: v2/facility-credentialing-workflows
-  spec_file: certifyos-v2-facility-credentialing-workflows-api-openapi.yml
+  evidence: '"Invite User", "Get Current User Permissions", schema UserRoleBulkUpdateRequest'
+  reason: 'User account lifecycle plus role and permission management for platform access — identity and
+    access management. Not HR employee records: the entities are application users with roles.'
+- tag: Webhooks
+  spec_file: certifyos-webhooks-api-openapi.yml
+  capability_id: BC-4270.80
+  capability_id_l1: BC-4270
+  capability_name: Webhook & Event Subscription Management
+  confidence: 0.75
+  evidence: '"Register Webhook (Credentialing Events)", "Test a registered webhook", "Cloud Task callback
+    for webhook delivery"'
+  reason: Lifecycle of outbound webhook subscriptions (register, list, remove, test) and delivery callbacks
+    — webhook and event subscription management exposed to integrating developers.
+- tag: providers
+  spec_file: certifyos-providers-api-openapi.yml
   capability_id: BC-2890
   capability_id_l1: BC-2890
   capability_name: Medical Staff & Credentialing Management
   confidence: 0.75
-  evidence: '"Approve Facility Credentialing Workflow", "Deny Facility Credentialing Workflow"'
-  reason: Credentialing decision workflow, but for facilities rather than practitioners, so only the L1
-    credentialing capability is asserted.
-- tag: Facility Credentialing Outreach Resource
-  spec_file: certifyos-facility-credentialing-outreach-resource-api-openapi.yml
+  evidence: GET /providers/{providerId}/credentialing-workflow-timelines 'Get all credentialing workflow
+    timelines for a provider'; 'Export Provider Directory'
+  reason: Provider-centric operations covering credentialing timelines, supporting documents and directory/HSD
+    exports sit within medical staff & credentialing/provider network management; too mixed to pick one
+    L2.
+- tag: Webhook
+  spec_file: certifyos-webhook-api-openapi.yml
+  capability_id: BC-4270.80
+  capability_id_l1: BC-4270
+  capability_name: Webhook & Event Subscription Management
+  confidence: 0.72
+  evidence: '"Trigger manual webhook event to registered subscriptions", schema WebhookEventType'
+  reason: Registration and lifecycle of outbound webhook subscriptions plus test event dispatch — outbound
+    event subscription management for API consumers.
+- tag: Facility Note
+  spec_file: certifyos-facility-note-api-openapi.yml
   capability_id: BC-2890
   capability_id_l1: BC-2890
   capability_name: Medical Staff & Credentialing Management
   confidence: 0.7
-  evidence: POST /facility-credentialing-outreaches  sendFacilityCredentialingOutreach  Send a new facility
-    credentialing outreach email
-  reason: Outreach correspondence within facility credentialing workflows. Credentialing is clearly the
-    domain (L1), but the sub-capabilities are practitioner-scoped whereas this is facility-scoped, so
-    no L2 is asserted.
+  evidence: GET /facility-credentialing-workflows/{workflowId}/notes "Get notes for a facility credentialing
+    workflow"
+  reason: Notes are a sub-resource of the facility credentialing workflow, so the surface serves credentialing
+    case handling rather than any generic document capability. L1 only; the notes themselves are workflow
+    annotation, which keeps confidence below the top band.
+- tag: Tenant Configuration
+  spec_file: certifyos-tenant-configuration-api-openapi.yml
+  capability_id: BC-4230.20
+  capability_id_l1: BC-4230
+  capability_name: Tenant Configuration Management
+  confidence: 0.7
+  evidence: '"Get All Tenant Configurations", "Update Tenant Configuration by Type", schema TenantConfigurationItemDto'
+  reason: Per-tenant configuration settings for the multi-tenant SaaS platform, matching tenant configuration
+    management. Confidence tempered because the config types are unspecified.
 - tag: flags
   spec_file: certifyos-flags-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
   confidence: 0.7
-  evidence: GET /flags FlagsController_findAllFlags Get all provider flags; POST /flags/{id}/mark-all-read-for-provider
-    FlagsController_markProviderReviewedAndApproved Mark all flags as read for a provider and approve
-  reason: Flags here are provider-level exceptions surfaced by CertifyOS's ongoing monitoring, triaged
-    and cleared/approved per provider — part of ongoing practitioner credentialing and monitoring rather
-    than generic alerting. Moderate confidence as the flag subject matter is not itself described.
-- tag: providers
-  spec_file: certifyos-providers-api-openapi.yml
+  evidence: GET /flags 'Get all provider flags'; POST /flags/{id}/mark-all-read-for-provider 'Mark all
+    flags as read for a provider and approve'
+  reason: Flags are provider-level compliance/monitoring exceptions reviewed and cleared as part of ongoing
+    credentialing monitoring; sub-capability inference carries some ambiguity.
+- tag: v2/facilities
+  spec_file: certifyos-v2-facilities-api-openapi.yml
+  capability_id: BC-2890
+  capability_id_l1: BC-2890
+  capability_name: Medical Staff & Credentialing Management
+  confidence: 0.7
+  evidence: '''Retrieve credentialing workflow timeline for a facility.''; FacilityStateLicenseDto, SanctionsDto,
+    ''Retrieve signed PSV url of a given facility.'''
+  reason: Facility records carry licences, sanctions, primary source verification and credentialing timelines
+    — facility credentialing within the credentialing capability; not practitioner-specific so L1 only.
+- tag: v2/flags
+  spec_file: certifyos-v2-flags-api-openapi.yml
   capability_id: BC-2890.10
   capability_id_l1: BC-2890
   capability_name: Practitioner Credentialing
   confidence: 0.7
-  evidence: GET /providers/{providerId}/credentialing-workflow-timelines CredentialingWorkflowTimelineController_findAll
-    Get all credentialing workflow timelines for a provider; POST /providers/{id}/supporting-documents
-    Upload Supporting Document
-  reason: Provider-scoped operations covering credentialing workflow timelines and supporting credentialing
-    documents, plus provider directory/HSD network exports. The credentialing evidence dominates; directory/network-adequacy
-    export adds some ambiguity, so confidence is moderate.
+  evidence: GET /v2/flags 'Find Flags For Provider'; 'Search provider flags'; ProviderFlagResponseDto
+  reason: Provider flag review/clearing supports ongoing credentialing and compliance monitoring of practitioners.
