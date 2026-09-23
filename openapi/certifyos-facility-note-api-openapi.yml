@@ -298,49 +298,20 @@ paths:
       - jwt: []
 components:
   schemas:
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     Instant:
       type: string
       format: date-time
       examples:
       - '2022-03-10T16:15:50Z'
-    CreateNoteRequest:
+    PageLinks:
       type: object
-      required:
-      - message
       properties:
-        message:
+        self:
           type: string
-          pattern: \S
-    NoteData:
-      type: object
-      description: Note data containing message content
-      required:
-      - message
-      properties:
-        message:
+        next:
           type: string
-          description: The message content of the note
-          examples:
-          - This is a note message
+        prev:
+          type: string
     NoteResponse:
       type: object
       description: Response containing note information
@@ -391,22 +362,13 @@ components:
           examples:
           - '2024-01-01T00:00:00Z'
           $ref: '#/components/schemas/Instant'
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    ApiError1:
       type: object
       properties:
         errors:
           type: array
           items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
+            $ref: '#/components/schemas/ErrorObject1'
     JsonNode:
       type: object
       properties:
@@ -454,35 +416,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    UpdateNoteRequest:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          pattern: \S
     GetNotesResponse:
       description: Response containing a paginated list of notes
       type: object
@@ -502,6 +435,73 @@ components:
           description: Pagination links for navigation
           type: object
           $ref: '#/components/schemas/PageLinks'
+    CreateNoteRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    UpdateNoteRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    NoteData:
+      type: object
+      description: Note data containing message content
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: The message content of the note
+          examples:
+          - This is a note message
   securitySchemes:
     jwt:
       type: http

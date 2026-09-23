@@ -9,7 +9,7 @@ servers:
 - url: https://ng-api-stg.certifyos.com/
   description: Staging (Test Data)
 tags:
-- name: flags
+- name: Flags
 paths:
   /flags:
     get:
@@ -59,7 +59,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
     patch:
@@ -92,7 +92,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/{id}/deactivate:
@@ -123,7 +123,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/{id}/activate:
@@ -154,7 +154,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/webhook/{id}/mark-read:
@@ -194,7 +194,7 @@ paths:
         '404':
           description: Resource not found.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/bulk-mark-read:
@@ -237,7 +237,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/{id}/mark-read:
@@ -277,7 +277,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/{id}/mark-unread:
@@ -308,7 +308,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/search:
@@ -444,7 +444,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/bulk-mark-unread:
@@ -487,7 +487,7 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
   /flags/{id}/mark-all-read-for-provider:
@@ -527,26 +527,20 @@ paths:
         '404':
           description: Resource not found.
       tags:
-      - flags
+      - Flags
       security:
       - BearerAuth: []
 components:
   schemas:
-    FlagMarkUnreadAllRequestDto:
+    FlagPatchAllRequestDto:
       type: object
       properties:
-        flagIds:
+        flags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/FlagPatchRequestDto'
       required:
-      - flagIds
-    ReadStatus:
-      type: string
-      enum:
-      - seen
-      - unseen
-      - all
+      - flags
     FlagMarkReadAllRequestDto:
       type: object
       properties:
@@ -568,16 +562,6 @@ components:
             $ref: '#/components/schemas/FlagPatchResponseDto'
       required:
       - flags
-    FlagPatchResponseDto:
-      type: object
-      properties:
-        id:
-          type: string
-        success:
-          type: boolean
-      required:
-      - id
-      - success
     FlagPatchRequestDto:
       type: object
       properties:
@@ -588,15 +572,31 @@ components:
       required:
       - id
       - active
-    FlagPatchAllRequestDto:
+    FlagMarkUnreadAllRequestDto:
       type: object
       properties:
-        flags:
+        flagIds:
           type: array
           items:
-            $ref: '#/components/schemas/FlagPatchRequestDto'
+            type: string
       required:
-      - flags
+      - flagIds
+    ReadStatus:
+      type: string
+      enum:
+      - seen
+      - unseen
+      - all
+    FlagPatchResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        success:
+          type: boolean
+      required:
+      - id
+      - success
   securitySchemes:
     BearerAuth:
       scheme: bearer

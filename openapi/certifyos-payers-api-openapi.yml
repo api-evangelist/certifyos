@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Certifyos Payers API
+  description: API for Certify application
+  title: Certify API Layer Payers API
   version: 1.0.0
-  description: 'Operations tagged Payers across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: http://localhost:9000
   description: Local Development Server
@@ -16,26 +16,11 @@ servers:
   description: Demo Server
 - url: https://api-service.certifyos.com
   description: Production Server
-- url: http://localhost:9001
-  description: Local Development Server
 tags:
 - name: Payers
   description: This resource represents a payer in the healthcare system. A payer refers to an entity that finances or reimburses the cost of health services. Use it to get, create, and update payers.
 paths:
   /payers:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     get:
       summary: Get all payers
       description: Returns a list of payers for the provided tenant. The payers are returned sorted by creation date, with the most recent payers appearing first.
@@ -116,19 +101,6 @@ paths:
       security:
       - jwt: []
   /payers/{id}:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     put:
       summary: Update an existing payer
       description: Updates a payer with the provided details
@@ -215,50 +187,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    GetAllPayersResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
-    PayerRequest:
-      type: object
-      properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        dataToValidate:
-          $ref: '#/components/schemas/JsonNode'
     Payer.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Payer.schema.json
@@ -280,6 +208,28 @@ components:
           type: string
       required:
       - name
+    PayerRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        dataToValidate:
+          $ref: '#/components/schemas/JsonNode'
+    SourceSystem.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
+      title: Source System Enum
+      description: Specifies the origin system of a record.
+      type: string
+      enum:
+      - API
+      - File Upload
     CreatePayerRequest:
       type: object
       properties:
@@ -333,6 +283,27 @@ components:
           type: boolean
         binary:
           type: boolean
+    GetAllPayersResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
+    PayerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -349,23 +320,21 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    PayerResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
   securitySchemes:
     jwt:
       type: http
       description: JWT Authentication - Provide only the raw token without Bearer prefix
       scheme: bearer
       bearerFormat: JWT
-x-refined-from:
-- certifyos-api-service-openapi.yml
-- certifyos-roster-service-openapi.yml

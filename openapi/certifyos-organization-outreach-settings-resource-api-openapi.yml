@@ -1,7 +1,7 @@
 openapi: 3.2.0
 info:
   description: API for Certify application
-  title: Certify API Layer Organization Outreach Settings Resource API
+  title: Certify API Layer Organization Outreach Settings Resource…
   version: 1.0.0
 servers:
 - url: http://localhost:9000
@@ -385,12 +385,164 @@ paths:
       - jwt: []
 components:
   schemas:
+    OutreachCcEmailAddressesResponse:
+      description: Response containing global outreach CC email addresses
+      type: object
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: List of global CC email addresses for all outreach types
+          examples:
+          - - sunayana.kalekar@certifyos.com
+            - mail@certifyos.com
     OutreachType:
       type: string
       enum:
       - PRACTITIONER_CREDENTIALING
       - FACILITY_CREDENTIALING
       - PRACTITIONER_MONITORING
+    OutreachTemplateDto:
+      type: object
+      description: Email template configuration for outreach
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: Template-specific CC email addresses
+          examples:
+          - - cc1@example.com
+            - cc2@example.com
+        subject:
+          type: string
+          description: Email subject line with placeholders
+          examples:
+          - 'Action Required: Update Needed for {{provider_name}} for {{client_name}} Credentialing - Notice #{{number_of_outreach_attempts}}'
+          pattern: \S
+        body:
+          type: string
+          description: Email body content with placeholders (supports HTML/rich text)
+          examples:
+          - Hi {{provider_name}}, {{provider_type}} (NPI = {{provider_npi}}),\n{{client_name}} has partnered with Certify for provider credentialing.
+          pattern: \S
+        logo:
+          description: Logo settings
+          type: object
+          $ref: '#/components/schemas/OutreachLogoDto'
+      required:
+      - subject
+      - body
+    OutreachSettingsRequest:
+      description: Request to create or update outreach settings for a specific outreach type. The type is specified in the URL path, not in the request body.
+      type: object
+      properties:
+        credentialingCycle:
+          type: string
+          description: Credentialing cycle for which these settings apply
+          examples:
+          - INITIAL
+          enum:
+          - INITIAL
+          - RECREDENTIALING
+        emailRecipientPreferences:
+          description: Email recipient preferences
+          type: object
+          $ref: '#/components/schemas/EmailRecipientPreferencesDto'
+        template:
+          description: Email template configuration
+          type: object
+          $ref: '#/components/schemas/OutreachTemplateDto'
+        outreachReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutreachReasonDto'
+          description: List of outreach reasons with instructions
+        smartOutreach:
+          description: Smart outreach automation settings
+          type: object
+          $ref: '#/components/schemas/SmartOutreachSettingsDto'
+    SmartOutreachSettingsDto:
+      type: object
+      description: Smart outreach automation settings
+      properties:
+        enabled:
+          type: boolean
+          description: Enable smart outreach automation
+          examples:
+          - false
+        businessDaysBetweenAttempts:
+          type: integer
+          format: int32
+          description: Business days between outreach attempts (display value, persisted as hours)
+          examples:
+          - 5
+          minimum: 1
+        maxAttemptsPerReason:
+          type: integer
+          format: int32
+          description: Maximum outreach attempts per reason
+          examples:
+          - 5
+          minimum: 1
+        recredCadenceDays:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Recredentialing cadence in days (null disables recred override)
+          examples:
+          - 2
+          minimum: 1
+        dryRunEnabled:
+          type: boolean
+          description: 'Dry run mode: evaluate exclusions without sending (per client)'
+          examples:
+          - false
+        caqhValidStatuses:
+          type:
+          - array
+          - 'null'
+          items:
+            type: string
+          description: CAQH provider_status values that qualify as a valid update and suppress outreach. Defaults to ["Reattestation", "Initial Application Complete"] when null or empty.
+    EmailRecipientPreferencesDto:
+      type: object
+      description: Email recipient preferences for outreach
+      properties:
+        primaryEmail:
+          type: boolean
+          description: Enable Primary Email recipient
+          examples:
+          - true
+        caqhPrimaryEmail:
+          type: boolean
+          description: Enable CAQH Primary Email recipient
+          examples:
+          - false
+        credentialingPrimaryContact:
+          type: boolean
+          description: Enable Credentialing Primary Contact recipient
+          examples:
+          - true
+        credentialingOfficeManager:
+          type: boolean
+          description: Enable Credentialing Office Manager recipient
+          examples:
+          - false
+    OutreachCcEmailAddressesRequest:
+      description: Request to update global outreach CC email addresses
+      type: object
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+          description: List of global CC email addresses for all outreach types
+          examples:
+          - - sunayana.kalekar@certifyos.com
+            - mail@certifyos.com
     OutreachSettingsResponse:
       description: Response containing outreach settings for a specific outreach type
       type: object
@@ -423,66 +575,63 @@ components:
           description: Smart outreach automation settings
           type: object
           $ref: '#/components/schemas/SmartOutreachSettingsDto'
-    OutreachSettingsRequest:
-      description: Request to create or update outreach settings for a specific outreach type. The type is specified in the URL path, not in the request body.
+    OutreachReasonDto:
+      description: Outreach reason with instruction
       type: object
       properties:
-        credentialingCycle:
+        id:
           type: string
-          description: Credentialing cycle for which these settings apply
+          description: Unique identifier for the outreach reason
           examples:
-          - INITIAL
-          enum:
-          - INITIAL
-          - RECREDENTIALING
-        emailRecipientPreferences:
-          description: Email recipient preferences
-          type: object
-          $ref: '#/components/schemas/EmailRecipientPreferencesDto'
-        template:
-          description: Email template configuration
-          type: object
-          $ref: '#/components/schemas/OutreachTemplateDto'
-        outreachReasons:
-          type: array
-          items:
-            $ref: '#/components/schemas/OutreachReasonDto'
-          description: List of outreach reasons with instructions
-        smartOutreach:
-          description: Smart outreach automation settings
-          type: object
-          $ref: '#/components/schemas/SmartOutreachSettingsDto'
-    OutreachTemplateDto:
-      type: object
-      description: Email template configuration for outreach
-      properties:
-        ccEmails:
-          type: array
-          items:
-            type: string
-          description: Template-specific CC email addresses
-          examples:
-          - - cc1@example.com
-            - cc2@example.com
-        subject:
+          - reason-123e4567-e89b-12d3-a456-426614174000
+        reason:
           type: string
-          description: Email subject line with placeholders
+          description: Reason title
           examples:
-          - 'Action Required: Update Needed for {{provider_name}} for {{client_name}} Credentialing - Notice #{{number_of_outreach_attempts}}'
+          - Malpractice Insurance Missing
           pattern: \S
-        body:
+        instruction:
           type: string
-          description: Email body content with placeholders (supports HTML/rich text)
+          description: Instruction text
           examples:
-          - Hi {{provider_name}}, {{provider_type}} (NPI = {{provider_npi}}),\n{{client_name}} has partnered with Certify for provider credentialing.
+          - Your state license is either missing or has expired.
           pattern: \S
-        logo:
-          description: Logo settings
-          type: object
-          $ref: '#/components/schemas/OutreachLogoDto'
       required:
-      - subject
-      - body
+      - reason
+      - instruction
+    OutreachLogoDto:
+      description: Logo settings for outreach email template
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether to include the logo in emails
+          examples:
+          - true
+        url:
+          type: string
+          description: Logo URL/address
+          examples:
+          - https://storage.googleapis.com/certifyos-public-assets/images/county-header-nevada.png
+        width:
+          type: string
+          description: Logo display width
+          examples:
+          - 100%
+    OutreachReasonValueDto:
+      type: object
+      description: Outreach reason value with title and instruction
+      properties:
+        title:
+          type: string
+          description: Reason title
+          examples:
+          - Missing License
+        instruction:
+          type: string
+          description: Reason instruction
+          examples:
+          - Your state license is either missing or has expired.
     EmailComposerAutopopulationResponse:
       description: Response containing all data needed to autopopulate the email composer for Practitioner Initial workflow
       type: object
@@ -533,155 +682,6 @@ components:
             reasons:
             - title: Missing License
               instruction: Please provide...
-    OutreachReasonValueDto:
-      type: object
-      description: Outreach reason value with title and instruction
-      properties:
-        title:
-          type: string
-          description: Reason title
-          examples:
-          - Missing License
-        instruction:
-          type: string
-          description: Reason instruction
-          examples:
-          - Your state license is either missing or has expired.
-    OutreachCcEmailAddressesRequest:
-      description: Request to update global outreach CC email addresses
-      type: object
-      properties:
-        ccEmails:
-          type: array
-          items:
-            type: string
-          description: List of global CC email addresses for all outreach types
-          examples:
-          - - sunayana.kalekar@certifyos.com
-            - mail@certifyos.com
-    OutreachCcEmailAddressesResponse:
-      description: Response containing global outreach CC email addresses
-      type: object
-      properties:
-        ccEmails:
-          type: array
-          items:
-            type: string
-          description: List of global CC email addresses for all outreach types
-          examples:
-          - - sunayana.kalekar@certifyos.com
-            - mail@certifyos.com
-    OutreachLogoDto:
-      description: Logo settings for outreach email template
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          description: Whether to include the logo in emails
-          examples:
-          - true
-        url:
-          type: string
-          description: Logo URL/address
-          examples:
-          - https://storage.googleapis.com/certifyos-public-assets/images/county-header-nevada.png
-        width:
-          type: string
-          description: Logo display width
-          examples:
-          - 100%
-    EmailRecipientPreferencesDto:
-      type: object
-      description: Email recipient preferences for outreach
-      properties:
-        primaryEmail:
-          type: boolean
-          description: Enable Primary Email recipient
-          examples:
-          - true
-        caqhPrimaryEmail:
-          type: boolean
-          description: Enable CAQH Primary Email recipient
-          examples:
-          - false
-        credentialingPrimaryContact:
-          type: boolean
-          description: Enable Credentialing Primary Contact recipient
-          examples:
-          - true
-        credentialingOfficeManager:
-          type: boolean
-          description: Enable Credentialing Office Manager recipient
-          examples:
-          - false
-    SmartOutreachSettingsDto:
-      type: object
-      description: Smart outreach automation settings
-      properties:
-        enabled:
-          type: boolean
-          description: Enable smart outreach automation
-          examples:
-          - false
-        businessDaysBetweenAttempts:
-          type: integer
-          format: int32
-          description: Business days between outreach attempts (display value, persisted as hours)
-          examples:
-          - 5
-          minimum: 1
-        maxAttemptsPerReason:
-          type: integer
-          format: int32
-          description: Maximum outreach attempts per reason
-          examples:
-          - 5
-          minimum: 1
-        recredCadenceDays:
-          type:
-          - integer
-          - 'null'
-          format: int32
-          description: Recredentialing cadence in days (null disables recred override)
-          examples:
-          - 2
-          minimum: 1
-        dryRunEnabled:
-          type: boolean
-          description: 'Dry run mode: evaluate exclusions without sending (per client)'
-          examples:
-          - false
-        caqhValidStatuses:
-          type:
-          - array
-          - 'null'
-          items:
-            type: string
-          description: CAQH provider_status values that qualify as a valid update and suppress outreach. Defaults to ["Reattestation", "Initial Application Complete"] when null or empty.
-    OutreachReasonDto:
-      description: Outreach reason with instruction
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the outreach reason
-          examples:
-          - reason-123e4567-e89b-12d3-a456-426614174000
-        reason:
-          type: string
-          description: Reason title
-          examples:
-          - Malpractice Insurance Missing
-          pattern: \S
-        instruction:
-          type: string
-          description: Instruction text
-          examples:
-          - Your state license is either missing or has expired.
-          pattern: \S
-      required:
-      - reason
-      - instruction
   securitySchemes:
     jwt:
       type: http

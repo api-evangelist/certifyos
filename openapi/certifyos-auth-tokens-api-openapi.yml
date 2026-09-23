@@ -9,15 +9,12 @@ servers:
 - url: https://ng-api-stg.certifyos.com/
   description: Staging (Test Data)
 tags:
-- name: auth-tokens
+- name: Auth Tokens
 paths:
   /auth-tokens/v2/api:
     post:
       operationId: AuthTokensController_createApiToken
-      summary: 'Obtain an access token with a 24-hour expiry.
-
-
-        Contact our support team to request the client_id and client_secret.'
+      summary: Obtain an access token with a 24-hour expiry.
       description: Provides an access token to query the APIs
       parameters: []
       requestBody:
@@ -49,9 +46,17 @@ paths:
         '404':
           description: User not found.
       tags:
-      - auth-tokens
+      - Auth Tokens
 components:
   schemas:
+    AccessTokenV2ResponseDto:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+      required:
+      - access_token
     CreateApiAuthTokenDto:
       type: object
       properties:
@@ -67,14 +72,6 @@ components:
       required:
       - client_id
       - client_secret
-    AccessTokenV2ResponseDto:
-      type: object
-      properties:
-        access_token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-      required:
-      - access_token
   securitySchemes:
     BearerAuth:
       scheme: bearer

@@ -53,8 +53,16 @@ paths:
       - BearerAuth: []
     get:
       operationId: ProviderV2Controller_findOne
-      summary: Retrieve all available information for a provider.
-      description: "Fetches comprehensive details about a provider, \n      including optional related data such as credentialing workflows, \n      all sections data (state-licenses, board certifications, dea, etc.), \n      signed URLs for supporting documents/ attachments, verifier info, group info, and \n      sanction items based on the provided query parameters."
+      summary: Retrieve all available information for a provider
+      description: 'Fetches comprehensive details about a provider,
+
+        including optional related data such as credentialing workflows,
+
+        all sections data (state-licenses, board certifications, dea, etc.),
+
+        signed URLs for supporting documents/ attachments, verifier info, group info, and
+
+        sanction items based on the provided query parameters.'
       parameters:
       - name: organization-id
         in: header
@@ -242,8 +250,10 @@ paths:
   /v2/provider/{providerId}/supporting-documents/{supportingDocumentId}/signed-url:
     get:
       operationId: ProviderV2Controller_getDocumentSignedUrl
-      summary: Retrieve signed url of a given supporting-document id.
-      description: "Retrieves a signed URL for the specified supporting document ID associated with the provider. \n      The signed URL provides secure, temporary access to the document and remains valid for 10 minutes."
+      summary: Retrieve signed url of a given supporting-document id
+      description: 'Retrieves a signed URL for the specified supporting document ID associated with the provider.
+
+        The signed URL provides secure, temporary access to the document and remains valid for 10 minutes.'
       parameters:
       - name: organization-id
         in: header
@@ -1763,8 +1773,12 @@ paths:
   /v2/provider/{providerId}/credentialing-workflows:
     post:
       operationId: ProviderV2Controller_createCredentialingWorkflow
-      summary: Creates a credentialing workflow for the provider.
-      description: "Initiates a new credentialing workflow for the specified \n      provider. The workflow will automatically trigger the pipeline to \n      fetch the required provider information needed for credentialing."
+      summary: Creates a credentialing workflow for the provider
+      description: 'Initiates a new credentialing workflow for the specified
+
+        provider. The workflow will automatically trigger the pipeline to
+
+        fetch the required provider information needed for credentialing.'
       parameters:
       - name: organization-id
         in: header
@@ -1877,7 +1891,7 @@ paths:
       - BearerAuth: []
     get:
       operationId: ProviderV2Controller_getProviderGroups
-      summary: Retrieve groups/ org-entities for a provider.
+      summary: Retrieve groups/ org-entities for a provider
       description: Fetches all the groups (org-entities) associated with a provider.
       parameters:
       - name: organization-id
@@ -2174,87 +2188,273 @@ paths:
       - BearerAuth: []
 components:
   schemas:
-    LiabilityInsurance:
+    Question:
       type: object
       properties:
-        carrier_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        policy_number:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        policy_expiration:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        occurence_amount:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        general_aggregate_amount:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        document:
+        question_text:
+          type: string
+        question_response:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionResponse'
+      required:
+      - question_text
+      - question_response
+    PractitionerMedicaidDto:
+      type: object
+      properties:
+        medicaidNumber:
+          type: string
+        medicaidState:
           type: string
       required:
-      - carrier_name
-      - policy_number
-      - policy_expiration
-      - occurence_amount
-      - general_aggregate_amount
-      - document
-    ProfessionalIdResponseV2Dto:
+      - medicaidNumber
+      - medicaidState
+    NpdbDataDto:
       type: object
       properties:
         id:
           type: string
-          description: Unique identifier for the professional ID
-        type:
+          description: Unique identifier for the NPDB data.
+        type_of_action:
+          type: string
+          description: Type of action taken.
           enum:
-          - Medicare Number
-          - Medicaid Number
-          - ECFMG Number
-          - Foreign National Identification Number
-          - Unique Physician Identification Number
-          - CLIA
-          - DEA
+          - No Action
+          - Medical Malpractice Payment
+          - Health Plan
+          - State Licensure/Certification
+          - Professional Society
+          - Exclusion/Debarment
+          - DEA/Federal Licensure
+          - Government Administrative
+          - Judgement/Conviction
+          - Clinical Privileges
+          - Peer Review Organization
+        report_date:
           type: string
-          description: Type of professional ID
-        number:
+          description: Date the report was created
+          example: YYYY-MM-DD
+        process_date:
           type: string
-          description: Professional ID number
-        issue_date:
+          description: Date the report was processed
+          example: YYYY-MM-DD
+        verified_by:
           type: string
-          description: Issue date of the professional ID
-        expiration_date:
+          description: Name of the individual who verified the report
+        verified_date:
           type: string
-          description: Expiration date of the professional ID
-        notes:
+          description: Date the report was verified
+          example: YYYY-MM-DD
+        created_date:
           type: string
-          description: Notes about the professional ID
-        state:
+          description: Date the report entry was created
+          example: YYYY-MM-DD
+        payment_date:
           type: string
-          description: State associated with the professional ID
+          description: Date the payment was made (if applicable)
+          example: YYYY-MM-DD
+        specific_allegation_date:
+          type: string
+          description: Date of the specific allegation (if applicable)
+          example: YYYY-MM-DD
         source:
           type: string
-          description: Source of the professional ID
+          description: Source of the report
+          enum:
+          - National Practitioner Data Bank
+        report_type:
+          type: string
+          description: Type of report (e.g., disciplinary, administrative)
+          enum:
+          - Adverse Action Report
+          - Medical Malpractice Payment Report
+          - No Report Found
+        first_name:
+          type: string
+          description: First name of the subject of the report
+        last_name:
+          type: string
+          description: Last name of the subject of the report
+        gender:
+          type: string
+          description: Gender of the subject
+        npi:
+          type: string
+          description: National Provider Identifier (NPI)
+        home_address:
+          type: string
+          description: Home address of the subject
+        home_city:
+          type: string
+          description: Home city of the subject
+        home_state:
+          type: string
+          description: Home state of the subject
+        home_zip:
+          type: string
+          description: Home ZIP code of the subject
+        dcn:
+          type: string
+          description: Document Control Number (DCN)
+        birth_date:
+          type: string
+          description: Birth date of the subject
+          example: '1980-05-21'
+        databank_subject_id:
+          type: string
+          description: Databank Subject ID, unique identifier from NPDB
       required:
       - id
-      - type
-      - number
-    CreateAttestedProviderDocumentDto:
+      - type_of_action
+      - report_date
+      - process_date
+      - verified_by
+      - verified_date
+      - created_date
+      - payment_date
+      - specific_allegation_date
+      - source
+      - report_type
+      - first_name
+      - last_name
+      - gender
+      - npi
+      - home_address
+      - home_city
+      - home_state
+      - home_zip
+      - dcn
+      - birth_date
+      - databank_subject_id
+    MalpracticeInsuranceDto:
       type: object
       properties:
-        fileType:
+        expiry_date:
           type: string
-          description: Type of the file uploading
-        organizationId:
+          description: Date when the malpractice insurance policy expires
+          example: YYYY-MM-DD
+        id:
           type: string
-          description: ID assigned to Client Organization
-        workflowId:
+          description: Unique identifier for the malpractice insurance record
+        source:
           type: string
-          description: ID assigned to Workflow
-        file:
+          description: Source from which the malpractice insurance information was obtained
+          enum:
+          - Copy of Insurance
+          - Application
+          - N/A
+        status:
           type: string
-          format: binary
-          description: Provider Document
+          description: Current status of the malpractice insurance policy
+          enum:
+          - active
+          - expired
+        policy_number:
+          type: string
+          description: Policy number of the malpractice insurance
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the malpractice insurance
+        verified_date:
+          type: string
+          description: Date the malpractice insurance was verified
+          example: YYYY-MM-DD
+        aggregate_coverage_amount:
+          type: number
+          description: Aggregate coverage amount of the malpractice insurance policy
+        occurrence_coverage_amount:
+          type: number
+          description: Occurrence coverage amount of the malpractice insurance policy
+        policyHolder:
+          type: string
+          description: Name of the policy holder for the malpractice insurance
+        pliCoverageType:
+          type: string
+          description: Type of Professional Liability Insurance (PLI) coverage
+        policyEffectiveDate:
+          type: string
+          description: Effective date of the malpractice insurance policy
+          example: YYYY-MM-DD
+        policyExpirationDate:
+          type: string
+          description: Expiration date of the malpractice insurance policy
+          example: YYYY-MM-DD
+        policyCurrentEffectiveDate:
+          type: string
+          description: Current effective date of the malpractice insurance policy
+          example: YYYY-MM-DD
+        individualCoverageFlag:
+          type: boolean
+          description: Indicates if the policy provides individual coverage (true/false)
+        insuranceType:
+          type: string
+          description: Type of insurance.
       required:
-      - fileType
-      - organizationId
-      - workflowId
+      - expiry_date
+      - id
+      - source
+      - status
+      - policy_number
+      - verified_by
+      - verified_date
+      - aggregate_coverage_amount
+      - occurrence_coverage_amount
+      - policyHolder
+      - pliCoverageType
+      - policyEffectiveDate
+      - policyExpirationDate
+      - policyCurrentEffectiveDate
+      - individualCoverageFlag
+      - insuranceType
+    ProviderV2ResponseDto:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProviderV2Dto'
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+    FieldValueWithDescription:
+      type: object
+      properties:
+        value:
+          type: string
+        description:
+          type: string
+      required:
+      - value
+      - description
+    ProviderV2GroupsResponseDto:
+      type: object
+      properties:
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        external_group_id:
+          type: string
+          description: Client's ID for the group
+        id:
+          type: string
+      required:
+      - group_name
+      - group_npi
+      - group_tin
+      - id
     LicenseDto:
       type: object
       properties:
@@ -2339,18 +2539,45 @@ components:
       - report_date
       - verified_by
       - verified_date
-    RaceEthnicityLevel2Dto:
+    CreateProviderV2GroupDto:
       type: object
       properties:
-        raceEthnicityLevel2Name:
+        group_name:
           type: string
-        raceEthnicityLevel3:
-          type: array
-          items:
-            $ref: '#/components/schemas/RaceEthnicityLevel3Dto'
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        location_name:
+          type: string
+          description: Name of group location
+        external_group_id:
+          type: string
+          description: Client's ID for the group
       required:
-      - raceEthnicityLevel2Name
-      - raceEthnicityLevel3
+      - group_name
+      - group_npi
+      - group_tin
+    CredentialingWorkflowOrgEntityTypeDto:
+      type: object
+      properties:
+        id:
+          type: string
+          default: null
+        name:
+          type: string
+          default: null
+      required:
+      - id
     EducationTrainingDto:
       type: object
       properties:
@@ -2750,172 +2977,833 @@ components:
       - licensing_board_reference
       - verified_by
       - verified_date
-    CreateProfessionalIdV2Dto:
+    QuestionResponse:
       type: object
       properties:
-        type:
-          enum:
-          - Medicare Number
-          - Medicaid Number
-          - ECFMG Number
-          - Foreign National Identification Number
-          - Unique Physician Identification Number
-          - CLIA
-          - DEA
+        response_text:
           type: string
-          description: Type of professional ID
-        number:
-          type: string
-          description: Professional ID number
-        issue_date:
-          format: date-time
-          type: string
-          description: Issue date of the professional ID
-        expiration_date:
-          format: date-time
-          type: string
-          description: Expiration date of the professional ID
-        notes:
-          type: string
-          description: Notes about the professional ID
-        state:
-          enum:
-          - AK
-          - AL
-          - AR
-          - AS
-          - AZ
-          - CA
-          - CO
-          - CT
-          - DC
-          - DE
-          - FL
-          - FM
-          - GA
-          - GU
-          - HI
-          - IA
-          - ID
-          - IL
-          - IN
-          - KS
-          - KY
-          - LA
-          - MA
-          - MD
-          - ME
-          - MH
-          - MI
-          - MN
-          - MO
-          - MP
-          - MS
-          - MT
-          - NC
-          - ND
-          - NE
-          - NH
-          - NJ
-          - NM
-          - NV
-          - NY
-          - OH
-          - OK
-          - OR
-          - PA
-          - PR
-          - PW
-          - RI
-          - SC
-          - SD
-          - TN
-          - TX
-          - UT
-          - UM
-          - VA
-          - VI
-          - VT
-          - WA
-          - WI
-          - WV
-          - WY
-          type: string
-          description: State associated with the professional ID
-        source:
-          type: string
-          description: Source of the professional ID
       required:
-      - type
-      - number
-    Email:
+      - response_text
+    Education:
       type: object
       properties:
-        type:
+        institution_name:
           $ref: '#/components/schemas/FieldValueWithDescription'
-        email:
+        degree:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+        start_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        graduation_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        end_date:
           $ref: '#/components/schemas/FieldValueWithDescription'
       required:
-      - type
-      - email
-    CreateAttestedProviderDataDto:
+      - institution_name
+      - degree
+      - start_date
+      - graduation_date
+      - end_date
+    RaceEthnicityLevel2Dto:
       type: object
       properties:
-        purpose:
+        raceEthnicityLevel2Name:
+          type: string
+        raceEthnicityLevel3:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceEthnicityLevel3Dto'
+      required:
+      - raceEthnicityLevel2Name
+      - raceEthnicityLevel3
+    PerformanceIndicatorDto:
+      type: object
+      properties:
+        access_issue:
+          type: string
+        benefits:
+          type: string
+        claims:
+          type: string
+        clinical:
+          type: string
+        complaints:
+          type: string
+        id:
+          type: string
+        service:
+          type: string
+      required:
+      - access_issue
+      - benefits
+      - claims
+      - clinical
+      - complaints
+      - id
+      - service
+    PracticeLocationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        provider_id:
           type: string
         organization_id:
           type: string
-        workflow_id:
+        name:
           type: string
-        date_complete:
-          format: date-time
+        tin:
           type: string
-        attestation_metadata:
+        start_date:
+          type: string
+          example: YYYY-MM-DD
+        drawing_blood:
+          type: boolean
+        laboratory_services:
+          type: boolean
+        clia_number:
+          type: string
+        clia_expiration_date:
+          type: string
+          example: YYYY-MM-DD
+        address1:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        npi:
+          type: string
+        phoneCoverage24x7:
+          type: boolean
+        totalLocationHours:
+          type: number
+        locationHours:
           type: array
           items:
-            $ref: '#/components/schemas/AttestationMetadata'
-        data_snapshot:
-          $ref: '#/components/schemas/DataSnapshot'
-        question:
-          type: array
-          items:
-            $ref: '#/components/schemas/Question'
+            $ref: '#/components/schemas/LocationHourDto'
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
       required:
-      - purpose
+      - id
+      - provider_id
       - organization_id
-      - workflow_id
-      - date_complete
-      - attestation_metadata
-      - data_snapshot
-      - question
-    CreateProviderV2GroupDto:
+      - name
+    ProviderV2Dto:
       type: object
       properties:
-        group_name:
+        provider_sanctions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderSanctionsDto'
+        malpractice_insurance:
+          type: array
+          items:
+            $ref: '#/components/schemas/MalpracticeInsuranceDto'
+        npdb_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NpdbDataDto'
+        performance_indicator:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformanceIndicatorDto'
+        application_verification:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationVerificationDto'
+        board_certifications_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoardCertificationDto'
+        credentialing_timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialingTimelineDto'
+        education_training:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationTrainingDto'
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/LicenseDto'
+        deas:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeaDto'
+        hospital_affiliations:
+          type: array
+          items:
+            $ref: '#/components/schemas/HospitalAffiliationDto'
+        licensure_actions:
+          $ref: '#/components/schemas/LicensureActionsDto'
+        first_name:
           type: string
-          description: Name of the group
-        group_npi:
+        middle_name:
           type: string
-          minLength: 10
-          maxLength: 10
-          description: Group National Provider Identifier (NPI)
-          example: '2345678901'
-        group_tin:
+        last_name:
           type: string
-          minLength: 9
-          maxLength: 9
-          description: Group Tax Identification Number (TIN)
-          example: '123456789'
-        location_name:
+        npi:
           type: string
-          description: Name of group location
-        external_group_id:
+        provider_type:
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
           type: string
-          description: Client's ID for the group
+          description: Type of provider
+        caqh_provider_id:
+          type: string
+        provider_id:
+          type: string
+        status:
+          type: string
+          description: Current status of the provider
+          enum:
+          - Terminated
+          - Active
+          - Denied
+          - New
+          - In Progress
+        organization_id:
+          type: string
+        file_type:
+          type: string
+          description: File type classification of the credentialing workflow
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+        psv_url:
+          type: string
+        dob:
+          type: string
+        gender:
+          type: string
+          description: Gender of the provider
+          enum:
+          - Male
+          - Female
+          - Not Listed/Unknown
+        verified_by:
+          type: string
+        monitoring_status:
+          type: string
+          description: Current monitoring status of the provider
+          enum:
+          - In Progress
+          - Data Missing
+          - Outreach in Progress
+          - Reviewed by CertifyOS
+          - No action required
+        last_monitoring_date:
+          type: string
+          example: YYYY-MM-DD
+        provider_created_date:
+          type: string
+          example: YYYY-MM-DD
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+        file_completion_date:
+          type: string
+          example: YYYY-MM-DD
+        file_status:
+          type: string
+        race:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceTypeDto'
+        ethnicity:
+          type: string
+          description: Ethnicity of the provider
+          enum:
+          - White
+          - American Indian or Alaska Native
+          - Hispanic and Latino Americans
+          - Pacific Islander
+          - Asian
+          - Black or African American
+          - Hawaiian
+          - Mixed Ethnicity
+          - Other
+        other_languages:
+          type: array
+          items:
+            type: string
+        supporting_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportingDocumentV2Dto'
+        external_id:
+          type: string
+        professional_ids:
+          description: Professional IDs associated with the provider
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfessionalIdV2Dto'
+        practitioner_medicaid:
+          $ref: '#/components/schemas/PractitionerMedicaidDto'
+        practitioner_practice_location:
+          $ref: '#/components/schemas/PractitionerPracticeActiveLocationDto'
+        practice_location:
+          description: Practice locations associated with the provider
+          type: array
+          items:
+            $ref: '#/components/schemas/PracticeLocationDto'
+        credentialing_status:
+          type: string
+          description: Credentialing status of the provider
+          enum:
+          - Not sent to credentialing
+          - Not Started
+          - In Progress
+          - Recredentialing in progress
+          - Data missing
+          - Outreach in progress
+          - PSV Complete
+          - PSV ready
+          - Hold for Cred Comm
+          - Tabled
+          - Cred approved
+          - Cred denied
+          - Provider Terminated
+          - Withdrawn/Cancelled
+          - Credentialing restarted
+          - PSV complete by CertifyOS
+        credentialing_cycle:
+          type: string
+          description: Credentialing cycle of the provider
+          enum:
+          - Initial
+          - Recredentialing
+        states:
+          type: array
+          items:
+            type: string
+        assigned_states:
+          type: array
+          items:
+            type: string
+        sanction_items:
+          description: Sanction items associated with the provider
+          type: array
+          items:
+            $ref: '#/components/schemas/BaseSanctionItemResponseDto'
+        isPCP:
+          type: boolean
+        isSpecialist:
+          type: boolean
+        acceptsNewPatients:
+          type: boolean
+        acceptsNewMedicarePatients:
+          type: boolean
+        primaryEmail:
+          type: string
       required:
-      - group_name
-      - group_npi
-      - group_tin
+      - provider_sanctions
+      - malpractice_insurance
+      - npdb_data
+      - performance_indicator
+      - application_verification
+      - board_certifications_data
+      - credentialing_timeline
+      - education_training
+      - licenses
+      - deas
+      - hospital_affiliations
+      - licensure_actions
+      - first_name
+      - middle_name
+      - last_name
+      - npi
+      - provider_type
+      - caqh_provider_id
+      - provider_id
+      - status
+      - organization_id
+      - file_type
+      - psv_url
+      - dob
+      - gender
+      - verified_by
+      - monitoring_status
+      - last_monitoring_date
+      - provider_created_date
+      - verified_date
+      - file_completion_date
+      - file_status
+      - race
+      - ethnicity
+      - other_languages
+      - supporting_documents
+      - external_id
+      - professional_ids
+      - practitioner_medicaid
+      - practitioner_practice_location
+      - practice_location
+      - sanction_items
+    HospitalAffiliationDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the affiliated hospital
+        specialty:
+          type: string
+          description: Specialty associated with the hospital affiliation
+          enum:
+          - Acupuncture
+          - Acute Care
+          - Acute Care Nurse Practitioner
+          - Acute/Critical Care Nursing
+          - Addiction Medicine
+          - Addiction Psychology
+          - Administrative Medicine
+          - Adult Acute/Critical Care Nursing
+          - Adult-Gerontology Acute Care
+          - Adult-Gerontology Acute Care Clinical Nurse Specialist
+          - Adult-Gerontology Acute Care Nurse Practitioner
+          - Adult-Gerontology Clinical Nurse Specialist
+          - Adult-Gerontology Primary Care
+          - Adult-Gerontology Primary Care Nurse Practitioner
+          - Adult Health Clinical Nurse Specialist
+          - Adult Nurse Practitioner
+          - Adult Psychiatric-Mental Health
+          - Adult Psychiatric Mental Health Nurse Practitioner
+          - Advanced Certified Hospice and Palliative Nurse
+          - Advanced Diabetes Management
+          - Advanced Oncology Certified Nurse
+          - Aerospace Medicine
+          - Allergy and Immunology
+          - Ambulatory Care Nurse
+          - Anatomic Pathology
+          - Anatomic Pathology and Clinical Pathology
+          - Anatomic Pathology - General
+          - Anesthesiology
+          - Assistant Behavior Analyst
+          - Audiology
+          - Behavioral Analyst
+          - Board Certified Assistant Behavior Analyst
+          - Board Certified Behavior Analyst
+          - Board Certified Behavior Analyst - Doctoral
+          - Cardiac Medicine
+          - Cardiac Surgery
+          - Cardiac/Vascular Nurse
+          - Cardiology
+          - Cardiovascular and Thoracic Surgery
+          - Cardiothoracic Surgery
+          - Cardiovascular Computed Tomography
+          - Case Management
+          - Cataract Surgery
+          - Certified Diabetes Care and Education Specialist
+          - Certified Hand Therapist
+          - Certified Nurse Midwife
+          - Certified Pediatric Nurse
+          - Certified Registered Nurse Anesthetist
+          - Chiropractor
+          - Chiropractic Acupuncture
+          - Clinical Biochemical Genetics
+          - Clinical Child and Adolescent Psychology
+          - Clinical Cytogenetics
+          - Clinical Electrophysiologic Physical Therapist
+          - Clinical Genetics (MD)
+          - Clinical Genetics and Genomics (MD)
+          - Clinical Health Psychology
+          - Clinical Lipidology
+          - Clinical Mental Health Counselor
+          - Clinical Molecular Genetics
+          - Clinical Neurophysiology
+          - Clinical Nurse Specialist
+          - Clinical Nurse Specialist in Adult Psychiatric and Mental Health
+          - Clinical Nurse Specialist in Child and Adolescent Psychiatric and Mental Health
+          - Clinical Psychology
+          - Clinical Pathology/Laboratory Medicine
+          - Clinical Social Work
+          - Colon and Rectal Surgery
+          - Community Behavioral Health Clinician
+          - Counseling Psychology
+          - Couple and Family Psychology
+          - Dental
+          - Dental Public Health
+          - Dermatology
+          - Dermatology Nurse Practitioner
+          - Diabetes Care and Education
+          - Diagnostic Radiology
+          - Diagnostic Radiology with Special Competence in Nuclear Radiology
+          - DOULA
+          - Echocardiography
+          - Educational Commission for Foreign Medical Graduates
+          - Electrodiagnostic Medicine
+          - Electronic Fetal Monitoring
+          - Emergency Medicine
+          - Emergency Nurse Practitioner
+          - EMDR
+          - Endocrinology
+          - Endodontics
+          - Endovascular Medicine
+          - ENT/Otolaryngology
+          - Facial Plastic and Reconstructive Surgery
+          - Family Medicine
+          - Family Medicine, Geriatric Medicine
+          - Family Medicine, Obesity Medicine
+          - Family Nurse Practitioner
+          - Family Practice
+          - Focused Practice in Pediatric and Adolescent Gynecology - Obstetrics & Gynecology Designation
+          - Focused Practice in Metabolic Bariatric Surgery - Surgery Designation
+          - Focused Practice in Minimally Invasive Gynecologic Surgery - Obstetrics & Gynecology
+          - Foot and Ankle Surgery
+          - Foot Surgery
+          - Forensic Psychology
+          - Gastroenterology
+          - General Practice
+          - General Surgery
+          - Genetic Counseling
+          - Geriatrics
+          - Gerontological
+          - Gerontological Nurse Practitioner
+          - Gerontological Nutrition
+          - Gerontology
+          - Geropsychology
+          - Group Psychology
+          - Gynecology
+          - Histocompatibility and Immunogenetics
+          - HIV Specialist
+          - Infectious Diseases
+          - Inpatient Obstetric Nursing
+          - Internal Medicine
+          - Internal Medicine, Geriatric Medicine
+          - Internal Medicine, Obesity Medicine
+          - Interventional Radiology and Diagnostic Radiology
+          - Laboratory Genetics and Genomics
+          - Lactation Consultant (Registered Nurse)
+          - Limb Preservation and Salvage
+          - Lower Extremity Geriatric Medicine
+          - Massage Therapy
+          - Maternal Newborn Nursing
+          - Medical Physics (Diagnostic, Nuclear, Therapeutic)
+          - Medical Surgical Nurse
+          - Minimally Invasive Foot and Ankle Surgery
+          - National Certified Counselor (NCC)
+          - Naturopathic Medicine
+          - Neonatal Acute Care Clinical Nurse Specialist
+          - Neonatal Acute/Critical Care Nursing
+          - Neonatal Nurse Practitioner
+          - Nephrology
+          - Neurological Surgery
+          - Neurology
+          - Neurology with Special Qualification in Child Neurology
+          - Neuromusculoskeletal Medicine & OMM
+          - Neurophysiology-Neurology
+          - Nuclear Cardiology
+          - Nuclear Medicine
+          - Nurse Anesthetist
+          - Nurse Executive, Advanced
+          - Nurse Practitioner
+          - Obesity and Weight Management
+          - Obesity Medicine
+          - Obstetrics & Gynecology
+          - Obstetrics & Gynecology, Obesity Medicine
+          - Oculoplastics Surgery
+          - Occupational Medicine
+          - Occupational Therapist
+          - Occupational Therapist, Hand
+          - Oncology Clinical Nurse Specialist
+          - Oncology - Medical
+          - Oncology - Medical, Surgical
+          - Oncology Nurse Practitioner
+          - Oncology Nutrition
+          - Oncology - Radiation/Radiation Oncology
+          - Oncology - Surgical
+          - Ophthalmology
+          - Optometry
+          - Oral and Maxillofacial Surgery
+          - Organizational and Business Consulting Psychology
+          - Orofacial Pain
+          - Orthodontics
+          - Orthopaedic Physical Therapist
+          - Orthopaedic Surgery
+          - Orthopaedic Surgery of the Spine
+          - Osteopathic Manipulative Medicine (OMM)
+          - Otolaryngology
+          - Otolaryngology and Facial Plastic Surgery
+          - Otolaryngology - Head and Neck Surgery
+          - Pain Management
+          - Pain Medicine
+          - Pathology - Anatomic
+          - Pathology - Anatomic/Pathology - Clinical
+          - Pathology - Clinical
+          - Pediatric Acute Care Clinical Nurse Specialist
+          - Pediatric Acute/Critical Care Nursing
+          - Pediatric Critical Care Nutrition
+          - Pediatric Dentistry
+          - Pediatric Neurological Surgery
+          - Pediatric Nurse Practitioner - Acute Care
+          - Pediatric Nurse Practitioner - Primary Care
+          - Pediatric Nutrition
+          - Pediatric Primary Care
+          - Pediatrics
+          - 'Pediatrics: Developmental-Behavioral Pediatrics'
+          - Pediatrics, Obesity Medicine
+          - Peer Support Specialist
+          - Periodontics
+          - Pharmacist
+          - Physical Medicine and Rehabilitation
+          - Physical Therapist
+          - Physical Therapist, Hand
+          - Physical Therapy
+          - Physician Assistant
+          - Physiatry, Rehabilitative Medicine
+          - Plastic and Reconstructive Surgery
+          - Plastic Surgery
+          - Podiatric Medicine and Surgery Residency
+          - Podiatric Sports Medicine
+          - Podiatry
+          - Police and Public Safety Psychology
+          - Prevention and Treatment of Diabetic Foot Wounds and Diabetic Footwear
+          - Preventative Medicine
+          - Preventive Medicine, Obesity Medicine
+          - Primary Care
+          - Primary Care in Podiatric Medicine
+          - Primary Care - Nurse Practitioners
+          - Primary Care - Physician Assistants
+          - Proctology
+          - Progressive Care Nursing
+          - Prosthodontics
+          - Psychoanalytic and Psychodynamic Psychology
+          - Psychiatric-Mental Health
+          - Psychiatric Mental Health Nurse Practitioner
+          - Psychiatry
+          - Psychiatry & Neurology, Obesity Medicine
+          - 'Psychiatry: Child and Adolescent Psychiatry'
+          - 'Psychiatry: Geriatric Psychiatry'
+          - Psychiatry & Neurology
+          - Psychology
+          - Psychotherapy
+          - Public Health and General Preventive Medicine
+          - Pulmonology
+          - Radiation Oncology
+          - Radiologic Physics
+          - Radiology
+          - Reconstructive Rearfoot/Ankle Surgery
+          - Recreational Therapy
+          - Registered Behavior Technician
+          - Registered Dietitian Nutritionist
+          - Registered Physician in Neurovascular Interpretation (RPNI)
+          - Registered Physician in Vascular Interpretation(RPVI)
+          - Rehabilitation Psychology
+          - Renal Nutrition
+          - Retina Specialist
+          - Rheumatology
+          - School Nurse Practitioner
+          - School Psychology
+          - Serious Mental Illness Psychology
+          - Sleep Medicine
+          - Social Work
+          - Speech-Language Pathology
+          - Sports Dietetics
+          - Surgery
+          - Therapeutic Radiology
+          - Thoracic and Cardiac Surgery
+          - Thoracic Surgery
+          - Toxicology
+          - Urgent Care Medicine
+          - Urological Surgery
+          - Urology
+          - Vascular Medicine
+          - Vascular Surgery
+          - Venous and Lymphatic Medicine
+          - Women's Health Nurse Practitioner
+          - Wound Specialist
+        state:
+          type: string
+          description: State where the hospital is located (if applicable)
+        type:
+          type: string
+          description: Type of hospital affiliation
+          enum:
+          - Hospital Privileges
+          - Hospital Admitting Arrangements
+          - Non-hospital Admitting Arrangements
+          - Exempt
+        source:
+          type: string
+          description: Source from which the hospital affiliation information was obtained (if applicable)
+          enum:
+          - Verified through Licensing Board
+          - Verified through Board Certification
+          - Verified by Provider Application
+          - Verified by Hospital Institution
+          - Verified through the American Medical Association (AMA)
+          - Verified by Other
+        start_date:
+          type: string
+          description: Date when the hospital affiliation started
+          example: YYYY-MM-DD
+        end_date:
+          format: date-time
+          type: string
+          description: Date when the hospital affiliation ended/ends
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the hospital affiliation
+        verified_date:
+          type: string
+          description: Date the hospital affiliation was verified
+          example: YYYY-MM-DD
+      required:
+      - name
+      - specialty
+      - type
+      - start_date
+      - end_date
+      - verified_by
+      - verified_date
+    ProviderOutreachResponseDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderOutreachDto'
+        count:
+          type: number
+          example: 10
+      required:
+      - data
+      - count
+    CreateAttestedProviderDocumentDto:
+      type: object
+      properties:
+        fileType:
+          type: string
+          description: Type of the file uploading
+        organizationId:
+          type: string
+          description: ID assigned to Client Organization
+        workflowId:
+          type: string
+          description: ID assigned to Workflow
+        file:
+          type: string
+          format: binary
+          description: Provider Document
+      required:
+      - fileType
+      - organizationId
+      - workflowId
+    RaceEthnicityLevel3Dto:
+      type: object
+      properties:
+        raceEthnicityLevel3Name:
+          type: string
+      required:
+      - raceEthnicityLevel3Name
+    DEA:
+      type: object
+      properties:
+        dea_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+        issue_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        expiration_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        renewal_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - dea_number
+      - state
+      - document
+      - issue_date
+      - expiration_date
+      - renewal_date
     BoardCertificationDto:
       type: object
       properties:
@@ -3492,370 +4380,425 @@ components:
       - moc
       - status
       - duration_type
-    ProviderAddress:
+    OtherName:
+      type: object
+      properties:
+        first_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        middle_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        last_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        suffix_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        name_type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - first_name
+      - last_name
+      - name_type
+    CreateProfessionalIdV2Dto:
       type: object
       properties:
         type:
+          enum:
+          - Medicare Number
+          - Medicaid Number
+          - ECFMG Number
+          - Foreign National Identification Number
+          - Unique Physician Identification Number
+          - CLIA
+          - DEA
+          type: string
+          description: Type of professional ID
+        number:
+          type: string
+          description: Professional ID number
+        issue_date:
+          format: date-time
+          type: string
+          description: Issue date of the professional ID
+        expiration_date:
+          format: date-time
+          type: string
+          description: Expiration date of the professional ID
+        notes:
+          type: string
+          description: Notes about the professional ID
+        state:
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          type: string
+          description: State associated with the professional ID
+        source:
+          type: string
+          description: Source of the professional ID
+      required:
+      - type
+      - number
+    LiabilityInsurance:
+      type: object
+      properties:
+        carrier_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        policy_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        policy_expiration:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        occurence_amount:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        general_aggregate_amount:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: string
+      required:
+      - carrier_name
+      - policy_number
+      - policy_expiration
+      - occurence_amount
+      - general_aggregate_amount
+      - document
+    PractitionerPracticeActiveLocationDto:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/CaqhAddressDto'
+        healthcareServiceName:
+          type: string
+      required:
+      - address
+      - healthcareServiceName
+    CreateProfessionalIdsV2Dto:
+      type: object
+      properties:
+        professional_ids:
+          description: Array of professional IDs to create
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateProfessionalIdV2Dto'
+      required:
+      - professional_ids
+    ApplicationVerificationDto:
+      type: object
+      properties:
+        explanation:
+          type: string
+        id:
+          type: string
+        verification_type:
+          type: string
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - explanation
+      - id
+      - verification_type
+      - verified_by
+      - verified_date
+    LocationHourDto:
+      type: object
+      properties:
+        dayOfweek:
+          type: string
+        endHours:
+          type: string
+        startHours:
+          type: string
+    CredentialingTimelineDto:
+      type: object
+      properties:
+        medical_director:
+          type: string
+        attestation_date:
+          type: string
+          example: YYYY-MM-DD
+        initial_credentialing_date:
+          type: string
+          example: YYYY-MM-DD
+        last_credentialed_date:
+          type: string
+          example: YYYY-MM-DD
+        psv_complete_date:
+          type: string
+          example: YYYY-MM-DD
+        credentialing_decision_date:
+          type: string
+          example: YYYY-MM-DD
+        next_credentialing_date:
+          type: string
+          example: YYYY-MM-DD
+        received_for_credentialing_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - medical_director
+      - attestation_date
+      - last_credentialed_date
+      - psv_complete_date
+      - credentialing_decision_date
+      - next_credentialing_date
+      - received_for_credentialing_date
+    ProfessionalIdV2Dto:
+      type: object
+      properties:
+        type:
+          enum:
+          - Medicare Number
+          - Medicaid Number
+          - ECFMG Number
+          - Foreign National Identification Number
+          - Unique Physician Identification Number
+          - CLIA
+          - DEA
+          type: string
+          description: Type of professional ID
+        number:
+          type: string
+          description: Professional ID number
+        issue_date:
+          type: string
+          description: Issue date of the professional ID
+        expiration_date:
+          type: string
+          description: Expiration date of the professional ID
+        note:
+          type: string
+          description: Notes about the professional ID
+        state:
+          type: string
+          description: State associated with the professional ID
+        source:
+          type: string
+          description: Source of the professional ID
+      required:
+      - type
+      - number
+      - issue_date
+      - expiration_date
+    Email:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        email:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - type
+      - email
+    OutreachDataDto:
+      type: object
+      properties:
+        to:
+          example:
+          - string@string.com
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        numberOfAttachments:
+          type: number
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+      required:
+      - to
+      - reason
+      - subject
+      - body
+    AttestationMetadata:
+      type: object
+      properties:
+        attestation_language:
+          type: string
+        attestation_signature_image:
+          type: string
+        attestation_name:
+          type: string
+        date_attested:
+          format: date-time
+          type: string
+    ProviderSanctionsDto:
+      type: object
+      properties:
+        date_of_report:
+          type: string
+          description: Date the sanction report was issued
+          example: YYYY-MM-DD
+        id:
+          type: string
+          description: Unique identifier for the provider sanction record
+        sanction_type:
+          type: string
+          description: Type of sanction applied to the provider
+          enum:
+          - OIG
+          - GSA/SAM/OFAC
+          - OFAC
+          - MOO
+          - OMIG
+          - State Exclusion List
+          - Preclusion List Check
+        type_of_action:
+          type: string
+          description: Type of action taken against the provider
+          enum:
+          - No Match Found
+          - Match Found
+        verified_by:
+          type: string
+          description: Name of the person or system that verified the sanction
+        data:
+          type: string
+          description: Additional data or details related to the sanction
+        verified_date:
+          type: string
+          description: Date the sanction was verified
+          example: YYYY-MM-DD
+      required:
+      - date_of_report
+      - id
+      - sanction_type
+      - type_of_action
+      - verified_by
+      - data
+      - verified_date
+    EmploymentHistory:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        employer:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        title:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        speciality:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        start_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        end_date:
           $ref: '#/components/schemas/FieldValueWithDescription'
         address_line_1:
           $ref: '#/components/schemas/FieldValueWithDescription'
         address_line_2:
           $ref: '#/components/schemas/FieldValueWithDescription'
-        zip:
+        country:
           $ref: '#/components/schemas/FieldValueWithDescription'
         city:
           $ref: '#/components/schemas/FieldValueWithDescription'
         state:
           $ref: '#/components/schemas/FieldValueWithDescription'
-        country:
+        zip:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        gap_explanation:
           $ref: '#/components/schemas/FieldValueWithDescription'
       required:
       - type
-      - address_line_1
-      - zip
-      - city
-      - state
-      - country
-    RaceTypeDto:
-      type: object
-      properties:
-        raceEthnicityLevel1:
-          type: string
-        raceEthnicityLevel2:
-          type: array
-          items:
-            $ref: '#/components/schemas/RaceEthnicityLevel2Dto'
-      required:
-      - raceEthnicityLevel1
-      - raceEthnicityLevel2
-    SubSpecialtiesV2Dto:
-      type: object
-      properties:
-        specialty_nucc_taxonomy_code:
-          type: string
-          description: Nucc taxonomy code tied to this subspecialty
-        name:
-          type: string
-          description: Name of subspecialty tied to this taxonomy code
-      required:
-      - specialty_nucc_taxonomy_code
-      - name
-    HospitalAffiliationDto:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Name of the affiliated hospital
-        specialty:
-          type: string
-          description: Specialty associated with the hospital affiliation
-          enum:
-          - Acupuncture
-          - Acute Care
-          - Acute Care Nurse Practitioner
-          - Acute/Critical Care Nursing
-          - Addiction Medicine
-          - Addiction Psychology
-          - Administrative Medicine
-          - Adult Acute/Critical Care Nursing
-          - Adult-Gerontology Acute Care
-          - Adult-Gerontology Acute Care Clinical Nurse Specialist
-          - Adult-Gerontology Acute Care Nurse Practitioner
-          - Adult-Gerontology Clinical Nurse Specialist
-          - Adult-Gerontology Primary Care
-          - Adult-Gerontology Primary Care Nurse Practitioner
-          - Adult Health Clinical Nurse Specialist
-          - Adult Nurse Practitioner
-          - Adult Psychiatric-Mental Health
-          - Adult Psychiatric Mental Health Nurse Practitioner
-          - Advanced Certified Hospice and Palliative Nurse
-          - Advanced Diabetes Management
-          - Advanced Oncology Certified Nurse
-          - Aerospace Medicine
-          - Allergy and Immunology
-          - Ambulatory Care Nurse
-          - Anatomic Pathology
-          - Anatomic Pathology and Clinical Pathology
-          - Anatomic Pathology - General
-          - Anesthesiology
-          - Assistant Behavior Analyst
-          - Audiology
-          - Behavioral Analyst
-          - Board Certified Assistant Behavior Analyst
-          - Board Certified Behavior Analyst
-          - Board Certified Behavior Analyst - Doctoral
-          - Cardiac Medicine
-          - Cardiac Surgery
-          - Cardiac/Vascular Nurse
-          - Cardiology
-          - Cardiovascular and Thoracic Surgery
-          - Cardiothoracic Surgery
-          - Cardiovascular Computed Tomography
-          - Case Management
-          - Cataract Surgery
-          - Certified Diabetes Care and Education Specialist
-          - Certified Hand Therapist
-          - Certified Nurse Midwife
-          - Certified Pediatric Nurse
-          - Certified Registered Nurse Anesthetist
-          - Chiropractor
-          - Chiropractic Acupuncture
-          - Clinical Biochemical Genetics
-          - Clinical Child and Adolescent Psychology
-          - Clinical Cytogenetics
-          - Clinical Electrophysiologic Physical Therapist
-          - Clinical Genetics (MD)
-          - Clinical Genetics and Genomics (MD)
-          - Clinical Health Psychology
-          - Clinical Lipidology
-          - Clinical Mental Health Counselor
-          - Clinical Molecular Genetics
-          - Clinical Neurophysiology
-          - Clinical Nurse Specialist
-          - Clinical Nurse Specialist in Adult Psychiatric and Mental Health
-          - Clinical Nurse Specialist in Child and Adolescent Psychiatric and Mental Health
-          - Clinical Psychology
-          - Clinical Pathology/Laboratory Medicine
-          - Clinical Social Work
-          - Colon and Rectal Surgery
-          - Community Behavioral Health Clinician
-          - Counseling Psychology
-          - Couple and Family Psychology
-          - Dental
-          - Dental Public Health
-          - Dermatology
-          - Dermatology Nurse Practitioner
-          - Diabetes Care and Education
-          - Diagnostic Radiology
-          - Diagnostic Radiology with Special Competence in Nuclear Radiology
-          - DOULA
-          - Echocardiography
-          - Educational Commission for Foreign Medical Graduates
-          - Electrodiagnostic Medicine
-          - Electronic Fetal Monitoring
-          - Emergency Medicine
-          - Emergency Nurse Practitioner
-          - EMDR
-          - Endocrinology
-          - Endodontics
-          - Endovascular Medicine
-          - ENT/Otolaryngology
-          - Facial Plastic and Reconstructive Surgery
-          - Family Medicine
-          - Family Medicine, Geriatric Medicine
-          - Family Medicine, Obesity Medicine
-          - Family Nurse Practitioner
-          - Family Practice
-          - Focused Practice in Pediatric and Adolescent Gynecology - Obstetrics & Gynecology Designation
-          - Focused Practice in Metabolic Bariatric Surgery - Surgery Designation
-          - Focused Practice in Minimally Invasive Gynecologic Surgery - Obstetrics & Gynecology
-          - Foot and Ankle Surgery
-          - Foot Surgery
-          - Forensic Psychology
-          - Gastroenterology
-          - General Practice
-          - General Surgery
-          - Genetic Counseling
-          - Geriatrics
-          - Gerontological
-          - Gerontological Nurse Practitioner
-          - Gerontological Nutrition
-          - Gerontology
-          - Geropsychology
-          - Group Psychology
-          - Gynecology
-          - Histocompatibility and Immunogenetics
-          - HIV Specialist
-          - Infectious Diseases
-          - Inpatient Obstetric Nursing
-          - Internal Medicine
-          - Internal Medicine, Geriatric Medicine
-          - Internal Medicine, Obesity Medicine
-          - Interventional Radiology and Diagnostic Radiology
-          - Laboratory Genetics and Genomics
-          - Lactation Consultant (Registered Nurse)
-          - Limb Preservation and Salvage
-          - Lower Extremity Geriatric Medicine
-          - Massage Therapy
-          - Maternal Newborn Nursing
-          - Medical Physics (Diagnostic, Nuclear, Therapeutic)
-          - Medical Surgical Nurse
-          - Minimally Invasive Foot and Ankle Surgery
-          - National Certified Counselor (NCC)
-          - Naturopathic Medicine
-          - Neonatal Acute Care Clinical Nurse Specialist
-          - Neonatal Acute/Critical Care Nursing
-          - Neonatal Nurse Practitioner
-          - Nephrology
-          - Neurological Surgery
-          - Neurology
-          - Neurology with Special Qualification in Child Neurology
-          - Neuromusculoskeletal Medicine & OMM
-          - Neurophysiology-Neurology
-          - Nuclear Cardiology
-          - Nuclear Medicine
-          - Nurse Anesthetist
-          - Nurse Executive, Advanced
-          - Nurse Practitioner
-          - Obesity and Weight Management
-          - Obesity Medicine
-          - Obstetrics & Gynecology
-          - Obstetrics & Gynecology, Obesity Medicine
-          - Oculoplastics Surgery
-          - Occupational Medicine
-          - Occupational Therapist
-          - Occupational Therapist, Hand
-          - Oncology Clinical Nurse Specialist
-          - Oncology - Medical
-          - Oncology - Medical, Surgical
-          - Oncology Nurse Practitioner
-          - Oncology Nutrition
-          - Oncology - Radiation/Radiation Oncology
-          - Oncology - Surgical
-          - Ophthalmology
-          - Optometry
-          - Oral and Maxillofacial Surgery
-          - Organizational and Business Consulting Psychology
-          - Orofacial Pain
-          - Orthodontics
-          - Orthopaedic Physical Therapist
-          - Orthopaedic Surgery
-          - Orthopaedic Surgery of the Spine
-          - Osteopathic Manipulative Medicine (OMM)
-          - Otolaryngology
-          - Otolaryngology and Facial Plastic Surgery
-          - Otolaryngology - Head and Neck Surgery
-          - Pain Management
-          - Pain Medicine
-          - Pathology - Anatomic
-          - Pathology - Anatomic/Pathology - Clinical
-          - Pathology - Clinical
-          - Pediatric Acute Care Clinical Nurse Specialist
-          - Pediatric Acute/Critical Care Nursing
-          - Pediatric Critical Care Nutrition
-          - Pediatric Dentistry
-          - Pediatric Neurological Surgery
-          - Pediatric Nurse Practitioner - Acute Care
-          - Pediatric Nurse Practitioner - Primary Care
-          - Pediatric Nutrition
-          - Pediatric Primary Care
-          - Pediatrics
-          - 'Pediatrics: Developmental-Behavioral Pediatrics'
-          - Pediatrics, Obesity Medicine
-          - Peer Support Specialist
-          - Periodontics
-          - Pharmacist
-          - Physical Medicine and Rehabilitation
-          - Physical Therapist
-          - Physical Therapist, Hand
-          - Physical Therapy
-          - Physician Assistant
-          - Physiatry, Rehabilitative Medicine
-          - Plastic and Reconstructive Surgery
-          - Plastic Surgery
-          - Podiatric Medicine and Surgery Residency
-          - Podiatric Sports Medicine
-          - Podiatry
-          - Police and Public Safety Psychology
-          - Prevention and Treatment of Diabetic Foot Wounds and Diabetic Footwear
-          - Preventative Medicine
-          - Preventive Medicine, Obesity Medicine
-          - Primary Care
-          - Primary Care in Podiatric Medicine
-          - Primary Care - Nurse Practitioners
-          - Primary Care - Physician Assistants
-          - Proctology
-          - Progressive Care Nursing
-          - Prosthodontics
-          - Psychoanalytic and Psychodynamic Psychology
-          - Psychiatric-Mental Health
-          - Psychiatric Mental Health Nurse Practitioner
-          - Psychiatry
-          - Psychiatry & Neurology, Obesity Medicine
-          - 'Psychiatry: Child and Adolescent Psychiatry'
-          - 'Psychiatry: Geriatric Psychiatry'
-          - Psychiatry & Neurology
-          - Psychology
-          - Psychotherapy
-          - Public Health and General Preventive Medicine
-          - Pulmonology
-          - Radiation Oncology
-          - Radiologic Physics
-          - Radiology
-          - Reconstructive Rearfoot/Ankle Surgery
-          - Recreational Therapy
-          - Registered Behavior Technician
-          - Registered Dietitian Nutritionist
-          - Registered Physician in Neurovascular Interpretation (RPNI)
-          - Registered Physician in Vascular Interpretation(RPVI)
-          - Rehabilitation Psychology
-          - Renal Nutrition
-          - Retina Specialist
-          - Rheumatology
-          - School Nurse Practitioner
-          - School Psychology
-          - Serious Mental Illness Psychology
-          - Sleep Medicine
-          - Social Work
-          - Speech-Language Pathology
-          - Sports Dietetics
-          - Surgery
-          - Therapeutic Radiology
-          - Thoracic and Cardiac Surgery
-          - Thoracic Surgery
-          - Toxicology
-          - Urgent Care Medicine
-          - Urological Surgery
-          - Urology
-          - Vascular Medicine
-          - Vascular Surgery
-          - Venous and Lymphatic Medicine
-          - Women's Health Nurse Practitioner
-          - Wound Specialist
-        state:
-          type: string
-          description: State where the hospital is located (if applicable)
-        type:
-          type: string
-          description: Type of hospital affiliation
-          enum:
-          - Hospital Privileges
-          - Hospital Admitting Arrangements
-          - Non-hospital Admitting Arrangements
-          - Exempt
-        source:
-          type: string
-          description: Source from which the hospital affiliation information was obtained (if applicable)
-          enum:
-          - Verified through Licensing Board
-          - Verified through Board Certification
-          - Verified by Provider Application
-          - Verified by Hospital Institution
-          - Verified through the American Medical Association (AMA)
-          - Verified by Other
-        start_date:
-          type: string
-          description: Date when the hospital affiliation started
-          example: YYYY-MM-DD
-        end_date:
-          format: date-time
-          type: string
-          description: Date when the hospital affiliation ended/ends
-        verified_by:
-          type: string
-          description: Name of the person or system that verified the hospital affiliation
-        verified_date:
-          type: string
-          description: Date the hospital affiliation was verified
-          example: YYYY-MM-DD
-      required:
-      - name
-      - specialty
-      - type
+      - employer
+      - title
+      - speciality
       - start_date
       - end_date
-      - verified_by
-      - verified_date
+      - address_line_1
+      - address_line_2
+      - country
+      - city
+      - state
+      - zip
+      - gap_explanation
+    CaqhAddressDto:
+      type: object
+      properties:
+        address1:
+          type: string
+        address2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zipCode:
+          type: string
+        country:
+          type: string
+      required:
+      - address1
+      - address2
+      - city
+      - state
+      - zipCode
+      - country
     CreateSpecialtiesV2Dto:
       type: object
       properties:
@@ -3879,6 +4822,143 @@ components:
       - name
       - is_primary
       - sub_specialties
+    LicensureActionsDto:
+      type: object
+      properties:
+        date_of_last_action:
+          type: string
+        date_of_report:
+          type: string
+        details:
+          type: string
+        state:
+          type: string
+        type_of_action:
+          type: string
+        id:
+          type: string
+      required:
+      - date_of_last_action
+      - date_of_report
+      - details
+      - state
+      - type_of_action
+      - id
+    CreateAttestedProviderDataDto:
+      type: object
+      properties:
+        purpose:
+          type: string
+        organization_id:
+          type: string
+        workflow_id:
+          type: string
+        date_complete:
+          format: date-time
+          type: string
+        attestation_metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttestationMetadata'
+        data_snapshot:
+          $ref: '#/components/schemas/DataSnapshot'
+        question:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+      required:
+      - purpose
+      - organization_id
+      - workflow_id
+      - date_complete
+      - attestation_metadata
+      - data_snapshot
+      - question
+    SubSpecialtiesV2Dto:
+      type: object
+      properties:
+        specialty_nucc_taxonomy_code:
+          type: string
+          description: Nucc taxonomy code tied to this subspecialty
+        name:
+          type: string
+          description: Name of subspecialty tied to this taxonomy code
+      required:
+      - specialty_nucc_taxonomy_code
+      - name
+    CredentialingWorkflowTimelineV2ResponseDto:
+      type: object
+      properties:
+        credentialingWorkflowId:
+          type: string
+        credentialingStatus:
+          type: string
+        credentialingCycle:
+          type: string
+        providerId:
+          type: string
+        organizationId:
+          type: string
+        orgEntity:
+          $ref: '#/components/schemas/CredentialingWorkflowOrgEntityTypeDto'
+        medicalDirectorId:
+          type: string
+        medicalDirectorName:
+          type: string
+        receivedForCredentialingDate:
+          type: string
+        attestationDate:
+          type: string
+        initialCredentialingDate:
+          type: string
+        lastCredentialedDate:
+          type: string
+        psvCompleteDate:
+          type: string
+        credentialingDecisionDate:
+          type: string
+        nextCredentialingDate:
+          type: string
+        updatedAt:
+          type: string
+        updatedByName:
+          type: string
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        decisionEnteredById:
+          type: string
+        decisionEnteredByName:
+          type: string
+      required:
+      - credentialingWorkflowId
+      - credentialingStatus
+      - credentialingCycle
+      - providerId
+      - organizationId
+      - orgEntity
+      - medicalDirectorId
+      - medicalDirectorName
+      - receivedForCredentialingDate
+      - attestationDate
+      - initialCredentialingDate
+      - lastCredentialedDate
+      - psvCompleteDate
+      - credentialingDecisionDate
+      - nextCredentialingDate
+      - updatedAt
+      - updatedByName
+      - updatedBy
+      - createdAt
+      - createdBy
+      - createdByName
+      - decisionEnteredById
+      - decisionEnteredByName
     BaseSanctionItemResponseDto:
       type: object
       properties:
@@ -3979,308 +5059,395 @@ components:
       - id
       - source
       - sanction_type
-    PracticeLocationDto:
+    RaceTypeDto:
+      type: object
+      properties:
+        raceEthnicityLevel1:
+          type: string
+        raceEthnicityLevel2:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceEthnicityLevel2Dto'
+      required:
+      - raceEthnicityLevel1
+      - raceEthnicityLevel2
+    Attachment:
+      type: object
+      properties:
+        content:
+          type: string
+        disposition:
+          type: string
+        filename:
+          type: string
+        type:
+          type: string
+    DocumentInfo:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        url:
+          type: string
+      required:
+      - type
+      - url
+    ProfessionalIdResponseV2Dto:
       type: object
       properties:
         id:
           type: string
+          description: Unique identifier for the professional ID
+        type:
+          enum:
+          - Medicare Number
+          - Medicaid Number
+          - ECFMG Number
+          - Foreign National Identification Number
+          - Unique Physician Identification Number
+          - CLIA
+          - DEA
+          type: string
+          description: Type of professional ID
+        number:
+          type: string
+          description: Professional ID number
+        issue_date:
+          type: string
+          description: Issue date of the professional ID
+        expiration_date:
+          type: string
+          description: Expiration date of the professional ID
+        notes:
+          type: string
+          description: Notes about the professional ID
+        state:
+          type: string
+          description: State associated with the professional ID
+        source:
+          type: string
+          description: Source of the professional ID
+      required:
+      - id
+      - type
+      - number
+    SupportingDocumentV2Dto:
+      type: object
+      properties:
+        created_at:
+          format: date-time
+          type: string
+        file_type:
+          type: string
+        file_url:
+          type: string
+        original_file_name:
+          type: string
+        id:
+          type: string
+      required:
+      - created_at
+      - file_type
+      - file_url
+      - original_file_name
+      - id
+    ProviderOutreachDto:
+      type: object
+      properties:
         provider_id:
           type: string
         organization_id:
           type: string
-        name:
+        workflow_id:
           type: string
-        tin:
+        outreach_correspondence_id:
           type: string
-        start_date:
+        data:
+          $ref: '#/components/schemas/OutreachDataDto'
+        created_at:
+          type: string
+        created_by_name:
+          type: string
+        id:
+          type: string
+        latest_event:
+          type: string
+        outreach_correspondence:
+          type: string
+        status_code:
+          type: number
+        sg_message_id:
+          type: string
+      required:
+      - provider_id
+      - organization_id
+      - workflow_id
+      - data
+      - created_at
+      - created_by_name
+      - id
+    DataSnapshot:
+      type: object
+      properties:
+        first_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        middle_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        last_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        suffix_name:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        npi:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        other_name:
+          type: array
+          items:
+            $ref: '#/components/schemas/OtherName'
+        email:
+          type: array
+          items:
+            $ref: '#/components/schemas/Email'
+        caqh_id:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        provider_type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/License'
+        speciality_board_certification:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialityBoardCertificate'
+        dea:
+          type: array
+          items:
+            $ref: '#/components/schemas/DEA'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderAddress'
+        dob:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        gender:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        sex:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        ssn:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentInfo'
+        employment_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmploymentHistory'
+        liability_insurance:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiabilityInsurance'
+      required:
+      - first_name
+      - middle_name
+      - last_name
+      - suffix_name
+      - npi
+      - other_name
+      - email
+      - caqh_id
+      - provider_type
+      - education
+      - licenses
+      - speciality_board_certification
+      - dea
+      - addresses
+      - dob
+      - gender
+      - sex
+      - ssn
+      - document
+      - employment_history
+      - liability_insurance
+    DeaDto:
+      type: object
+      properties:
+        expire_date:
           type: string
           example: YYYY-MM-DD
-        drawing_blood:
-          type: boolean
-        laboratory_services:
-          type: boolean
-        clia_number:
+        dea_number:
           type: string
-        clia_expiration_date:
-          type: string
-          example: YYYY-MM-DD
-        address1:
-          type: string
-        city:
+        id:
           type: string
         state:
           type: string
-        zip:
-          type: string
-        country:
-          type: string
-        npi:
-          type: string
-        phoneCoverage24x7:
-          type: boolean
-        totalLocationHours:
-          type: number
-        locationHours:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocationHourDto'
-        verified_by:
-          type: string
-        verified_date:
-          type: string
-          example: YYYY-MM-DD
-      required:
-      - id
-      - provider_id
-      - organization_id
-      - name
-    NpdbDataDto:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the NPDB data.
-        type_of_action:
-          type: string
-          description: Type of action taken.
-          enum:
-          - No Action
-          - Medical Malpractice Payment
-          - Health Plan
-          - State Licensure/Certification
-          - Professional Society
-          - Exclusion/Debarment
-          - DEA/Federal Licensure
-          - Government Administrative
-          - Judgement/Conviction
-          - Clinical Privileges
-          - Peer Review Organization
-        report_date:
-          type: string
-          description: Date the report was created
-          example: YYYY-MM-DD
-        process_date:
-          type: string
-          description: Date the report was processed
-          example: YYYY-MM-DD
-        verified_by:
-          type: string
-          description: Name of the individual who verified the report
-        verified_date:
-          type: string
-          description: Date the report was verified
-          example: YYYY-MM-DD
-        created_date:
-          type: string
-          description: Date the report entry was created
-          example: YYYY-MM-DD
-        payment_date:
-          type: string
-          description: Date the payment was made (if applicable)
-          example: YYYY-MM-DD
-        specific_allegation_date:
-          type: string
-          description: Date of the specific allegation (if applicable)
-          example: YYYY-MM-DD
-        source:
-          type: string
-          description: Source of the report
-          enum:
-          - National Practitioner Data Bank
-        report_type:
-          type: string
-          description: Type of report (e.g., disciplinary, administrative)
-          enum:
-          - Adverse Action Report
-          - Medical Malpractice Payment Report
-          - No Report Found
-        first_name:
-          type: string
-          description: First name of the subject of the report
-        last_name:
-          type: string
-          description: Last name of the subject of the report
-        gender:
-          type: string
-          description: Gender of the subject
-        npi:
-          type: string
-          description: National Provider Identifier (NPI)
-        home_address:
-          type: string
-          description: Home address of the subject
-        home_city:
-          type: string
-          description: Home city of the subject
-        home_state:
-          type: string
-          description: Home state of the subject
-        home_zip:
-          type: string
-          description: Home ZIP code of the subject
-        dcn:
-          type: string
-          description: Document Control Number (DCN)
-        birth_date:
-          type: string
-          description: Birth date of the subject
-          example: '1980-05-21'
-        databank_subject_id:
-          type: string
-          description: Databank Subject ID, unique identifier from NPDB
-      required:
-      - id
-      - type_of_action
-      - report_date
-      - process_date
-      - verified_by
-      - verified_date
-      - created_date
-      - payment_date
-      - specific_allegation_date
-      - source
-      - report_type
-      - first_name
-      - last_name
-      - gender
-      - npi
-      - home_address
-      - home_city
-      - home_state
-      - home_zip
-      - dcn
-      - birth_date
-      - databank_subject_id
-    OutreachDataDto:
-      type: object
-      properties:
-        to:
-          example:
-          - string@string.com
-          type: array
-          items:
-            type: string
-        reason:
-          type: string
-        subject:
-          type: string
-        body:
-          type: string
-        entityType:
-          type: string
-        entityId:
-          type: string
-        numberOfAttachments:
-          type: number
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment'
-      required:
-      - to
-      - reason
-      - subject
-      - body
-    MalpracticeInsuranceDto:
-      type: object
-      properties:
-        expiry_date:
-          type: string
-          description: Date when the malpractice insurance policy expires
-          example: YYYY-MM-DD
-        id:
-          type: string
-          description: Unique identifier for the malpractice insurance record
-        source:
-          type: string
-          description: Source from which the malpractice insurance information was obtained
-          enum:
-          - Copy of Insurance
-          - Application
-          - N/A
         status:
           type: string
-          description: Current status of the malpractice insurance policy
+          description: Current status of the DEA registration
           enum:
-          - active
-          - expired
-        policy_number:
+          - Active
+          - Inactive
+        provider_type:
           type: string
-          description: Policy number of the malpractice insurance
+          description: Type of provider
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CphT
+          - CPsyD
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DD
+          - DDS
+          - DMD
+          - DO
+          - DOU
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LactCon
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RD
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - Rph
+          - RPSGT
+          - RT
+          - SA
+          - SLP
+          - SW
         verified_by:
           type: string
-          description: Name of the person or system that verified the malpractice insurance
         verified_date:
           type: string
-          description: Date the malpractice insurance was verified
           example: YYYY-MM-DD
-        aggregate_coverage_amount:
-          type: number
-          description: Aggregate coverage amount of the malpractice insurance policy
-        occurrence_coverage_amount:
-          type: number
-          description: Occurrence coverage amount of the malpractice insurance policy
-        policyHolder:
+        source:
           type: string
-          description: Name of the policy holder for the malpractice insurance
-        pliCoverageType:
+        type:
           type: string
-          description: Type of Professional Liability Insurance (PLI) coverage
-        policyEffectiveDate:
-          type: string
-          description: Effective date of the malpractice insurance policy
-          example: YYYY-MM-DD
-        policyExpirationDate:
-          type: string
-          description: Expiration date of the malpractice insurance policy
-          example: YYYY-MM-DD
-        policyCurrentEffectiveDate:
-          type: string
-          description: Current effective date of the malpractice insurance policy
-          example: YYYY-MM-DD
-        individualCoverageFlag:
-          type: boolean
-          description: Indicates if the policy provides individual coverage (true/false)
-        insuranceType:
-          type: string
-          description: Type of insurance.
+          description: Type of controlled substance registration
+          enum:
+          - DEA
+          - CDS
       required:
-      - expiry_date
+      - expire_date
+      - dea_number
       - id
-      - source
+      - state
       - status
-      - policy_number
+      - provider_type
       - verified_by
       - verified_date
-      - aggregate_coverage_amount
-      - occurrence_coverage_amount
-      - policyHolder
-      - pliCoverageType
-      - policyEffectiveDate
-      - policyExpirationDate
-      - policyCurrentEffectiveDate
-      - individualCoverageFlag
-      - insuranceType
-    ApplicationVerificationDto:
+      - source
+      - type
+    License:
       type: object
       properties:
-        explanation:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        license_number:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        issuing_board:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        document:
           type: string
-        id:
-          type: string
-        verification_type:
-          type: string
-        verified_by:
-          type: string
-        verified_date:
-          type: string
-          example: YYYY-MM-DD
+        expiration_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        issue_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        renewal_date:
+          $ref: '#/components/schemas/FieldValueWithDescription'
       required:
-      - explanation
-      - id
-      - verification_type
-      - verified_by
-      - verified_date
+      - type
+      - state
+      - license_number
+      - issuing_board
+      - document
+      - expiration_date
+      - issue_date
+      - renewal_date
+    ProviderAddress:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        address_line_1:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        address_line_2:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        zip:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        city:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        state:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+        country:
+          $ref: '#/components/schemas/FieldValueWithDescription'
+      required:
+      - type
+      - address_line_1
+      - zip
+      - city
+      - state
+      - country
     CreateProviderDtoV2:
       type: object
       properties:
@@ -4454,1029 +5621,6 @@ components:
       - last_name
       - degree
       - states
-    ProviderOutreachDto:
-      type: object
-      properties:
-        provider_id:
-          type: string
-        organization_id:
-          type: string
-        workflow_id:
-          type: string
-        outreach_correspondence_id:
-          type: string
-        data:
-          $ref: '#/components/schemas/OutreachDataDto'
-        created_at:
-          type: string
-        created_by_name:
-          type: string
-        id:
-          type: string
-        latest_event:
-          type: string
-        outreach_correspondence:
-          type: string
-        status_code:
-          type: number
-        sg_message_id:
-          type: string
-      required:
-      - provider_id
-      - organization_id
-      - workflow_id
-      - data
-      - created_at
-      - created_by_name
-      - id
-    ProviderV2Dto:
-      type: object
-      properties:
-        provider_sanctions:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProviderSanctionsDto'
-        malpractice_insurance:
-          type: array
-          items:
-            $ref: '#/components/schemas/MalpracticeInsuranceDto'
-        npdb_data:
-          type: array
-          items:
-            $ref: '#/components/schemas/NpdbDataDto'
-        performance_indicator:
-          type: array
-          items:
-            $ref: '#/components/schemas/PerformanceIndicatorDto'
-        application_verification:
-          type: array
-          items:
-            $ref: '#/components/schemas/ApplicationVerificationDto'
-        board_certifications_data:
-          type: array
-          items:
-            $ref: '#/components/schemas/BoardCertificationDto'
-        credentialing_timeline:
-          type: array
-          items:
-            $ref: '#/components/schemas/CredentialingTimelineDto'
-        education_training:
-          type: array
-          items:
-            $ref: '#/components/schemas/EducationTrainingDto'
-        licenses:
-          type: array
-          items:
-            $ref: '#/components/schemas/LicenseDto'
-        deas:
-          type: array
-          items:
-            $ref: '#/components/schemas/DeaDto'
-        hospital_affiliations:
-          type: array
-          items:
-            $ref: '#/components/schemas/HospitalAffiliationDto'
-        licensure_actions:
-          $ref: '#/components/schemas/LicensureActionsDto'
-        first_name:
-          type: string
-        middle_name:
-          type: string
-        last_name:
-          type: string
-        npi:
-          type: string
-        provider_type:
-          enum:
-          - AA
-          - ABA
-          - ACU
-          - ADC
-          - APN
-          - AT
-          - ATR
-          - AUD
-          - BCaBA
-          - BCBA
-          - BSW
-          - BT
-          - CBHT
-          - CMHC
-          - CNS
-          - CP
-          - CphT
-          - CPsyD
-          - CRNA
-          - CSP
-          - CSW
-          - CTRS
-          - DC
-          - DD
-          - DDS
-          - DMD
-          - DO
-          - DOU
-          - DPM
-          - DT
-          - EMT
-          - GC
-          - HOS
-          - IBCLC
-          - LactCon
-          - LBHC
-          - LCSW
-          - LMHC
-          - LN
-          - LP
-          - LPC
-          - LPN
-          - LPT
-          - MA
-          - MD
-          - MFT
-          - MT
-          - MW
-          - ND
-          - NEU
-          - NMW
-          - NP
-          - OA
-          - OD
-          - OPT
-          - OT
-          - OTA
-          - PA
-          - PC
-          - PDH
-          - PHA
-          - PHD
-          - PSW
-          - PT
-          - PTA
-          - PTNL
-          - RD
-          - RDH
-          - RDN
-          - RN
-          - RNFA
-          - Rph
-          - RPSGT
-          - RT
-          - SA
-          - SLP
-          - SW
-          type: string
-          description: Type of provider
-        caqh_provider_id:
-          type: string
-        provider_id:
-          type: string
-        status:
-          type: string
-          description: Current status of the provider
-          enum:
-          - Terminated
-          - Active
-          - Denied
-          - New
-          - In Progress
-        organization_id:
-          type: string
-        file_type:
-          type: string
-          description: File type classification of the credentialing workflow
-          enum:
-          - Clean
-          - Non_Clean
-          - Pending
-        psv_url:
-          type: string
-        dob:
-          type: string
-        gender:
-          type: string
-          description: Gender of the provider
-          enum:
-          - Male
-          - Female
-          - Not Listed/Unknown
-        verified_by:
-          type: string
-        monitoring_status:
-          type: string
-          description: Current monitoring status of the provider
-          enum:
-          - In Progress
-          - Data Missing
-          - Outreach in Progress
-          - Reviewed by CertifyOS
-          - No action required
-        last_monitoring_date:
-          type: string
-          example: YYYY-MM-DD
-        provider_created_date:
-          type: string
-          example: YYYY-MM-DD
-        verified_date:
-          type: string
-          example: YYYY-MM-DD
-        file_completion_date:
-          type: string
-          example: YYYY-MM-DD
-        file_status:
-          type: string
-        race:
-          type: array
-          items:
-            $ref: '#/components/schemas/RaceTypeDto'
-        ethnicity:
-          type: string
-          description: Ethnicity of the provider
-          enum:
-          - White
-          - American Indian or Alaska Native
-          - Hispanic and Latino Americans
-          - Pacific Islander
-          - Asian
-          - Black or African American
-          - Hawaiian
-          - Mixed Ethnicity
-          - Other
-        other_languages:
-          type: array
-          items:
-            type: string
-        supporting_documents:
-          type: array
-          items:
-            $ref: '#/components/schemas/SupportingDocumentV2Dto'
-        external_id:
-          type: string
-        professional_ids:
-          description: Professional IDs associated with the provider
-          type: array
-          items:
-            $ref: '#/components/schemas/ProfessionalIdV2Dto'
-        practitioner_medicaid:
-          $ref: '#/components/schemas/PractitionerMedicaidDto'
-        practitioner_practice_location:
-          $ref: '#/components/schemas/PractitionerPracticeActiveLocationDto'
-        practice_location:
-          description: Practice locations associated with the provider
-          type: array
-          items:
-            $ref: '#/components/schemas/PracticeLocationDto'
-        credentialing_status:
-          type: string
-          description: Credentialing status of the provider
-          enum:
-          - Not sent to credentialing
-          - Not Started
-          - In Progress
-          - Recredentialing in progress
-          - Data missing
-          - Outreach in progress
-          - PSV Complete
-          - PSV ready
-          - Hold for Cred Comm
-          - Tabled
-          - Cred approved
-          - Cred denied
-          - Provider Terminated
-          - Withdrawn/Cancelled
-          - Credentialing restarted
-          - PSV complete by CertifyOS
-        credentialing_cycle:
-          type: string
-          description: Credentialing cycle of the provider
-          enum:
-          - Initial
-          - Recredentialing
-        states:
-          type: array
-          items:
-            type: string
-        assigned_states:
-          type: array
-          items:
-            type: string
-        sanction_items:
-          description: Sanction items associated with the provider
-          type: array
-          items:
-            $ref: '#/components/schemas/BaseSanctionItemResponseDto'
-        isPCP:
-          type: boolean
-        isSpecialist:
-          type: boolean
-        acceptsNewPatients:
-          type: boolean
-        acceptsNewMedicarePatients:
-          type: boolean
-        primaryEmail:
-          type: string
-      required:
-      - provider_sanctions
-      - malpractice_insurance
-      - npdb_data
-      - performance_indicator
-      - application_verification
-      - board_certifications_data
-      - credentialing_timeline
-      - education_training
-      - licenses
-      - deas
-      - hospital_affiliations
-      - licensure_actions
-      - first_name
-      - middle_name
-      - last_name
-      - npi
-      - provider_type
-      - caqh_provider_id
-      - provider_id
-      - status
-      - organization_id
-      - file_type
-      - psv_url
-      - dob
-      - gender
-      - verified_by
-      - monitoring_status
-      - last_monitoring_date
-      - provider_created_date
-      - verified_date
-      - file_completion_date
-      - file_status
-      - race
-      - ethnicity
-      - other_languages
-      - supporting_documents
-      - external_id
-      - professional_ids
-      - practitioner_medicaid
-      - practitioner_practice_location
-      - practice_location
-      - sanction_items
-    LicensureActionsDto:
-      type: object
-      properties:
-        date_of_last_action:
-          type: string
-        date_of_report:
-          type: string
-        details:
-          type: string
-        state:
-          type: string
-        type_of_action:
-          type: string
-        id:
-          type: string
-      required:
-      - date_of_last_action
-      - date_of_report
-      - details
-      - state
-      - type_of_action
-      - id
-    CredentialingWorkflowTimelineV2ResponseDto:
-      type: object
-      properties:
-        credentialingWorkflowId:
-          type: string
-        credentialingStatus:
-          type: string
-        credentialingCycle:
-          type: string
-        providerId:
-          type: string
-        organizationId:
-          type: string
-        orgEntity:
-          $ref: '#/components/schemas/CredentialingWorkflowOrgEntityTypeDto'
-        medicalDirectorId:
-          type: string
-        medicalDirectorName:
-          type: string
-        receivedForCredentialingDate:
-          type: string
-        attestationDate:
-          type: string
-        initialCredentialingDate:
-          type: string
-        lastCredentialedDate:
-          type: string
-        psvCompleteDate:
-          type: string
-        credentialingDecisionDate:
-          type: string
-        nextCredentialingDate:
-          type: string
-        updatedAt:
-          type: string
-        updatedByName:
-          type: string
-        updatedBy:
-          type: string
-        createdAt:
-          type: string
-        createdBy:
-          type: string
-        createdByName:
-          type: string
-        decisionEnteredById:
-          type: string
-        decisionEnteredByName:
-          type: string
-      required:
-      - credentialingWorkflowId
-      - credentialingStatus
-      - credentialingCycle
-      - providerId
-      - organizationId
-      - orgEntity
-      - medicalDirectorId
-      - medicalDirectorName
-      - receivedForCredentialingDate
-      - attestationDate
-      - initialCredentialingDate
-      - lastCredentialedDate
-      - psvCompleteDate
-      - credentialingDecisionDate
-      - nextCredentialingDate
-      - updatedAt
-      - updatedByName
-      - updatedBy
-      - createdAt
-      - createdBy
-      - createdByName
-      - decisionEnteredById
-      - decisionEnteredByName
-    ProviderOutreachResponseDto:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProviderOutreachDto'
-        count:
-          type: number
-          example: 10
-      required:
-      - data
-      - count
-    Question:
-      type: object
-      properties:
-        question_text:
-          type: string
-        question_response:
-          type: array
-          items:
-            $ref: '#/components/schemas/QuestionResponse'
-      required:
-      - question_text
-      - question_response
-    DeaDto:
-      type: object
-      properties:
-        expire_date:
-          type: string
-          example: YYYY-MM-DD
-        dea_number:
-          type: string
-        id:
-          type: string
-        state:
-          type: string
-        status:
-          type: string
-          description: Current status of the DEA registration
-          enum:
-          - Active
-          - Inactive
-        provider_type:
-          type: string
-          description: Type of provider
-          enum:
-          - AA
-          - ABA
-          - ACU
-          - ADC
-          - APN
-          - AT
-          - ATR
-          - AUD
-          - BCaBA
-          - BCBA
-          - BSW
-          - BT
-          - CBHT
-          - CMHC
-          - CNS
-          - CP
-          - CphT
-          - CPsyD
-          - CRNA
-          - CSP
-          - CSW
-          - CTRS
-          - DC
-          - DD
-          - DDS
-          - DMD
-          - DO
-          - DOU
-          - DPM
-          - DT
-          - EMT
-          - GC
-          - HOS
-          - IBCLC
-          - LactCon
-          - LBHC
-          - LCSW
-          - LMHC
-          - LN
-          - LP
-          - LPC
-          - LPN
-          - LPT
-          - MA
-          - MD
-          - MFT
-          - MT
-          - MW
-          - ND
-          - NEU
-          - NMW
-          - NP
-          - OA
-          - OD
-          - OPT
-          - OT
-          - OTA
-          - PA
-          - PC
-          - PDH
-          - PHA
-          - PHD
-          - PSW
-          - PT
-          - PTA
-          - PTNL
-          - RD
-          - RDH
-          - RDN
-          - RN
-          - RNFA
-          - Rph
-          - RPSGT
-          - RT
-          - SA
-          - SLP
-          - SW
-        verified_by:
-          type: string
-        verified_date:
-          type: string
-          example: YYYY-MM-DD
-        source:
-          type: string
-        type:
-          type: string
-          description: Type of controlled substance registration
-          enum:
-          - DEA
-          - CDS
-      required:
-      - expire_date
-      - dea_number
-      - id
-      - state
-      - status
-      - provider_type
-      - verified_by
-      - verified_date
-      - source
-      - type
-    DocumentInfo:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        url:
-          type: string
-      required:
-      - type
-      - url
-    Education:
-      type: object
-      properties:
-        institution_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        degree:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        document:
-          type: string
-        start_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        graduation_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        end_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-      required:
-      - institution_name
-      - degree
-      - start_date
-      - graduation_date
-      - end_date
-    FieldValueWithDescription:
-      type: object
-      properties:
-        value:
-          type: string
-        description:
-          type: string
-      required:
-      - value
-      - description
-    PractitionerPracticeActiveLocationDto:
-      type: object
-      properties:
-        address:
-          $ref: '#/components/schemas/CaqhAddressDto'
-        healthcareServiceName:
-          type: string
-      required:
-      - address
-      - healthcareServiceName
-    SupportingDocumentV2Dto:
-      type: object
-      properties:
-        created_at:
-          format: date-time
-          type: string
-        file_type:
-          type: string
-        file_url:
-          type: string
-        original_file_name:
-          type: string
-        id:
-          type: string
-      required:
-      - created_at
-      - file_type
-      - file_url
-      - original_file_name
-      - id
-    QuestionResponse:
-      type: object
-      properties:
-        response_text:
-          type: string
-      required:
-      - response_text
-    DEA:
-      type: object
-      properties:
-        dea_number:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        state:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        document:
-          type: string
-        issue_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        expiration_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        renewal_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-      required:
-      - dea_number
-      - state
-      - document
-      - issue_date
-      - expiration_date
-      - renewal_date
-    ProviderV2GroupsResponseDto:
-      type: object
-      properties:
-        group_name:
-          type: string
-          description: Name of the group
-        group_npi:
-          type: string
-          minLength: 10
-          maxLength: 10
-          description: Group National Provider Identifier (NPI)
-          example: '2345678901'
-        group_tin:
-          type: string
-          minLength: 9
-          maxLength: 9
-          description: Group Tax Identification Number (TIN)
-          example: '123456789'
-        external_group_id:
-          type: string
-          description: Client's ID for the group
-        id:
-          type: string
-      required:
-      - group_name
-      - group_npi
-      - group_tin
-      - id
-    PerformanceIndicatorDto:
-      type: object
-      properties:
-        access_issue:
-          type: string
-        benefits:
-          type: string
-        claims:
-          type: string
-        clinical:
-          type: string
-        complaints:
-          type: string
-        id:
-          type: string
-        service:
-          type: string
-      required:
-      - access_issue
-      - benefits
-      - claims
-      - clinical
-      - complaints
-      - id
-      - service
-    OtherName:
-      type: object
-      properties:
-        first_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        middle_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        last_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        suffix_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        name_type:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-      required:
-      - first_name
-      - last_name
-      - name_type
-    ProviderV2ResponseDto:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/ProviderV2Dto'
-        success:
-          type: boolean
-      required:
-      - data
-      - success
-    PractitionerMedicaidDto:
-      type: object
-      properties:
-        medicaidNumber:
-          type: string
-        medicaidState:
-          type: string
-      required:
-      - medicaidNumber
-      - medicaidState
-    ProfessionalIdV2Dto:
-      type: object
-      properties:
-        type:
-          enum:
-          - Medicare Number
-          - Medicaid Number
-          - ECFMG Number
-          - Foreign National Identification Number
-          - Unique Physician Identification Number
-          - CLIA
-          - DEA
-          type: string
-          description: Type of professional ID
-        number:
-          type: string
-          description: Professional ID number
-        issue_date:
-          type: string
-          description: Issue date of the professional ID
-        expiration_date:
-          type: string
-          description: Expiration date of the professional ID
-        note:
-          type: string
-          description: Notes about the professional ID
-        state:
-          type: string
-          description: State associated with the professional ID
-        source:
-          type: string
-          description: Source of the professional ID
-      required:
-      - type
-      - number
-      - issue_date
-      - expiration_date
-    License:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        state:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        license_number:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        issuing_board:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        document:
-          type: string
-        expiration_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        issue_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        renewal_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-      required:
-      - type
-      - state
-      - license_number
-      - issuing_board
-      - document
-      - expiration_date
-      - issue_date
-      - renewal_date
-    CredentialingWorkflowOrgEntityTypeDto:
-      type: object
-      properties:
-        id:
-          type: string
-          default: null
-        name:
-          type: string
-          default: null
-      required:
-      - id
-    DataSnapshot:
-      type: object
-      properties:
-        first_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        middle_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        last_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        suffix_name:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        npi:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        other_name:
-          type: array
-          items:
-            $ref: '#/components/schemas/OtherName'
-        email:
-          type: array
-          items:
-            $ref: '#/components/schemas/Email'
-        caqh_id:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        provider_type:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        education:
-          type: array
-          items:
-            $ref: '#/components/schemas/Education'
-        licenses:
-          type: array
-          items:
-            $ref: '#/components/schemas/License'
-        speciality_board_certification:
-          type: array
-          items:
-            $ref: '#/components/schemas/SpecialityBoardCertificate'
-        dea:
-          type: array
-          items:
-            $ref: '#/components/schemas/DEA'
-        addresses:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProviderAddress'
-        dob:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        gender:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        sex:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        ssn:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        document:
-          type: array
-          items:
-            $ref: '#/components/schemas/DocumentInfo'
-        employment_history:
-          type: array
-          items:
-            $ref: '#/components/schemas/EmploymentHistory'
-        liability_insurance:
-          type: array
-          items:
-            $ref: '#/components/schemas/LiabilityInsurance'
-      required:
-      - first_name
-      - middle_name
-      - last_name
-      - suffix_name
-      - npi
-      - other_name
-      - email
-      - caqh_id
-      - provider_type
-      - education
-      - licenses
-      - speciality_board_certification
-      - dea
-      - addresses
-      - dob
-      - gender
-      - sex
-      - ssn
-      - document
-      - employment_history
-      - liability_insurance
-    ProviderSanctionsDto:
-      type: object
-      properties:
-        date_of_report:
-          type: string
-          description: Date the sanction report was issued
-          example: YYYY-MM-DD
-        id:
-          type: string
-          description: Unique identifier for the provider sanction record
-        sanction_type:
-          type: string
-          description: Type of sanction applied to the provider
-          enum:
-          - OIG
-          - GSA/SAM/OFAC
-          - OFAC
-          - MOO
-          - OMIG
-          - State Exclusion List
-          - Preclusion List Check
-        type_of_action:
-          type: string
-          description: Type of action taken against the provider
-          enum:
-          - No Match Found
-          - Match Found
-        verified_by:
-          type: string
-          description: Name of the person or system that verified the sanction
-        data:
-          type: string
-          description: Additional data or details related to the sanction
-        verified_date:
-          type: string
-          description: Date the sanction was verified
-          example: YYYY-MM-DD
-      required:
-      - date_of_report
-      - id
-      - sanction_type
-      - type_of_action
-      - verified_by
-      - data
-      - verified_date
-    RaceEthnicityLevel3Dto:
-      type: object
-      properties:
-        raceEthnicityLevel3Name:
-          type: string
-      required:
-      - raceEthnicityLevel3Name
-    Attachment:
-      type: object
-      properties:
-        content:
-          type: string
-        disposition:
-          type: string
-        filename:
-          type: string
-        type:
-          type: string
     SpecialityBoardCertificate:
       type: object
       properties:
@@ -5508,136 +5652,6 @@ components:
       - issue_date
       - renewal_date
       - expiration_date
-    EmploymentHistory:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        employer:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        title:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        speciality:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        start_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        end_date:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        address_line_1:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        address_line_2:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        country:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        city:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        state:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        zip:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-        gap_explanation:
-          $ref: '#/components/schemas/FieldValueWithDescription'
-      required:
-      - type
-      - employer
-      - title
-      - speciality
-      - start_date
-      - end_date
-      - address_line_1
-      - address_line_2
-      - country
-      - city
-      - state
-      - zip
-      - gap_explanation
-    LocationHourDto:
-      type: object
-      properties:
-        dayOfweek:
-          type: string
-        endHours:
-          type: string
-        startHours:
-          type: string
-    AttestationMetadata:
-      type: object
-      properties:
-        attestation_language:
-          type: string
-        attestation_signature_image:
-          type: string
-        attestation_name:
-          type: string
-        date_attested:
-          format: date-time
-          type: string
-    CreateProfessionalIdsV2Dto:
-      type: object
-      properties:
-        professional_ids:
-          description: Array of professional IDs to create
-          type: array
-          items:
-            $ref: '#/components/schemas/CreateProfessionalIdV2Dto'
-      required:
-      - professional_ids
-    CredentialingTimelineDto:
-      type: object
-      properties:
-        medical_director:
-          type: string
-        attestation_date:
-          type: string
-          example: YYYY-MM-DD
-        initial_credentialing_date:
-          type: string
-          example: YYYY-MM-DD
-        last_credentialed_date:
-          type: string
-          example: YYYY-MM-DD
-        psv_complete_date:
-          type: string
-          example: YYYY-MM-DD
-        credentialing_decision_date:
-          type: string
-          example: YYYY-MM-DD
-        next_credentialing_date:
-          type: string
-          example: YYYY-MM-DD
-        received_for_credentialing_date:
-          type: string
-          example: YYYY-MM-DD
-      required:
-      - medical_director
-      - attestation_date
-      - last_credentialed_date
-      - psv_complete_date
-      - credentialing_decision_date
-      - next_credentialing_date
-      - received_for_credentialing_date
-    CaqhAddressDto:
-      type: object
-      properties:
-        address1:
-          type: string
-        address2:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        zipCode:
-          type: string
-        country:
-          type: string
-      required:
-      - address1
-      - address2
-      - city
-      - state
-      - zipCode
-      - country
   securitySchemes:
     BearerAuth:
       scheme: bearer

@@ -652,6 +652,66 @@ paths:
       - jwt: []
 components:
   schemas:
+    UpdateUserRequest:
+      description: Request body for updating user details (full update - email is not updatable)
+      type: object
+      required:
+      - firstName
+      - lastName
+      properties:
+        firstName:
+          type: string
+          description: User first name
+          examples:
+          - John
+          pattern: \S
+          maxLength: 100
+        lastName:
+          type: string
+          description: User last name
+          examples:
+          - Doe
+          pattern: \S
+          maxLength: 100
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    UserRoleBulkUpdateRequest:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            type: string
+        remove:
+          type: array
+          items:
+            type: string
+    UserResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
     UserCreationResponse:
       type: object
       properties:
@@ -667,11 +727,6 @@ components:
           type: string
         status:
           type: string
-    OffsetDateTime:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T12:15:50-04:00'
     UserListResponseDto:
       title: UserListResponseDto
       description: Paginated list of users
@@ -690,35 +745,26 @@ components:
           description: Pagination links
           type: object
           $ref: '#/components/schemas/PageLinks1'
-    Tenant:
+    RoleDetails:
       type: object
+      description: Role details with full role information
       properties:
         id:
           type: string
         name:
           type: string
-    UserProfileResponse:
-      type: object
-      properties:
-        id:
+        description:
           type: string
-        email:
+        tenantId:
           type: string
-        firstName:
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
           type: string
-        lastName:
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedBy:
           type: string
-        tenants:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tenant'
-    BulkRoleUpdateResponse:
-      description: Response for bulk role update operation
-      type: object
-      properties:
-        message:
-          type: string
-          description: Success message
     PageLinks1:
       type: object
       properties:
@@ -728,6 +774,56 @@ components:
           type: string
         prev:
           type: string
+    BulkRoleUpdateResponse:
+      description: Response for bulk role update operation
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+    RoleDetails1:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tenantId:
+          type: string
+        roleId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+    UserListResponseWithRolesDto:
+      title: UserListResponseWithRolesDto
+      description: Paginated list of users with roles
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponseWithRolesDto'
+          description: List of users with roles
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of users
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
     UserResponseWithRolesDto:
       type: object
       description: User response with roles included
@@ -755,67 +851,7 @@ components:
           items:
             $ref: '#/components/schemas/RoleDetails'
           description: List of roles assigned to the user
-    SuccessResponse:
-      type: object
-      properties:
-        message:
-          type: string
-    PartialUpdateUserRequest:
-      description: Request body for partially updating user details (email is not updatable)
-      type: object
-      properties:
-        firstName:
-          type: string
-          description: User first name
-          examples:
-          - John
-          maxLength: 100
-        lastName:
-          type: string
-          description: User last name
-          examples:
-          - Doe
-          maxLength: 100
-    UserListResponseWithRolesDto:
-      title: UserListResponseWithRolesDto
-      description: Paginated list of users with roles
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserResponseWithRolesDto'
-          description: List of users with roles
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of users
-        links:
-          description: Pagination links
-          type: object
-          $ref: '#/components/schemas/PageLinks1'
-    UpdateUserRequest:
-      description: Request body for updating user details (full update - email is not updatable)
-      type: object
-      required:
-      - firstName
-      - lastName
-      properties:
-        firstName:
-          type: string
-          description: User first name
-          examples:
-          - John
-          pattern: \S
-          maxLength: 100
-        lastName:
-          type: string
-          description: User last name
-          examples:
-          - Doe
-          pattern: \S
-          maxLength: 100
-    UserResponseDto:
+    UserProfileResponse:
       type: object
       properties:
         id:
@@ -826,16 +862,10 @@ components:
           type: string
         lastName:
           type: string
-        tenantId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-        updatedAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-        createdBy:
-          type: string
-        updatedBy:
-          type: string
+        tenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tenant'
     CreateUserRequest:
       description: Request body for creating a new user
       type: object
@@ -872,23 +902,6 @@ components:
           - Doe
           pattern: \S
           maxLength: 100
-    UserRolesResponseDto:
-      description: User roles response containing list of roles
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoleDetails1'
-          description: List of roles assigned to the user
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of roles assigned to the user
-        links:
-          description: Pagination links
-          type: object
-          $ref: '#/components/schemas/PageLinks1'
     InviteUserRequest:
       description: Request body for inviting a new user
       type: object
@@ -917,52 +930,39 @@ components:
           - Doe
           pattern: \S
           maxLength: 100
-    UserRoleBulkUpdateRequest:
+    PartialUpdateUserRequest:
+      description: Request body for partially updating user details (email is not updatable)
       type: object
       properties:
-        add:
+        firstName:
+          type: string
+          description: User first name
+          examples:
+          - John
+          maxLength: 100
+        lastName:
+          type: string
+          description: User last name
+          examples:
+          - Doe
+          maxLength: 100
+    UserRolesResponseDto:
+      description: User roles response containing list of roles
+      type: object
+      properties:
+        data:
           type: array
           items:
-            type: string
-        remove:
-          type: array
-          items:
-            type: string
-    RoleDetails:
-      type: object
-      description: Role details with full role information
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        tenantId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-        updatedBy:
-          type: string
-    RoleDetails1:
-      type: object
-      properties:
-        id:
-          type: string
-        userId:
-          type: string
-        tenantId:
-          type: string
-        roleId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-        createdBy:
-          type: string
+            $ref: '#/components/schemas/RoleDetails1'
+          description: List of roles assigned to the user
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roles assigned to the user
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
   securitySchemes:
     jwt:
       type: http

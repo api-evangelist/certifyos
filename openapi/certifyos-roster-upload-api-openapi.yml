@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Certifyos Roster upload API
+  description: API for Certify application
+  title: Certify API Layer Roster upload API
   version: 1.0.0
-  description: 'Operations tagged Roster upload across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: http://localhost:9000
   description: Local Development Server
@@ -16,26 +16,11 @@ servers:
   description: Demo Server
 - url: https://api-service.certifyos.com
   description: Production Server
-- url: http://localhost:9001
-  description: Local Development Server
 tags:
 - name: Roster upload
   description: APIs for roster upload file column mappings
 paths:
   /roster-upload/{templateId}/column-mapping:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     post:
       summary: Get mappings for the upload in a given template
       description: Get mappings details for the uploaded columns in a given template. Requires the column_mapping_enabled feature flag to be enabled. Uses tenant-specific schema paths from tenant_configurations if configured, otherwise falls back to default schemas.
@@ -89,19 +74,6 @@ paths:
       security:
       - jwt: []
   /roster-upload/{templateId}/column-mapping/template:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     post:
       summary: create template from column mappings
       description: Creates a new template from the provided column mappings. Requires the column_mapping_enabled feature flag to be enabled. The mappings are validated against tenant-specific schemas if configured.
@@ -169,11 +141,6 @@ components:
           type: string
         templateDescription:
           type: string
-    RosterJobType:
-      type: string
-      enum:
-      - PRACTITIONER
-      - FACILITY
     SingleStepTemplateFlowResponse:
       type: object
       properties:
@@ -216,41 +183,6 @@ components:
             type: string
         singleSelect:
           type: boolean
-    GetUploadMappingsRequest:
-      type: object
-      properties:
-        columns:
-          type: array
-          items:
-            type: string
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        compareAgainstTemplate:
-          type: boolean
-    GetUploadMappingsResponse:
-      type: object
-      properties:
-        mapped:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        unMapped:
-          type: array
-          items:
-            type: string
-        systemFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -276,12 +208,49 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
+    GetUploadMappingsRequest:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        compareAgainstTemplate:
+          type: boolean
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
+    GetUploadMappingsResponse:
+      type: object
+      properties:
+        mapped:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        unMapped:
+          type: array
+          items:
+            type: string
+        systemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
   securitySchemes:
     jwt:
       type: http
       description: JWT Authentication - Provide only the raw token without Bearer prefix
       scheme: bearer
       bearerFormat: JWT
-x-refined-from:
-- certifyos-api-service-openapi.yml
-- certifyos-roster-service-openapi.yml

@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Certifyos Network API
+  description: API for Certify application
+  title: Certify API Layer Network API
   version: 1.0.0
-  description: 'Operations tagged Network across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: http://localhost:9000
   description: Local Development Server
@@ -16,26 +16,11 @@ servers:
   description: Demo Server
 - url: https://api-service.certifyos.com
   description: Production Server
-- url: http://localhost:9001
-  description: Local Development Server
 tags:
 - name: Network
   description: APIs for managing network entities
 paths:
   /networks:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     get:
       summary: Get all networks
       description: Returns a list of networks for the provided tenant. The networks are returned sorted by creation date, with the most recent networks appearing first.
@@ -123,19 +108,6 @@ paths:
       security:
       - jwt: []
   /networks/practitioners/effective-date:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     put:
       summary: Update effective date of a practitioner in a group for a network
       description: Updates the effective date of a practitioner in a group for a network. This updates the effectiveDate in the TenantGroupPractitionerNetwork table.
@@ -182,19 +154,6 @@ paths:
       security:
       - jwt: []
   /networks/{id}:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     put:
       summary: Update a new network
       description: Updates a new network with the provided details
@@ -244,7 +203,6 @@ paths:
       - jwt: []
     get:
       summary: Get a network by id
-      description: Get a network by id
       operationId: findNetworkById
       tags:
       - Network
@@ -323,19 +281,6 @@ paths:
       security:
       - jwt: []
   /networks/{networkId}/groups/{groupId}/practitioners/{practitionerId}/specialties/{specialtyId}/dates:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     put:
       summary: Update practitioner specialty effective/termination dates in group for network
       description: Updates the effectiveDate and/or terminationDate in the TenantGroupPractitionerNetworkSpecialty relationship identified by networkId, groupId, practitionerId, and specialtyId.
@@ -407,24 +352,22 @@ paths:
       - jwt: []
 components:
   schemas:
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    CreateNetworkRequest:
+    UpdateGroupPractitionerNetworkEffectiveDateRequest:
       type: object
+      required:
+      - networkId
+      - tenantGroupPractitionerId
+      - effectiveDate
       properties:
-        data:
-          $ref: '#/components/schemas/Network.schema'
-          type: object
+        networkId:
+          type: string
+          pattern: \S
+        tenantGroupPractitionerId:
+          type: string
+          pattern: \S
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
     NetworkResponse.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/api-contracts/response/NetworkResponse.schema.json
@@ -441,6 +384,61 @@ components:
               type: string
             contractId:
               type: string
+    UpdateGroupNetworkSpecialtyDatesRequest:
+      type: object
+      required:
+      - effectiveDate
+      properties:
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        terminationDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        applyToAllAssociatedNetworksAndPlans:
+          type: boolean
+        applyToAllAssociatedLocations:
+          type: boolean
+    CreateNetworkRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Network.schema'
+          type: object
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     JsonNode:
       type: object
       properties:
@@ -488,21 +486,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    UpdateGroupNetworkSpecialtyDatesRequest:
-      type: object
-      required:
-      - effectiveDate
-      properties:
-        effectiveDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        terminationDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        applyToAllAssociatedNetworksAndPlans:
-          type: boolean
-        applyToAllAssociatedLocations:
-          type: boolean
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -519,56 +502,6 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    UpdateGroupPractitionerNetworkEffectiveDateRequest:
-      type: object
-      required:
-      - networkId
-      - tenantGroupPractitionerId
-      - effectiveDate
-      properties:
-        networkId:
-          type: string
-          pattern: \S
-        tenantGroupPractitionerId:
-          type: string
-          pattern: \S
-        effectiveDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
     Network.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Network.schema.json
@@ -582,6 +515,18 @@ components:
         contractId:
           description: The identifier of the associated contract.
           type: string
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     GetAllNetworksResponse:
       type: object
       properties:
@@ -598,6 +543,3 @@ components:
       description: JWT Authentication - Provide only the raw token without Bearer prefix
       scheme: bearer
       bearerFormat: JWT
-x-refined-from:
-- certifyos-api-service-openapi.yml
-- certifyos-roster-service-openapi.yml

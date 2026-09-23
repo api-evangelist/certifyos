@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Certifyos Specialty API
+  description: API for Certify application
+  title: Certify API Layer Specialty API
   version: 1.0.0
-  description: 'Operations tagged Specialty across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: http://localhost:9000
   description: Local Development Server
@@ -16,26 +16,11 @@ servers:
   description: Demo Server
 - url: https://api-service.certifyos.com
   description: Production Server
-- url: http://localhost:9001
-  description: Local Development Server
 tags:
 - name: Specialty
   description: Endpoints for managing medical specialties.
 paths:
   /specialties:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     get:
       summary: Get all specialties
       description: Retrieves a list of all specialties with optional filtering by name
@@ -135,19 +120,6 @@ paths:
       security:
       - jwt: []
   /specialties/nucc:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     post:
       summary: Create a new NuccSpecialty
       description: Creates a new NuccSpecialty
@@ -202,19 +174,6 @@ paths:
       security:
       - jwt: []
   /specialties/nuccByTaxonomy/{taxonomyCode}:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     get:
       summary: Get NuccSpecialty by Taxonomy Code
       description: Retrieves a NuccSpecialty by its taxonomy code
@@ -267,19 +226,6 @@ paths:
       security:
       - jwt: []
   /specialties/{id}:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     put:
       summary: Update a specialty
       description: Updates an existing specialty
@@ -421,30 +367,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    NuccSpecialtyCategory.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.schema.json
-      title: NUCC Specialty Category
-      description: Allowed categories for NUCC Specialty
-      type: string
-      enum:
-      - Individual
-      - Non-Individual
-    Date:
-      type: string
-      format: date
     CreateSpecialtyRequest:
       type: object
       properties:
@@ -457,6 +379,18 @@ components:
         data:
           $ref: '#/components/schemas/Specialty.schema'
           type: object
+    NuccSpecialtyCategory.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.schema.json
+      title: NUCC Specialty Category
+      description: Allowed categories for NUCC Specialty
+      type: string
+      enum:
+      - Individual
+      - Non-Individual
+    Date:
+      type: string
+      format: date
     NuccSpecialty.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
@@ -490,41 +424,6 @@ components:
       - specialtyNuccTaxonomyCode
       - displayName
       additionalProperties: false
-    Specialty.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Specialty.schema.json
-      title: Specialty
-      description: Represents the master specialty list, including custom specialties, to include crosswalk between NUCC, HSD, and ABMS Specialties.  References the entities for NUCC, HSD, and ABMS specialties.
-      type: object
-      properties:
-        name:
-          description: The name of the specialty.
-          type: string
-        classificationSource:
-          description: The source of the specialty classification (e.g., NUCC, HSD, ABMS).
-          type: string
-        subspecialtyName:
-          description: The subspecialty name of the specialty.
-          type: string
-        specialtyCategory:
-          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
-        taxonomyCode:
-          description: The taxonomy code associated with the specialty.
-          type: string
-        taxonomyDescription:
-          description: The description of the taxonomy code.
-          type: string
-      required:
-      - name
-      - classificationSource
-      - specialtyCategory
-      additionalProperties: false
-    CreateNuccSpecialtyRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/NuccSpecialty.schema'
-          type: object
     JsonNode:
       type: object
       properties:
@@ -572,6 +471,35 @@ components:
           type: boolean
         binary:
           type: boolean
+    Specialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Specialty.schema.json
+      title: Specialty
+      description: Represents the master specialty list, including custom specialties, to include crosswalk between NUCC, HSD, and ABMS Specialties.  References the entities for NUCC, HSD, and ABMS specialties.
+      type: object
+      properties:
+        name:
+          description: The name of the specialty.
+          type: string
+        classificationSource:
+          description: The source of the specialty classification (e.g., NUCC, HSD, ABMS).
+          type: string
+        subspecialtyName:
+          description: The subspecialty name of the specialty.
+          type: string
+        specialtyCategory:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+        taxonomyCode:
+          description: The taxonomy code associated with the specialty.
+          type: string
+        taxonomyDescription:
+          description: The description of the taxonomy code.
+          type: string
+      required:
+      - name
+      - classificationSource
+      - specialtyCategory
+      additionalProperties: false
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -588,12 +516,27 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    CreateNuccSpecialtyRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NuccSpecialty.schema'
+          type: object
   securitySchemes:
     jwt:
       type: http
       description: JWT Authentication - Provide only the raw token without Bearer prefix
       scheme: bearer
       bearerFormat: JWT
-x-refined-from:
-- certifyos-api-service-openapi.yml
-- certifyos-roster-service-openapi.yml

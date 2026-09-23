@@ -9,12 +9,12 @@ servers:
 - url: https://ng-api-stg.certifyos.com/
   description: Staging (Test Data)
 tags:
-- name: forms
+- name: Forms
 paths:
   /forms/submissions:
     post:
       operationId: FormSubmissionController_create
-      summary: Create a new form submission.
+      summary: Create a new form submission
       description: Creates a new form submission.
       parameters:
       - name: organization-id
@@ -42,13 +42,13 @@ paths:
         '403':
           description: Forbidden if user access is not right.
       tags:
-      - forms
+      - Forms
       security:
       - BearerAuth: []
   /forms/submissions/{id}:
     get:
       operationId: FormSubmissionController_findOne
-      summary: Get a form submission by ID.
+      summary: Get a form submission by ID
       description: Retrieves a single form submission by its unique ID.
       parameters:
       - name: organization-id
@@ -75,19 +75,11 @@ paths:
         '404':
           description: Form submission not found.
       tags:
-      - forms
+      - Forms
       security:
       - BearerAuth: []
 components:
   schemas:
-    CreateFormSubmissionDto:
-      type: object
-      properties:
-        data:
-          type: object
-          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
-      required:
-      - data
     FormSubmissionSubmittedByResponseDto:
       type: object
       properties:
@@ -186,6 +178,14 @@ components:
       - createdAt
       - createdBy
       - updatedAt
+    CreateFormSubmissionDto:
+      type: object
+      properties:
+        data:
+          type: object
+          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
+      required:
+      - data
   securitySchemes:
     BearerAuth:
       scheme: bearer

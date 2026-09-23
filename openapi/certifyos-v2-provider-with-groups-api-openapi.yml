@@ -53,6 +53,34 @@ paths:
       - BearerAuth: []
 components:
   schemas:
+    CreateProviderV2GroupDto:
+      type: object
+      properties:
+        group_name:
+          type: string
+          description: Name of the group
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        location_name:
+          type: string
+          description: Name of group location
+        external_group_id:
+          type: string
+          description: Client's ID for the group
+      required:
+      - group_name
+      - group_npi
+      - group_tin
     CreateProviderWithGroupDtoV2:
       type: object
       properties:
@@ -194,34 +222,6 @@ components:
       - last_name
       - degree
       - states
-    CreateProviderV2GroupDto:
-      type: object
-      properties:
-        group_name:
-          type: string
-          description: Name of the group
-        group_npi:
-          type: string
-          minLength: 10
-          maxLength: 10
-          description: Group National Provider Identifier (NPI)
-          example: '2345678901'
-        group_tin:
-          type: string
-          minLength: 9
-          maxLength: 9
-          description: Group Tax Identification Number (TIN)
-          example: '123456789'
-        location_name:
-          type: string
-          description: Name of group location
-        external_group_id:
-          type: string
-          description: Client's ID for the group
-      required:
-      - group_name
-      - group_npi
-      - group_tin
   securitySchemes:
     BearerAuth:
       scheme: bearer

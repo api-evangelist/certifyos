@@ -296,57 +296,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    CreateMonitoringWorkflowRunRequest:
-      type: object
-      required:
-      - monitoringRunId
-      properties:
-        monitoringRunId:
-          type: string
-        nextPageToken:
-          type: string
-    UpdateMonitoringRunRequest:
-      description: Request to update a monitoring run
-      type: object
-      properties:
-        runStatus:
-          type: string
-          description: Status of the monitoring run
-          examples:
-          - in-progress
-        completedTenants:
-          type: integer
-          format: int32
-          description: Number of tenants that have completed processing
-          examples:
-          - 5
-        additionalData:
-          description: Additional data to be stored with the monitoring run
-          type: object
-          examples:
-          - key: value
-          $ref: '#/components/schemas/JsonNode'
-    CreateMonitoringRunRequest:
-      type: object
-      properties:
-        startDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        endDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
     JsonNode:
       type: object
       properties:
@@ -394,6 +343,36 @@ components:
           type: boolean
         binary:
           type: boolean
+    CreateMonitoringRunRequest:
+      type: object
+      properties:
+        startDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        endDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+    UpdateMonitoringRunRequest:
+      description: Request to update a monitoring run
+      type: object
+      properties:
+        runStatus:
+          type: string
+          description: Status of the monitoring run
+          examples:
+          - in-progress
+        completedTenants:
+          type: integer
+          format: int32
+          description: Number of tenants that have completed processing
+          examples:
+          - 5
+        additionalData:
+          description: Additional data to be stored with the monitoring run
+          type: object
+          examples:
+          - key: value
+          $ref: '#/components/schemas/JsonNode'
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -410,6 +389,27 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    CreateMonitoringWorkflowRunRequest:
+      type: object
+      required:
+      - monitoringRunId
+      properties:
+        monitoringRunId:
+          type: string
+        nextPageToken:
+          type: string
   securitySchemes:
     jwt:
       type: http

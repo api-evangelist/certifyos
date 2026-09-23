@@ -130,18 +130,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     Instant:
       type: string
       format: date-time
@@ -165,34 +153,19 @@ components:
           description: Timezone abbreviation for the current date
           examples:
           - EST
-    TenantConfigurationItemDto:
-      description: A tenant configuration item
+    TenantConfigurationListResponseDto:
+      description: List of all tenant configurations for a tenant
       type: object
       properties:
-        id:
-          type: string
-          description: Unique identifier for the configuration
-        tenantId:
-          type: string
-          description: Tenant ID this configuration belongs to
-        namespace:
-          type: string
-          description: Namespace for the configuration
-        configurationTypeId:
-          type: string
-          description: Type identifier for the configuration
-        configuration:
-          description: Configuration data as JSON
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        updatedAt:
-          description: Timestamp when the configuration was last updated
-          type: string
-          $ref: '#/components/schemas/Instant'
-        createdAt:
-          description: Timestamp when the configuration was created
-          type: string
-          $ref: '#/components/schemas/Instant'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantConfigurationItemDto'
+          description: List of tenant configurations
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of tenant configurations
     JsonNode:
       type: object
       properties:
@@ -240,19 +213,46 @@ components:
           type: boolean
         binary:
           type: boolean
-    TenantConfigurationListResponseDto:
-      description: List of all tenant configurations for a tenant
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    TenantConfigurationItemDto:
+      description: A tenant configuration item
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantConfigurationItemDto'
-          description: List of tenant configurations
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of tenant configurations
+        id:
+          type: string
+          description: Unique identifier for the configuration
+        tenantId:
+          type: string
+          description: Tenant ID this configuration belongs to
+        namespace:
+          type: string
+          description: Namespace for the configuration
+        configurationTypeId:
+          type: string
+          description: Type identifier for the configuration
+        configuration:
+          description: Configuration data as JSON
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        updatedAt:
+          description: Timestamp when the configuration was last updated
+          type: string
+          $ref: '#/components/schemas/Instant'
+        createdAt:
+          description: Timestamp when the configuration was created
+          type: string
+          $ref: '#/components/schemas/Instant'
   securitySchemes:
     jwt:
       type: http

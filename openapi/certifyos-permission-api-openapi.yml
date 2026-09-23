@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Certifyos Permission API
+  description: API for Certify application
+  title: Certify API Layer Permission API
   version: 1.0.0
-  description: 'Operations tagged Permission across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-roster-service-openapi.yml. Each path carries the servers of the definition it was published in.'
 servers:
 - url: http://localhost:9000
   description: Local Development Server
@@ -16,26 +16,11 @@ servers:
   description: Demo Server
 - url: https://api-service.certifyos.com
   description: Production Server
-- url: http://localhost:9001
-  description: Local Development Server
 tags:
 - name: Permission
   description: APIs for managing permissions
 paths:
   /permissions:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     get:
       summary: Get All Permissions
       description: Returns all permissions from the database
@@ -113,19 +98,6 @@ paths:
       security:
       - jwt: []
   /permissions/{id}:
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
     put:
       summary: Update Permission
       description: Updates an existing permission
@@ -238,6 +210,38 @@ paths:
       - jwt: []
 components:
   schemas:
+    PermissionListResponseDto:
+      description: Paginated list of permissions
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionResponseDto'
+          description: List of permissions
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of permissions
+        page:
+          type: integer
+          format: int32
+          description: Current page number
+        size:
+          type: integer
+          format: int32
+          description: Number of items per page
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+        hasPrevious:
+          type: boolean
+          description: Whether there is a previous page
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
     PermissionUpdateRequest:
       description: Request body for updating a permission
       type: object
@@ -292,38 +296,6 @@ components:
           description: Last update timestamp
           type: string
           $ref: '#/components/schemas/OffsetDateTime'
-    PermissionListResponseDto:
-      description: Paginated list of permissions
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/PermissionResponseDto'
-          description: List of permissions
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of permissions
-        page:
-          type: integer
-          format: int32
-          description: Current page number
-        size:
-          type: integer
-          format: int32
-          description: Number of items per page
-        hasNext:
-          type: boolean
-          description: Whether there is a next page
-        hasPrevious:
-          type: boolean
-          description: Whether there is a previous page
-    OffsetDateTime:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T12:15:50-04:00'
     PermissionCreateRequest:
       description: Request body for creating a new permission
       type: object
@@ -354,6 +326,3 @@ components:
       description: JWT Authentication - Provide only the raw token without Bearer prefix
       scheme: bearer
       bearerFormat: JWT
-x-refined-from:
-- certifyos-api-service-openapi.yml
-- certifyos-roster-service-openapi.yml

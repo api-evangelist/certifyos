@@ -71,9 +71,7 @@ paths:
 
         - Entity type
 
-        - Tenant ID
-
-        '
+        - Tenant ID'
       operationId: udfSchemaFindLatestByEntityType
       tags:
       - UDF Schema
@@ -233,21 +231,56 @@ paths:
       - jwt: []
 components:
   schemas:
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     Date:
       type: string
       format: date
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    UdfSchemaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        schema:
+          $ref: '#/components/schemas/JsonNode'
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
     JsonNode:
       type: object
       properties:
@@ -313,28 +346,6 @@ components:
       - tenant_group_location
       - tenant_group_network
       - tenant_group_facility_network
-    UdfSchemaResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantId:
-          type: string
-        entityType:
-          $ref: '#/components/schemas/EntityType'
-        schema:
-          $ref: '#/components/schemas/JsonNode'
-        version:
-          type: integer
-          format: int32
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
     ApiError:
       description: Standard API error response containing a list of error objects
       type: object
@@ -344,31 +355,18 @@ components:
           items:
             $ref: '#/components/schemas/ErrorObject'
           description: List of error objects describing validation or processing failures
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
   securitySchemes:
     jwt:
       type: http
