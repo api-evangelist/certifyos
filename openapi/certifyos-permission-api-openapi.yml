@@ -210,60 +210,35 @@ paths:
       - jwt: []
 components:
   schemas:
-    PermissionListResponseDto:
-      description: Paginated list of permissions
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/PermissionResponseDto'
-          description: List of permissions
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of permissions
-        page:
-          type: integer
-          format: int32
-          description: Current page number
-        size:
-          type: integer
-          format: int32
-          description: Number of items per page
-        hasNext:
-          type: boolean
-          description: Whether there is a next page
-        hasPrevious:
-          type: boolean
-          description: Whether there is a previous page
-    OffsetDateTime:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T12:15:50-04:00'
-    PermissionUpdateRequest:
-      description: Request body for updating a permission
+    PermissionCreateRequest:
+      description: Request body for creating a new permission
       type: object
       properties:
         resource:
           type: string
           maxLength: 100
-          description: Resource name
+          pattern: \S
+          description: The resource name (e.g., 'user', 'roster')
           examples:
           - user
         action:
           type: string
           maxLength: 100
-          description: Action name
+          pattern: \S
+          description: The action name (e.g., 'read', 'create')
           examples:
           - read
         description:
           type: string
           maxLength: 500
-          description: Permission description
+          description: A brief description of the permission
           examples:
           - Allows reading user profiles
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
     PermissionResponseDto:
       type: object
       description: Permission information response
@@ -296,28 +271,53 @@ components:
           description: Last update timestamp
           type: string
           $ref: '#/components/schemas/OffsetDateTime'
-    PermissionCreateRequest:
-      description: Request body for creating a new permission
+    PermissionListResponseDto:
+      description: Paginated list of permissions
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionResponseDto'
+          description: List of permissions
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of permissions
+        page:
+          type: integer
+          format: int32
+          description: Current page number
+        size:
+          type: integer
+          format: int32
+          description: Number of items per page
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+        hasPrevious:
+          type: boolean
+          description: Whether there is a previous page
+    PermissionUpdateRequest:
+      description: Request body for updating a permission
       type: object
       properties:
         resource:
           type: string
           maxLength: 100
-          pattern: \S
-          description: The resource name (e.g., 'user', 'roster')
+          description: Resource name
           examples:
           - user
         action:
           type: string
           maxLength: 100
-          pattern: \S
-          description: The action name (e.g., 'read', 'create')
+          description: Action name
           examples:
           - read
         description:
           type: string
           maxLength: 500
-          description: A brief description of the permission
+          description: Permission description
           examples:
           - Allows reading user profiles
   securitySchemes:

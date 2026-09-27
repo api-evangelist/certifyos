@@ -238,15 +238,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
     ContractLifeCycleInfo:
       type: object
       properties:
@@ -262,58 +253,64 @@ components:
           type: string
         billingTerminationDate:
           type: string
-    ContractClinicalAndQualityInfo:
+    ContractAdministrativeAndLegalInfo:
       type: object
       properties:
-        hasQualityProgram:
+        amendmentOnFile:
           type: boolean
-        qualityProgramInitiatives:
+        amendmentNumber:
           type: string
-        averageStarsAndPmpmBonus:
+        practitionersTerminationNoticePeriod:
           type: string
-        hasMlrTarget:
+        providersManualUpdatesNoticePeriod:
+          type: string
+        policyUpdateNotificationRequired:
           type: boolean
-        mlrTargetDescription:
+        claimFilingLimit:
           type: string
-        performanceReportingRequirements:
+        reimbursementScheduleUpdateFrequency:
           type: string
-        credentialingDelegation:
-          type: boolean
-        recredentialingInterval:
-          type: string
-        referralRequirements:
-          type: boolean
-        priorAuthorizationRequired:
-          type: boolean
-        panelSizeLimits:
-          type: string
-        providerRosterUpdateFrequency:
-          type: string
-    Contract:
+        timelyPaymentCommitment:
+          type: integer
+          format: int32
+    ContractGeneralInfo:
       type: object
       properties:
-        id:
+        contractId:
           type: string
-        planId:
+        contractName:
+          type: string
+        contractTemplate:
+          type: string
+        contractRate:
+          type: string
+        reimbursementCode:
+          type: string
+        contractType:
+          type: string
+        vbcAttribution:
+          type: string
+        contractStatus:
+          type: string
+        contractAgreementType:
+          type: string
+        groupId:
+          type: string
+        practitionerId:
           type: string
         networkId:
           type: string
-        documentId:
+        planId:
           type: string
-        createdBy:
+    PageLinks:
+      type: object
+      properties:
+        self:
           type: string
-        updatedBy:
+        next:
           type: string
-        generalInfo:
-          $ref: '#/components/schemas/ContractGeneralInfo'
-        lifecycle:
-          $ref: '#/components/schemas/ContractLifeCycleInfo'
-        financial:
-          $ref: '#/components/schemas/ContractFinancialInfo'
-        administrativeAndLegal:
-          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
-        clinicalAndQuality:
-          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
+        prev:
+          type: string
     ContractFinancialInfo:
       type: object
       properties:
@@ -360,6 +357,18 @@ components:
           type: string
         telehealthNoShow:
           type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
     ApiError1:
       type: object
       properties:
@@ -367,34 +376,57 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ErrorObject1'
-    ContractGeneralInfo:
+    Contract:
       type: object
       properties:
-        contractId:
+        id:
           type: string
-        contractName:
-          type: string
-        contractTemplate:
-          type: string
-        contractRate:
-          type: string
-        reimbursementCode:
-          type: string
-        contractType:
-          type: string
-        vbcAttribution:
-          type: string
-        contractStatus:
-          type: string
-        contractAgreementType:
-          type: string
-        groupId:
-          type: string
-        practitionerId:
+        planId:
           type: string
         networkId:
           type: string
-        planId:
+        documentId:
+          type: string
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+        generalInfo:
+          $ref: '#/components/schemas/ContractGeneralInfo'
+        lifecycle:
+          $ref: '#/components/schemas/ContractLifeCycleInfo'
+        financial:
+          $ref: '#/components/schemas/ContractFinancialInfo'
+        administrativeAndLegal:
+          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
+        clinicalAndQuality:
+          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
+    ContractClinicalAndQualityInfo:
+      type: object
+      properties:
+        hasQualityProgram:
+          type: boolean
+        qualityProgramInitiatives:
+          type: string
+        averageStarsAndPmpmBonus:
+          type: string
+        hasMlrTarget:
+          type: boolean
+        mlrTargetDescription:
+          type: string
+        performanceReportingRequirements:
+          type: string
+        credentialingDelegation:
+          type: boolean
+        recredentialingInterval:
+          type: string
+        referralRequirements:
+          type: boolean
+        priorAuthorizationRequired:
+          type: boolean
+        panelSizeLimits:
+          type: string
+        providerRosterUpdateFrequency:
           type: string
     PagedContractResponse:
       type: object
@@ -408,38 +440,6 @@ components:
         totalCount:
           type: integer
           format: int64
-    ContractAdministrativeAndLegalInfo:
-      type: object
-      properties:
-        amendmentOnFile:
-          type: boolean
-        amendmentNumber:
-          type: string
-        practitionersTerminationNoticePeriod:
-          type: string
-        providersManualUpdatesNoticePeriod:
-          type: string
-        policyUpdateNotificationRequired:
-          type: boolean
-        claimFilingLimit:
-          type: string
-        reimbursementScheduleUpdateFrequency:
-          type: string
-        timelyPaymentCommitment:
-          type: integer
-          format: int32
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
   securitySchemes:
     jwt:
       type: http

@@ -144,6 +144,17 @@ paths:
       - jwt: []
 components:
   schemas:
+    PlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        payerId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
     Payer.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Payer.schema.json
@@ -171,6 +182,35 @@ components:
         data:
           $ref: '#/components/schemas/Plan.schema'
           type: object
+    SourceSystem.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
+      title: Source System Enum
+      description: Specifies the origin system of a record.
+      type: string
+      enum:
+      - API
+      - File Upload
+    LineOfBusiness.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business associated with a healthcare plan.
+      type: string
+      enum:
+      - Medicare
+      - Medicaid
+      - Commercial
+    GetAllPlansResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
     NetworkType.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
@@ -182,45 +222,6 @@ components:
       - Commercial - PPO
       - Medicare - HMO
       - Medicaid - HMO
-    Plan.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Plan.schema.json
-      title: Plan
-      description: Represents a healthcare plan with business line, network type, and benefits information.
-      type: object
-      properties:
-        lineOfBusiness:
-          description: The line of business under which the plan operates (e.g., Commercial, Medicare, Medicaid).
-          $ref: '#/components/schemas/LineOfBusiness.schema'
-        networkType:
-          description: The type of network associated with the plan (e.g., HMO, PPO).
-          $ref: '#/components/schemas/NetworkType.schema'
-        benefits:
-          description: The benefits offered under the plan.
-          type: string
-        name:
-          description: The name of the plan.
-          type: string
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
-    PlanResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantId:
-          type: string
-        payerId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
     JsonNode:
       type: object
       properties:
@@ -268,18 +269,25 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+    Plan.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Plan.schema.json
+      title: Plan
+      description: Represents a healthcare plan with business line, network type, and benefits information.
+      type: object
+      properties:
+        lineOfBusiness:
+          description: The line of business under which the plan operates (e.g., Commercial, Medicare, Medicaid).
+          $ref: '#/components/schemas/LineOfBusiness.schema'
+        networkType:
+          description: The type of network associated with the plan (e.g., HMO, PPO).
+          $ref: '#/components/schemas/NetworkType.schema'
+        benefits:
+          description: The benefits offered under the plan.
+          type: string
+        name:
+          description: The name of the plan.
+          type: string
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -296,26 +304,18 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    LineOfBusiness.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business associated with a healthcare plan.
+    JsonNodeType:
       type: string
       enum:
-      - Medicare
-      - Medicaid
-      - Commercial
-    GetAllPlansResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
   securitySchemes:
     jwt:
       type: http

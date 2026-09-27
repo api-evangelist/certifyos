@@ -187,6 +187,30 @@ paths:
       - jwt: []
 components:
   schemas:
+    PayerRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        dataToValidate:
+          $ref: '#/components/schemas/JsonNode'
+    PayerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
     Payer.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Payer.schema.json
@@ -208,19 +232,12 @@ components:
           type: string
       required:
       - name
-    PayerRequest:
+    CreatePayerRequest:
       type: object
       properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
         data:
-          $ref: '#/components/schemas/JsonNode'
-        dataToValidate:
-          $ref: '#/components/schemas/JsonNode'
+          $ref: '#/components/schemas/Payer.schema'
+          type: object
     SourceSystem.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
@@ -230,12 +247,6 @@ components:
       enum:
       - API
       - File Upload
-    CreatePayerRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Payer.schema'
-          type: object
     JsonNode:
       type: object
       properties:
@@ -283,27 +294,18 @@ components:
           type: boolean
         binary:
           type: boolean
-    GetAllPayersResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
-    PayerResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -320,18 +322,16 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+    GetAllPayersResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
   securitySchemes:
     jwt:
       type: http

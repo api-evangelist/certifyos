@@ -130,11 +130,34 @@ paths:
       - jwt: []
 components:
   schemas:
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
+    TenantConfigurationItemDto:
+      description: A tenant configuration item
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the configuration
+        tenantId:
+          type: string
+          description: Tenant ID this configuration belongs to
+        namespace:
+          type: string
+          description: Namespace for the configuration
+        configurationTypeId:
+          type: string
+          description: Type identifier for the configuration
+        configuration:
+          description: Configuration data as JSON
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        updatedAt:
+          description: Timestamp when the configuration was last updated
+          type: string
+          $ref: '#/components/schemas/Instant'
+        createdAt:
+          description: Timestamp when the configuration was created
+          type: string
+          $ref: '#/components/schemas/Instant'
     TenantTimezoneResponse:
       description: Tenant timezone configuration response
       type: object
@@ -166,6 +189,11 @@ components:
           type: integer
           format: int64
           description: Total number of tenant configurations
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
     JsonNode:
       type: object
       properties:
@@ -225,34 +253,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    TenantConfigurationItemDto:
-      description: A tenant configuration item
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the configuration
-        tenantId:
-          type: string
-          description: Tenant ID this configuration belongs to
-        namespace:
-          type: string
-          description: Namespace for the configuration
-        configurationTypeId:
-          type: string
-          description: Type identifier for the configuration
-        configuration:
-          description: Configuration data as JSON
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        updatedAt:
-          description: Timestamp when the configuration was last updated
-          type: string
-          $ref: '#/components/schemas/Instant'
-        createdAt:
-          description: Timestamp when the configuration was created
-          type: string
-          $ref: '#/components/schemas/Instant'
   securitySchemes:
     jwt:
       type: http

@@ -231,9 +231,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    Date:
-      type: string
-      format: date
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -259,6 +256,15 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     UdfSchemaResponse:
       type: object
       properties:
@@ -346,15 +352,6 @@ components:
       - tenant_group_location
       - tenant_group_network
       - tenant_group_facility_network
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     JsonNodeType:
       type: string
       enum:
@@ -367,6 +364,9 @@ components:
       - OBJECT
       - POJO
       - STRING
+    Date:
+      type: string
+      format: date
   securitySchemes:
     jwt:
       type: http

@@ -353,72 +353,364 @@ paths:
       - BearerAuth: []
 components:
   schemas:
-    SubSpecialtiesDto:
+    FacilityGroupsResponseDto:
       type: object
       properties:
-        specialtyNuccTaxonomyCode:
+        id:
+          type: string
+        group_name:
+          type: string
+        group_npi:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: Group National Provider Identifier (NPI)
+          example: '2345678901'
+        group_tin:
+          type: string
+          minLength: 9
+          maxLength: 9
+          description: Group Tax Identification Number (TIN)
+          example: '123456789'
+        external_group_id:
+          type: string
+      required:
+      - id
+      - group_name
+      - group_npi
+      - group_tin
+    FacilityProviderV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+        npi:
           type: string
         name:
           type: string
+        type:
+          type: string
+          description: Provider type/credential
+          enum:
+          - AA
+          - ABA
+          - ACU
+          - ADC
+          - APN
+          - AT
+          - ATR
+          - AUD
+          - BCaBA
+          - BCBA
+          - BSW
+          - BT
+          - CBHT
+          - CMHC
+          - CNS
+          - CP
+          - CPsyD
+          - CphT
+          - CRNA
+          - CSP
+          - CSW
+          - CTRS
+          - DC
+          - DDS
+          - DMD
+          - DO
+          - DPM
+          - DT
+          - EMT
+          - GC
+          - HOS
+          - IBCLC
+          - LBHC
+          - LCSW
+          - LMHC
+          - LN
+          - LP
+          - LPC
+          - LPN
+          - LPT
+          - LactCon
+          - MA
+          - MD
+          - MFT
+          - MT
+          - MW
+          - ND
+          - NEU
+          - NMW
+          - NP
+          - OA
+          - OD
+          - OPT
+          - OT
+          - OTA
+          - PA
+          - PC
+          - PDH
+          - PHA
+          - PHD
+          - PSW
+          - PT
+          - PTA
+          - PTNL
+          - RDH
+          - RDN
+          - RN
+          - RNFA
+          - RPSGT
+          - RT
+          - Rph
+          - SA
+          - SW
+          example: MD
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
       required:
-      - specialtyNuccTaxonomyCode
+      - id
+      - npi
       - name
-    InsuranceDto:
+      - type
+      - verified_by
+      - verified_date
+    HsdSpecialty:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+          - ''
+          - '001'
+          - '002'
+          - '003'
+          - '004'
+          - '005'
+          - '006'
+          - '007'
+          - 008
+          - '010'
+          - '011'
+          - '012'
+          - '013'
+          - '014'
+          - '015'
+          - '016'
+          - '017'
+          - 018
+          - 019
+          - '020'
+          - '021'
+          - '022'
+          - '023'
+          - '025'
+          - '026'
+          - '027'
+          - 028
+          - 029
+          - '030'
+          - '031'
+          - '033'
+          - '034'
+          - '035'
+          - '036'
+          - '037'
+          - '040'
+          - '041'
+          - '042'
+          - '043'
+          - '044'
+          - '045'
+          - '046'
+          - '047'
+          - 048
+          - 049
+          - '050'
+          - '051'
+          - '052'
+          - '057'
+        name:
+          type: string
+          enum:
+          - ''
+          - General Practice
+          - Family Practice
+          - Internal Medicine
+          - Geriatrics
+          - Primary Care - Physician Assistants
+          - Primary Care - Nurse Practitioners
+          - Allergy and Immunology
+          - Cardiology
+          - Chiropractor
+          - Dermatology
+          - Endocrinology
+          - ENT/Otolaryngology
+          - Gastroenterology
+          - General Surgery
+          - Gynecology, OB/GYN
+          - Infectious Diseases
+          - Nephrology
+          - Neurology
+          - Neurosurgery
+          - Oncology - Medical, Surgical
+          - Oncology - Radiation/Radiation Oncology
+          - Ophthalmology
+          - Orthopedic Surgery
+          - Physiatry, Rehabilitative Medicine
+          - Plastic Surgery
+          - Podiatry
+          - Psychiatry
+          - Pulmonology
+          - Rheumatology
+          - Urology
+          - Vascular Surgery
+          - Cardiothoracic Surgery
+          - Clinical Psychology
+          - Clinical Social Work
+          - Acute Inpatient Hospitals
+          - Cardiac Surgery Program
+          - Cardiac Catheterization Services
+          - Critical Care Services – Intensive Care Units (ICU)
+          - Outpatient Dialysis
+          - Surgical Services (Outpatient or ASC)
+          - Skilled Nursing Facilities
+          - Diagnostic Radiology
+          - Mammography
+          - Physical Therapy
+          - Occupational Therapy
+          - Speech Therapy
+          - Inpatient Psychiatric Facility Services
+          - Outpatient Infusion/Chemotherapy
+      required:
+      - code
+      - name
+    PracticeLicenseV2Dto:
       type: object
       properties:
         id:
           type: string
-        action:
+        state:
           type: string
-          default: updated
+          description: US state or territory where practice license is issued
           enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        policyNumber:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+          example: CA
+        expirationDate:
+          format: date-time
           type: string
-          description: Insurance policy number
+        type:
+          type: string
+          description: Type of practice license
+          enum:
+          - State License
+          - Business Permit
+          - Occupational License
+          - Medical gas permit
+          example: State License
+        status:
+          type: string
+          description: Current status of the practice license
+          enum:
+          - Active
+          - Inactive
+          - Expired
+          - Retired
+          - Revoked
+          - Lapsed
+          - Probation
+          - Surrendered
+          - Suspended
+          example: Active
+        license:
+          type: string
         source:
           type: string
-          description: Insurance carrier/company name
-        insuranceType:
+          description: Source of practice license verification
+        verified_by:
           type: string
-          description: Type of insurance
-          enum:
-          - General Liability
-          - Professional Liability
-          example: Professional Liability
-        expirationDate:
-          format: date
+          description: Name of the person who verified this practice license information
+        verified_date:
           type: string
-          description: Date when the insurance policy expires
+          description: Date when this practice license information was verified
+          example: YYYY-MM-DD
+        issueDate:
+          format: date-time
+          type: string
       required:
-      - policyNumber
-      - source
-      - insuranceType
+      - id
+      - state
       - expirationDate
-    TerminateFacilityV2Dto:
-      type: object
-      properties:
-        facility_ids:
-          description: Facility ids to be terminated in comma separated strings within the array.
-          type: array
-          items:
-            type: string
-        reason:
-          type: string
-          description: Reason for the termination.
-        filters:
-          description: Add Filters to the facility to be terminated
-          allOf:
-          - $ref: '#/components/schemas/FilterFacilityV2Dto'
-      required:
-      - facility_ids
-      - reason
-      - filters
-    FacilityPerformanceIndicatorDto:
+      - type
+      - status
+      - license
+      - source
+      - verified_by
+      - verified_date
+      - issueDate
+    MedicareStarRatingDto:
       type: object
       properties:
         id:
@@ -432,31 +724,13 @@ components:
           - deleted
         isUpdated:
           type: boolean
-        applicable:
+        starRating:
           type: string
-          description: Whether performance indicator is applicable
-          enum:
-          - 'Yes'
-          - 'No'
-          - N/A
-          example: 'Yes'
-        complaints:
+        reportDate:
+          format: date-time
           type: string
-        clinical:
+        source:
           type: string
-        benefits:
-          type: string
-        claims:
-          type: string
-        accessIssues:
-          type: string
-      required:
-      - applicable
-      - complaints
-      - clinical
-      - benefits
-      - claims
-      - accessIssues
     OnSiteReviewDto:
       type: object
       properties:
@@ -486,149 +760,6 @@ components:
       required:
       - applicable
       - source
-    PaginatedFacilityV2ResponseDto:
-      type: object
-      properties:
-        data:
-          description: Array of facility objects
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityResponseV2Dto'
-        count:
-          type: number
-          description: Total number of facilities
-          example: 528
-        ids:
-          type:
-          - array
-          - 'null'
-          description: Array of specific facility IDs (when filtering)
-      required:
-      - data
-      - count
-    AppVerificationDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        explanation:
-          type: string
-        source:
-          type: string
-        verificationType:
-          type: string
-    FacilitySupportingDocumentDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        name:
-          type: string
-        lastModified:
-          format: date-time
-          type: string
-        type:
-          type: string
-      required:
-      - name
-      - lastModified
-      - type
-    FacilityCredentialingWorkflowTimelineV2ResponseDto:
-      type: object
-      properties:
-        facilityCredentialingWorkflowId:
-          type: string
-        credentialingStatus:
-          type: string
-        credentialingCycle:
-          type: string
-        facilityId:
-          type: string
-        organizationId:
-          type: string
-        medicalDirectorId:
-          type: string
-        medicalDirectorName:
-          type: string
-        receivedForCredentialingDate:
-          type: string
-        attestationDate:
-          type: string
-        lastCredentialedDate:
-          type: string
-        psvCompleteDate:
-          type: string
-        credentialingDecisionDate:
-          type: string
-        nextCredentialingDate:
-          type: string
-        updatedAt:
-          type: string
-        updatedByName:
-          type: string
-        updatedBy:
-          type: string
-        createdAt:
-          type: string
-        createdBy:
-          type: string
-        createdByName:
-          type: string
-        decisionEnteredById:
-          type: string
-        decisionEnteredByName:
-          type: string
-        verifierId:
-          type: string
-      required:
-      - facilityId
-      - organizationId
-      - receivedForCredentialingDate
-      - lastCredentialedDate
-      - psvCompleteDate
-      - credentialingDecisionDate
-      - nextCredentialingDate
-      - updatedAt
-      - createdAt
-    MedicareStarRatingDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        starRating:
-          type: string
-        reportDate:
-          format: date-time
-          type: string
-        source:
-          type: string
     TimelineV2Dto:
       type: object
       properties:
@@ -650,153 +781,6 @@ components:
       - title
       - verified_by
       - verified_date
-    PaginatedFacilityOutreachResponseDto:
-      type: object
-      properties:
-        data:
-          description: List of outreach records
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityOutreachResponseDto'
-        count:
-          type: number
-          example: 1
-          description: Total number of records
-      required:
-      - data
-      - count
-    BusinessLicenseV2Dto:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-          description: Business name as registered
-        entity:
-          type: string
-          description: Business entity type
-        city:
-          type: string
-        type:
-          type: string
-        incorporationDate:
-          type: string
-          description: Date when the business was incorporated
-          format: date
-        verified_by:
-          type: string
-          description: Name of the person who verified this business license information
-          example: John Doe
-        verified_date:
-          type: string
-          description: Date when this business license information was verified
-          example: YYYY-MM-DD
-      required:
-      - id
-      - name
-      - entity
-      - city
-      - type
-      - incorporationDate
-      - verified_by
-      - verified_date
-    FacilityOutreachResponseDto:
-      type: object
-      properties:
-        provider_id:
-          type: string
-        organization_id:
-          type: string
-        workflow_id:
-          type: string
-        outreach_correspondence_id:
-          type: string
-        data:
-          $ref: '#/components/schemas/OutreachDataDto'
-        created_at:
-          type: string
-        created_by_name:
-          type: string
-        id:
-          type: string
-        latest_event:
-          type: string
-        outreach_correspondence:
-          type: string
-        status_code:
-          type: number
-        sg_message_id:
-          type: string
-      required:
-      - provider_id
-      - organization_id
-      - workflow_id
-      - data
-      - created_at
-      - created_by_name
-      - id
-    NpdbDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        applicable:
-          type: string
-          description: Whether NPDB check is applicable
-          enum:
-          - 'Yes'
-          - 'No'
-          - N/A
-          example: 'Yes'
-        source:
-          type: string
-        typeOfAction:
-          type: string
-          description: Type of NPDB action
-          enum:
-          - No Action
-          - Medical Malpractice Payment
-          - Health Plan
-          - State Licensure/Certification
-          - Professional Society
-          - Exclusion/Debarment
-          - DEA/Federal Licensure
-          - Government Administrative
-          - Judgement/Conviction
-          - Clinical Privileges
-          - Peer Review Organization
-          example: No Action
-        reportResults:
-          type: string
-          default: No Report Found
-          enum:
-          - Adverse Action Report
-          - Medical Malpractice Payment Report
-          - No Report Found
-          description: NPDB report results
-          example: No Report Found
-        reportDate:
-          format: date-time
-          type: string
-        processDate:
-          format: date-time
-          type: string
-      required:
-      - applicable
-      - source
-      - typeOfAction
-      - reportDate
-      - processDate
     FacilityResponseV2Dto:
       type: object
       properties:
@@ -1131,37 +1115,17 @@ components:
       - deas
       - credentialingStatus
       - timelines
-    OutreachDataDto:
+    SubSpecialtiesDto:
       type: object
       properties:
-        to:
-          example:
-          - string@string.com
-          type: array
-          items:
-            type: string
-        reason:
+        specialtyNuccTaxonomyCode:
           type: string
-        subject:
+        name:
           type: string
-        body:
-          type: string
-        entityType:
-          type: string
-        entityId:
-          type: string
-        numberOfAttachments:
-          type: number
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment'
       required:
-      - to
-      - reason
-      - subject
-      - body
-    FacilityStateLicenseDto:
+      - specialtyNuccTaxonomyCode
+      - name
+    NpdbDto:
       type: object
       properties:
         id:
@@ -1175,51 +1139,53 @@ components:
           - deleted
         isUpdated:
           type: boolean
-        licenseType:
+        applicable:
           type: string
-          description: Type of license
+          description: Whether NPDB check is applicable
           enum:
-          - State License
-          - Business Permit
-          - Occupational License
-          - Medical gas permit
-          example: State License
+          - 'Yes'
+          - 'No'
+          - N/A
+          example: 'Yes'
         source:
           type: string
-          description: Source of license verification (licensing authority)
-          example: Utah Department of Health and Human Services
-        licenseNumber:
+        typeOfAction:
           type: string
-          description: License number issued by the licensing authority
-          example: F23-100000
-        status:
-          type: string
-          description: Status of the license (e.g., "Active", "Expired")
+          description: Type of NPDB action
           enum:
-          - Active
-          - Inactive
-          - Expired
-          - Retired
-          - Revoked
-          - Lapsed
-          - Probation
-          - Surrendered
-          - Suspended
-          example: Active
-        issueDate:
-          format: date
+          - No Action
+          - Medical Malpractice Payment
+          - Health Plan
+          - State Licensure/Certification
+          - Professional Society
+          - Exclusion/Debarment
+          - DEA/Federal Licensure
+          - Government Administrative
+          - Judgement/Conviction
+          - Clinical Privileges
+          - Peer Review Organization
+          example: No Action
+        reportResults:
           type: string
-          description: Date when the state license was issued
-        expirationDate:
-          format: date
+          default: No Report Found
+          enum:
+          - Adverse Action Report
+          - Medical Malpractice Payment Report
+          - No Report Found
+          description: NPDB report results
+          example: No Report Found
+        reportDate:
+          format: date-time
           type: string
-          description: Date when the state license expires
+        processDate:
+          format: date-time
+          type: string
       required:
-      - licenseType
+      - applicable
       - source
-      - licenseNumber
-      - status
-      - expirationDate
+      - typeOfAction
+      - reportDate
+      - processDate
     UpdateFacilityDto:
       type: object
       properties:
@@ -1426,128 +1392,259 @@ components:
           type: string
         medicalDirectorId:
           type: string
-    PracticeLicenseV2Dto:
+    PaginatedFacilityOutreachResponseDto:
+      type: object
+      properties:
+        data:
+          description: List of outreach records
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityOutreachResponseDto'
+        count:
+          type: number
+          example: 1
+          description: Total number of records
+      required:
+      - data
+      - count
+    FacilityCredentialingWorkflowTimelineV2ResponseDto:
+      type: object
+      properties:
+        facilityCredentialingWorkflowId:
+          type: string
+        credentialingStatus:
+          type: string
+        credentialingCycle:
+          type: string
+        facilityId:
+          type: string
+        organizationId:
+          type: string
+        medicalDirectorId:
+          type: string
+        medicalDirectorName:
+          type: string
+        receivedForCredentialingDate:
+          type: string
+        attestationDate:
+          type: string
+        lastCredentialedDate:
+          type: string
+        psvCompleteDate:
+          type: string
+        credentialingDecisionDate:
+          type: string
+        nextCredentialingDate:
+          type: string
+        updatedAt:
+          type: string
+        updatedByName:
+          type: string
+        updatedBy:
+          type: string
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        decisionEnteredById:
+          type: string
+        decisionEnteredByName:
+          type: string
+        verifierId:
+          type: string
+      required:
+      - facilityId
+      - organizationId
+      - receivedForCredentialingDate
+      - lastCredentialedDate
+      - psvCompleteDate
+      - credentialingDecisionDate
+      - nextCredentialingDate
+      - updatedAt
+      - createdAt
+    OutreachDataDto:
+      type: object
+      properties:
+        to:
+          example:
+          - string@string.com
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        numberOfAttachments:
+          type: number
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+      required:
+      - to
+      - reason
+      - subject
+      - body
+    AppVerificationDto:
       type: object
       properties:
         id:
           type: string
-        state:
+        action:
           type: string
-          description: US state or territory where practice license is issued
+          default: updated
           enum:
-          - AK
-          - AL
-          - AR
-          - AS
-          - AZ
-          - CA
-          - CO
-          - CT
-          - DC
-          - DE
-          - FL
-          - FM
-          - GA
-          - GU
-          - HI
-          - IA
-          - ID
-          - IL
-          - IN
-          - KS
-          - KY
-          - LA
-          - MA
-          - MD
-          - ME
-          - MH
-          - MI
-          - MN
-          - MO
-          - MP
-          - MS
-          - MT
-          - NC
-          - ND
-          - NE
-          - NH
-          - NJ
-          - NM
-          - NV
-          - NY
-          - OH
-          - OK
-          - OR
-          - PA
-          - PR
-          - PW
-          - RI
-          - SC
-          - SD
-          - TN
-          - TX
-          - UT
-          - UM
-          - VA
-          - VI
-          - VT
-          - WA
-          - WI
-          - WV
-          - WY
-          example: CA
-        expirationDate:
-          format: date-time
-          type: string
-        type:
-          type: string
-          description: Type of practice license
-          enum:
-          - State License
-          - Business Permit
-          - Occupational License
-          - Medical gas permit
-          example: State License
-        status:
-          type: string
-          description: Current status of the practice license
-          enum:
-          - Active
-          - Inactive
-          - Expired
-          - Retired
-          - Revoked
-          - Lapsed
-          - Probation
-          - Surrendered
-          - Suspended
-          example: Active
-        license:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        explanation:
           type: string
         source:
           type: string
-          description: Source of practice license verification
+        verificationType:
+          type: string
+    FacilityPerformanceIndicatorDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        applicable:
+          type: string
+          description: Whether performance indicator is applicable
+          enum:
+          - 'Yes'
+          - 'No'
+          - N/A
+          example: 'Yes'
+        complaints:
+          type: string
+        clinical:
+          type: string
+        benefits:
+          type: string
+        claims:
+          type: string
+        accessIssues:
+          type: string
+      required:
+      - applicable
+      - complaints
+      - clinical
+      - benefits
+      - claims
+      - accessIssues
+    BusinessLicenseV2Dto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Business name as registered
+        entity:
+          type: string
+          description: Business entity type
+        city:
+          type: string
+        type:
+          type: string
+        incorporationDate:
+          type: string
+          description: Date when the business was incorporated
+          format: date
         verified_by:
           type: string
-          description: Name of the person who verified this practice license information
+          description: Name of the person who verified this business license information
+          example: John Doe
         verified_date:
           type: string
-          description: Date when this practice license information was verified
+          description: Date when this business license information was verified
           example: YYYY-MM-DD
-        issueDate:
+      required:
+      - id
+      - name
+      - entity
+      - city
+      - type
+      - incorporationDate
+      - verified_by
+      - verified_date
+    AccreditationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        accreditationBody:
+          type: string
+          default: ''
+        applicable:
+          type: string
+        status:
+          type: string
+          description: Accreditation status
+          enum:
+          - Accredited
+          - Not Accredited
+          example: Accredited
+        effectiveDate:
+          format: date-time
+          type: string
+        expirationDate:
           format: date-time
           type: string
       required:
-      - id
-      - state
-      - expirationDate
-      - type
+      - accreditationBody
+      - applicable
       - status
-      - license
-      - source
-      - verified_by
-      - verified_date
-      - issueDate
+      - effectiveDate
+    TerminateFacilityV2Dto:
+      type: object
+      properties:
+        facility_ids:
+          description: Facility ids to be terminated in comma separated strings within the array.
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for the termination.
+        filters:
+          description: Add Filters to the facility to be terminated
+          allOf:
+          - $ref: '#/components/schemas/FilterFacilityV2Dto'
+      required:
+      - facility_ids
+      - reason
+      - filters
     UnterminateFacilityV2Dto:
       type: object
       properties:
@@ -1567,6 +1664,137 @@ components:
       - facility_ids
       - reason
       - filters
+    FacilitySupportingDocumentDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        name:
+          type: string
+        lastModified:
+          format: date-time
+          type: string
+        type:
+          type: string
+      required:
+      - name
+      - lastModified
+      - type
+    FilterFacilityV2Dto:
+      type: object
+      properties:
+        offset:
+          type: number
+          default: 0
+          minimum: 0
+          description: The starting index for pagination, specifying how many records to skip.
+        limit:
+          type: number
+          default: 10
+          description: The maximum number of records to retrieve in a single request.
+        file_type:
+          type: string
+          description: File Type of the facility to filter by to be terminated. (Effective only when no facility_ids are being passed and filters are used for query instead, but we need to pass the value in every case to make the api request)
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+        start_updated_at:
+          format: date-time
+          type: string
+          description: Filter facility that are created or updated >= specified date.
+        end_updated_at:
+          format: date-time
+          type: string
+          description: Filter providers that are created or updated < specified date.
+    CreateSpecialtiesDto:
+      type: object
+      properties:
+        specialtyNuccTaxonomyCode:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        id:
+          type: string
+        isPrimary:
+          type: boolean
+        specialtyBoardName:
+          type: string
+        source:
+          type: string
+        subSpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubSpecialtiesDto'
+      required:
+      - name
+    PaginatedFacilityV2ResponseDto:
+      type: object
+      properties:
+        data:
+          description: Array of facility objects
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityResponseV2Dto'
+        count:
+          type: number
+          description: Total number of facilities
+          example: 528
+        ids:
+          type:
+          - array
+          - 'null'
+          description: Array of specific facility IDs (when filtering)
+      required:
+      - data
+      - count
+    InsuranceDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        policyNumber:
+          type: string
+          description: Insurance policy number
+        source:
+          type: string
+          description: Insurance carrier/company name
+        insuranceType:
+          type: string
+          description: Type of insurance
+          enum:
+          - General Liability
+          - Professional Liability
+          example: Professional Liability
+        expirationDate:
+          format: date
+          type: string
+          description: Date when the insurance policy expires
+      required:
+      - policyNumber
+      - source
+      - insuranceType
+      - expirationDate
     Attachment:
       type: object
       properties:
@@ -1578,6 +1806,175 @@ components:
           type: string
         type:
           type: string
+    SanctionsDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        sanctionType:
+          type: string
+          description: Type of sanction applied
+          enum:
+          - OIG
+          - GSA/SAM/OFAC
+          - OFAC
+          - MOO
+          - OMIG
+          - State Exclusion List
+          - Preclusion List Check
+        source:
+          type: string
+        reportResults:
+          type: string
+          description: Result of the sanction check
+          enum:
+          - Match Found
+          - No Match Found
+      required:
+      - sanctionType
+      - source
+      - reportResults
+    FacilityOutreachResponseDto:
+      type: object
+      properties:
+        provider_id:
+          type: string
+        organization_id:
+          type: string
+        workflow_id:
+          type: string
+        outreach_correspondence_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/OutreachDataDto'
+        created_at:
+          type: string
+        created_by_name:
+          type: string
+        id:
+          type: string
+        latest_event:
+          type: string
+        outreach_correspondence:
+          type: string
+        status_code:
+          type: number
+        sg_message_id:
+          type: string
+      required:
+      - provider_id
+      - organization_id
+      - workflow_id
+      - data
+      - created_at
+      - created_by_name
+      - id
+    CertificationsDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        source:
+          type: string
+        types:
+          type: string
+        certificateType:
+          type: string
+          default: CLIA
+          enum:
+          - State Survey
+          - CLIA
+          - CMS
+          - CDS
+          - DEA
+          - N/A
+          description: Type of certification
+          example: CLIA
+        number:
+          type: string
+        issueDate:
+          format: date-time
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+    FacilityStateLicenseDto:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+          default: updated
+          enum:
+          - updated
+          - created
+          - deleted
+        isUpdated:
+          type: boolean
+        licenseType:
+          type: string
+          description: Type of license
+          enum:
+          - State License
+          - Business Permit
+          - Occupational License
+          - Medical gas permit
+          example: State License
+        source:
+          type: string
+          description: Source of license verification (licensing authority)
+          example: Utah Department of Health and Human Services
+        licenseNumber:
+          type: string
+          description: License number issued by the licensing authority
+          example: F23-100000
+        status:
+          type: string
+          description: Status of the license (e.g., "Active", "Expired")
+          enum:
+          - Active
+          - Inactive
+          - Expired
+          - Retired
+          - Revoked
+          - Lapsed
+          - Probation
+          - Surrendered
+          - Suspended
+          example: Active
+        issueDate:
+          format: date
+          type: string
+          description: Date when the state license was issued
+        expirationDate:
+          format: date
+          type: string
+          description: Date when the state license expires
+      required:
+      - licenseType
+      - source
+      - licenseNumber
+      - status
+      - expirationDate
     DEADto:
       type: object
       properties:
@@ -1680,380 +2077,6 @@ components:
       - status
       - source
       - expirationDate
-    FacilityProviderV2Dto:
-      type: object
-      properties:
-        id:
-          type: string
-        npi:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-          description: Provider type/credential
-          enum:
-          - AA
-          - ABA
-          - ACU
-          - ADC
-          - APN
-          - AT
-          - ATR
-          - AUD
-          - BCaBA
-          - BCBA
-          - BSW
-          - BT
-          - CBHT
-          - CMHC
-          - CNS
-          - CP
-          - CPsyD
-          - CphT
-          - CRNA
-          - CSP
-          - CSW
-          - CTRS
-          - DC
-          - DDS
-          - DMD
-          - DO
-          - DPM
-          - DT
-          - EMT
-          - GC
-          - HOS
-          - IBCLC
-          - LBHC
-          - LCSW
-          - LMHC
-          - LN
-          - LP
-          - LPC
-          - LPN
-          - LPT
-          - LactCon
-          - MA
-          - MD
-          - MFT
-          - MT
-          - MW
-          - ND
-          - NEU
-          - NMW
-          - NP
-          - OA
-          - OD
-          - OPT
-          - OT
-          - OTA
-          - PA
-          - PC
-          - PDH
-          - PHA
-          - PHD
-          - PSW
-          - PT
-          - PTA
-          - PTNL
-          - RDH
-          - RDN
-          - RN
-          - RNFA
-          - RPSGT
-          - RT
-          - Rph
-          - SA
-          - SW
-          example: MD
-        verified_by:
-          type: string
-        verified_date:
-          type: string
-          example: YYYY-MM-DD
-      required:
-      - id
-      - npi
-      - name
-      - type
-      - verified_by
-      - verified_date
-    HsdSpecialty:
-      type: object
-      properties:
-        code:
-          type: string
-          enum:
-          - ''
-          - '001'
-          - '002'
-          - '003'
-          - '004'
-          - '005'
-          - '006'
-          - '007'
-          - 008
-          - '010'
-          - '011'
-          - '012'
-          - '013'
-          - '014'
-          - '015'
-          - '016'
-          - '017'
-          - 018
-          - 019
-          - '020'
-          - '021'
-          - '022'
-          - '023'
-          - '025'
-          - '026'
-          - '027'
-          - 028
-          - 029
-          - '030'
-          - '031'
-          - '033'
-          - '034'
-          - '035'
-          - '036'
-          - '037'
-          - '040'
-          - '041'
-          - '042'
-          - '043'
-          - '044'
-          - '045'
-          - '046'
-          - '047'
-          - 048
-          - 049
-          - '050'
-          - '051'
-          - '052'
-          - '057'
-        name:
-          type: string
-          enum:
-          - ''
-          - General Practice
-          - Family Practice
-          - Internal Medicine
-          - Geriatrics
-          - Primary Care - Physician Assistants
-          - Primary Care - Nurse Practitioners
-          - Allergy and Immunology
-          - Cardiology
-          - Chiropractor
-          - Dermatology
-          - Endocrinology
-          - ENT/Otolaryngology
-          - Gastroenterology
-          - General Surgery
-          - Gynecology, OB/GYN
-          - Infectious Diseases
-          - Nephrology
-          - Neurology
-          - Neurosurgery
-          - Oncology - Medical, Surgical
-          - Oncology - Radiation/Radiation Oncology
-          - Ophthalmology
-          - Orthopedic Surgery
-          - Physiatry, Rehabilitative Medicine
-          - Plastic Surgery
-          - Podiatry
-          - Psychiatry
-          - Pulmonology
-          - Rheumatology
-          - Urology
-          - Vascular Surgery
-          - Cardiothoracic Surgery
-          - Clinical Psychology
-          - Clinical Social Work
-          - Acute Inpatient Hospitals
-          - Cardiac Surgery Program
-          - Cardiac Catheterization Services
-          - Critical Care Services – Intensive Care Units (ICU)
-          - Outpatient Dialysis
-          - Surgical Services (Outpatient or ASC)
-          - Skilled Nursing Facilities
-          - Diagnostic Radiology
-          - Mammography
-          - Physical Therapy
-          - Occupational Therapy
-          - Speech Therapy
-          - Inpatient Psychiatric Facility Services
-          - Outpatient Infusion/Chemotherapy
-      required:
-      - code
-      - name
-    FilterFacilityV2Dto:
-      type: object
-      properties:
-        offset:
-          type: number
-          default: 0
-          minimum: 0
-          description: The starting index for pagination, specifying how many records to skip.
-        limit:
-          type: number
-          default: 10
-          description: The maximum number of records to retrieve in a single request.
-        file_type:
-          type: string
-          description: File Type of the facility to filter by to be terminated. (Effective only when no facility_ids are being passed and filters are used for query instead, but we need to pass the value in every case to make the api request)
-          enum:
-          - Clean
-          - Non_Clean
-          - Pending
-        start_updated_at:
-          format: date-time
-          type: string
-          description: Filter facility that are created or updated >= specified date.
-        end_updated_at:
-          format: date-time
-          type: string
-          description: Filter providers that are created or updated < specified date.
-    FacilityGroupsResponseDto:
-      type: object
-      properties:
-        id:
-          type: string
-        group_name:
-          type: string
-        group_npi:
-          type: string
-          minLength: 10
-          maxLength: 10
-          description: Group National Provider Identifier (NPI)
-          example: '2345678901'
-        group_tin:
-          type: string
-          minLength: 9
-          maxLength: 9
-          description: Group Tax Identification Number (TIN)
-          example: '123456789'
-        external_group_id:
-          type: string
-      required:
-      - id
-      - group_name
-      - group_npi
-      - group_tin
-    SanctionsDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        sanctionType:
-          type: string
-          description: Type of sanction applied
-          enum:
-          - OIG
-          - GSA/SAM/OFAC
-          - OFAC
-          - MOO
-          - OMIG
-          - State Exclusion List
-          - Preclusion List Check
-        source:
-          type: string
-        reportResults:
-          type: string
-          description: Result of the sanction check
-          enum:
-          - Match Found
-          - No Match Found
-      required:
-      - sanctionType
-      - source
-      - reportResults
-    CertificationsDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        source:
-          type: string
-        types:
-          type: string
-        certificateType:
-          type: string
-          default: CLIA
-          enum:
-          - State Survey
-          - CLIA
-          - CMS
-          - CDS
-          - DEA
-          - N/A
-          description: Type of certification
-          example: CLIA
-        number:
-          type: string
-        issueDate:
-          format: date-time
-          type: string
-        expirationDate:
-          format: date-time
-          type: string
-    AccreditationDto:
-      type: object
-      properties:
-        id:
-          type: string
-        action:
-          type: string
-          default: updated
-          enum:
-          - updated
-          - created
-          - deleted
-        isUpdated:
-          type: boolean
-        accreditationBody:
-          type: string
-          default: ''
-        applicable:
-          type: string
-        status:
-          type: string
-          description: Accreditation status
-          enum:
-          - Accredited
-          - Not Accredited
-          example: Accredited
-        effectiveDate:
-          format: date-time
-          type: string
-        expirationDate:
-          format: date-time
-          type: string
-      required:
-      - accreditationBody
-      - applicable
-      - status
-      - effectiveDate
     CreateFacilityDto:
       type: object
       properties:
@@ -2268,29 +2291,6 @@ components:
       - perfIndicator
       - liabilityInsurances
       - medicareStarRatings
-    CreateSpecialtiesDto:
-      type: object
-      properties:
-        specialtyNuccTaxonomyCode:
-          type: string
-        code:
-          type: string
-        name:
-          type: string
-        id:
-          type: string
-        isPrimary:
-          type: boolean
-        specialtyBoardName:
-          type: string
-        source:
-          type: string
-        subSpecialties:
-          type: array
-          items:
-            $ref: '#/components/schemas/SubSpecialtiesDto'
-      required:
-      - name
   securitySchemes:
     BearerAuth:
       scheme: bearer

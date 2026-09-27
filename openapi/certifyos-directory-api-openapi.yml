@@ -175,37 +175,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    DirectoryRequest:
-      description: Request body for starting a directory export job
-      type: object
-      properties:
-        responseFormat:
-          description: 'Output format for the exported file. Supported values: `ndjson` (Newline Delimited JSON) or `csv` (Comma Separated Values), the default is `ndjson`. If not specified, defaults to ''ndjson''.'
-          type: string
-          examples:
-          - ndjson
-          enum:
-          - ndjson
-          - csv
-          $ref: '#/components/schemas/DirectoryExportOutputFormat'
-        templateId:
-          type: string
-          description: Optional egress template ID for template-driven export. When provided, the export uses the template's column mappings instead of the legacy pipeline.
-        mappingsCsvUrl:
-          type: string
-          description: Optional GCS URL to column mappings CSV for template pipeline
-    JobStatus:
-      type: string
-      enum:
-      - MAPPING
-      - IN_PROGRESS
-      - COMPLETED
-      - FAILED
     DirectoryJobStatusResponse:
       description: Response containing directory job status information
       type: object
@@ -240,31 +209,6 @@ components:
           description: URL to the exported file (only present when job is completed)
           examples:
           - https://storage.com/path/to/file.json
-    DirectoryResponse:
-      description: Response containing directory job information
-      type: object
-      properties:
-        exportJobId:
-          type: string
-          description: Unique identifier for the directory job
-          examples:
-          - job-123456
-        tenantId:
-          type: string
-          description: ID of the tenant
-          examples:
-          - tenant-123456
-        startedAt:
-          description: Timestamp when the directory job was started
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
-        entityType:
-          type: string
-          description: Entity type (practitioners or facilities)
-          examples:
-          - practitioners
     DirectoryExportOutputFormat:
       type: string
       enum:
@@ -317,6 +261,38 @@ components:
           description: Number of failed items
           examples:
           - 5
+    DirectoryResponse:
+      description: Response containing directory job information
+      type: object
+      properties:
+        exportJobId:
+          type: string
+          description: Unique identifier for the directory job
+          examples:
+          - job-123456
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant-123456
+        startedAt:
+          description: Timestamp when the directory job was started
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        entityType:
+          type: string
+          description: Entity type (practitioners or facilities)
+          examples:
+          - practitioners
+    JobStatus:
+      type: string
+      enum:
+      - MAPPING
+      - IN_PROGRESS
+      - COMPLETED
+      - FAILED
     ApiError:
       description: Standard API error response containing a list of error objects
       type: object
@@ -326,6 +302,30 @@ components:
           items:
             $ref: '#/components/schemas/ErrorObject'
           description: List of error objects describing validation or processing failures
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    DirectoryRequest:
+      description: Request body for starting a directory export job
+      type: object
+      properties:
+        responseFormat:
+          description: 'Output format for the exported file. Supported values: `ndjson` (Newline Delimited JSON) or `csv` (Comma Separated Values), the default is `ndjson`. If not specified, defaults to ''ndjson''.'
+          type: string
+          examples:
+          - ndjson
+          enum:
+          - ndjson
+          - csv
+          $ref: '#/components/schemas/DirectoryExportOutputFormat'
+        templateId:
+          type: string
+          description: Optional egress template ID for template-driven export. When provided, the export uses the template's column mappings instead of the legacy pipeline.
+        mappingsCsvUrl:
+          type: string
+          description: Optional GCS URL to column mappings CSV for template pipeline
   securitySchemes:
     jwt:
       type: http

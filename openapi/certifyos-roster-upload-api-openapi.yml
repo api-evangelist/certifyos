@@ -126,6 +126,11 @@ paths:
       - jwt: []
 components:
   schemas:
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
     SaveMappingsRequest:
       type: object
       properties:
@@ -141,6 +146,40 @@ components:
           type: string
         templateDescription:
           type: string
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     SingleStepTemplateFlowResponse:
       type: object
       properties:
@@ -156,6 +195,32 @@ components:
           type: string
         schemaUrl:
           type: string
+    GetUploadMappingsRequest:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        compareAgainstTemplate:
+          type: boolean
+    GetUploadMappingsResponse:
+      type: object
+      properties:
+        mapped:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        unMapped:
+          type: array
+          items:
+            type: string
+        systemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
     Field:
       type: object
       properties:
@@ -183,71 +248,6 @@ components:
             type: string
         singleSelect:
           type: boolean
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
-    GetUploadMappingsRequest:
-      type: object
-      properties:
-        columns:
-          type: array
-          items:
-            type: string
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        compareAgainstTemplate:
-          type: boolean
-    RosterJobType:
-      type: string
-      enum:
-      - PRACTITIONER
-      - FACILITY
-    GetUploadMappingsResponse:
-      type: object
-      properties:
-        mapped:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        unMapped:
-          type: array
-          items:
-            type: string
-        systemFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
   securitySchemes:
     jwt:
       type: http

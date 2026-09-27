@@ -63,43 +63,61 @@ paths:
       - jwt: []
 components:
   schemas:
-    StandardizedAddress:
-      type: object
-      description: Standardized address components
-      properties:
-        addressLine1:
-          type: string
-          description: Standardized primary street line
-        addressLine2:
-          type: string
-          description: Standardized secondary street line
-        city:
-          type: string
-          description: Standardized city
-        county:
-          type: string
-          description: Standardized county
-        state:
-          type: string
-          description: Standardized state code
-        zip:
-          type: string
-          description: Standardized ZIP / postal code
-        zip4:
-          type: string
-          description: ZIP+4 extension, if available
-        country:
-          type: string
-          description: Country code
-        formattedAddress:
-          type: string
-          description: Pretty-printed single-line address
     AddressConfidence:
       type: string
       enum:
       - HIGH
       - MEDIUM
       - LOW
+    StandardizeAddressRequest:
+      description: Input address to be standardized and validated
+      type: object
+      required:
+      - addressLine1
+      properties:
+        addressLine1:
+          type: string
+          description: Primary street line
+          examples:
+          - 123 Main Street
+          pattern: \S
+        addressLine2:
+          type: string
+          description: Secondary street line (apt, suite, unit, floor)
+          examples:
+          - Suite 100
+        city:
+          type: string
+          description: City
+          examples:
+          - New York
+        county:
+          type: string
+          description: County
+          examples:
+          - New York County
+        state:
+          type: string
+          description: State / province code
+          examples:
+          - NY
+        zip:
+          type: string
+          description: ZIP / postal code (5 or 5+4, hyphen-separated)
+          examples:
+          - '10001'
+          pattern: \d{5}(?:-\d{4})?
+        country:
+          type: string
+          description: ISO country code
+          examples:
+          - US
+          default: US
+        addressType:
+          type: string
+          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
+          examples:
+          - billing
     AddressEnrichment:
       type: object
       description: Enrichment values attached to the standardized address
@@ -162,55 +180,37 @@ components:
           description: Enrichment values derived from the standardized address
           type: object
           $ref: '#/components/schemas/AddressEnrichment'
-    StandardizeAddressRequest:
-      description: Input address to be standardized and validated
+    StandardizedAddress:
       type: object
-      required:
-      - addressLine1
+      description: Standardized address components
       properties:
         addressLine1:
           type: string
-          description: Primary street line
-          examples:
-          - 123 Main Street
-          pattern: \S
+          description: Standardized primary street line
         addressLine2:
           type: string
-          description: Secondary street line (apt, suite, unit, floor)
-          examples:
-          - Suite 100
+          description: Standardized secondary street line
         city:
           type: string
-          description: City
-          examples:
-          - New York
+          description: Standardized city
         county:
           type: string
-          description: County
-          examples:
-          - New York County
+          description: Standardized county
         state:
           type: string
-          description: State / province code
-          examples:
-          - NY
+          description: Standardized state code
         zip:
           type: string
-          description: ZIP / postal code (5 or 5+4, hyphen-separated)
-          examples:
-          - '10001'
-          pattern: \d{5}(?:-\d{4})?
+          description: Standardized ZIP / postal code
+        zip4:
+          type: string
+          description: ZIP+4 extension, if available
         country:
           type: string
-          description: ISO country code
-          examples:
-          - US
-          default: US
-        addressType:
+          description: Country code
+        formattedAddress:
           type: string
-          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
-          examples:
-          - billing
+          description: Pretty-printed single-line address
     AddressValidationStatus:
       type: string
       enum:

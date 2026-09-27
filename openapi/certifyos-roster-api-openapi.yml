@@ -440,37 +440,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    RosterResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantId:
-          type: string
-        templateId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        invalidCount:
-          type: integer
-          format: int64
-        validCount:
-          type: integer
-          format: int64
-        completedCount:
-          type: integer
-          format: int64
-        failedCount:
-          type: integer
-          format: int64
     PageLinks:
       type: object
       properties:
@@ -491,9 +460,6 @@ components:
         totalCount:
           type: integer
           format: int64
-    Date:
-      type: string
-      format: date
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -519,6 +485,28 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
+    RosterReuploadResponse:
+      type: object
+      properties:
+        rosterId:
+          type: string
+        path:
+          type: string
+        filename:
+          type: string
+        bucketName:
+          type: string
+        message:
+          type: string
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     JsonNode:
       type: object
       properties:
@@ -566,28 +554,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    RosterReuploadResponse:
-      type: object
-      properties:
-        rosterId:
-          type: string
-        path:
-          type: string
-        filename:
-          type: string
-        bucketName:
-          type: string
-        message:
-          type: string
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     JsonNodeType:
       type: string
       enum:
@@ -600,6 +566,40 @@ components:
       - OBJECT
       - POJO
       - STRING
+    RosterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        templateId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        invalidCount:
+          type: integer
+          format: int64
+        validCount:
+          type: integer
+          format: int64
+        completedCount:
+          type: integer
+          format: int64
+        failedCount:
+          type: integer
+          format: int64
+    Date:
+      type: string
+      format: date
   securitySchemes:
     jwt:
       type: http

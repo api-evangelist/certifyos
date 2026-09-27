@@ -367,18 +367,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    CreateSpecialtyRequest:
-      type: object
-      properties:
-        nuccSpecialtyId:
-          type: string
-        abmsSpecialtyId:
-          type: string
-        hsdSpecialtyId:
-          type: string
-        data:
-          $ref: '#/components/schemas/Specialty.schema'
-          type: object
     NuccSpecialtyCategory.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.schema.json
@@ -388,9 +376,6 @@ components:
       enum:
       - Individual
       - Non-Individual
-    Date:
-      type: string
-      format: date
     NuccSpecialty.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
@@ -424,6 +409,12 @@ components:
       - specialtyNuccTaxonomyCode
       - displayName
       additionalProperties: false
+    CreateNuccSpecialtyRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NuccSpecialty.schema'
+          type: object
     JsonNode:
       type: object
       properties:
@@ -471,6 +462,49 @@ components:
           type: boolean
         binary:
           type: boolean
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    CreateSpecialtyRequest:
+      type: object
+      properties:
+        nuccSpecialtyId:
+          type: string
+        abmsSpecialtyId:
+          type: string
+        hsdSpecialtyId:
+          type: string
+        data:
+          $ref: '#/components/schemas/Specialty.schema'
+          type: object
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Date:
+      type: string
+      format: date
     Specialty.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Specialty.schema.json
@@ -500,40 +534,6 @@ components:
       - classificationSource
       - specialtyCategory
       additionalProperties: false
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    CreateNuccSpecialtyRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/NuccSpecialty.schema'
-          type: object
   securitySchemes:
     jwt:
       type: http

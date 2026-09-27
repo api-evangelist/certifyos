@@ -75,6 +75,15 @@ paths:
       - jwt: []
 components:
   schemas:
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -100,15 +109,26 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    ApiError:
-      description: Standard API error response containing a list of error objects
+    FlagCalculatorRequest:
+      description: Request to calculate flags for a monitoring workflow
       type: object
+      required:
+      - monitoringWorkflowId
       properties:
-        errors:
+        monitoringWorkflowId:
+          type: string
+          description: ID of the monitoring workflow to calculate flags for
+          examples:
+          - mw_1234567890
+          pattern: \S
+        sections:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
+            type: string
+          description: Array of sections to calculate flags for. If not provided or empty, all sections' flags are calculated
+          examples:
+          - - licenses
+            - education
     FlagCalculatorResponse:
       description: Response from flag calculator operation
       type: object
@@ -142,26 +162,6 @@ components:
           description: ID of the monitoring workflow
           examples:
           - mw_1234567890
-    FlagCalculatorRequest:
-      description: Request to calculate flags for a monitoring workflow
-      type: object
-      required:
-      - monitoringWorkflowId
-      properties:
-        monitoringWorkflowId:
-          type: string
-          description: ID of the monitoring workflow to calculate flags for
-          examples:
-          - mw_1234567890
-          pattern: \S
-        sections:
-          type: array
-          items:
-            type: string
-          description: Array of sections to calculate flags for. If not provided or empty, all sections' flags are calculated
-          examples:
-          - - licenses
-            - education
   securitySchemes:
     jwt:
       type: http

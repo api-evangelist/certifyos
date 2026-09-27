@@ -143,23 +143,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    BulkFlagStatusUpdateRequest:
-      description: Request to update status of multiple flags
-      type: object
-      required:
-      - flagIds
-      properties:
-        flagIds:
-          type: array
-          items:
-            type: string
-            pattern: \S
-          description: List of flag IDs to update
-          examples:
-          - - flag-123
-            - flag-456
-            - flag-789
-          minItems: 1
     BulkFlagStatusUpdateResponse:
       description: Response containing results of bulk flag status update operation
       type: object
@@ -198,32 +181,23 @@ components:
           description: Number of failed updates
           examples:
           - 1
-    FlagResponse:
+    BulkFlagStatusUpdateRequest:
+      description: Request to update status of multiple flags
       type: object
+      required:
+      - flagIds
       properties:
-        id:
-          type: string
-        tenantProviderId:
-          type: string
-        flagTypeId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        originMonitoringWorkflowId:
-          type: string
-        hash:
-          type: string
-    Date:
-      type: string
-      format: date
+        flagIds:
+          type: array
+          items:
+            type: string
+            pattern: \S
+          description: List of flag IDs to update
+          examples:
+          - - flag-123
+            - flag-456
+            - flag-789
+          minItems: 1
     JsonNode:
       type: object
       properties:
@@ -271,6 +245,44 @@ components:
           type: boolean
         binary:
           type: boolean
+    FlagResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantProviderId:
+          type: string
+        flagTypeId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        originMonitoringWorkflowId:
+          type: string
+        hash:
+          type: string
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Date:
+      type: string
+      format: date
     StatusUpdateResult:
       type: object
       description: Result of a single flag status update
@@ -290,18 +302,6 @@ components:
         errorCode:
           type: string
           description: Error code if the operation failed
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
   securitySchemes:
     jwt:
       type: http
