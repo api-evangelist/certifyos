@@ -155,6 +155,53 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    SourceSystem.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
+      title: Source System Enum
+      description: Specifies the origin system of a record.
+      type: string
+      enum:
+      - API
+      - File Upload
+    LineOfBusiness.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business associated with a healthcare plan.
+      type: string
+      enum:
+      - Medicare
+      - Medicaid
+      - Commercial
     Payer.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Payer.schema.json
@@ -176,52 +223,6 @@ components:
           type: string
       required:
       - name
-    CreatePlanRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Plan.schema'
-          type: object
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
-    LineOfBusiness.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business associated with a healthcare plan.
-      type: string
-      enum:
-      - Medicare
-      - Medicaid
-      - Commercial
-    GetAllPlansResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
-    NetworkType.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business and network type combination for a healthcare plan.
-      type: string
-      enum:
-      - Commercial - HMO
-      - Commercial - PPO
-      - Medicare - HMO
-      - Medicaid - HMO
     JsonNode:
       type: object
       properties:
@@ -269,6 +270,17 @@ components:
           type: boolean
         binary:
           type: boolean
+    NetworkType.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business and network type combination for a healthcare plan.
+      type: string
+      enum:
+      - Commercial - HMO
+      - Commercial - PPO
+      - Medicare - HMO
+      - Medicaid - HMO
     Plan.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Plan.schema.json
@@ -288,34 +300,22 @@ components:
         name:
           description: The name of the plan.
           type: string
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    GetAllPlansResponse:
       type: object
       properties:
-        errors:
+        totalCount:
+          type: integer
+          format: int64
+        data:
           type: array
           items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+            $ref: '#/components/schemas/Payer.schema'
+    CreatePlanRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Plan.schema'
+          type: object
   securitySchemes:
     jwt:
       type: http

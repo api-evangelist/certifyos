@@ -374,109 +374,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    TriggerResponse:
-      description: Response for manual webhook event triggering
-      type: object
-      properties:
-        message:
-          type: string
-          description: Success message
-        eventType:
-          description: Event type that was triggered
-          type: string
-          $ref: '#/components/schemas/WebhookEventType'
-    GetWebhooksResponse:
-      description: Response containing a paginated list of webhooks
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total count of webhooks
-          examples:
-          - 100
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookResponse'
-          description: Array of webhook records
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
-    Webhook.data.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Webhook.data.schema.json
-      title: Webhook
-      description: Schema for webhook data payload
-      type: object
-      unevaluatedProperties: false
-      properties:
-        webhookUrl:
-          type: string
-          format: uri
-          description: The URL endpoint where webhook events will be sent
-          minLength: 1
-          maxLength: 2048
-          pattern: ^https?://
-        eventTypes:
-          type: array
-          description: List of event types that will trigger this webhook
-          items:
-            type: string
-            minLength: 1
-            maxLength: 100
-            pattern: ^[a-z0-9._-]+$
-          uniqueItems: true
-          minItems: 0
-          maxItems: 100
-        headers:
-          anyOf:
-          - type: object
-            description: Custom HTTP headers to include in webhook requests
-            additionalProperties:
-              type: string
-            maxProperties: 50
-          - type: 'null'
-          description: Custom HTTP headers to include in webhook requests (optional)
-        isActive:
-          type: boolean
-          description: Whether the webhook is currently active and will receive events
-          default: true
-      required:
-      - webhookUrl
-      - eventTypes
-      - isActive
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     WebhookRequest:
       description: Request to create a new webhook
       type: object
@@ -526,79 +423,6 @@ components:
           description: 'Optional OAuth client-credentials configuration. When provided, a token is minted before each delivery and sent as Authorization: Bearer <token>.'
           type: object
           $ref: '#/components/schemas/WebhookOauthConfiguration'
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    WebhookEventType:
-      type: string
-      enum:
-      - credential_workflow.status.changed
-      - facility_credential_workflow.status.changed
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
     WebhookOauthConfiguration:
       description: 'OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.'
       type: object
@@ -657,6 +481,36 @@ components:
             Invalid payloads will return a 400 Bad Request with detailed validation error messages.'
           type: object
           $ref: '#/components/schemas/JsonNode'
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     JsonNodeType:
       type: string
       enum:
@@ -669,6 +523,21 @@ components:
       - OBJECT
       - POJO
       - STRING
+    GetWebhooksResponse:
+      description: Response containing a paginated list of webhooks
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of webhooks
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookResponse'
+          description: Array of webhook records
     WebhookResponse:
       type: object
       description: Response containing a single webhook
@@ -709,6 +578,137 @@ components:
           examples:
           - '2021-01-01T00:00:00Z'
           $ref: '#/components/schemas/Instant'
+    TriggerResponse:
+      description: Response for manual webhook event triggering
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        eventType:
+          description: Event type that was triggered
+          type: string
+          $ref: '#/components/schemas/WebhookEventType'
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    Webhook.data.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Webhook.data.schema.json
+      title: Webhook
+      description: Schema for webhook data payload
+      type: object
+      unevaluatedProperties: false
+      properties:
+        webhookUrl:
+          type: string
+          format: uri
+          description: The URL endpoint where webhook events will be sent
+          minLength: 1
+          maxLength: 2048
+          pattern: ^https?://
+        eventTypes:
+          type: array
+          description: List of event types that will trigger this webhook
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+            pattern: ^[a-z0-9._-]+$
+          uniqueItems: true
+          minItems: 0
+          maxItems: 100
+        headers:
+          anyOf:
+          - type: object
+            description: Custom HTTP headers to include in webhook requests
+            additionalProperties:
+              type: string
+            maxProperties: 50
+          - type: 'null'
+          description: Custom HTTP headers to include in webhook requests (optional)
+        isActive:
+          type: boolean
+          description: Whether the webhook is currently active and will receive events
+          default: true
+      required:
+      - webhookUrl
+      - eventTypes
+      - isActive
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    WebhookEventType:
+      type: string
+      enum:
+      - credential_workflow.status.changed
+      - facility_credential_workflow.status.changed
   securitySchemes:
     jwt:
       type: http

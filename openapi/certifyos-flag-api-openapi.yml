@@ -143,44 +143,18 @@ paths:
       - jwt: []
 components:
   schemas:
-    BulkFlagStatusUpdateResponse:
-      description: Response containing results of bulk flag status update operation
-      type: object
-      required:
-      - successful
-      - failed
-      - totalCount
-      - successCount
-      - failureCount
-      properties:
-        successful:
-          type: array
-          items:
-            $ref: '#/components/schemas/StatusUpdateResult'
-          description: List of successful status updates
-        failed:
-          type: array
-          items:
-            $ref: '#/components/schemas/StatusUpdateResult'
-          description: List of failed status updates
-        totalCount:
-          type: integer
-          format: int32
-          description: Total number of flags processed
-          examples:
-          - 5
-        successCount:
-          type: integer
-          format: int32
-          description: Number of successful updates
-          examples:
-          - 4
-        failureCount:
-          type: integer
-          format: int32
-          description: Number of failed updates
-          examples:
-          - 1
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     BulkFlagStatusUpdateRequest:
       description: Request to update status of multiple flags
       type: object
@@ -245,6 +219,66 @@ components:
           type: boolean
         binary:
           type: boolean
+    BulkFlagStatusUpdateResponse:
+      description: Response containing results of bulk flag status update operation
+      type: object
+      required:
+      - successful
+      - failed
+      - totalCount
+      - successCount
+      - failureCount
+      properties:
+        successful:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of successful status updates
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of failed status updates
+        totalCount:
+          type: integer
+          format: int32
+          description: Total number of flags processed
+          examples:
+          - 5
+        successCount:
+          type: integer
+          format: int32
+          description: Number of successful updates
+          examples:
+          - 4
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of failed updates
+          examples:
+          - 1
+    StatusUpdateResult:
+      type: object
+      description: Result of a single flag status update
+      properties:
+        flagId:
+          type: string
+          description: Flag ID that was processed
+          examples:
+          - flag-123
+        flagResponse:
+          description: Flag response if successful
+          type: object
+          $ref: '#/components/schemas/FlagResponse'
+        errorMessage:
+          type: string
+          description: Error message if the operation failed
+        errorCode:
+          type: string
+          description: Error code if the operation failed
+    Date:
+      type: string
+      format: date
     FlagResponse:
       type: object
       properties:
@@ -268,40 +302,6 @@ components:
           type: string
         hash:
           type: string
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    Date:
-      type: string
-      format: date
-    StatusUpdateResult:
-      type: object
-      description: Result of a single flag status update
-      properties:
-        flagId:
-          type: string
-          description: Flag ID that was processed
-          examples:
-          - flag-123
-        flagResponse:
-          description: Flag response if successful
-          type: object
-          $ref: '#/components/schemas/FlagResponse'
-        errorMessage:
-          type: string
-          description: Error message if the operation failed
-        errorCode:
-          type: string
-          description: Error code if the operation failed
   securitySchemes:
     jwt:
       type: http

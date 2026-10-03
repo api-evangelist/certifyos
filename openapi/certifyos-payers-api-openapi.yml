@@ -187,30 +187,49 @@ paths:
       - jwt: []
 components:
   schemas:
-    PayerRequest:
+    CreatePayerRequest:
       type: object
       properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
         data:
-          $ref: '#/components/schemas/JsonNode'
-        dataToValidate:
-          $ref: '#/components/schemas/JsonNode'
-    PayerResponse:
+          $ref: '#/components/schemas/Payer.schema'
+          type: object
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
       properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
-        data:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
           $ref: '#/components/schemas/JsonNode'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    SourceSystem.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
+      title: Source System Enum
+      description: Specifies the origin system of a record.
+      type: string
+      enum:
+      - API
+      - File Upload
     Payer.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Payer.schema.json
@@ -232,21 +251,19 @@ components:
           type: string
       required:
       - name
-    CreatePayerRequest:
+    PayerRequest:
       type: object
       properties:
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
         data:
-          $ref: '#/components/schemas/Payer.schema'
-          type: object
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
+          $ref: '#/components/schemas/JsonNode'
+        dataToValidate:
+          $ref: '#/components/schemas/JsonNode'
     JsonNode:
       type: object
       properties:
@@ -294,33 +311,16 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    PayerResponse:
       type: object
       properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
+        id:
+          type: string
+        externalPayerId:
+          type: string
+        sourceId:
+          type: string
+        data:
           $ref: '#/components/schemas/JsonNode'
     GetAllPayersResponse:
       type: object

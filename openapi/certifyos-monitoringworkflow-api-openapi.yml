@@ -1067,239 +1067,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    attachment:
-      type: object
-      properties:
-        createdAt:
-          type: string
-          format: date
-          description: The date the attachment was created.
-        fileType:
-          type: string
-          description: Supporting Document File Type (i.e. Malpractice Insurance Policy, License, etc.)
-        fileUrl:
-          type: string
-          description: Supporting Document File URI in GCS
-        originalFileName:
-          type: string
-          description: Supporting Document Original File Name
-        state:
-          type: string
-          description: The state associated with the supporting document.
-        expirationDate:
-          type: string
-          format: date
-          description: The expiration date of the supporting document.
-        source:
-          type: string
-          description: The source of the supporting document.
-        createdBy:
-          type: string
-          description: The user who created the record.
-        credWorkflowRecordOrigin:
-          type: string
-          description: Indicate how this record was added/edited within the credentialing workflow.
-    Date:
-      type: string
-      format: date
-    MonitoringSupportingDocumentUpdateRequest:
-      title: Monitoring supporting documents
-      description: Supporting document data for PUT operations using replace-all pattern
-      type: object
-      required:
-      - fileUrl
-      - fileType
-      - originalFileName
-      properties:
-        fileUrl:
-          type: string
-          description: URL of the supporting document file
-          examples:
-          - tenant-1/monitoring-workflows/mw_123/supporting-documents/1729961373476_doc.pdf
-          pattern: \S
-        fileType:
-          type: string
-          description: Type of the supporting document
-          examples:
-          - Medical License
-          pattern: \S
-        originalFileName:
-          type: string
-          description: Original name of the uploaded file
-          examples:
-          - medical_license.pdf
-          pattern: \S
-        createdAt:
-          type: string
-          description: Date when the document was created
-          examples:
-          - '2024-01-15T10:00:00Z'
-        createdBy:
-          type: string
-          description: The user who created the record
-          examples:
-          - user@example.com
-        state:
-          type: string
-          description: The state associated with the supporting document
-          examples:
-          - CA
-        expirationDate:
-          type: string
-          description: The expiration date of the supporting document
-          examples:
-          - '2025-12-31'
-        source:
-          type: string
-          description: The source of the supporting document
-          examples:
-          - Manual Upload
-    CreateMonitoringWorkflowAssignmentRequest:
-      description: Request to create a new assignment for a monitoring workflow
-      type: object
-      required:
-      - assignTo
-      properties:
-        assignTo:
-          type: string
-          description: User ID being assigned to
-          examples:
-          - user_123456
-          pattern: \S
-    MonitoringWorkflow.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/MonitoringWorkflow.schema.json
-      title: MonitoringWorkflow
-      description: Represents the monitoring workflow data stored in the data JSON field.
-      type: object
-      properties:
-        practitioner:
-          $ref: '#/components/schemas/Practitioner.schema'
-        externalId:
-          description: External identifier for the monitoring workflow.
-          type: string
-        flags:
-          description: Array of flags associated with the monitoring workflow.
-          type: array
-          items:
-            type: object
-            properties:
-              flagType:
-                description: Type of flag.
-                type: string
-              flagValue:
-                description: Value of the flag.
-                type: string
-              description:
-                description: Description of the flag.
-                type:
-                - string
-                - 'null'
-            required:
-            - flagType
-            - flagValue
-            additionalProperties: true
-        assignments:
-          description: History of assignment changes for this workflow.
-          type: array
-          items:
-            type: object
-            properties:
-              reason:
-                description: Reason for the assignment change.
-                type:
-                - string
-                - 'null'
-              assignedBy:
-                description: User or system that made the change.
-                type: string
-              assignedFrom:
-                description: Previous assignee (if any).
-                type:
-                - string
-                - 'null'
-              assignedTo:
-                description: Assignee after the change.
-                type:
-                - string
-                - 'null'
-              assignedOn:
-                description: Timestamp when the change occurred.
-                type: string
-                format: date-time
-            required:
-            - assignedBy
-            - assignedTo
-            - assignedOn
-            additionalProperties: true
-      required:
-      - practitioner
-      additionalProperties: true
-      unevaluatedProperties: true
-    WorkflowUpdateFailure:
-      type: object
-      properties:
-        workflowId:
-          type: string
-          description: Workflow ID that failed to update
-        errorMessage:
-          type: string
-          description: Error message describing the failure
-    MonitoringWorkflowDataPipelineRequestResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        databankSubjectId:
-          type: string
-        caqhRequestMetaData:
-          $ref: '#/components/schemas/JsonNode'
-        npdbRequestMetaData:
-          $ref: '#/components/schemas/JsonNode'
-        monitoringWorkflowId:
-          type: string
-        dataPipelineRequestId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        createdByName:
-          type: string
-        updatedByName:
-          type: string
-        pipelineName:
-          type: string
-        stepStatus:
-          type: string
-        stepName:
-          type: string
-        dataPipelineRequestCreatedAt:
-          $ref: '#/components/schemas/Date'
-        dataPipelineRequestStepLastCreatedAt:
-          $ref: '#/components/schemas/Date'
-        dataPipelineRequestSteps:
-          $ref: '#/components/schemas/JsonNode'
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
     BulkUnassignMonitoringWorkflowResponse:
       description: Response containing results of bulk unassignment of monitoring workflows
       type: object
@@ -1326,34 +1093,71 @@ components:
           type: integer
           format: int32
           description: Number of failed unassignments
-    AssignmentResult2:
+    UpdateMonitoringWorkflowStatusRequest:
+      description: Request to update monitoring workflow status
       type: object
-      description: Result of an individual assignment operation
+      required:
+      - workflowStatus
+      - description
       properties:
-        workflowId:
+        workflowStatus:
           type: string
-          description: ID of the credentialing workflow
+          description: The new workflow status
           examples:
-          - 44c8fa75-15a1-4790-a0dd-139058d1f86d
-        assignment:
-          description: Assignment history response if successful
-          type: object
-          $ref: '#/components/schemas/AssignmentEntry2'
-        error:
+          - IN_PROGRESS
+          pattern: \S
+        description:
           type: string
-          description: Error message if assignment failed
-    UnassignmentResult:
+          description: Description for the timeline event
+          examples:
+          - Monitoring workflow status changed to IN_PROGRESS
+          pattern: \S
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    FlagHistoryAttachmentResponse:
       type: object
-      description: Result of an individual unassignment operation
       properties:
-        workflowId:
+        id:
           type: string
-          description: ID of the monitoring workflow
+        flagHistoryId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+    BulkAssignMonitoringWorkflowRequest:
+      description: Request to assign multiple monitoring workflows
+      type: object
+      properties:
+        workflowIds:
+          type: array
+          items:
+            type: string
+          description: List of monitoring workflow IDs to assign. Either workflowIds or filter must be provided.
           examples:
-          - 44c8fa75-15a1-4790-a0dd-139058d1f86d
-        error:
+          - - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+            - 55d9fb86-26b2-5801-b1ee-240169e2f97e
+        assignTo:
+          type: array
+          items:
+            type: string
+          description: List of user IDs to assign workflows to. Workflows will be evenly distributed across these users
+          examples:
+          - - user_123456
+            - user_789012
+          minItems: 1
+        filter:
           type: string
-          description: Error message if unassignment failed
+          description: Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs when workflowIds is not provided. See GET /monitoring-workflows endpoint documentation for filter format.
+          examples:
+          - '{"data.monitoringStatus":{"eq":"PENDING"}}'
+      required:
+      - assignTo
     DeleteAttachmentRequest2:
       description: Request to delete an attachment
       type: object
@@ -1373,32 +1177,50 @@ components:
           examples:
           - monitoring-workflow-attachments/workflow-123/dea/1729771200000_dea-certificate.pdf
           pattern: \S
-    BulkAssignMonitoringWorkflowResponse:
-      description: Response containing results of bulk assignment of monitoring workflows
+    PageLinks:
       type: object
       properties:
-        successful:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssignmentResult2'
-          description: List of successful assignments
-        failed:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssignmentResult2'
-          description: List of failed assignments with error details
-        totalProcessed:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    BulkUpdateMonitoringWorkflowStatusResponse:
+      description: Response for bulk monitoring workflow status update
+      type: object
+      properties:
+        totalCount:
           type: integer
           format: int32
           description: Total number of workflows processed
         successCount:
           type: integer
           format: int32
-          description: Number of successful assignments
+          description: Number of successfully updated workflows
         failureCount:
           type: integer
           format: int32
-          description: Number of failed assignments
+          description: Number of failed updates
+        successfulWorkflowIds:
+          type: array
+          items:
+            type: string
+          description: List of successfully updated workflow IDs
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowUpdateFailure'
+          description: List of failed workflow IDs with error messages
+    WorkflowUpdateFailure:
+      type: object
+      properties:
+        workflowId:
+          type: string
+          description: Workflow ID that failed to update
+        errorMessage:
+          type: string
+          description: Error message describing the failure
     GetMonitoringWorkflowResponse:
       description: Response containing a single monitoring workflow
       type: object
@@ -1473,85 +1295,125 @@ components:
           description: Map of other workflow IDs to their display labels (e.g. period name)
           type: object
           $ref: '#/components/schemas/JsonNode'
-    BulkUnassignMonitoringWorkflowRequest:
-      description: Request to unassign multiple monitoring workflows
+    AssignmentResult2:
       type: object
+      description: Result of an individual assignment operation
       properties:
-        workflowIds:
-          type: array
-          items:
-            type: string
-          description: List of monitoring workflow IDs to unassign (workflow IDs will be fetched using the filter if not provided).
-          examples:
-          - - 44c8fa75-15a1-4790-a0dd-139058d1f86d
-            - 55d9fb86-26b2-5801-b1ee-240169e2f97e
-        filter:
+        workflowId:
           type: string
-          description: Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs. See GET /monitoring-workflows endpoint documentation for filter format.
+          description: ID of the credentialing workflow
           examples:
-          - '{"data.workflowStatus":{"eq":"PENDING"}}'
-    PipelineName:
-      type: string
-      enum:
-      - CAQH
-      - NPDB
-      - CREDENTIALING_WORKFLOW
-    ApiError:
-      description: Standard API error response containing a list of error objects
+          - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+        assignment:
+          description: Assignment history response if successful
+          type: object
+          $ref: '#/components/schemas/AssignmentEntry2'
+        error:
+          type: string
+          description: Error message if assignment failed
+    AssignmentEntry2:
       type: object
       properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    JsonNode:
+        assignedTo:
+          type: string
+          description: User ID the assignment changed to
+          examples:
+          - user_789012
+        assignedBy:
+          type: string
+          description: User ID who made the assignment change
+          examples:
+          - user_345678
+        assignedAt:
+          type: string
+          description: Timestamp when the assignment was changed
+          examples:
+          - '2021-01-01T00:00:00Z'
+    MonitoringWorkflowResponse.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/api-contracts/response/MonitoringWorkflowResponse.schema.json
+      title: MonitoringWorkflowResponse
+      description: 'Defines the structure for monitoring workflow response data, extending the base schema with system-computed fields.
+
+
+        Computed fields are automatically derived by the system and returned as read-only values. They should not be included when creating or updating records.'
+      allOf:
+      - $ref: '#/components/schemas/MonitoringWorkflow.schema'
+      - type: object
+        properties:
+          monitoringStatus:
+            type: string
+            description: Current status of the monitoring workflow.
+            enum:
+            - NOT_STARTED
+            - IN_PROGRESS
+            - OUTREACH_IN_PROGRESS
+            - DATA_MISSING
+            - NO_ACTION_REQUIRED
+            - CERTIFYOS_REVIEW_COMPLETE
+            example: IN_PROGRESS
+            readOnly: true
+          monitoringStatusLastUpdatedDate:
+            type:
+            - string
+            - 'null'
+            format: date-time
+            description: Date when monitoring status was last updated.
+            example: '2024-01-15T10:30:00Z'
+            readOnly: true
+      unevaluatedProperties: false
+    MonitoringSupportingDocumentUpdateRequest:
+      title: Monitoring supporting documents
+      description: Supporting document data for PUT operations using replace-all pattern
       type: object
+      required:
+      - fileUrl
+      - fileType
+      - originalFileName
       properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
+        fileUrl:
+          type: string
+          description: URL of the supporting document file
+          examples:
+          - tenant-1/monitoring-workflows/mw_123/supporting-documents/1729961373476_doc.pdf
+          pattern: \S
+        fileType:
+          type: string
+          description: Type of the supporting document
+          examples:
+          - Medical License
+          pattern: \S
+        originalFileName:
+          type: string
+          description: Original name of the uploaded file
+          examples:
+          - medical_license.pdf
+          pattern: \S
+        createdAt:
+          type: string
+          description: Date when the document was created
+          examples:
+          - '2024-01-15T10:00:00Z'
+        createdBy:
+          type: string
+          description: The user who created the record
+          examples:
+          - user@example.com
+        state:
+          type: string
+          description: The state associated with the supporting document
+          examples:
+          - CA
+        expirationDate:
+          type: string
+          description: The expiration date of the supporting document
+          examples:
+          - '2025-12-31'
+        source:
+          type: string
+          description: The source of the supporting document
+          examples:
+          - Manual Upload
     GetMonitoringPipelineRunsResponse:
       description: Response containing a paginated list of monitoring pipeline runs
       type: object
@@ -1608,6 +1470,44 @@ components:
           description: Pagination links for navigation
           type: object
           $ref: '#/components/schemas/PageLinks'
+    MonitoringWorkflowAttachment:
+      description: Attachment metadata for monitoring workflow row
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: Creation timestamp
+          examples:
+          - '2024-01-15T10:30:00Z'
+        fileType:
+          type: string
+          description: Document file type
+          examples:
+          - DEA Certificate
+        fileUrl:
+          type: string
+          description: GCS file URL for file retrieval
+          examples:
+          - monitoring-workflow-attachments/workflow-123/dea/1729771200000_dea-certificate.pdf
+        originalFileName:
+          type: string
+          description: Original file name
+          examples:
+          - dea-certificate.pdf
+        expirationDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Expiration date
+          examples:
+          - '2025-12-31'
+          default: '9999-12-31'
+        createdBy:
+          type: string
+          description: User who created the record
+      required:
+      - fileType
+      - fileUrl
+      - originalFileName
     FlagTypeResponse:
       type: object
       properties:
@@ -1616,28 +1516,6 @@ components:
         flagType:
           type: string
         description:
-          type: string
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    FlagHistoryAttachmentResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        flagHistoryId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
           type: string
     ErrorObject:
       type: object
@@ -1664,39 +1542,213 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    GetMonitoringWorkflowsResponse:
-      description: Response containing a list of monitoring workflows
+    attachment:
       type: object
       properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total count of monitoring workflows
-          examples:
-          - 100
+        createdAt:
+          type: string
+          format: date
+          description: The date the attachment was created.
+        fileType:
+          type: string
+          description: Supporting Document File Type (i.e. Malpractice Insurance Policy, License, etc.)
+        fileUrl:
+          type: string
+          description: Supporting Document File URI in GCS
+        originalFileName:
+          type: string
+          description: Supporting Document Original File Name
+        state:
+          type: string
+          description: The state associated with the supporting document.
+        expirationDate:
+          type: string
+          format: date
+          description: The expiration date of the supporting document.
+        source:
+          type: string
+          description: The source of the supporting document.
+        createdBy:
+          type: string
+          description: The user who created the record.
+        credWorkflowRecordOrigin:
+          type: string
+          description: Indicate how this record was added/edited within the credentialing workflow.
+    PipelineName:
+      type: string
+      enum:
+      - CAQH
+      - NPDB
+      - CREDENTIALING_WORKFLOW
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    FlagHistoryWithAttachmentsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        flagId:
+          type: string
         data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        attachments:
           type: array
           items:
-            $ref: '#/components/schemas/GetMonitoringWorkflowResponse'
-          description: Array of monitoring workflow records
-    AssignmentEntry2:
+            $ref: '#/components/schemas/FlagHistoryAttachmentResponse'
+    UploadMonitoringWorkflowAttachmentResponse:
+      description: Response containing the uploaded attachment metadata
       type: object
       properties:
-        assignedTo:
+        message:
           type: string
-          description: User ID the assignment changed to
+          description: Success message
           examples:
-          - user_789012
-        assignedBy:
+          - Attachment uploaded successfully
+        attachment:
+          description: The uploaded attachment metadata
+          type: object
+          $ref: '#/components/schemas/MonitoringWorkflowAttachment'
+    RunPipelineRequest:
+      type: object
+      required:
+      - pipelineName
+      properties:
+        pipelineName:
+          $ref: '#/components/schemas/PipelineName'
+    UnassignmentResult:
+      type: object
+      description: Result of an individual unassignment operation
+      properties:
+        workflowId:
           type: string
-          description: User ID who made the assignment change
+          description: ID of the monitoring workflow
           examples:
-          - user_345678
-        assignedAt:
+          - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+        error:
           type: string
-          description: Timestamp when the assignment was changed
-          examples:
-          - '2021-01-01T00:00:00Z'
+          description: Error message if unassignment failed
+    Date:
+      type: string
+      format: date
+    MonitoringWorkflow.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/MonitoringWorkflow.schema.json
+      title: MonitoringWorkflow
+      description: Represents the monitoring workflow data stored in the data JSON field.
+      type: object
+      properties:
+        practitioner:
+          $ref: '#/components/schemas/Practitioner.schema'
+        externalId:
+          description: External identifier for the monitoring workflow.
+          type: string
+        flags:
+          description: Array of flags associated with the monitoring workflow.
+          type: array
+          items:
+            type: object
+            properties:
+              flagType:
+                description: Type of flag.
+                type: string
+              flagValue:
+                description: Value of the flag.
+                type: string
+              description:
+                description: Description of the flag.
+                type:
+                - string
+                - 'null'
+            required:
+            - flagType
+            - flagValue
+            additionalProperties: true
+        assignments:
+          description: History of assignment changes for this workflow.
+          type: array
+          items:
+            type: object
+            properties:
+              reason:
+                description: Reason for the assignment change.
+                type:
+                - string
+                - 'null'
+              assignedBy:
+                description: User or system that made the change.
+                type: string
+              assignedFrom:
+                description: Previous assignee (if any).
+                type:
+                - string
+                - 'null'
+              assignedTo:
+                description: Assignee after the change.
+                type:
+                - string
+                - 'null'
+              assignedOn:
+                description: Timestamp when the change occurred.
+                type: string
+                format: date-time
+            required:
+            - assignedBy
+            - assignedTo
+            - assignedOn
+            additionalProperties: true
+      required:
+      - practitioner
+      additionalProperties: true
+      unevaluatedProperties: true
     Practitioner.schema:
       type: object
       $schema: https://json-schema.org/draft/2020-12/schema
@@ -5480,77 +5532,99 @@ components:
           type: string
           description: Record id of the practitioner
       unevaluatedProperties: false
-    RunPipelineRequest:
-      type: object
-      required:
-      - pipelineName
-      properties:
-        pipelineName:
-          $ref: '#/components/schemas/PipelineName'
-    MonitoringWorkflowAttachment:
-      description: Attachment metadata for monitoring workflow row
+    ApiError:
+      description: Standard API error response containing a list of error objects
       type: object
       properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    MonitoringWorkflowDataPipelineRequestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        databankSubjectId:
+          type: string
+        caqhRequestMetaData:
+          $ref: '#/components/schemas/JsonNode'
+        npdbRequestMetaData:
+          $ref: '#/components/schemas/JsonNode'
+        monitoringWorkflowId:
+          type: string
+        dataPipelineRequestId:
+          type: string
         createdAt:
-          type: string
-          description: Creation timestamp
-          examples:
-          - '2024-01-15T10:30:00Z'
-        fileType:
-          type: string
-          description: Document file type
-          examples:
-          - DEA Certificate
-        fileUrl:
-          type: string
-          description: GCS file URL for file retrieval
-          examples:
-          - monitoring-workflow-attachments/workflow-123/dea/1729771200000_dea-certificate.pdf
-        originalFileName:
-          type: string
-          description: Original file name
-          examples:
-          - dea-certificate.pdf
-        expirationDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-          description: Expiration date
-          examples:
-          - '2025-12-31'
-          default: '9999-12-31'
+          $ref: '#/components/schemas/Date'
         createdBy:
           type: string
-          description: User who created the record
-      required:
-      - fileType
-      - fileUrl
-      - originalFileName
-    BulkUpdateMonitoringWorkflowStatusResponse:
-      description: Response for bulk monitoring workflow status update
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        createdByName:
+          type: string
+        updatedByName:
+          type: string
+        pipelineName:
+          type: string
+        stepStatus:
+          type: string
+        stepName:
+          type: string
+        dataPipelineRequestCreatedAt:
+          $ref: '#/components/schemas/Date'
+        dataPipelineRequestStepLastCreatedAt:
+          $ref: '#/components/schemas/Date'
+        dataPipelineRequestSteps:
+          $ref: '#/components/schemas/JsonNode'
+    BulkUpdateMonitoringWorkflowStatusRequest:
+      description: Request to update status of multiple monitoring workflows
       type: object
+      required:
+      - workflowIds
+      - workflowStatus
+      - description
       properties:
-        totalCount:
-          type: integer
-          format: int32
-          description: Total number of workflows processed
-        successCount:
-          type: integer
-          format: int32
-          description: Number of successfully updated workflows
-        failureCount:
-          type: integer
-          format: int32
-          description: Number of failed updates
-        successfulWorkflowIds:
+        workflowIds:
           type: array
           items:
             type: string
-          description: List of successfully updated workflow IDs
-        failures:
+          description: List of monitoring workflow IDs to update
+          examples:
+          - - workflow-id-1
+            - workflow-id-2
+          minItems: 1
+        workflowStatus:
+          type: string
+          description: The new workflow status
+          examples:
+          - IN_PROGRESS
+          pattern: \S
+        description:
+          type: string
+          description: Description for the timeline event
+          examples:
+          - Monitoring workflow status changed to IN_PROGRESS
+          pattern: \S
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/WorkflowUpdateFailure'
-          description: List of failed workflow IDs with error messages
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
     JsonNodeType:
       type: string
       enum:
@@ -5563,51 +5637,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    FlagHistoryWithAttachmentsResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        flagId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FlagHistoryAttachmentResponse'
-    BulkAssignMonitoringWorkflowRequest:
-      description: Request to assign multiple monitoring workflows
-      type: object
-      properties:
-        workflowIds:
-          type: array
-          items:
-            type: string
-          description: List of monitoring workflow IDs to assign. Either workflowIds or filter must be provided.
-          examples:
-          - - 44c8fa75-15a1-4790-a0dd-139058d1f86d
-            - 55d9fb86-26b2-5801-b1ee-240169e2f97e
-        assignTo:
-          type: array
-          items:
-            type: string
-          description: List of user IDs to assign workflows to. Workflows will be evenly distributed across these users
-          examples:
-          - - user_123456
-            - user_789012
-          minItems: 1
-        filter:
-          type: string
-          description: Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs when workflowIds is not provided. See GET /monitoring-workflows endpoint documentation for filter format.
-          examples:
-          - '{"data.monitoringStatus":{"eq":"PENDING"}}'
-      required:
-      - assignTo
     FlagWithTypeResponse:
       type: object
       properties:
@@ -5633,6 +5662,33 @@ components:
           type: string
         flagType:
           $ref: '#/components/schemas/FlagTypeResponse'
+    GetMonitoringWorkflowsResponse:
+      description: Response containing a list of monitoring workflows
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of monitoring workflows
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetMonitoringWorkflowResponse'
+          description: Array of monitoring workflow records
+    CreateMonitoringWorkflowAssignmentRequest:
+      description: Request to create a new assignment for a monitoring workflow
+      type: object
+      required:
+      - assignTo
+      properties:
+        assignTo:
+          type: string
+          description: User ID being assigned to
+          examples:
+          - user_123456
+          pattern: \S
     MonitoringWorkflowResponse:
       type: object
       properties:
@@ -5670,105 +5726,23 @@ components:
           type: object
           additionalProperties:
             type: string
-    UploadMonitoringWorkflowAttachmentResponse:
-      description: Response containing the uploaded attachment metadata
+    BulkUnassignMonitoringWorkflowRequest:
+      description: Request to unassign multiple monitoring workflows
       type: object
-      properties:
-        message:
-          type: string
-          description: Success message
-          examples:
-          - Attachment uploaded successfully
-        attachment:
-          description: The uploaded attachment metadata
-          type: object
-          $ref: '#/components/schemas/MonitoringWorkflowAttachment'
-    UpdateMonitoringWorkflowStatusRequest:
-      description: Request to update monitoring workflow status
-      type: object
-      required:
-      - workflowStatus
-      - description
-      properties:
-        workflowStatus:
-          type: string
-          description: The new workflow status
-          examples:
-          - IN_PROGRESS
-          pattern: \S
-        description:
-          type: string
-          description: Description for the timeline event
-          examples:
-          - Monitoring workflow status changed to IN_PROGRESS
-          pattern: \S
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    MonitoringWorkflowResponse.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/api-contracts/response/MonitoringWorkflowResponse.schema.json
-      title: MonitoringWorkflowResponse
-      description: 'Defines the structure for monitoring workflow response data, extending the base schema with system-computed fields.
-
-
-        Computed fields are automatically derived by the system and returned as read-only values. They should not be included when creating or updating records.'
-      allOf:
-      - $ref: '#/components/schemas/MonitoringWorkflow.schema'
-      - type: object
-        properties:
-          monitoringStatus:
-            type: string
-            description: Current status of the monitoring workflow.
-            enum:
-            - NOT_STARTED
-            - IN_PROGRESS
-            - OUTREACH_IN_PROGRESS
-            - DATA_MISSING
-            - NO_ACTION_REQUIRED
-            - CERTIFYOS_REVIEW_COMPLETE
-            example: IN_PROGRESS
-            readOnly: true
-          monitoringStatusLastUpdatedDate:
-            type:
-            - string
-            - 'null'
-            format: date-time
-            description: Date when monitoring status was last updated.
-            example: '2024-01-15T10:30:00Z'
-            readOnly: true
-      unevaluatedProperties: false
-    BulkUpdateMonitoringWorkflowStatusRequest:
-      description: Request to update status of multiple monitoring workflows
-      type: object
-      required:
-      - workflowIds
-      - workflowStatus
-      - description
       properties:
         workflowIds:
           type: array
           items:
             type: string
-          description: List of monitoring workflow IDs to update
+          description: List of monitoring workflow IDs to unassign (workflow IDs will be fetched using the filter if not provided).
           examples:
-          - - workflow-id-1
-            - workflow-id-2
-          minItems: 1
-        workflowStatus:
+          - - 44c8fa75-15a1-4790-a0dd-139058d1f86d
+            - 55d9fb86-26b2-5801-b1ee-240169e2f97e
+        filter:
           type: string
-          description: The new workflow status
+          description: Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs. See GET /monitoring-workflows endpoint documentation for filter format.
           examples:
-          - IN_PROGRESS
-          pattern: \S
-        description:
-          type: string
-          description: Description for the timeline event
-          examples:
-          - Monitoring workflow status changed to IN_PROGRESS
-          pattern: \S
+          - '{"data.workflowStatus":{"eq":"PENDING"}}'
     FlagWithHistoryResponse:
       type: object
       properties:
@@ -5798,6 +5772,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
+    BulkAssignMonitoringWorkflowResponse:
+      description: Response containing results of bulk assignment of monitoring workflows
+      type: object
+      properties:
+        successful:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentResult2'
+          description: List of successful assignments
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentResult2'
+          description: List of failed assignments with error details
+        totalProcessed:
+          type: integer
+          format: int32
+          description: Total number of workflows processed
+        successCount:
+          type: integer
+          format: int32
+          description: Number of successful assignments
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of failed assignments
   securitySchemes:
     jwt:
       type: http

@@ -298,14 +298,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    UpdateNoteRequest1:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          pattern: \S
     PageLinks:
       type: object
       properties:
@@ -314,26 +306,6 @@ components:
         next:
           type: string
         prev:
-          type: string
-    CreateNoteRequest1:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          pattern: \S
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
           type: string
     NoteData1:
       type: object
@@ -346,77 +318,6 @@ components:
           description: The message content of the note
           examples:
           - This is a note message
-    GetNotesResponse1:
-      description: Response containing a paginated list of notes
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total count of notes matching the filter criteria
-          examples:
-          - 100
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/NoteResponse1'
-          description: Array of note records
-        links:
-          description: Pagination links for navigation
-          type: object
-          $ref: '#/components/schemas/PageLinks'
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -433,13 +334,19 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    ApiError1:
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    UpdateNoteRequest1:
       type: object
+      required:
+      - message
       properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
+        message:
+          type: string
+          pattern: \S
     JsonNodeType:
       type: string
       enum:
@@ -452,6 +359,13 @@ components:
       - OBJECT
       - POJO
       - STRING
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
     NoteResponse1:
       type: object
       description: Response containing note information
@@ -502,6 +416,92 @@ components:
           examples:
           - '2024-01-01T00:00:00Z'
           $ref: '#/components/schemas/Instant'
+    CreateNoteRequest1:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    GetNotesResponse1:
+      description: Response containing a paginated list of notes
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of notes matching the filter criteria
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteResponse1'
+          description: Array of note records
+        links:
+          description: Pagination links for navigation
+          type: object
+          $ref: '#/components/schemas/PageLinks'
   securitySchemes:
     jwt:
       type: http

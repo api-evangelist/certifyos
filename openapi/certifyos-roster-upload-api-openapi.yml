@@ -126,6 +126,68 @@ paths:
       - jwt: []
 components:
   schemas:
+    Field:
+      type: object
+      properties:
+        name:
+          type: string
+        mappedKey:
+          type: string
+        mappedEntity:
+          type: string
+        entityGroup:
+          type: string
+        isRequired:
+          type: boolean
+        isStaticField:
+          type: boolean
+        isSingleSelect:
+          type: boolean
+        validationRegex:
+          type: string
+        description:
+          type: string
+        enum:
+          type: array
+          items:
+            type: string
+        singleSelect:
+          type: boolean
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    GetUploadMappingsRequest:
+      type: object
+      properties:
+        columns:
+          type: array
+          items:
+            type: string
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        compareAgainstTemplate:
+          type: boolean
+    GetUploadMappingsResponse:
+      type: object
+      properties:
+        mapped:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        unMapped:
+          type: array
+          items:
+            type: string
+        systemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
     RosterJobType:
       type: string
       enum:
@@ -171,15 +233,6 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     SingleStepTemplateFlowResponse:
       type: object
       properties:
@@ -195,59 +248,6 @@ components:
           type: string
         schemaUrl:
           type: string
-    GetUploadMappingsRequest:
-      type: object
-      properties:
-        columns:
-          type: array
-          items:
-            type: string
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        compareAgainstTemplate:
-          type: boolean
-    GetUploadMappingsResponse:
-      type: object
-      properties:
-        mapped:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        unMapped:
-          type: array
-          items:
-            type: string
-        systemFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-    Field:
-      type: object
-      properties:
-        name:
-          type: string
-        mappedKey:
-          type: string
-        mappedEntity:
-          type: string
-        entityGroup:
-          type: string
-        isRequired:
-          type: boolean
-        isStaticField:
-          type: boolean
-        isSingleSelect:
-          type: boolean
-        validationRegex:
-          type: string
-        description:
-          type: string
-        enum:
-          type: array
-          items:
-            type: string
-        singleSelect:
-          type: boolean
   securitySchemes:
     jwt:
       type: http

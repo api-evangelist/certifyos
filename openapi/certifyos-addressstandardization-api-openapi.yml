@@ -69,6 +69,75 @@ components:
       - HIGH
       - MEDIUM
       - LOW
+    StandardizedAddress:
+      type: object
+      description: Standardized address components
+      properties:
+        addressLine1:
+          type: string
+          description: Standardized primary street line
+        addressLine2:
+          type: string
+          description: Standardized secondary street line
+        city:
+          type: string
+          description: Standardized city
+        county:
+          type: string
+          description: Standardized county
+        state:
+          type: string
+          description: Standardized state code
+        zip:
+          type: string
+          description: Standardized ZIP / postal code
+        zip4:
+          type: string
+          description: ZIP+4 extension, if available
+        country:
+          type: string
+          description: Country code
+        formattedAddress:
+          type: string
+          description: Pretty-printed single-line address
+    AddressEnrichment:
+      type: object
+      description: Enrichment values attached to the standardized address
+      properties:
+        zip4:
+          type: string
+          description: ZIP+4 extension, if available
+          examples:
+          - '1234'
+        county:
+          type: string
+          description: County name, if available
+          examples:
+          - New York County
+        latitude:
+          type: number
+          format: double
+          description: Latitude in decimal degrees, if available
+        longitude:
+          type: number
+          format: double
+          description: Longitude in decimal degrees, if available
+        stateFips:
+          type: string
+          description: 2-digit state FIPS code, if available
+          examples:
+          - '36'
+        countyFips:
+          type: string
+          description: 5-digit county FIPS code, if available
+          examples:
+          - '36061'
+        formattedAddress:
+          type: string
+          description: Pretty-printed single-line address, if available
+        timezone:
+          type: string
+          description: IANA timezone ID, if available; always null until timezone enrichment ships
     StandardizeAddressRequest:
       description: Input address to be standardized and validated
       type: object
@@ -118,44 +187,12 @@ components:
           description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
           examples:
           - billing
-    AddressEnrichment:
-      type: object
-      description: Enrichment values attached to the standardized address
-      properties:
-        zip4:
-          type: string
-          description: ZIP+4 extension, if available
-          examples:
-          - '1234'
-        county:
-          type: string
-          description: County name, if available
-          examples:
-          - New York County
-        latitude:
-          type: number
-          format: double
-          description: Latitude in decimal degrees, if available
-        longitude:
-          type: number
-          format: double
-          description: Longitude in decimal degrees, if available
-        stateFips:
-          type: string
-          description: 2-digit state FIPS code, if available
-          examples:
-          - '36'
-        countyFips:
-          type: string
-          description: 5-digit county FIPS code, if available
-          examples:
-          - '36061'
-        formattedAddress:
-          type: string
-          description: Pretty-printed single-line address, if available
-        timezone:
-          type: string
-          description: IANA timezone ID, if available; always null until timezone enrichment ships
+    AddressValidationStatus:
+      type: string
+      enum:
+      - VALID
+      - PARTIAL
+      - INVALID
     StandardizeAddressResponse:
       description: Standardized address with confidence, validation status, and enrichment data
       type: object
@@ -180,43 +217,6 @@ components:
           description: Enrichment values derived from the standardized address
           type: object
           $ref: '#/components/schemas/AddressEnrichment'
-    StandardizedAddress:
-      type: object
-      description: Standardized address components
-      properties:
-        addressLine1:
-          type: string
-          description: Standardized primary street line
-        addressLine2:
-          type: string
-          description: Standardized secondary street line
-        city:
-          type: string
-          description: Standardized city
-        county:
-          type: string
-          description: Standardized county
-        state:
-          type: string
-          description: Standardized state code
-        zip:
-          type: string
-          description: Standardized ZIP / postal code
-        zip4:
-          type: string
-          description: ZIP+4 extension, if available
-        country:
-          type: string
-          description: Country code
-        formattedAddress:
-          type: string
-          description: Pretty-printed single-line address
-    AddressValidationStatus:
-      type: string
-      enum:
-      - VALID
-      - PARTIAL
-      - INVALID
   securitySchemes:
     jwt:
       type: http

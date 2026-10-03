@@ -405,140 +405,24 @@ paths:
       - BearerAuth: []
 components:
   schemas:
-    PractitionerLicenseDto:
+    ShareProviderToCredCommDto:
       type: object
       properties:
-        state:
-          type: string
-        licenseNumber:
-          type: string
-        type:
-          type: string
-        licenseStatus:
-          type: string
-        issueDate:
-          format: date-time
-          type: string
-        expirationDate:
-          format: date-time
-          type: string
-        source:
-          type: string
-      required:
-      - state
-      - licenseNumber
-      - type
-      - licenseStatus
-      - expirationDate
-      - source
-    ShareBulkProviderToCredCommDtoV2:
-      type: object
-      properties:
-        provider_ids:
-          description: Array of provider IDs to share to cred committee
-          type: array
-          items:
-            type: string
         reason:
           type: string
-          description: Reason for sharing to cred committee
       required:
-      - provider_ids
       - reason
-    PracticeLocationDto:
+    PractitionerEgressLinksDto:
       type: object
       properties:
-        id:
+        self:
           type: string
-        provider_id:
-          type: string
-        organization_id:
-          type: string
-        name:
-          type: string
-        tin:
-          type: string
-        start_date:
-          type: string
-          example: YYYY-MM-DD
-        drawing_blood:
-          type: boolean
-        laboratory_services:
-          type: boolean
-        clia_number:
-          type: string
-        clia_expiration_date:
-          type: string
-          example: YYYY-MM-DD
-        address1:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        zip:
-          type: string
-        country:
-          type: string
-        npi:
-          type: string
-        phoneCoverage24x7:
-          type: boolean
-        totalLocationHours:
-          type: number
-        locationHours:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocationHourDto'
-        verified_by:
-          type: string
-        verified_date:
-          type: string
-          example: YYYY-MM-DD
-      required:
-      - id
-      - provider_id
-      - organization_id
-      - name
-    FilterProvidersV2Dto:
-      type: object
-      properties:
-        offset:
-          type: number
-          default: 0
-          minimum: 0
-          description: The starting index for pagination, specifying how many records to skip.
-        limit:
-          type: number
-          default: 10
-          description: The maximum number of records to retrieve in a single request.
-        file_type:
-          type: string
-          description: File Type of the providers to filter by to be terminated.
-          enum:
-          - Clean
-          - Non_Clean
-          - Pending
-        flagged:
-          type: boolean
-          description: Flagged providers will be terminated.
-        start_updated_at:
-          format: date-time
-          type: string
-          description: Filter providers that are created or updated >= specified date.
-        end_updated_at:
-          format: date-time
-          type: string
-          description: Filter providers that are created or updated < specified date.
-    BulkCreateProviderResponseDtoV2:
-      type: object
-      properties:
-        provider_id:
-          type: string
-        error:
-          $ref: '#/components/schemas/CreateProviderError'
-      required:
-      - error
+          description: URL for the current page
+        next:
+          type:
+          - string
+          - 'null'
+          description: URL for the next page. Null when no more records exist.
     ProviderListV2ResponseDto:
       type: object
       properties:
@@ -634,247 +518,17 @@ components:
       - dob
       - isHospitalBased
       - practice_location
-    ShareProviderToCredCommDto:
+    CreateProviderError:
       type: object
       properties:
-        reason:
+        message:
           type: string
-      required:
-      - reason
-    PractitionerEgressResponseDto:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/PractitionerEgressDto'
-        nextCursor:
-          type:
-          - string
-          - 'null'
-          description: Cursor for next page. Null when no more records exist.
-        links:
-          description: Pagination links for navigation
-          allOf:
-          - $ref: '#/components/schemas/PractitionerEgressLinksDto'
-      required:
-      - data
-      - nextCursor
-      - links
-    UpdateProvidersDtoV2:
-      type: object
-      properties:
-        initial_credentialing_date:
-          format: date-time
-          type: string
-          description: Date by which Provider was initially credentialed.
-        external_id:
-          type: string
-          description: Client’s ID for the provider
-        primary_email:
-          type: string
-          description: Provider’s email address
-          example: string@string.com
-        gender:
-          type: string
-          enum:
-          - M
-          - F
-          - U
-          description: Provider Gender
-        dob:
-          format: date-time
-          type: string
-          description: Provider’s date of birth
-        is_pcp:
-          type: boolean
-          description: Indicates whether the provider is a Primary Care Provider (PCP).
-        is_specialist:
-          type: boolean
-          description: Indicates whether the provider is a specialist.
-        accepts_new_patients:
-          type: boolean
-          description: Indicates whether the provider is currently accepting new patients.
-        accepts_new_medicare_patients:
-          type: boolean
-          description: Indicates whether the provider accepts new Medicare patients.
-        assigned_states:
-          type: string
-          items:
-            type: string
-            enum:
-            - AK
-            - AL
-            - AR
-            - AS
-            - AZ
-            - CA
-            - CO
-            - CT
-            - DC
-            - DE
-            - FL
-            - FM
-            - GA
-            - GU
-            - HI
-            - IA
-            - ID
-            - IL
-            - IN
-            - KS
-            - KY
-            - LA
-            - MA
-            - MD
-            - ME
-            - MH
-            - MI
-            - MN
-            - MO
-            - MP
-            - MS
-            - MT
-            - NC
-            - ND
-            - NE
-            - NH
-            - NJ
-            - NM
-            - NV
-            - NY
-            - OH
-            - OK
-            - OR
-            - PA
-            - PR
-            - PW
-            - RI
-            - SC
-            - SD
-            - TN
-            - TX
-            - UT
-            - UM
-            - VA
-            - VI
-            - VT
-            - WA
-            - WI
-            - WV
-            - WY
-          description: Provider's assigned states
-          enum:
-          - AK
-          - AL
-          - AR
-          - AS
-          - AZ
-          - CA
-          - CO
-          - CT
-          - DC
-          - DE
-          - FL
-          - FM
-          - GA
-          - GU
-          - HI
-          - IA
-          - ID
-          - IL
-          - IN
-          - KS
-          - KY
-          - LA
-          - MA
-          - MD
-          - ME
-          - MH
-          - MI
-          - MN
-          - MO
-          - MP
-          - MS
-          - MT
-          - NC
-          - ND
-          - NE
-          - NH
-          - NJ
-          - NM
-          - NV
-          - NY
-          - OH
-          - OK
-          - OR
-          - PA
-          - PR
-          - PW
-          - RI
-          - SC
-          - SD
-          - TN
-          - TX
-          - UT
-          - UM
-          - VA
-          - VI
-          - VT
-          - WA
-          - WI
-          - WV
-          - WY
-    PractitionerEgressLinksDto:
-      type: object
-      properties:
-        self:
-          type: string
-          description: URL for the current page
-        next:
-          type:
-          - string
-          - 'null'
-          description: URL for the next page. Null when no more records exist.
-    PractitionerEgressDto:
-      type: object
-      properties:
-        npi:
-          type: string
-        firstName:
-          type: string
-        lastName:
-          type: string
-        middleName:
-          type: string
-        providerType:
+        name:
           type: string
         status:
-          type: string
-        states:
-          type: array
-          items:
-            type: string
-        credentialingStatus:
-          type: string
-        licenses:
-          type: array
-          items:
-            $ref: '#/components/schemas/PractitionerLicenseDto'
-        deaData:
-          type: array
-          items:
-            $ref: '#/components/schemas/PractitionerDeaDto'
-        cdsData:
-          type: array
-          items:
-            $ref: '#/components/schemas/PractitionerDeaDto'
+          type: number
       required:
-      - npi
-      - firstName
-      - lastName
-      - status
-      - credentialingStatus
+      - message
     PractitionerDeaDto:
       type: object
       properties:
@@ -909,26 +563,6 @@ components:
       - expirationDate
       - status
       - source
-    CreateProviderError:
-      type: object
-      properties:
-        message:
-          type: string
-        name:
-          type: string
-        status:
-          type: number
-      required:
-      - message
-    LocationHourDto:
-      type: object
-      properties:
-        dayOfweek:
-          type: string
-        endHours:
-          type: string
-        startHours:
-          type: string
     UnterminateProviderV2Dto:
       type: object
       properties:
@@ -948,25 +582,32 @@ components:
       - provider_ids
       - reason
       - filters
-    TerminateProviderV2Dto:
+    PractitionerLicenseDto:
       type: object
       properties:
-        provider_ids:
-          description: Provider ids to be terminated in comma separated strings within the array.
-          type: array
-          items:
-            type: string
-        reason:
+        state:
           type: string
-          description: Reason for the termination.
-        filters:
-          description: Filters for Provider Termination
-          allOf:
-          - $ref: '#/components/schemas/FilterProvidersV2Dto'
+        licenseNumber:
+          type: string
+        type:
+          type: string
+        licenseStatus:
+          type: string
+        issueDate:
+          format: date-time
+          type: string
+        expirationDate:
+          format: date-time
+          type: string
+        source:
+          type: string
       required:
-      - provider_ids
-      - reason
-      - filters
+      - state
+      - licenseNumber
+      - type
+      - licenseStatus
+      - expirationDate
+      - source
     CreateProviderDtoV2:
       type: object
       properties:
@@ -1140,6 +781,365 @@ components:
       - last_name
       - degree
       - states
+    PracticeLocationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        provider_id:
+          type: string
+        organization_id:
+          type: string
+        name:
+          type: string
+        tin:
+          type: string
+        start_date:
+          type: string
+          example: YYYY-MM-DD
+        drawing_blood:
+          type: boolean
+        laboratory_services:
+          type: boolean
+        clia_number:
+          type: string
+        clia_expiration_date:
+          type: string
+          example: YYYY-MM-DD
+        address1:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        npi:
+          type: string
+        phoneCoverage24x7:
+          type: boolean
+        totalLocationHours:
+          type: number
+        locationHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationHourDto'
+        verified_by:
+          type: string
+        verified_date:
+          type: string
+          example: YYYY-MM-DD
+      required:
+      - id
+      - provider_id
+      - organization_id
+      - name
+    FilterProvidersV2Dto:
+      type: object
+      properties:
+        offset:
+          type: number
+          default: 0
+          minimum: 0
+          description: The starting index for pagination, specifying how many records to skip.
+        limit:
+          type: number
+          default: 10
+          description: The maximum number of records to retrieve in a single request.
+        file_type:
+          type: string
+          description: File Type of the providers to filter by to be terminated.
+          enum:
+          - Clean
+          - Non_Clean
+          - Pending
+        flagged:
+          type: boolean
+          description: Flagged providers will be terminated.
+        start_updated_at:
+          format: date-time
+          type: string
+          description: Filter providers that are created or updated >= specified date.
+        end_updated_at:
+          format: date-time
+          type: string
+          description: Filter providers that are created or updated < specified date.
+    LocationHourDto:
+      type: object
+      properties:
+        dayOfweek:
+          type: string
+        endHours:
+          type: string
+        startHours:
+          type: string
+    UpdateProvidersDtoV2:
+      type: object
+      properties:
+        initial_credentialing_date:
+          format: date-time
+          type: string
+          description: Date by which Provider was initially credentialed.
+        external_id:
+          type: string
+          description: Client’s ID for the provider
+        primary_email:
+          type: string
+          description: Provider’s email address
+          example: string@string.com
+        gender:
+          type: string
+          enum:
+          - M
+          - F
+          - U
+          description: Provider Gender
+        dob:
+          format: date-time
+          type: string
+          description: Provider’s date of birth
+        is_pcp:
+          type: boolean
+          description: Indicates whether the provider is a Primary Care Provider (PCP).
+        is_specialist:
+          type: boolean
+          description: Indicates whether the provider is a specialist.
+        accepts_new_patients:
+          type: boolean
+          description: Indicates whether the provider is currently accepting new patients.
+        accepts_new_medicare_patients:
+          type: boolean
+          description: Indicates whether the provider accepts new Medicare patients.
+        assigned_states:
+          type: string
+          items:
+            type: string
+            enum:
+            - AK
+            - AL
+            - AR
+            - AS
+            - AZ
+            - CA
+            - CO
+            - CT
+            - DC
+            - DE
+            - FL
+            - FM
+            - GA
+            - GU
+            - HI
+            - IA
+            - ID
+            - IL
+            - IN
+            - KS
+            - KY
+            - LA
+            - MA
+            - MD
+            - ME
+            - MH
+            - MI
+            - MN
+            - MO
+            - MP
+            - MS
+            - MT
+            - NC
+            - ND
+            - NE
+            - NH
+            - NJ
+            - NM
+            - NV
+            - NY
+            - OH
+            - OK
+            - OR
+            - PA
+            - PR
+            - PW
+            - RI
+            - SC
+            - SD
+            - TN
+            - TX
+            - UT
+            - UM
+            - VA
+            - VI
+            - VT
+            - WA
+            - WI
+            - WV
+            - WY
+          description: Provider's assigned states
+          enum:
+          - AK
+          - AL
+          - AR
+          - AS
+          - AZ
+          - CA
+          - CO
+          - CT
+          - DC
+          - DE
+          - FL
+          - FM
+          - GA
+          - GU
+          - HI
+          - IA
+          - ID
+          - IL
+          - IN
+          - KS
+          - KY
+          - LA
+          - MA
+          - MD
+          - ME
+          - MH
+          - MI
+          - MN
+          - MO
+          - MP
+          - MS
+          - MT
+          - NC
+          - ND
+          - NE
+          - NH
+          - NJ
+          - NM
+          - NV
+          - NY
+          - OH
+          - OK
+          - OR
+          - PA
+          - PR
+          - PW
+          - RI
+          - SC
+          - SD
+          - TN
+          - TX
+          - UT
+          - UM
+          - VA
+          - VI
+          - VT
+          - WA
+          - WI
+          - WV
+          - WY
+    BulkCreateProviderResponseDtoV2:
+      type: object
+      properties:
+        provider_id:
+          type: string
+        error:
+          $ref: '#/components/schemas/CreateProviderError'
+      required:
+      - error
+    TerminateProviderV2Dto:
+      type: object
+      properties:
+        provider_ids:
+          description: Provider ids to be terminated in comma separated strings within the array.
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for the termination.
+        filters:
+          description: Filters for Provider Termination
+          allOf:
+          - $ref: '#/components/schemas/FilterProvidersV2Dto'
+      required:
+      - provider_ids
+      - reason
+      - filters
+    PractitionerEgressResponseDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerEgressDto'
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          description: Cursor for next page. Null when no more records exist.
+        links:
+          description: Pagination links for navigation
+          allOf:
+          - $ref: '#/components/schemas/PractitionerEgressLinksDto'
+      required:
+      - data
+      - nextCursor
+      - links
+    PractitionerEgressDto:
+      type: object
+      properties:
+        npi:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+        providerType:
+          type: string
+        status:
+          type: string
+        states:
+          type: array
+          items:
+            type: string
+        credentialingStatus:
+          type: string
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerLicenseDto'
+        deaData:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerDeaDto'
+        cdsData:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerDeaDto'
+      required:
+      - npi
+      - firstName
+      - lastName
+      - status
+      - credentialingStatus
+    ShareBulkProviderToCredCommDtoV2:
+      type: object
+      properties:
+        provider_ids:
+          description: Array of provider IDs to share to cred committee
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          description: Reason for sharing to cred committee
+      required:
+      - provider_ids
+      - reason
   securitySchemes:
     BearerAuth:
       scheme: bearer

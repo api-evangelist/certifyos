@@ -116,6 +116,64 @@ paths:
       security: []
 components:
   schemas:
+    LoginResponse:
+      description: Response containing authentication tokens after successful login
+      type: object
+      required:
+      - accessToken
+      - expiresIn
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          examples:
+          - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresIn:
+          type: integer
+          format: int64
+          description: Token expiration time in seconds
+          examples:
+          - 86400
+    ClientCredentialsRequest:
+      description: Request body for client credentials authentication
+      type: object
+      properties:
+        clientId:
+          type: string
+          description: Auth0 client ID. If not provided, uses configured client ID
+          examples:
+          - your-client-id
+        clientSecret:
+          type: string
+          description: Auth0 client secret. If not provided, uses configured client secret
+          examples:
+          - your-client-secret
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    LoginRequest:
+      description: Request body for user authentication
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          description: User email address
+          examples:
+          - user@example.com
+        password:
+          type: string
+          description: User password
+          examples:
+          - password
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -141,50 +199,6 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    LoginResponse:
-      description: Response containing authentication tokens after successful login
-      type: object
-      required:
-      - accessToken
-      - expiresIn
-      properties:
-        accessToken:
-          type: string
-          description: JWT access token
-          examples:
-          - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-        expiresIn:
-          type: integer
-          format: int64
-          description: Token expiration time in seconds
-          examples:
-          - 86400
-    LoginRequest:
-      description: Request body for user authentication
-      type: object
-      required:
-      - email
-      - password
-      properties:
-        email:
-          type: string
-          description: User email address
-          examples:
-          - user@example.com
-        password:
-          type: string
-          description: User password
-          examples:
-          - password
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     ClientCredentialsResponse:
       description: Response containing access token after successful client credentials exchange
       type: object
@@ -209,20 +223,6 @@ components:
           description: Token type
           examples:
           - Bearer
-    ClientCredentialsRequest:
-      description: Request body for client credentials authentication
-      type: object
-      properties:
-        clientId:
-          type: string
-          description: Auth0 client ID. If not provided, uses configured client ID
-          examples:
-          - your-client-id
-        clientSecret:
-          type: string
-          description: Auth0 client secret. If not provided, uses configured client secret
-          examples:
-          - your-client-secret
   securitySchemes:
     jwt:
       type: http
