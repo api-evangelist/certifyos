@@ -303,93 +303,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    ClientCredentialsConfigurationDto:
-      type: object
-      properties:
-        client_id:
-          type: string
-          description: Client ID for OAuth token exchange
-          example: my-client-id
-        client_secret:
-          type: string
-          description: Client secret for OAuth token exchange
-          example: my-client-secret
-        token_url:
-          type: string
-          description: URL for OAuth token exchange
-          example: https://auth.example.com/oauth/token
-        scope:
-          type:
-          - string
-          - 'null'
-          description: Scope for OAuth token exchange
-          example: resource.read
-        headers:
-          type:
-          - object
-          - 'null'
-          description: Key-value pairs of custom headers to send in the OAuth token exchange request to {token_url}.
-          example:
-            X-Domain-Name: example.com
-      required:
-      - client_id
-      - client_secret
-      - token_url
-    CreateWebhookTestEventDto:
-      type: object
-      properties:
-        message:
-          type: string
-          description: Message to include in the test event sent to the webhook
-        eventType:
-          enum:
-          - IN_PROGRESS
-          - PSV_COMPLETED
-          - CREDENTIALING_COMPLETED
-          - PROVIDER_TERMINATED
-          - FACILITY_NOT_SENT_TO_CREDENTIALING
-          - FACILITY_IN_PROGRESS
-          - FACILITY_DATA_MISSING
-          - FACILITY_OUTREACH_IN_PROGRESS
-          - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
-          - FACILITY_CREDENTIALING_RESTARTED
-          - FACILITY_PSV_READY
-          - FACILITY_CRED_APPROVED
-          - FACILITY_HOLD_FOR_CRED_COMM
-          - FACILITY_CRED_DENIED
-          - FACILITY_TERMINATED
-          - FACILITY_RECREDENTIALING_IN_PROGRESS
-          - FACILITY_TABLED
-          - FACILITY_WITHDRAWN_CANCELLED
-          - FACILITY_NOT_STARTED
-          - PROVIDER_NOT_SENT_TO_CREDENTIALING
-          - PROVIDER_NOT_STARTED
-          - PROVIDER_IN_PROGRESS
-          - PROVIDER_DATA_MISSING
-          - PROVIDER_OUTREACH_IN_PROGRESS
-          - PROVIDER_PSV_COMPLETED
-          - PROVIDER_CREDENTIALING_RESTARTED
-          - PROVIDER_PSV_READY
-          - PROVIDER_CRED_APPROVED
-          - PROVIDER_HOLD_FOR_CRED_COMM
-          - PROVIDER_CRED_DENIED
-          - PROVIDER_RECREDENTIALING_IN_PROGRESS
-          - PROVIDER_TABLED
-          - PROVIDER_WITHDRAWN_CANCELLED
-          - FORM_SUBMISSION_CREATED
-          type: string
-          description: Event type for the test event sent to the webhook
-      required:
-      - message
-      - eventType
-    RemoveWebhooksDto:
-      type: object
-      properties:
-        id:
-          type: string
-          description: ID assigned to the Webhook
-      required:
-      - id
     CreateWebhooksDto:
       type: object
       properties:
@@ -457,13 +370,6 @@ components:
       required:
       - url
       - event_types
-    CreateWebhookResponseDto:
-      type: object
-      properties:
-        id:
-          type: string
-      required:
-      - id
     WebhookResponseDto:
       type: object
       properties:
@@ -543,6 +449,100 @@ components:
       - url
       - event_types
       - created_at
+    CreateWebhookResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    RemoveWebhooksDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID assigned to the Webhook
+      required:
+      - id
+    ClientCredentialsConfigurationDto:
+      type: object
+      properties:
+        client_id:
+          type: string
+          description: Client ID for OAuth token exchange
+          example: my-client-id
+        client_secret:
+          type: string
+          description: Client secret for OAuth token exchange
+          example: my-client-secret
+        token_url:
+          type: string
+          description: URL for OAuth token exchange
+          example: https://auth.example.com/oauth/token
+        scope:
+          type:
+          - string
+          - 'null'
+          description: Scope for OAuth token exchange
+          example: resource.read
+        headers:
+          type:
+          - object
+          - 'null'
+          description: Key-value pairs of custom headers to send in the OAuth token exchange request to {token_url}.
+          example:
+            X-Domain-Name: example.com
+      required:
+      - client_id
+      - client_secret
+      - token_url
+    CreateWebhookTestEventDto:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message to include in the test event sent to the webhook
+        eventType:
+          enum:
+          - IN_PROGRESS
+          - PSV_COMPLETED
+          - CREDENTIALING_COMPLETED
+          - PROVIDER_TERMINATED
+          - FACILITY_NOT_SENT_TO_CREDENTIALING
+          - FACILITY_IN_PROGRESS
+          - FACILITY_DATA_MISSING
+          - FACILITY_OUTREACH_IN_PROGRESS
+          - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
+          - FACILITY_CREDENTIALING_RESTARTED
+          - FACILITY_PSV_READY
+          - FACILITY_CRED_APPROVED
+          - FACILITY_HOLD_FOR_CRED_COMM
+          - FACILITY_CRED_DENIED
+          - FACILITY_TERMINATED
+          - FACILITY_RECREDENTIALING_IN_PROGRESS
+          - FACILITY_TABLED
+          - FACILITY_WITHDRAWN_CANCELLED
+          - FACILITY_NOT_STARTED
+          - PROVIDER_NOT_SENT_TO_CREDENTIALING
+          - PROVIDER_NOT_STARTED
+          - PROVIDER_IN_PROGRESS
+          - PROVIDER_DATA_MISSING
+          - PROVIDER_OUTREACH_IN_PROGRESS
+          - PROVIDER_PSV_COMPLETED
+          - PROVIDER_CREDENTIALING_RESTARTED
+          - PROVIDER_PSV_READY
+          - PROVIDER_CRED_APPROVED
+          - PROVIDER_HOLD_FOR_CRED_COMM
+          - PROVIDER_CRED_DENIED
+          - PROVIDER_RECREDENTIALING_IN_PROGRESS
+          - PROVIDER_TABLED
+          - PROVIDER_WITHDRAWN_CANCELLED
+          - FORM_SUBMISSION_CREATED
+          type: string
+          description: Event type for the test event sent to the webhook
+      required:
+      - message
+      - eventType
   securitySchemes:
     jwt:
       type: http

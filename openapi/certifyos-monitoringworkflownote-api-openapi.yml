@@ -298,67 +298,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    NoteData1:
-      type: object
-      description: Note data containing message content
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          description: The message content of the note
-          examples:
-          - This is a note message
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    UpdateNoteRequest1:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          pattern: \S
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     ApiError1:
       type: object
       properties:
@@ -366,6 +305,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ErrorObject1'
+    CreateNoteRequest1:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
     NoteResponse1:
       type: object
       description: Response containing note information
@@ -416,7 +363,7 @@ components:
           examples:
           - '2024-01-01T00:00:00Z'
           $ref: '#/components/schemas/Instant'
-    CreateNoteRequest1:
+    UpdateNoteRequest1:
       type: object
       required:
       - message
@@ -424,18 +371,6 @@ components:
         message:
           type: string
           pattern: \S
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
     JsonNode:
       type: object
       properties:
@@ -483,6 +418,71 @@ components:
           type: boolean
         binary:
           type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    NoteData1:
+      type: object
+      description: Note data containing message content
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          description: The message content of the note
+          examples:
+          - This is a note message
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
     GetNotesResponse1:
       description: Response containing a paginated list of notes
       type: object

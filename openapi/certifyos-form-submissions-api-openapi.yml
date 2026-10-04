@@ -211,50 +211,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    CreateFormSubmissionRequest:
-      description: Request payload for creating a form submission
-      type: object
-      required:
-      - data
-      properties:
-        data:
-          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
-          examples:
-          - {}
-    FormSubmissionSubmittedByResponse:
-      type: object
-      description: Information about who submitted the form
-      properties:
-        email:
-          type: string
-          description: The email of the user who submitted the form
-          examples:
-          - user@example.com
-        user:
-          description: The user information of the person who submitted the form
-          examples:
-          - {}
-    TenantOptions:
-      description: Per-tenant options for multi-tenant form submission fan-out
-      type: object
-      properties:
-        createPractitioner:
-          type: boolean
-          description: When true, creates a tenant practitioner crosswalk in addition to the portal crosswalk. Requires practitionerData to be present in the request.
-          default: false
-        createFacility:
-          type: boolean
-          description: When true, creates a tenant facility crosswalk in addition to the portal crosswalk. Requires facilityData to be present in the request.
-          default: false
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     FormSubmissionResponseDto:
       description: Form submission response
       type: object
@@ -345,39 +301,62 @@ components:
           description: The date and time when the form submission was last updated
           examples:
           - '2025-01-01T12:00:00Z'
-    TenantSubmissionResult:
+    CreateFormSubmissionRequest:
+      description: Request payload for creating a form submission
       type: object
-      description: Result of processing a single tenant in a multi-tenant form submission
+      required:
+      - data
       properties:
-        tenantId:
+        data:
+          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
+          examples:
+          - {}
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
           type: string
-          description: The tenant ID that was processed
+          description: Error reason/code
           examples:
-          - tenant_blue_cross
-        status:
+          - VALIDATION_ERROR
+        title:
           type: string
-          description: 'Processing status for this tenant: success or failed'
+          description: Error title/summary
           examples:
-          - success
-        certifyId:
+          - 'Validation failed for field: eventTypes'
+        detail:
           type: string
-          description: Tenant crosswalk certify ID, populated when a tenant crosswalk was created. Empty string when only a portal crosswalk was created.
+          description: Detailed error message
           examples:
-          - certify_pract_001
-        errorCode:
-          type:
-          - string
-          - 'null'
-          description: Error code when status is failed
-          examples:
-          - DOWNSTREAM_VALIDATION_ERROR
-        errorMessage:
-          type:
-          - string
-          - 'null'
-          description: Human-readable error detail when status is failed
-          examples:
-          - Missing required payer field
+          - eventTypes is required and cannot be empty or null
+    TenantOptions:
+      description: Per-tenant options for multi-tenant form submission fan-out
+      type: object
+      properties:
+        createPractitioner:
+          type: boolean
+          description: When true, creates a tenant practitioner crosswalk in addition to the portal crosswalk. Requires practitionerData to be present in the request.
+          default: false
+        createFacility:
+          type: boolean
+          description: When true, creates a tenant facility crosswalk in addition to the portal crosswalk. Requires facilityData to be present in the request.
+          default: false
     MultiTenantFormSubmissionResponse:
       description: Response for a multi-tenant form submission
       type: object
@@ -431,31 +410,52 @@ components:
           - tenant_blue_cross:
               createPractitioner: true
               createFacility: false
-    ErrorObject:
+    TenantSubmissionResult:
       type: object
-      description: Individual error object containing details about a specific validation or processing error
+      description: Result of processing a single tenant in a multi-tenant form submission
       properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
+        tenantId:
           type: string
-          description: Error reason/code
+          description: The tenant ID that was processed
           examples:
-          - VALIDATION_ERROR
-        title:
+          - tenant_blue_cross
+        status:
           type: string
-          description: Error title/summary
+          description: 'Processing status for this tenant: success or failed'
           examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
+          - success
+        certifyId:
           type: string
-          description: Detailed error message
+          description: Tenant crosswalk certify ID, populated when a tenant crosswalk was created. Empty string when only a portal crosswalk was created.
           examples:
-          - eventTypes is required and cannot be empty or null
+          - certify_pract_001
+        errorCode:
+          type:
+          - string
+          - 'null'
+          description: Error code when status is failed
+          examples:
+          - DOWNSTREAM_VALIDATION_ERROR
+        errorMessage:
+          type:
+          - string
+          - 'null'
+          description: Human-readable error detail when status is failed
+          examples:
+          - Missing required payer field
+    FormSubmissionSubmittedByResponse:
+      type: object
+      description: Information about who submitted the form
+      properties:
+        email:
+          type: string
+          description: The email of the user who submitted the form
+          examples:
+          - user@example.com
+        user:
+          description: The user information of the person who submitted the form
+          examples:
+          - {}
   securitySchemes:
     jwt:
       type: http

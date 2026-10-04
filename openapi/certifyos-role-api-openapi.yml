@@ -319,85 +319,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    PageLinks1:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    RoleListResponseDto:
-      description: Paginated list of roles
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoleResponseDto'
-          description: List of roles
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of roles
-        links:
-          description: Pagination links
-          type: object
-          $ref: '#/components/schemas/PageLinks1'
-    OffsetDateTime:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T12:15:50-04:00'
-    PermissionResponseDto:
-      type: object
-      description: Permission information response
-      properties:
-        id:
-          type: string
-          description: Permission ID
-          examples:
-          - perm-123-456-789
-        resource:
-          type: string
-          description: Resource name
-          examples:
-          - user
-        action:
-          type: string
-          description: Action name
-          examples:
-          - read
-        description:
-          type: string
-          description: Permission description
-          examples:
-          - Allows reading user profiles
-        createdAt:
-          description: Creation timestamp
-          type: string
-          $ref: '#/components/schemas/OffsetDateTime'
-        updatedAt:
-          description: Last update timestamp
-          type: string
-          $ref: '#/components/schemas/OffsetDateTime'
-    RoleUpdateRequest:
-      description: Request body for updating a role
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 100
-          description: Role name
-          examples:
-          - Business Admin
-        description:
-          type: string
-          maxLength: 500
-          description: Role description
-          examples:
-          - Full access to all operations
     RoleCreateRequest:
       description: Request body for creating a new role
       type: object
@@ -414,24 +335,15 @@ components:
           description: Role description
           examples:
           - Full access to all operations
-    RolePermissionBulkUpdateRequest:
+    PageLinks1:
       type: object
       properties:
-        add:
-          type: array
-          items:
-            type: string
-        remove:
-          type: array
-          items:
-            type: string
-    RolePermissionAddRequest:
-      type: object
-      properties:
-        permissionIds:
-          type: array
-          items:
-            type: string
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
     RoleResponseDto:
       type: object
       description: Role information response
@@ -474,6 +386,94 @@ components:
           description: Updated by
           examples:
           - user-123-456-789
+    RolePermissionBulkUpdateRequest:
+      type: object
+      properties:
+        add:
+          type: array
+          items:
+            type: string
+        remove:
+          type: array
+          items:
+            type: string
+    RoleListResponseDto:
+      description: Paginated list of roles
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleResponseDto'
+          description: List of roles
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roles
+        links:
+          description: Pagination links
+          type: object
+          $ref: '#/components/schemas/PageLinks1'
+    PermissionResponseDto:
+      type: object
+      description: Permission information response
+      properties:
+        id:
+          type: string
+          description: Permission ID
+          examples:
+          - perm-123-456-789
+        resource:
+          type: string
+          description: Resource name
+          examples:
+          - user
+        action:
+          type: string
+          description: Action name
+          examples:
+          - read
+        description:
+          type: string
+          description: Permission description
+          examples:
+          - Allows reading user profiles
+        createdAt:
+          description: Creation timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          description: Last update timestamp
+          type: string
+          $ref: '#/components/schemas/OffsetDateTime'
+    RolePermissionAddRequest:
+      type: object
+      properties:
+        permissionIds:
+          type: array
+          items:
+            type: string
+    RoleUpdateRequest:
+      description: Request body for updating a role
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Role name
+          examples:
+          - Business Admin
+        description:
+          type: string
+          maxLength: 500
+          description: Role description
+          examples:
+          - Full access to all operations
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
   securitySchemes:
     jwt:
       type: http

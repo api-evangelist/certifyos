@@ -187,40 +187,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    CreatePayerRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Payer.schema'
-          type: object
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     SourceSystem.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
@@ -230,27 +196,6 @@ components:
       enum:
       - API
       - File Upload
-    Payer.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Payer.schema.json
-      title: Payer
-      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
-      type: object
-      properties:
-        name:
-          description: Name of the payer
-          type: string
-        category:
-          description: Type of payer
-          type: string
-        sourceSystem:
-          description: Origin of the record (e.g., API, File Upload)
-          $ref: '#/components/schemas/SourceSystem.schema'
-        changeReason:
-          description: Optional description of why a change was made
-          type: string
-      required:
-      - name
     PayerRequest:
       type: object
       properties:
@@ -264,6 +209,12 @@ components:
           $ref: '#/components/schemas/JsonNode'
         dataToValidate:
           $ref: '#/components/schemas/JsonNode'
+    CreatePayerRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Payer.schema'
+          type: object
     JsonNode:
       type: object
       properties:
@@ -311,6 +262,44 @@ components:
           type: boolean
         binary:
           type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    GetAllPayersResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
     PayerResponse:
       type: object
       properties:
@@ -322,16 +311,27 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
-    GetAllPayersResponse:
+    Payer.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Payer.schema.json
+      title: Payer
+      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
       type: object
       properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
+        name:
+          description: Name of the payer
+          type: string
+        category:
+          description: Type of payer
+          type: string
+        sourceSystem:
+          description: Origin of the record (e.g., API, File Upload)
+          $ref: '#/components/schemas/SourceSystem.schema'
+        changeReason:
+          description: Optional description of why a change was made
+          type: string
+      required:
+      - name
   securitySchemes:
     jwt:
       type: http

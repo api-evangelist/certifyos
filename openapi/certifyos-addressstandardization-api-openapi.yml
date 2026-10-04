@@ -63,12 +63,30 @@ paths:
       - jwt: []
 components:
   schemas:
-    AddressConfidence:
-      type: string
-      enum:
-      - HIGH
-      - MEDIUM
-      - LOW
+    StandardizeAddressResponse:
+      description: Standardized address with confidence, validation status, and enrichment data
+      type: object
+      properties:
+        standardizedAddress:
+          description: Normalized address components
+          type: object
+          $ref: '#/components/schemas/StandardizedAddress'
+        confidence:
+          description: How much the caller should trust the standardized address
+          type: string
+          examples:
+          - HIGH
+          $ref: '#/components/schemas/AddressConfidence'
+        validationStatus:
+          description: External validation status
+          type: string
+          examples:
+          - VALID
+          $ref: '#/components/schemas/AddressValidationStatus'
+        enrichment:
+          description: Enrichment values derived from the standardized address
+          type: object
+          $ref: '#/components/schemas/AddressEnrichment'
     StandardizedAddress:
       type: object
       description: Standardized address components
@@ -100,44 +118,6 @@ components:
         formattedAddress:
           type: string
           description: Pretty-printed single-line address
-    AddressEnrichment:
-      type: object
-      description: Enrichment values attached to the standardized address
-      properties:
-        zip4:
-          type: string
-          description: ZIP+4 extension, if available
-          examples:
-          - '1234'
-        county:
-          type: string
-          description: County name, if available
-          examples:
-          - New York County
-        latitude:
-          type: number
-          format: double
-          description: Latitude in decimal degrees, if available
-        longitude:
-          type: number
-          format: double
-          description: Longitude in decimal degrees, if available
-        stateFips:
-          type: string
-          description: 2-digit state FIPS code, if available
-          examples:
-          - '36'
-        countyFips:
-          type: string
-          description: 5-digit county FIPS code, if available
-          examples:
-          - '36061'
-        formattedAddress:
-          type: string
-          description: Pretty-printed single-line address, if available
-        timezone:
-          type: string
-          description: IANA timezone ID, if available; always null until timezone enrichment ships
     StandardizeAddressRequest:
       description: Input address to be standardized and validated
       type: object
@@ -193,30 +173,50 @@ components:
       - VALID
       - PARTIAL
       - INVALID
-    StandardizeAddressResponse:
-      description: Standardized address with confidence, validation status, and enrichment data
+    AddressEnrichment:
       type: object
+      description: Enrichment values attached to the standardized address
       properties:
-        standardizedAddress:
-          description: Normalized address components
-          type: object
-          $ref: '#/components/schemas/StandardizedAddress'
-        confidence:
-          description: How much the caller should trust the standardized address
+        zip4:
           type: string
+          description: ZIP+4 extension, if available
           examples:
-          - HIGH
-          $ref: '#/components/schemas/AddressConfidence'
-        validationStatus:
-          description: External validation status
+          - '1234'
+        county:
           type: string
+          description: County name, if available
           examples:
-          - VALID
-          $ref: '#/components/schemas/AddressValidationStatus'
-        enrichment:
-          description: Enrichment values derived from the standardized address
-          type: object
-          $ref: '#/components/schemas/AddressEnrichment'
+          - New York County
+        latitude:
+          type: number
+          format: double
+          description: Latitude in decimal degrees, if available
+        longitude:
+          type: number
+          format: double
+          description: Longitude in decimal degrees, if available
+        stateFips:
+          type: string
+          description: 2-digit state FIPS code, if available
+          examples:
+          - '36'
+        countyFips:
+          type: string
+          description: 5-digit county FIPS code, if available
+          examples:
+          - '36061'
+        formattedAddress:
+          type: string
+          description: Pretty-printed single-line address, if available
+        timezone:
+          type: string
+          description: IANA timezone ID, if available; always null until timezone enrichment ships
+    AddressConfidence:
+      type: string
+      enum:
+      - HIGH
+      - MEDIUM
+      - LOW
   securitySchemes:
     jwt:
       type: http

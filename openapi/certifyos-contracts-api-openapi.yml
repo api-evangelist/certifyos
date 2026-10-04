@@ -238,6 +238,31 @@ paths:
       - jwt: []
 components:
   schemas:
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+        planId:
+          type: string
+        networkId:
+          type: string
+        documentId:
+          type: string
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+        generalInfo:
+          $ref: '#/components/schemas/ContractGeneralInfo'
+        lifecycle:
+          $ref: '#/components/schemas/ContractLifeCycleInfo'
+        financial:
+          $ref: '#/components/schemas/ContractFinancialInfo'
+        administrativeAndLegal:
+          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
+        clinicalAndQuality:
+          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
     ContractClinicalAndQualityInfo:
       type: object
       properties:
@@ -265,47 +290,35 @@ components:
           type: string
         providerRosterUpdateFrequency:
           type: string
-    PageLinks:
+    ContractGeneralInfo:
       type: object
       properties:
-        self:
+        contractId:
           type: string
-        next:
+        contractName:
           type: string
-        prev:
+        contractTemplate:
           type: string
-    ContractAdministrativeAndLegalInfo:
-      type: object
-      properties:
-        amendmentOnFile:
-          type: boolean
-        amendmentNumber:
+        contractRate:
           type: string
-        practitionersTerminationNoticePeriod:
+        reimbursementCode:
           type: string
-        providersManualUpdatesNoticePeriod:
+        contractType:
           type: string
-        policyUpdateNotificationRequired:
-          type: boolean
-        claimFilingLimit:
+        vbcAttribution:
           type: string
-        reimbursementScheduleUpdateFrequency:
+        contractStatus:
           type: string
-        timelyPaymentCommitment:
-          type: integer
-          format: int32
-    PagedContractResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Contract'
-        links:
-          $ref: '#/components/schemas/PageLinks'
-        totalCount:
-          type: integer
-          format: int64
+        contractAgreementType:
+          type: string
+        groupId:
+          type: string
+        practitionerId:
+          type: string
+        networkId:
+          type: string
+        planId:
+          type: string
     ApiError1:
       type: object
       properties:
@@ -359,72 +372,38 @@ components:
           type: string
         telehealthNoShow:
           type: string
-    Contract:
+    PagedContractResponse:
       type: object
       properties:
-        id:
-          type: string
-        planId:
-          type: string
-        networkId:
-          type: string
-        documentId:
-          type: string
-        createdBy:
-          type: string
-        updatedBy:
-          type: string
-        generalInfo:
-          $ref: '#/components/schemas/ContractGeneralInfo'
-        lifecycle:
-          $ref: '#/components/schemas/ContractLifeCycleInfo'
-        financial:
-          $ref: '#/components/schemas/ContractFinancialInfo'
-        administrativeAndLegal:
-          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
-        clinicalAndQuality:
-          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
-    ErrorObject1:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
+    ContractAdministrativeAndLegalInfo:
       type: object
       properties:
-        reason:
+        amendmentOnFile:
+          type: boolean
+        amendmentNumber:
           type: string
-        detail:
+        practitionersTerminationNoticePeriod:
           type: string
-        httpStatus:
+        providersManualUpdatesNoticePeriod:
+          type: string
+        policyUpdateNotificationRequired:
+          type: boolean
+        claimFilingLimit:
+          type: string
+        reimbursementScheduleUpdateFrequency:
+          type: string
+        timelyPaymentCommitment:
           type: integer
           format: int32
-        title:
-          type: string
-    ContractGeneralInfo:
-      type: object
-      properties:
-        contractId:
-          type: string
-        contractName:
-          type: string
-        contractTemplate:
-          type: string
-        contractRate:
-          type: string
-        reimbursementCode:
-          type: string
-        contractType:
-          type: string
-        vbcAttribution:
-          type: string
-        contractStatus:
-          type: string
-        contractAgreementType:
-          type: string
-        groupId:
-          type: string
-        practitionerId:
-          type: string
-        networkId:
-          type: string
-        planId:
-          type: string
     ContractLifeCycleInfo:
       type: object
       properties:
@@ -439,6 +418,27 @@ components:
         billingEffectiveDate:
           type: string
         billingTerminationDate:
+          type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
           type: string
   securitySchemes:
     jwt:

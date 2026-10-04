@@ -440,27 +440,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    Date:
-      type: string
-      format: date
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     RosterResponse:
       type: object
       properties:
@@ -492,18 +471,6 @@ components:
         failedCount:
           type: integer
           format: int64
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     RosterReuploadResponse:
       type: object
       properties:
@@ -517,6 +484,43 @@ components:
           type: string
         message:
           type: string
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    Date:
+      type: string
+      format: date
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
     JsonNode:
       type: object
       properties:
@@ -564,31 +568,18 @@ components:
           type: boolean
         binary:
           type: boolean
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     PagedResponse1:
       type: object
       properties:
@@ -600,6 +591,15 @@ components:
         totalCount:
           type: integer
           format: int64
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
   securitySchemes:
     jwt:
       type: http

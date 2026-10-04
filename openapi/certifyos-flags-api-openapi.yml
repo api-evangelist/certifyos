@@ -532,18 +532,15 @@ paths:
       - BearerAuth: []
 components:
   schemas:
-    FlagMarkReadAllRequestDto:
+    FlagMarkUnreadAllRequestDto:
       type: object
       properties:
         flagIds:
           type: array
           items:
             type: string
-        reason:
-          type: string
       required:
       - flagIds
-      - reason
     FlagPatchAllResponseDto:
       type: object
       properties:
@@ -551,6 +548,25 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FlagPatchResponseDto'
+      required:
+      - flags
+    FlagPatchRequestDto:
+      type: object
+      properties:
+        id:
+          type: string
+        active:
+          type: boolean
+      required:
+      - id
+      - active
+    FlagPatchAllRequestDto:
+      type: object
+      properties:
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagPatchRequestDto'
       required:
       - flags
     FlagPatchResponseDto:
@@ -563,40 +579,24 @@ components:
       required:
       - id
       - success
-    FlagMarkUnreadAllRequestDto:
-      type: object
-      properties:
-        flagIds:
-          type: array
-          items:
-            type: string
-      required:
-      - flagIds
-    FlagPatchRequestDto:
-      type: object
-      properties:
-        id:
-          type: string
-        active:
-          type: boolean
-      required:
-      - id
-      - active
     ReadStatus:
       type: string
       enum:
       - seen
       - unseen
       - all
-    FlagPatchAllRequestDto:
+    FlagMarkReadAllRequestDto:
       type: object
       properties:
-        flags:
+        flagIds:
           type: array
           items:
-            $ref: '#/components/schemas/FlagPatchRequestDto'
+            type: string
+        reason:
+          type: string
       required:
-      - flags
+      - flagIds
+      - reason
   securitySchemes:
     BearerAuth:
       scheme: bearer

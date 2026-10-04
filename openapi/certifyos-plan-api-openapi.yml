@@ -144,6 +144,26 @@ paths:
       - jwt: []
 components:
   schemas:
+    LineOfBusiness.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business associated with a healthcare plan.
+      type: string
+      enum:
+      - Medicare
+      - Medicaid
+      - Commercial
+    GetAllPlansResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
     PlanResponse:
       type: object
       properties:
@@ -155,34 +175,6 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     SourceSystem.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
@@ -192,37 +184,6 @@ components:
       enum:
       - API
       - File Upload
-    LineOfBusiness.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business associated with a healthcare plan.
-      type: string
-      enum:
-      - Medicare
-      - Medicaid
-      - Commercial
-    Payer.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Payer.schema.json
-      title: Payer
-      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
-      type: object
-      properties:
-        name:
-          description: Name of the payer
-          type: string
-        category:
-          description: Type of payer
-          type: string
-        sourceSystem:
-          description: Origin of the record (e.g., API, File Upload)
-          $ref: '#/components/schemas/SourceSystem.schema'
-        changeReason:
-          description: Optional description of why a change was made
-          type: string
-      required:
-      - name
     JsonNode:
       type: object
       properties:
@@ -270,17 +231,34 @@ components:
           type: boolean
         binary:
           type: boolean
-    NetworkType.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business and network type combination for a healthcare plan.
+    JsonNodeType:
       type: string
       enum:
-      - Commercial - HMO
-      - Commercial - PPO
-      - Medicare - HMO
-      - Medicaid - HMO
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
     Plan.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Plan.schema.json
@@ -300,16 +278,38 @@ components:
         name:
           description: The name of the plan.
           type: string
-    GetAllPlansResponse:
+    Payer.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Payer.schema.json
+      title: Payer
+      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
       type: object
       properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
+        name:
+          description: Name of the payer
+          type: string
+        category:
+          description: Type of payer
+          type: string
+        sourceSystem:
+          description: Origin of the record (e.g., API, File Upload)
+          $ref: '#/components/schemas/SourceSystem.schema'
+        changeReason:
+          description: Optional description of why a change was made
+          type: string
+      required:
+      - name
+    NetworkType.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
+      title: Line of Business Enum
+      description: Specifies the line of business and network type combination for a healthcare plan.
+      type: string
+      enum:
+      - Commercial - HMO
+      - Commercial - PPO
+      - Medicare - HMO
+      - Medicaid - HMO
     CreatePlanRequest:
       type: object
       properties:

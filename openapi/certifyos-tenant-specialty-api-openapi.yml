@@ -311,34 +311,26 @@ paths:
       - jwt: []
 components:
   schemas:
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    TenantSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+      title: TenantSpecialty
+      description: Represents a specialty associated with a tenant.
       type: object
       properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+        displayName:
+          type: string
+          description: Display name for the specialty.
+          minLength: 1
+        description:
+          type: string
+          description: Detailed description of the specialty.
+        changeReason:
+          type: string
+          description: Reason for any change to the specialty.
+      required:
+      - displayName
+      additionalProperties: false
     CreateTenantSpecialtyRequest:
       type: object
       properties:
@@ -394,26 +386,34 @@ components:
           type: boolean
         binary:
           type: boolean
-    TenantSpecialty.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
-      title: TenantSpecialty
-      description: Represents a specialty associated with a tenant.
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
       properties:
-        displayName:
-          type: string
-          description: Display name for the specialty.
-          minLength: 1
-        description:
-          type: string
-          description: Detailed description of the specialty.
-        changeReason:
-          type: string
-          description: Reason for any change to the specialty.
-      required:
-      - displayName
-      additionalProperties: false
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
   securitySchemes:
     jwt:
       type: http

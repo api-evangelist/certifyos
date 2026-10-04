@@ -367,6 +367,35 @@ paths:
       - jwt: []
 components:
   schemas:
+    Specialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/Specialty.schema.json
+      title: Specialty
+      description: Represents the master specialty list, including custom specialties, to include crosswalk between NUCC, HSD, and ABMS Specialties.  References the entities for NUCC, HSD, and ABMS specialties.
+      type: object
+      properties:
+        name:
+          description: The name of the specialty.
+          type: string
+        classificationSource:
+          description: The source of the specialty classification (e.g., NUCC, HSD, ABMS).
+          type: string
+        subspecialtyName:
+          description: The subspecialty name of the specialty.
+          type: string
+        specialtyCategory:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+        taxonomyCode:
+          description: The taxonomy code associated with the specialty.
+          type: string
+        taxonomyDescription:
+          description: The description of the taxonomy code.
+          type: string
+      required:
+      - name
+      - classificationSource
+      - specialtyCategory
+      additionalProperties: false
     NuccSpecialtyCategory.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.schema.json
@@ -376,73 +405,15 @@ components:
       enum:
       - Individual
       - Non-Individual
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     CreateNuccSpecialtyRequest:
       type: object
       properties:
         data:
           $ref: '#/components/schemas/NuccSpecialty.schema'
           type: object
-    NuccSpecialty.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
-      title: NuccSpecialty
-      description: Represents the NUCC specialty information options for a healthcare provider.
-      type: object
-      properties:
-        classification:
-          type: string
-          description: The classification of the NUCC specialty
-          minLength: 1
-        specialization:
-          type:
-          - string
-          - 'null'
-          description: The specific specialization within the NUCC classification
-        category:
-          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
-          description: The category of the NUCC specialty (Individual or Non-individual)
-        displayName:
-          type: string
-          description: The human-readable name of the NUCC specialty
-          minLength: 1
-        specialtyNuccTaxonomyCode:
-          type: string
-          description: The NUCC taxonomy code associated with the specialty
-          minLength: 1
-      required:
-      - classification
-      - category
-      - specialtyNuccTaxonomyCode
-      - displayName
-      additionalProperties: false
+    Date:
+      type: string
+      format: date
     JsonNode:
       type: object
       properties:
@@ -490,38 +461,18 @@ components:
           type: boolean
         binary:
           type: boolean
-    Specialty.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Specialty.schema.json
-      title: Specialty
-      description: Represents the master specialty list, including custom specialties, to include crosswalk between NUCC, HSD, and ABMS Specialties.  References the entities for NUCC, HSD, and ABMS specialties.
-      type: object
-      properties:
-        name:
-          description: The name of the specialty.
-          type: string
-        classificationSource:
-          description: The source of the specialty classification (e.g., NUCC, HSD, ABMS).
-          type: string
-        subspecialtyName:
-          description: The subspecialty name of the specialty.
-          type: string
-        specialtyCategory:
-          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
-        taxonomyCode:
-          description: The taxonomy code associated with the specialty.
-          type: string
-        taxonomyDescription:
-          description: The description of the taxonomy code.
-          type: string
-      required:
-      - name
-      - classificationSource
-      - specialtyCategory
-      additionalProperties: false
-    Date:
+    JsonNodeType:
       type: string
-      format: date
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     CreateSpecialtyRequest:
       type: object
       properties:
@@ -534,6 +485,55 @@ components:
         data:
           $ref: '#/components/schemas/Specialty.schema'
           type: object
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
+    NuccSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
+      title: NuccSpecialty
+      description: Represents the NUCC specialty information options for a healthcare provider.
+      type: object
+      properties:
+        classification:
+          type: string
+          description: The classification of the NUCC specialty
+          minLength: 1
+        specialization:
+          type:
+          - string
+          - 'null'
+          description: The specific specialization within the NUCC classification
+        category:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+          description: The category of the NUCC specialty (Individual or Non-individual)
+        displayName:
+          type: string
+          description: The human-readable name of the NUCC specialty
+          minLength: 1
+        specialtyNuccTaxonomyCode:
+          type: string
+          description: The NUCC taxonomy code associated with the specialty
+          minLength: 1
+      required:
+      - classification
+      - category
+      - specialtyNuccTaxonomyCode
+      - displayName
+      additionalProperties: false
   securitySchemes:
     jwt:
       type: http

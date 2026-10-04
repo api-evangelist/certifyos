@@ -130,36 +130,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    TenantConfigurationListResponseDto:
-      description: List of all tenant configurations for a tenant
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantConfigurationItemDto'
-          description: List of tenant configurations
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of tenant configurations
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
     TenantTimezoneResponse:
       description: Tenant timezone configuration response
       type: object
@@ -178,6 +148,19 @@ components:
           description: Timezone abbreviation for the current date
           examples:
           - EST
+    TenantConfigurationListResponseDto:
+      description: List of all tenant configurations for a tenant
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantConfigurationItemDto'
+          description: List of tenant configurations
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of tenant configurations
     JsonNode:
       type: object
       properties:
@@ -225,6 +208,18 @@ components:
           type: boolean
         binary:
           type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     TenantConfigurationItemDto:
       description: A tenant configuration item
       type: object
@@ -253,6 +248,11 @@ components:
           description: Timestamp when the configuration was created
           type: string
           $ref: '#/components/schemas/Instant'
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
   securitySchemes:
     jwt:
       type: http

@@ -205,24 +205,95 @@ paths:
       - jwt: []
 components:
   schemas:
-    OfficeHour:
+    HospitalAdmittingPrivilege:
       type: object
-      description: Operating hours for a specific day of the week
       properties:
-        day:
-          $ref: '#/components/schemas/DaysOfTheWeek.schema'
-          description: Day of the week (three-letter abbreviation)
-        openTime:
+        privilege:
           type: string
-          format: time
-          description: Time when the location opens on this day
-        closeTime:
+        status:
           type: string
-          format: time
-          description: Time when the location closes on this day
-        closed:
+        effectiveDate:
+          type: string
+        terminationDate:
+          type: string
+    GroupLocationTypes.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/GroupLocationTypes.schema.json
+      title: Group Location Types Enum
+      description: Defines the various types of healthcare facilities and services that can be associated with a group.
+      type: string
+      enum:
+      - primaryCare
+      - specialtyCare
+      - behavioralHealth
+      - urgentCare
+      - surgicalServices
+      - rehabilitationServices
+      - laboratoryServices
+      - imagingServices
+      - longTermCare
+      - hospiceOrPalliativeCare
+      - homeHealthServices
+      - others
+    JsonNode:
+      type: object
+      properties:
+        empty:
           type: boolean
-          description: Indicates if the location is closed on this day
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
     Instant:
       type: string
       format: date-time
@@ -274,258 +345,6 @@ components:
           type: boolean
         tty:
           type: string
-    LocationContact2:
-      type: object
-      properties:
-        type:
-          type: string
-        name:
-          type: string
-        mainPhoneNumber:
-          type: string
-        afterHoursPhoneNumber:
-          type: string
-        email:
-          type: string
-        fax:
-          type: string
-        tty:
-          type: string
-    LocationResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        crosswalkId:
-          type: string
-        entityAddressId:
-          type: string
-        tenantId:
-          type: string
-        generalInfo:
-          $ref: '#/components/schemas/LocationGeneralInfo'
-        serviceAddress:
-          $ref: '#/components/schemas/LocationAddress2'
-        mailingAddress:
-          $ref: '#/components/schemas/LocationAddress2'
-        contacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocationContact2'
-        hoursOfOperation:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        languages:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        specialities:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        certifications:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        networkAffiliations:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        facilityTypes:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        paymentOptions:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        accessibilityOptions:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        practiceLimitations:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        otherAttributes:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        identifiers:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        notes:
-          type: array
-          items:
-            type: object
-            additionalProperties: {}
-        hospitalAdmittingPrivileges:
-          type: array
-          items:
-            $ref: '#/components/schemas/HospitalAdmittingPrivilege'
-        billingEffectiveDate:
-          $ref: '#/components/schemas/Instant'
-        billingTerminationDate:
-          $ref: '#/components/schemas/Instant'
-        effectiveDate:
-          $ref: '#/components/schemas/Instant'
-        terminationDate:
-          $ref: '#/components/schemas/Instant'
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    LocationRequest:
-      type: object
-      required:
-      - groupId
-      properties:
-        groupId:
-          type: string
-        locationData:
-          $ref: '#/components/schemas/Location.schema'
-          type: object
-        groupLocationData:
-          $ref: '#/components/schemas/GroupRegistryLocation.schema'
-          type: object
-        tenantGroupLocationData:
-          $ref: '#/components/schemas/TenantGroupLocation.schema'
-          type: object
-    GroupRegistryLocation.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/GroupRegistryLocation.schema.json
-      title: GroupRegistryLocation
-      description: Represents the registry location information for a healthcare provider group.
-      type: object
-      properties:
-        active:
-          description: Indicates if the registry location is active.
-          type: boolean
-      required:
-      - active
-      additionalProperties: false
-    PagedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        totalCount:
-          type: integer
-          format: int64
-        identifiersSearched:
-          type: integer
-          format: int64
-        matchedCount:
-          type: integer
-          format: int64
-        notFoundCount:
-          type: integer
-          format: int64
-        unmatchedIdentifiers:
-          type: array
-          items:
-            type: string
-    LocationAddress2:
-      type: object
-      properties:
-        addressLine1:
-          type: string
-        addressLine2:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        zip:
-          type: string
-        country:
-          type: string
-        county:
-          type: string
-        phone:
-          type: string
-        fax:
-          type: string
-        email:
-          type: string
-        url:
-          type: string
-        use:
-          type: string
-        type:
-          type: string
-    AdaCompliance:
-      type: object
-      description: Americans with Disabilities Act compliance details
-      properties:
-        handicapAccessible:
-          type: boolean
-          description: Indicates if the location is accessible to people with disabilities
-        handicapParking:
-          type: boolean
-          description: Indicates if designated handicap parking spaces are available
-        handicapRestroom:
-          type: boolean
-          description: Indicates if ADA-compliant restroom facilities are available
-    HospitalAdmittingPrivilege:
-      type: object
-      properties:
-        privilege:
-          type: string
-        status:
-          type: string
-        effectiveDate:
-          type: string
-        terminationDate:
-          type: string
-    GroupLocationTypes.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/GroupLocationTypes.schema.json
-      title: Group Location Types Enum
-      description: Defines the various types of healthcare facilities and services that can be associated with a group.
-      type: string
-      enum:
-      - primaryCare
-      - specialtyCare
-      - behavioralHealth
-      - urgentCare
-      - surgicalServices
-      - rehabilitationServices
-      - laboratoryServices
-      - imagingServices
-      - longTermCare
-      - hospiceOrPalliativeCare
-      - homeHealthServices
-      - others
     Location.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Location.schema.json
@@ -631,6 +450,84 @@ components:
               type: boolean
               description: Indicates if the location is closed on this day
       unevaluatedProperties: false
+    LocationRequest:
+      type: object
+      required:
+      - groupId
+      properties:
+        groupId:
+          type: string
+        locationData:
+          $ref: '#/components/schemas/Location.schema'
+          type: object
+        groupLocationData:
+          $ref: '#/components/schemas/GroupRegistryLocation.schema'
+          type: object
+        tenantGroupLocationData:
+          $ref: '#/components/schemas/TenantGroupLocation.schema'
+          type: object
+    DaysOfTheWeek.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/DaysOfTheWeek.schema.json
+      title: Days Of The Week Enum
+      type: string
+      description: A reusable enum schema defining the standard three-letter abbreviations for days of the week.
+      enum:
+      - Mon
+      - Tue
+      - Wed
+      - Thu
+      - Fri
+      - Sat
+      - Sun
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        totalCount:
+          type: integer
+          format: int64
+        identifiersSearched:
+          type: integer
+          format: int64
+        matchedCount:
+          type: integer
+          format: int64
+        notFoundCount:
+          type: integer
+          format: int64
+        unmatchedIdentifiers:
+          type: array
+          items:
+            type: string
+    AdaCompliance:
+      type: object
+      description: Americans with Disabilities Act compliance details
+      properties:
+        handicapAccessible:
+          type: boolean
+          description: Indicates if the location is accessible to people with disabilities
+        handicapParking:
+          type: boolean
+          description: Indicates if designated handicap parking spaces are available
+        handicapRestroom:
+          type: boolean
+          description: Indicates if ADA-compliant restroom facilities are available
+    GroupRegistryLocation.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/GroupRegistryLocation.schema.json
+      title: GroupRegistryLocation
+      description: Represents the registry location information for a healthcare provider group.
+      type: object
+      properties:
+        active:
+          description: Indicates if the registry location is active.
+          type: boolean
+      required:
+      - active
+      additionalProperties: false
     TenantGroupLocation.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/TenantGroupLocation.schema.json
@@ -663,79 +560,23 @@ components:
         npdbEnrollmentEnabled:
           description: Indicates if NPDB (National Practitioner Data Bank) enrollment is enabled.
           type: boolean
-    JsonNode:
+    LocationContact2:
       type: object
       properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    DaysOfTheWeek.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/DaysOfTheWeek.schema.json
-      title: Days Of The Week Enum
-      type: string
-      description: A reusable enum schema defining the standard three-letter abbreviations for days of the week.
-      enum:
-      - Mon
-      - Tue
-      - Wed
-      - Thu
-      - Fri
-      - Sat
-      - Sun
+        type:
+          type: string
+        name:
+          type: string
+        mainPhoneNumber:
+          type: string
+        afterHoursPhoneNumber:
+          type: string
+        email:
+          type: string
+        fax:
+          type: string
+        tty:
+          type: string
     LocationUpdateRequest:
       type: object
       required:
@@ -784,6 +625,165 @@ components:
           $ref: '#/components/schemas/JsonNode'
         userDefinedFields:
           $ref: '#/components/schemas/JsonNode'
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    LocationAddress2:
+      type: object
+      properties:
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        county:
+          type: string
+        phone:
+          type: string
+        fax:
+          type: string
+        email:
+          type: string
+        url:
+          type: string
+        use:
+          type: string
+        type:
+          type: string
+    LocationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        crosswalkId:
+          type: string
+        entityAddressId:
+          type: string
+        tenantId:
+          type: string
+        generalInfo:
+          $ref: '#/components/schemas/LocationGeneralInfo'
+        serviceAddress:
+          $ref: '#/components/schemas/LocationAddress2'
+        mailingAddress:
+          $ref: '#/components/schemas/LocationAddress2'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationContact2'
+        hoursOfOperation:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        languages:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        specialities:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        certifications:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        networkAffiliations:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        facilityTypes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        paymentOptions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        accessibilityOptions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        practiceLimitations:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        otherAttributes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        identifiers:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        notes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        hospitalAdmittingPrivileges:
+          type: array
+          items:
+            $ref: '#/components/schemas/HospitalAdmittingPrivilege'
+        billingEffectiveDate:
+          $ref: '#/components/schemas/Instant'
+        billingTerminationDate:
+          $ref: '#/components/schemas/Instant'
+        effectiveDate:
+          $ref: '#/components/schemas/Instant'
+        terminationDate:
+          $ref: '#/components/schemas/Instant'
+    OfficeHour:
+      type: object
+      description: Operating hours for a specific day of the week
+      properties:
+        day:
+          $ref: '#/components/schemas/DaysOfTheWeek.schema'
+          description: Day of the week (three-letter abbreviation)
+        openTime:
+          type: string
+          format: time
+          description: Time when the location opens on this day
+        closeTime:
+          type: string
+          format: time
+          description: Time when the location closes on this day
+        closed:
+          type: boolean
+          description: Indicates if the location is closed on this day
   securitySchemes:
     jwt:
       type: http

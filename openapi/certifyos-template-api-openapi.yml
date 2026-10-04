@@ -414,43 +414,7 @@ paths:
       - jwt: []
 components:
   schemas:
-    Field:
-      type: object
-      properties:
-        name:
-          type: string
-        mappedKey:
-          type: string
-        mappedEntity:
-          type: string
-        entityGroup:
-          type: string
-        isRequired:
-          type: boolean
-        isStaticField:
-          type: boolean
-        isSingleSelect:
-          type: boolean
-        validationRegex:
-          type: string
-        description:
-          type: string
-        enum:
-          type: array
-          items:
-            type: string
-        singleSelect:
-          type: boolean
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    ApproveTemplateResponse:
+    SingleStepTemplateFlowResponse:
       type: object
       properties:
         fields:
@@ -459,39 +423,18 @@ components:
             $ref: '#/components/schemas/Field'
         status:
           type: string
-    Date:
-      type: string
-      format: date
-    TemplateUploadResponse:
-      type: object
-      properties:
-        status:
+        templateId:
           type: string
-        data:
-          $ref: '#/components/schemas/TemplateData'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    RosterJobType:
-      type: string
-      enum:
-      - PRACTITIONER
-      - FACILITY
-    TemplateUpdateRequest:
+        templateUrl:
+          type: string
+        schemaUrl:
+          type: string
+    FieldSuggestion:
       type: object
       properties:
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        fields:
+        name:
+          type: string
+        suggestedMatches:
           type: array
           items:
             $ref: '#/components/schemas/Field'
@@ -502,34 +445,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ErrorObject1'
-    TemplateData:
+    ErrorObject1:
       type: object
       properties:
-        id:
+        reason:
           type: string
-        name:
+        detail:
           type: string
-        entities:
-          type: array
-          items:
-            type: string
-        allFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldSuggestion'
-    FieldSuggestion:
-      type: object
-      properties:
-        name:
+        httpStatus:
+          type: integer
+          format: int32
+        title:
           type: string
-        suggestedMatches:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
+    Date:
+      type: string
+      format: date
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
     JsonNode:
       type: object
       properties:
@@ -577,18 +512,100 @@ components:
           type: boolean
         binary:
           type: boolean
-    ErrorObject1:
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    TemplateUploadResponse:
       type: object
       properties:
-        reason:
+        status:
           type: string
-        detail:
-          type: string
-        httpStatus:
+        data:
+          $ref: '#/components/schemas/TemplateData'
+    PagedResponse1:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
           type: integer
-          format: int32
-        title:
+          format: int64
+    TemplateData:
+      type: object
+      properties:
+        id:
           type: string
+        name:
+          type: string
+        entities:
+          type: array
+          items:
+            type: string
+        allFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSuggestion'
+    Field:
+      type: object
+      properties:
+        name:
+          type: string
+        mappedKey:
+          type: string
+        mappedEntity:
+          type: string
+        entityGroup:
+          type: string
+        isRequired:
+          type: boolean
+        isStaticField:
+          type: boolean
+        isSingleSelect:
+          type: boolean
+        validationRegex:
+          type: string
+        description:
+          type: string
+        enum:
+          type: array
+          items:
+            type: string
+        singleSelect:
+          type: boolean
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    TemplateUpdateRequest:
+      type: object
+      properties:
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
     RosterTemplateResponse:
       type: object
       properties:
@@ -606,18 +623,7 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
-    PagedResponse1:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        links:
-          $ref: '#/components/schemas/PageLinks'
-        totalCount:
-          type: integer
-          format: int64
-    SingleStepTemplateFlowResponse:
+    ApproveTemplateResponse:
       type: object
       properties:
         fields:
@@ -625,12 +631,6 @@ components:
           items:
             $ref: '#/components/schemas/Field'
         status:
-          type: string
-        templateId:
-          type: string
-        templateUrl:
-          type: string
-        schemaUrl:
           type: string
   securitySchemes:
     jwt:

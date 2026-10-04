@@ -1142,197 +1142,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    TerminateGroupSpecialtyRequest:
-      description: 'Request to terminate one or more group specialties from network participation. Terminates at group-network association; optionally at group-location and group-level. Required: specialtyIds (standard Specialty IDs). Optional: networkIds (standard Network IDs to restrict scope).'
-      type: object
-      required:
-      - specialtyIds
-      - terminationEffectiveDate
-      - acknowledgementConfirmed
-      properties:
-        specialtyIds:
-          type: array
-          items:
-            type: string
-            pattern: \S
-          description: 'Required. List of Specialty IDs (standard/certify specialty identifiers) to terminate for this group. Each must be a specialty currently associated with the group. Obtain from: GET /specialties, or GET /groups/{id}/relationships/all (specialties with specialtyId).'
-          examples:
-          - - 207Q00000X
-            - 208D00000X
-          minItems: 1
-        networkIds:
-          type: array
-          items:
-            type: string
-          description: 'Optional. Network IDs (standard/certify network identifiers) to restrict termination to. If null or empty, terminates from all networks the group participates in. Obtain from: GET /networks or GET /groups/{id}/relationships/all (networks).'
-          examples:
-          - - net_001
-            - net_002
-        terminationInformedDate:
-          type: string
-          description: Termination informed date (ISO-8601 YYYY-MM-DD).
-          examples:
-          - '2024-01-15'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        terminationEffectiveDate:
-          type: string
-          description: Termination effective date (ISO-8601 YYYY-MM-DD). When the specialty termination takes effect.
-          examples:
-          - '2024-02-01'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        terminationReason:
-          type: string
-          description: Termination reason (e.g. code or free text).
-          examples:
-          - SPECIALTY_DISCONTINUED
-        acknowledgementConfirmed:
-          type: boolean
-          description: User acknowledgement that terminating specialty from the group will terminate it from its locations, participating networks and plans.
-        terminateAtGroupLocationSpecialties:
-          type: boolean
-          description: If true, also terminate the specialty at group-location level (TenantGroupLocationSpecialty).
-          default: true
-        terminateAtGroupLevel:
-          type: boolean
-          description: If true, also terminate the specialty at group level (TenantGroupSpecialty).
-          default: true
-    SpecialtyNotCreatedReason:
-      type: string
-      enum:
-      - MISSING_DEPENDENCY
-      - DOWNSTREAM_ERROR
-      - CONFLICT
-      - VALIDATION_ERROR
-    LocationNetwork1:
-      type: object
-      description: Network association for a practitioner at a specific location
-      required:
-      - networkId
-      properties:
-        networkId:
-          type: string
-          description: Network ID
-        data:
-          description: Network participation data (effectiveDate, status, etc.)
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    LocationService1:
-      type: object
-      required:
-      - serviceName
-      - serviceType
-      properties:
-        serviceName:
-          type: string
-          description: Service name
-        serviceType:
-          type: string
-          description: Service type
-        description:
-          type: string
-          description: Service description
-        available:
-          type: boolean
-          description: Whether service is currently available
-    LocationAddress:
-      type: object
-      required:
-      - addressType
-      - addressLine1
-      - city
-      - state
-      - zipCode
-      - country
-      properties:
-        addressType:
-          type: string
-          description: Address type (physical, mailing, billing, remittance)
-        addressLine1:
-          type: string
-          description: Address line 1
-        addressLine2:
-          type: string
-          description: Address line 2
-        city:
-          type: string
-          description: City
-        state:
-          type: string
-          description: State
-        zipCode:
-          type: string
-          description: ZIP code
-        county:
-          type: string
-          description: County
-        country:
-          type: string
-          description: Country
-        isPrimary:
-          type: boolean
-          description: Whether this is the primary address
-    AccessibilityItem:
-      type: object
-      required:
-      - question
-      - answer
-      properties:
-        question:
-          type: string
-          description: Accessibility question
-        answer:
-          type: string
-          description: Answer to the accessibility question
-    UpdateGroupLocationsRequest:
-      type: object
-      required:
-      - groupId
-      - locations
-      properties:
-        groupId:
-          type: string
-        locations:
-          type: array
-          items:
-            $ref: '#/components/schemas/UpdateGroupLocationRequest'
-          minItems: 1
-    SpecialtyAssociationLevel:
-      type: string
-      enum:
-      - GROUP
-      - LOCATION
-      - NETWORK_GROUP
-      - NETWORK_LOCATION
-    UpdateGroupLocationNetworkDatesRequest:
-      type: object
-      required:
-      - effectiveDate
-      properties:
-        effectiveDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-    OfficeHours:
-      type: object
-      properties:
-        hours:
-          type: array
-          items:
-            $ref: '#/components/schemas/DayHours'
-          description: List of office hours by day
-    GroupLocationNetworkResponse:
-      type: object
-      description: Response for a group location-network association
-      properties:
-        networkId:
-          type: string
-          description: ID of the network
-          examples:
-          - network-123
-        tenantGroupLocationNetworkId:
-          type: string
-          description: ID of the created/updated tenant group location network association
-          examples:
-          - tgln-456
     PracticeLimitation:
       type: object
       required:
@@ -1348,46 +1157,143 @@ components:
         appliesToPatients:
           type: string
           description: Applies to specific patient groups
-    GroupCreateResponse:
+    GroupPractitionerLocationRequest:
       type: object
-      properties:
-        id:
-          type: string
-        crosswalkId:
-          type: string
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    TerminateGroupLocationFromNetworkResponse:
-      description: Response for terminating a group location from networks
-      type: object
+      description: Request to associate a practitioner with a specific group location
       required:
       - tenantGroupLocationId
-      - terminatedCount
-      - networkIds
-      - results
       properties:
         tenantGroupLocationId:
           type: string
-          description: The tenant group location ID
-        terminatedCount:
-          type: integer
-          format: int32
-          description: The number of networks terminated from
-        networkIds:
+          description: ID of the tenant group location
+          examples:
+          - loc-123
+        locationData:
+          description: Location-specific data for the practitioner
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        networks:
           type: array
           items:
-            type: string
-          description: List of network IDs that were terminated
-        results:
+            $ref: '#/components/schemas/LocationNetwork1'
+          description: List of networks to associate with this practitioner at this specific location
+    PracticeLimitation1:
+      type: object
+      required:
+      - limitationType
+      - description
+      properties:
+        limitationType:
+          type: string
+          description: Type of limitation
+        description:
+          type: string
+          description: Description of the limitation
+        appliesToPatients:
+          type: string
+          description: Applies to specific patient groups
+    GroupPractitionerAssociationResponse:
+      type: object
+      description: Response for a practitioner-group association
+      properties:
+        certifyPractitionerId:
+          type: string
+          description: Certify Practitioner ID
+          examples:
+          - prac-123
+        tenantGroupPractitionerId:
+          type: string
+          description: ID of the created/updated tenant group practitioner association
+          examples:
+          - tgp-789
+        locations:
           type: array
           items:
-            $ref: '#/components/schemas/NetworkTerminationResult'
-          description: Termination results for each network
+            $ref: '#/components/schemas/GroupPractitionerLocationResponse'
+          description: List of location associations
+    LocationContact1:
+      type: object
+      required:
+      - type
+      - name
+      properties:
+        type:
+          type: string
+          description: Type of contact
+        name:
+          type: string
+          description: Name of the contact
+        mainPhoneNumber:
+          type: string
+          description: Main phone number
+        afterHoursPhoneNumber:
+          type: string
+          description: After hours phone number
+        email:
+          type: string
+          description: Email address
+        fax:
+          type: string
+          description: Fax number
+        tty:
+          type: string
+          description: TTY number
+    CredentialingContact:
+      type: object
+      description: Credentialing contact information
+      properties:
+        name:
+          type: string
+          description: Contact name
+          examples:
+          - Jane Smith
+        email:
+          type: string
+          description: Contact email
+          examples:
+          - jane@example.com
+        phone:
+          type: string
+          description: Contact phone
+          examples:
+          - 555-123-4567
+        title:
+          type: string
+          description: Contact title
+          examples:
+          - Credentialing Manager
+        department:
+          type: string
+          description: Contact department
+          examples:
+          - Credentialing
+    LocationNetwork1:
+      type: object
+      description: Network association for a practitioner at a specific location
+      required:
+      - networkId
+      properties:
+        networkId:
+          type: string
+          description: Network ID
+        data:
+          description: Network participation data (effectiveDate, status, etc.)
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+    LocationSpecialty:
+      type: object
+      required:
+      - specialtyId
+      properties:
+        specialtyId:
+          type: string
+          description: ID of the specialty
+        effectiveDate:
+          type: string
+          description: Effective date for the specialty
+        isPrimary:
+          type: boolean
+          description: Whether this is the primary specialty
     CreateGroupSpecialtyRequest:
       type: object
       required:
@@ -1441,36 +1347,248 @@ components:
           description: Indicates if the network specialty is primary
           examples:
           - true
-    TerminateGroupNetworksResponse:
-      description: Result of terminating a group from one or more networks.
+    SpecialtyAssociationLevel:
+      type: string
+      enum:
+      - GROUP
+      - LOCATION
+      - NETWORK_GROUP
+      - NETWORK_LOCATION
+    CreateGroupRequest:
+      description: Request to create a new group with complete data
+      type: object
+      properties:
+        name:
+          type: string
+          description: Group name
+          examples:
+          - Acme Medical Group
+        npi:
+          type: string
+          pattern: ^\d{10}$
+          description: National Provider Identifier
+          examples:
+          - '1234567890'
+        tin:
+          type: string
+          description: Tax Identification Number
+          examples:
+          - 12-3456789
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+          description: Group contacts
+          examples:
+          - - name: Jane Smith
+              email: jane@example.com
+              phone: 555-123-4567
+              title: Credentialing Manager
+        specialtyIds:
+          type: array
+          items:
+            type: string
+          description: Specialty IDs to associate with the group during creation (consistent with create practitioner pattern)
+        groupEffectiveDate:
+          description: Group effective date
+          type: string
+          examples:
+          - '2024-01-01'
+          $ref: '#/components/schemas/LocalDate'
+        externalGroupId:
+          type: string
+          description: External group ID from tenant system
+          examples:
+          - ext-group-123
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupAddressData'
+          description: Group addresses
+        networks:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkAssociation'
+          description: Networks to associate with the group during creation
+        contactPerson:
+          description: Contact person information as JSON
+          type: object
+          examples:
+          - name: John Doe
+            email: john@example.com
+            phone: 555-123-4567
+          $ref: '#/components/schemas/JsonNode'
+        active:
+          type: boolean
+          description: Whether the tenant group is currently active
+          examples:
+          - true
+        npdbEnrollmentEnabled:
+          type: boolean
+          description: Whether NPDB enrollment is enabled
+          examples:
+          - true
+        credentialingDelegation:
+          type: boolean
+          description: Whether credentialing is delegated
+          examples:
+          - true
+    AccessibilityItem:
       type: object
       required:
-      - groupId
-      - networkIds
-      - tenantGroupNetworksTerminated
-      - tenantGroupPractitionerNetworksTerminated
-      - tenantGroupLocationNetworksTerminated
+      - question
+      - answer
       properties:
-        groupId:
+        question:
           type: string
-          description: Certify group ID (same as the path parameter)
+          description: Accessibility question
+        answer:
+          type: string
+          description: Answer to the accessibility question
+    ManageGroupSpecialtiesResponse:
+      type: object
+      properties:
+        updatedSpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonNode'
+          description: Results from updated specialty records
+        addedSpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/JsonNode'
+          description: Results from newly added specialty associations
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialtyNotCreated'
+          description: Operations that failed, empty when all succeeded
+    TerminateGroupNetworksRequest:
+      description: Terminate group participation in the given networks and cascade to practitioner/location network rows.
+      type: object
+      required:
+      - networkIds
+      - terminationDate
+      properties:
         networkIds:
           type: array
           items:
             type: string
-          description: Certify (core) network IDs that were processed (echo of the request)
-        tenantGroupNetworksTerminated:
-          type: integer
-          format: int32
-          description: Number of TenantGroupNetwork rows terminated
-        tenantGroupPractitionerNetworksTerminated:
-          type: integer
-          format: int32
-          description: Number of TenantGroupPractitionerNetwork rows terminated
-        tenantGroupLocationNetworksTerminated:
-          type: integer
-          format: int32
-          description: Number of TenantGroupLocationNetwork rows terminated
+          description: Certify (core) network IDs to terminate the group from — same identifiers as other group/network APIs and Network.id in DAL.
+          minItems: 1
+        terminationDate:
+          type: string
+          description: Termination date (ISO-8601, YYYY-MM-DD)
+        terminationInformedDate:
+          type: string
+          description: Optional date the group was informed of termination (ISO-8601)
+        terminationReason:
+          type: string
+          description: Optional termination reason
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    SpecialtyNotCreated:
+      description: A specialty association that could not be created at this level, with reason and message
+      type: object
+      required:
+      - level
+      - reason
+      - message
+      properties:
+        level:
+          description: The relationship level (GROUP, LOCATION, NETWORK_GROUP, NETWORK_LOCATION)
+          type: string
+          $ref: '#/components/schemas/SpecialtyAssociationLevel'
+        reason:
+          description: 'Reason code: MISSING_DEPENDENCY, DOWNSTREAM_ERROR, CONFLICT, VALIDATION_ERROR'
+          type: string
+          $ref: '#/components/schemas/SpecialtyNotCreatedReason'
+        message:
+          type: string
+          description: User-facing message explaining what went wrong and how to fix it
+    TerminateGroupLocationRequest:
+      description: Request to terminate a group location
+      type: object
+      required:
+      - terminationDate
+      - consentConfirmed
+      properties:
+        terminationDate:
+          type: string
+          description: Termination date (ISO-8601 format, e.g., 2024-01-15). Must be >= start/effective date. Future dates allowed.
+          examples:
+          - '2024-01-15'
+          pattern: \S
+        terminationInformedDate:
+          type: string
+          description: Date when termination was informed (ISO-8601 format, e.g., 2024-01-15)
+          examples:
+          - '2024-01-15'
+        terminationReason:
+          type: string
+          description: Termination reason code. Used for compliance and audit purposes.
+          examples:
+          - FACILITY_CLOSED
+        consentConfirmed:
+          type: boolean
+          description: User consent confirmation that they understand the impact of this termination on the group, networks, plans, and practitioners
+        data:
+          description: Additional termination data
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+    UpdateGroupLocationNetworkDatesRequest:
+      type: object
+      required:
+      - effectiveDate
+      properties:
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
     ErrorObject1:
       type: object
       properties:
@@ -1483,149 +1601,15 @@ components:
           format: int32
         title:
           type: string
-    AssociateGroupPractitionersResponse:
-      description: Response for associating practitioners with a group
+    LocationAssociationResult2:
       type: object
       properties:
-        associations:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupPractitionerAssociationResponse'
-          description: List of created/updated practitioner associations
-    TaxInfo:
-      type: object
-      properties:
-        legalTaxName:
+        tenantGroupLocationId:
           type: string
-        taxEntityStates:
-          type: array
-          items:
-            type: string
-        irs575File:
+        locationId:
           type: string
-        w9File:
-          type: string
-        billingTin:
-          type: string
-          description: Billing Tax Identification Number (TIN) used for billing purposes.
-          examples:
-          - 12-3456789
-        billingNpi:
-          type: string
-          pattern: ^\d{10}$
-          description: Billing National Provider Identifier (NPI) used for billing purposes.
-          examples:
-          - '1234567890'
-    NetworkAssociationResult:
-      type: object
-      description: Result of a single network association update
-      properties:
-        networkId:
-          type: string
-          description: ID of the network
-          examples:
-          - net-123
-        tenantGroupNetworkId:
-          type: string
-          description: ID of the tenant group network association
-          examples:
-          - tgn-789
         status:
           type: string
-          description: Indicates if this was a new association or an update
-          examples:
-          - updated
-    LocationContact:
-      type: object
-      required:
-      - type
-      - name
-      properties:
-        type:
-          type: string
-          description: Type of contact
-        name:
-          type: string
-          description: Name of the contact
-        mainPhoneNumber:
-          type: string
-          description: Main phone number
-        afterHoursPhoneNumber:
-          type: string
-          description: After hours phone number
-        email:
-          type: string
-          description: Email address
-        fax:
-          type: string
-          description: Fax number
-        tty:
-          type: string
-          description: TTY number
-    UpdateSpecialtyItem1:
-      type: object
-      required:
-      - tenantGroupSpecialtyId
-      properties:
-        tenantGroupSpecialtyId:
-          type: string
-          description: ID of the existing TenantGroupSpecialty record to update
-          examples:
-          - tgs_abc123
-          pattern: \S
-        newTenantSpecialtyId:
-          type: string
-          description: ID of the new TenantSpecialty to replace the current one
-          examples:
-          - ts_xyz789
-        effectiveDate:
-          type: string
-          description: New effective date in YYYY-MM-DD format
-          examples:
-          - '2026-01-15'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        isPrimary:
-          type: boolean
-          description: Whether this specialty is primary
-        atLeastOneFieldProvided:
-          type: boolean
-    PagedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        totalCount:
-          type: integer
-          format: int64
-        identifiersSearched:
-          type: integer
-          format: int64
-        matchedCount:
-          type: integer
-          format: int64
-        notFoundCount:
-          type: integer
-          format: int64
-        unmatchedIdentifiers:
-          type: array
-          items:
-            type: string
-    PracticeLimitation1:
-      type: object
-      required:
-      - limitationType
-      - description
-      properties:
-        limitationType:
-          type: string
-          description: Type of limitation
-        description:
-          type: string
-          description: Description of the limitation
-        appliesToPatients:
-          type: string
-          description: Applies to specific patient groups
     ManageGroupSpecialtiesRequest:
       type: object
       properties:
@@ -1644,260 +1628,6 @@ components:
           description: Optional reason for change, applied to all operations
           examples:
           - Correcting specialty mappings per annual review
-    LocationNetwork:
-      type: object
-      required:
-      - networkId
-      properties:
-        networkId:
-          type: string
-          description: ID of the network
-        data:
-          description: Additional network data (effectiveDate, terminationDate, etc.)
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    GroupResponse:
-      description: Complete group information including core data, tenant data, and addresses
-      type: object
-      properties:
-        certifyId:
-          type: string
-          description: Primary key - Certify Group ID
-          examples:
-          - group-12345
-        crosswalkId:
-          type: string
-          description: Crosswalk ID
-          examples:
-          - '1234567890'
-        sourceId:
-          type: string
-          description: Source ID
-          examples:
-          - tenant:tenant-123
-        sourceUrl:
-          type: string
-          description: Source URL
-          examples:
-          - https://api.example.com
-        sourceType:
-          type: string
-          description: Source type
-          examples:
-          - tenant
-        sourceName:
-          type: string
-          description: Source name
-          examples:
-          - Tenant System
-        sourceDescription:
-          type: string
-          description: Source description
-          examples:
-          - Internal tenant system
-        survivorId:
-          type: string
-          description: Survivor ID
-          examples:
-          - survivor-123
-        groupData:
-          description: Complete group data
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        addresses:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupAddressData'
-          description: Group addresses (billing, remittance, service)
-        data:
-          description: Raw data object (legacy)
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        tenantGroupId:
-          type: string
-          description: Tenant Group ID (legacy)
-        lastUpdated:
-          description: Last updated timestamp
-          type: string
-          examples:
-          - '2022-03-10T12:15:50Z'
-          $ref: '#/components/schemas/LocalDateTime'
-        addressesCopy:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupAddressData'
-    GroupPractitionerLocationResponse:
-      type: object
-      description: Response for a practitioner-location association
-      properties:
-        tenantGroupLocationId:
-          type: string
-          description: ID of the tenant group location
-          examples:
-          - loc-123
-        groupPractitionerLocationId:
-          type: string
-          description: ID of the created/updated group practitioner location association
-          examples:
-          - gpl-456
-    AddGroupLocationResponse:
-      description: Response containing all created group location resources and relationships
-      type: object
-      properties:
-        tenantId:
-          type: string
-          description: ID of the tenant
-          examples:
-          - tenant-123
-        tenantGroupId:
-          type: string
-          description: ID of the tenant group
-          examples:
-          - tg-456
-        coreLocationId:
-          type: string
-          description: ID of the created core location
-          examples:
-          - loc-123
-        groupLocationId:
-          type: string
-          description: ID of the created group location
-          examples:
-          - gl-456
-        tenantGroupLocationId:
-          type: string
-          description: ID of the created tenant group location
-          examples:
-          - tgl-789
-        coreAddressIds:
-          type: array
-          items:
-            type: string
-          description: List of created core address IDs
-          examples:
-          - - addr-101
-            - addr-102
-        locationAddressRelationshipIds:
-          type: array
-          items:
-            type: string
-          description: List of created location-entity address relationship IDs
-          examples:
-          - - lea-201
-            - lea-202
-        groupSpecialtyRelationshipIds:
-          type: array
-          items:
-            type: string
-          description: List of created group specialty relationship IDs
-          examples:
-          - - group-spec-rel-1
-            - group-spec-rel-2
-        specialtyRelationshipIds:
-          type: array
-          items:
-            type: string
-          description: List of created location specialty relationship IDs
-          examples:
-          - - loc-spec-rel-1
-            - loc-spec-rel-2
-        tenantGroupNetworkIds:
-          type: array
-          items:
-            type: string
-          description: List of created tenant group network relationship IDs
-          examples:
-          - - tgn-301
-            - tgn-302
-        tenantGroupLocationNetworkIds:
-          type: array
-          items:
-            type: string
-          description: List of created tenant group location network relationship IDs
-          examples:
-          - - tgln-401
-            - tgln-402
-        tenantGroupNetworkSpecialtyIds:
-          type: array
-          items:
-            type: string
-          description: List of created tenant group network specialty relationship IDs
-          examples:
-          - - tgns-501
-            - tgns-502
-        status:
-          type: string
-          description: Status of the operation
-          examples:
-          - created
-    NetworkAssociation:
-      type: object
-      description: Network association information
-      required:
-      - networkName
-      properties:
-        networkName:
-          type: string
-          description: Network name
-          examples:
-          - Blue Cross Blue Shield Network
-        networkType:
-          type: string
-          description: Network type
-          examples:
-          - Commercial
-        networkEffectiveDate:
-          type: string
-          description: Network effective date
-          examples:
-          - '2024-01-01'
-        networkGroupStatus:
-          type: string
-          description: Group-network relationship status
-          examples:
-          - active
-        networkGroupTerminationDate:
-          type: string
-          description: Group-network termination date
-          examples:
-          - '2025-12-31'
-    LocationAddress1:
-      type: object
-      required:
-      - addressType
-      - addressLine1
-      - city
-      - state
-      - zipCode
-      - country
-      properties:
-        addressType:
-          type: string
-          description: Address type (physical, mailing, billing, remittance)
-        addressLine1:
-          type: string
-          description: Address line 1
-        addressLine2:
-          type: string
-          description: Address line 2
-        city:
-          type: string
-          description: City
-        state:
-          type: string
-          description: State
-        zipCode:
-          type: string
-          description: ZIP code
-        county:
-          type: string
-          description: County
-        country:
-          type: string
-          description: Country
-        isPrimary:
-          type: boolean
-          description: Whether this is the primary address
     TerminateGroupLocationFromNetworkRequest:
       description: Request to terminate a group location from networks
       type: object
@@ -1919,46 +1649,15 @@ components:
           description: Additional termination data
           type: object
           $ref: '#/components/schemas/JsonNode'
-    GroupPractitionerRequest:
+    UpdateGroupLocationRequest:
+      description: Request to update an existing group location
       type: object
-      description: Request to associate a single practitioner with a group
       required:
-      - certifyPractitionerId
-      properties:
-        certifyPractitionerId:
-          type: string
-          description: Certify Practitioner ID (Core Practitioner ID)
-          examples:
-          - prac-123
-        groupPractitionerData:
-          description: Group-practitioner relationship data
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        locations:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupPractitionerLocationRequest'
-          description: List of locations to associate with this practitioner
-        networks:
-          type: array
-          items:
-            $ref: '#/components/schemas/PractitionerNetwork'
-          description: List of networks to associate with this practitioner at the group level
-    LocationAssociationResult2:
-      type: object
+      - tenantGroupLocationId
       properties:
         tenantGroupLocationId:
           type: string
-        locationId:
-          type: string
-        status:
-          type: string
-    AddGroupLocationRequest:
-      description: Request to add a new location to a group
-      type: object
-      required:
-      - locationData
-      properties:
+          description: ID of the tenant group location to update
         locationData:
           description: Core location data (name, type, etc.)
           type: object
@@ -1974,31 +1673,31 @@ components:
         addresses:
           type: array
           items:
-            $ref: '#/components/schemas/LocationAddress'
+            $ref: '#/components/schemas/LocationAddress1'
           description: List of addresses for the location (physical, mailing, billing, etc.)
         locationSpecialities:
           type: array
           items:
-            $ref: '#/components/schemas/LocationSpecialty'
+            $ref: '#/components/schemas/LocationSpecialty1'
           description: List of location specialties
         contacts:
           type: array
           items:
-            $ref: '#/components/schemas/LocationContact'
+            $ref: '#/components/schemas/LocationContact1'
           description: List of contacts
         officeHours:
           description: Office hours for the location
           type: object
-          $ref: '#/components/schemas/OfficeHours'
+          $ref: '#/components/schemas/OfficeHours1'
         services:
           type: array
           items:
-            $ref: '#/components/schemas/LocationService'
+            $ref: '#/components/schemas/LocationService1'
           description: List of services offered at this location
         practiceLimitations:
           type: array
           items:
-            $ref: '#/components/schemas/PracticeLimitation'
+            $ref: '#/components/schemas/PracticeLimitation1'
           description: List of practice limitations
         accessibility:
           type: array
@@ -2038,113 +1737,113 @@ components:
         to:
           type: string
           description: Closing time (HH:mm)
-    ManageGroupSpecialtiesResponse:
+    GroupPractitionerLocationResponse:
       type: object
-      properties:
-        updatedSpecialties:
-          type: array
-          items:
-            $ref: '#/components/schemas/JsonNode'
-          description: Results from updated specialty records
-        addedSpecialties:
-          type: array
-          items:
-            $ref: '#/components/schemas/JsonNode'
-          description: Results from newly added specialty associations
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/SpecialtyNotCreated'
-          description: Operations that failed, empty when all succeeded
-    TerminateGroupLocationResponse:
-      description: Response for terminating a group location
-      type: object
-      required:
-      - tenantGroupLocationId
-      - success
-      - terminationDate
-      - terminationReason
-      - practitionersAffected
-      - practitionersRequiringReview
-      - networksAffected
+      description: Response for a practitioner-location association
       properties:
         tenantGroupLocationId:
           type: string
-          description: The tenant group location ID
-        success:
-          type: boolean
-          description: Whether termination was successful
+          description: ID of the tenant group location
+          examples:
+          - loc-123
+        groupPractitionerLocationId:
+          type: string
+          description: ID of the created/updated group practitioner location association
+          examples:
+          - gpl-456
+    UpdateGroupSpecialtyRequest:
+      type: object
+      required:
+      - tenantGroupSpecialtyId
+      properties:
+        tenantGroupSpecialtyId:
+          type: string
+          description: ID of the tenant group specialty to update
+          examples:
+          - tgs_123456
+          pattern: \S
+        effectiveDate:
+          type: string
+          description: Effective date for the group specialty (YYYY-MM-DD)
+          examples:
+          - '2024-01-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
         terminationDate:
           type: string
-          description: Termination date
-        terminationReason:
-          type: string
-          description: Termination reason
-        practitionersAffected:
-          type: integer
-          format: int32
-          description: Number of practitioners affected by this termination
-        practitionersRequiringReview:
+          description: Termination date for the group specialty (YYYY-MM-DD)
+          examples:
+          - '2024-12-31'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        groupPractitionerLocationSpecialties:
           type: array
           items:
             type: string
-          description: List of practitioner IDs that are linked only via this group-location and may need review
-        networksAffected:
-          type: integer
-          format: int32
-          description: Number of networks affected
-        errorMessage:
-          type: string
-          description: Error message if termination failed
-    GroupAddressData:
-      type: object
-      description: Group address information
-      properties:
-        addressType:
-          type: string
-          description: Address type
+          description: Group practitioner location specialties to update
           examples:
-          - billing
-        addressLine1:
-          type: string
-          description: Address line 1
+          - - tenantgrouppractitionerlocationspecialty_1
+        tenantGroupPractitionerLocationNetworkSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group practitioner location network specialties to update
           examples:
-          - 123 Main Street
-        addressLine2:
-          type: string
-          description: Address line 2
+          - - tenantgrouppractitionerlocationnetworkspecialty_1
+        tenantGroupPractitionerNetworkParticipationSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group practitioner network participation specialties to update
           examples:
-          - Suite 100
-        city:
-          type: string
-          description: City
+          - - tenantgrouppractitionernetworkparticipationspecialty_1
+        tenantGroupNetworkSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group network specialties to update
           examples:
-          - New York
-        state:
-          type: string
-          description: State
+          - - tenantgroupnetworkspecialty_1
+        tenantGroupLocationNetworkSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group location network specialties to update
           examples:
-          - NY
-        zip:
-          type: string
-          description: ZIP code
+          - - tenantgrouplocationparticipationspecialty_1
+        tenantGroupFacilityLocationNetworkSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group facility locationnetwork specialties to update
           examples:
-          - '10001'
-        county:
-          type: string
-          description: County
+          - - tenantgroupfacilitylocationnetworkspecialty_1
+        tenantGroupFacilityNetworkSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group facility network specialties to update
           examples:
-          - New York County
-        country:
-          type: string
-          description: Country
+          - - tenantgroupfacilitynetworkspecialty_1
+        tenantGroupLocationSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group location specialties to update
           examples:
-          - US
-        isPrimary:
-          type: boolean
-          description: Whether this is the primary address
+          - - tenantgrouplocationspecialty_1
+        tenantGroupPractitionerSpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group practitioner specialties to update
           examples:
-          - true
+          - - tenantgrouppractitionerspecialty_1
+        tenantGroupFacilitySpecialties:
+          type: array
+          items:
+            type: string
+          description: Tenant group facility specialties to update
+          examples:
+          - - tenantgroupfacilityspecialty_1
     UpdateGroupRequest:
       description: Request to update an existing group with complete data
       type: object
@@ -2290,20 +1989,313 @@ components:
           items:
             $ref: '#/components/schemas/GroupAddressData'
           description: Group addresses to update
-    AssociateGroupLocationNetworksResponse:
-      description: Response for associating a group location with networks
+    TerminateGroupLocationResponse:
+      description: Response for terminating a group location
       type: object
+      required:
+      - tenantGroupLocationId
+      - success
+      - terminationDate
+      - terminationReason
+      - practitionersAffected
+      - practitionersRequiringReview
+      - networksAffected
       properties:
         tenantGroupLocationId:
           type: string
-          description: ID of the group location
-          examples:
-          - loc-123
-        networks:
+          description: The tenant group location ID
+        success:
+          type: boolean
+          description: Whether termination was successful
+        terminationDate:
+          type: string
+          description: Termination date
+        terminationReason:
+          type: string
+          description: Termination reason
+        practitionersAffected:
+          type: integer
+          format: int32
+          description: Number of practitioners affected by this termination
+        practitionersRequiringReview:
           type: array
           items:
-            $ref: '#/components/schemas/GroupLocationNetworkResponse'
-          description: List of created/updated network associations
+            type: string
+          description: List of practitioner IDs that are linked only via this group-location and may need review
+        networksAffected:
+          type: integer
+          format: int32
+          description: Number of networks affected
+        errorMessage:
+          type: string
+          description: Error message if termination failed
+    GroupCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        crosswalkId:
+          type: string
+    AddGroupLocationResponse:
+      description: Response containing all created group location resources and relationships
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant-123
+        tenantGroupId:
+          type: string
+          description: ID of the tenant group
+          examples:
+          - tg-456
+        coreLocationId:
+          type: string
+          description: ID of the created core location
+          examples:
+          - loc-123
+        groupLocationId:
+          type: string
+          description: ID of the created group location
+          examples:
+          - gl-456
+        tenantGroupLocationId:
+          type: string
+          description: ID of the created tenant group location
+          examples:
+          - tgl-789
+        coreAddressIds:
+          type: array
+          items:
+            type: string
+          description: List of created core address IDs
+          examples:
+          - - addr-101
+            - addr-102
+        locationAddressRelationshipIds:
+          type: array
+          items:
+            type: string
+          description: List of created location-entity address relationship IDs
+          examples:
+          - - lea-201
+            - lea-202
+        groupSpecialtyRelationshipIds:
+          type: array
+          items:
+            type: string
+          description: List of created group specialty relationship IDs
+          examples:
+          - - group-spec-rel-1
+            - group-spec-rel-2
+        specialtyRelationshipIds:
+          type: array
+          items:
+            type: string
+          description: List of created location specialty relationship IDs
+          examples:
+          - - loc-spec-rel-1
+            - loc-spec-rel-2
+        tenantGroupNetworkIds:
+          type: array
+          items:
+            type: string
+          description: List of created tenant group network relationship IDs
+          examples:
+          - - tgn-301
+            - tgn-302
+        tenantGroupLocationNetworkIds:
+          type: array
+          items:
+            type: string
+          description: List of created tenant group location network relationship IDs
+          examples:
+          - - tgln-401
+            - tgln-402
+        tenantGroupNetworkSpecialtyIds:
+          type: array
+          items:
+            type: string
+          description: List of created tenant group network specialty relationship IDs
+          examples:
+          - - tgns-501
+            - tgns-502
+        status:
+          type: string
+          description: Status of the operation
+          examples:
+          - created
+    LocalDate:
+      type: string
+      format: date
+      examples:
+      - '2022-03-10'
+    GroupNetworkUpdateResponse:
+      description: Response containing updated group-network associations
+      type: object
+      properties:
+        tenantGroupId:
+          type: string
+          description: ID of the tenant group
+          examples:
+          - tg-456
+        networkAssociations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkAssociationResult'
+          description: List of updated network associations
+    GroupLocationNetworkResponse:
+      type: object
+      description: Response for a group location-network association
+      properties:
+        networkId:
+          type: string
+          description: ID of the network
+          examples:
+          - network-123
+        tenantGroupLocationNetworkId:
+          type: string
+          description: ID of the created/updated tenant group location network association
+          examples:
+          - tgln-456
+    AssociateGroupPractitionersResponse:
+      description: Response for associating practitioners with a group
+      type: object
+      properties:
+        associations:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupPractitionerAssociationResponse'
+          description: List of created/updated practitioner associations
+    Contact:
+      type: object
+      description: Contact information
+      properties:
+        name:
+          type: string
+          description: Contact name
+          examples:
+          - Jane Smith
+        email:
+          type: string
+          description: Contact email
+          examples:
+          - jane@example.com
+        phone:
+          type: string
+          description: Contact phone
+          examples:
+          - 555-123-4567
+        title:
+          type: string
+          description: Contact title
+          examples:
+          - Credentialing Manager
+        department:
+          type: string
+          description: Contact department
+          examples:
+          - Credentialing
+    LocationNetwork:
+      type: object
+      required:
+      - networkId
+      properties:
+        networkId:
+          type: string
+          description: ID of the network
+        data:
+          description: Additional network data (effectiveDate, terminationDate, etc.)
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+    TaxInfo:
+      type: object
+      properties:
+        legalTaxName:
+          type: string
+        taxEntityStates:
+          type: array
+          items:
+            type: string
+        irs575File:
+          type: string
+        w9File:
+          type: string
+        billingTin:
+          type: string
+          description: Billing Tax Identification Number (TIN) used for billing purposes.
+          examples:
+          - 12-3456789
+        billingNpi:
+          type: string
+          pattern: ^\d{10}$
+          description: Billing National Provider Identifier (NPI) used for billing purposes.
+          examples:
+          - '1234567890'
+    GroupLocationUpdateResponse:
+      type: object
+      properties:
+        tenantGroupId:
+          type: string
+        locationAssociations:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationAssociationResult2'
+    LocationService:
+      type: object
+      required:
+      - serviceName
+      - serviceType
+      properties:
+        serviceName:
+          type: string
+          description: Service name
+        serviceType:
+          type: string
+          description: Service type
+        description:
+          type: string
+          description: Service description
+        available:
+          type: boolean
+          description: Whether service is currently available
+    OfficeHours:
+      type: object
+      properties:
+        hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayHours'
+          description: List of office hours by day
+    UpdateGroupLocationsRequest:
+      type: object
+      required:
+      - groupId
+      - locations
+      properties:
+        groupId:
+          type: string
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateGroupLocationRequest'
+          minItems: 1
+    GroupLocationNetworkRequest:
+      type: object
+      description: Request to associate a group location with a network
+      required:
+      - networkId
+      properties:
+        networkId:
+          type: string
+          description: ID of the network
+          examples:
+          - network-123
+        networkData:
+          description: Network association data (effectiveDate, terminationDate, status, etc.)
+          type: object
+          $ref: '#/components/schemas/JsonNode'
     NetworkTerminationResult:
       type: object
       description: Termination result for a single network
@@ -2320,6 +2312,287 @@ components:
         errorMessage:
           type: string
           description: Error message if termination failed
+    TerminateGroupNetworksResponse:
+      description: Result of terminating a group from one or more networks.
+      type: object
+      required:
+      - groupId
+      - networkIds
+      - tenantGroupNetworksTerminated
+      - tenantGroupPractitionerNetworksTerminated
+      - tenantGroupLocationNetworksTerminated
+      properties:
+        groupId:
+          type: string
+          description: Certify group ID (same as the path parameter)
+        networkIds:
+          type: array
+          items:
+            type: string
+          description: Certify (core) network IDs that were processed (echo of the request)
+        tenantGroupNetworksTerminated:
+          type: integer
+          format: int32
+          description: Number of TenantGroupNetwork rows terminated
+        tenantGroupPractitionerNetworksTerminated:
+          type: integer
+          format: int32
+          description: Number of TenantGroupPractitionerNetwork rows terminated
+        tenantGroupLocationNetworksTerminated:
+          type: integer
+          format: int32
+          description: Number of TenantGroupLocationNetwork rows terminated
+    GroupResponse:
+      description: Complete group information including core data, tenant data, and addresses
+      type: object
+      properties:
+        certifyId:
+          type: string
+          description: Primary key - Certify Group ID
+          examples:
+          - group-12345
+        crosswalkId:
+          type: string
+          description: Crosswalk ID
+          examples:
+          - '1234567890'
+        sourceId:
+          type: string
+          description: Source ID
+          examples:
+          - tenant:tenant-123
+        sourceUrl:
+          type: string
+          description: Source URL
+          examples:
+          - https://api.example.com
+        sourceType:
+          type: string
+          description: Source type
+          examples:
+          - tenant
+        sourceName:
+          type: string
+          description: Source name
+          examples:
+          - Tenant System
+        sourceDescription:
+          type: string
+          description: Source description
+          examples:
+          - Internal tenant system
+        survivorId:
+          type: string
+          description: Survivor ID
+          examples:
+          - survivor-123
+        groupData:
+          description: Complete group data
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupAddressData'
+          description: Group addresses (billing, remittance, service)
+        data:
+          description: Raw data object (legacy)
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        tenantGroupId:
+          type: string
+          description: Tenant Group ID (legacy)
+        lastUpdated:
+          description: Last updated timestamp
+          type: string
+          examples:
+          - '2022-03-10T12:15:50Z'
+          $ref: '#/components/schemas/LocalDateTime'
+        addressesCopy:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupAddressData'
+    LocationAddress1:
+      type: object
+      required:
+      - addressType
+      - addressLine1
+      - city
+      - state
+      - zipCode
+      - country
+      properties:
+        addressType:
+          type: string
+          description: Address type (physical, mailing, billing, remittance)
+        addressLine1:
+          type: string
+          description: Address line 1
+        addressLine2:
+          type: string
+          description: Address line 2
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          description: State
+        zipCode:
+          type: string
+          description: ZIP code
+        county:
+          type: string
+          description: County
+        country:
+          type: string
+          description: Country
+        isPrimary:
+          type: boolean
+          description: Whether this is the primary address
+    LocationService1:
+      type: object
+      required:
+      - serviceName
+      - serviceType
+      properties:
+        serviceName:
+          type: string
+          description: Service name
+        serviceType:
+          type: string
+          description: Service type
+        description:
+          type: string
+          description: Service description
+        available:
+          type: boolean
+          description: Whether service is currently available
+    UpdateGroupLocationNetworkDatesResponse:
+      description: Response for updating effective dates of group location network associations
+      type: object
+      required:
+      - tenantGroupLocationId
+      - tenantGroupLocationNetworkIds
+      properties:
+        tenantGroupLocationId:
+          type: string
+          description: ID of the tenant group location that was updated
+          pattern: \S
+        tenantGroupLocationNetworkIds:
+          type: array
+          items:
+            type: string
+          description: IDs of updated tenant group location network associations
+    GroupPractitionerRequest:
+      type: object
+      description: Request to associate a single practitioner with a group
+      required:
+      - certifyPractitionerId
+      properties:
+        certifyPractitionerId:
+          type: string
+          description: Certify Practitioner ID (Core Practitioner ID)
+          examples:
+          - prac-123
+        groupPractitionerData:
+          description: Group-practitioner relationship data
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupPractitionerLocationRequest'
+          description: List of locations to associate with this practitioner
+        networks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PractitionerNetwork'
+          description: List of networks to associate with this practitioner at the group level
+    TerminateGroupLocationFromNetworkResponse:
+      description: Response for terminating a group location from networks
+      type: object
+      required:
+      - tenantGroupLocationId
+      - terminatedCount
+      - networkIds
+      - results
+      properties:
+        tenantGroupLocationId:
+          type: string
+          description: The tenant group location ID
+        terminatedCount:
+          type: integer
+          format: int32
+          description: The number of networks terminated from
+        networkIds:
+          type: array
+          items:
+            type: string
+          description: List of network IDs that were terminated
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkTerminationResult'
+          description: Termination results for each network
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        totalCount:
+          type: integer
+          format: int64
+        identifiersSearched:
+          type: integer
+          format: int64
+        matchedCount:
+          type: integer
+          format: int64
+        notFoundCount:
+          type: integer
+          format: int64
+        unmatchedIdentifiers:
+          type: array
+          items:
+            type: string
+    LocationAddress:
+      type: object
+      required:
+      - addressType
+      - addressLine1
+      - city
+      - state
+      - zipCode
+      - country
+      properties:
+        addressType:
+          type: string
+          description: Address type (physical, mailing, billing, remittance)
+        addressLine1:
+          type: string
+          description: Address line 1
+        addressLine2:
+          type: string
+          description: Address line 2
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          description: State
+        zipCode:
+          type: string
+          description: ZIP code
+        county:
+          type: string
+          description: County
+        country:
+          type: string
+          description: Country
+        isPrimary:
+          type: boolean
+          description: Whether this is the primary address
     PractitionerNetwork:
       type: object
       description: Network association for a practitioner
@@ -2333,115 +2606,18 @@ components:
           description: Network participation data (effectiveDate, status, etc.)
           type: object
           $ref: '#/components/schemas/JsonNode'
-    UpdateGroupSpecialtyRequest:
+    AssociateGroupPractitionersRequest:
+      description: Request to associate one or more practitioners with a group
       type: object
       required:
-      - tenantGroupSpecialtyId
+      - practitioners
       properties:
-        tenantGroupSpecialtyId:
-          type: string
-          description: ID of the tenant group specialty to update
-          examples:
-          - tgs_123456
-          pattern: \S
-        effectiveDate:
-          type: string
-          description: Effective date for the group specialty (YYYY-MM-DD)
-          examples:
-          - '2024-01-01'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        terminationDate:
-          type: string
-          description: Termination date for the group specialty (YYYY-MM-DD)
-          examples:
-          - '2024-12-31'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        groupPractitionerLocationSpecialties:
+        practitioners:
           type: array
           items:
-            type: string
-          description: Group practitioner location specialties to update
-          examples:
-          - - tenantgrouppractitionerlocationspecialty_1
-        tenantGroupPractitionerLocationNetworkSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group practitioner location network specialties to update
-          examples:
-          - - tenantgrouppractitionerlocationnetworkspecialty_1
-        tenantGroupPractitionerNetworkParticipationSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group practitioner network participation specialties to update
-          examples:
-          - - tenantgrouppractitionernetworkparticipationspecialty_1
-        tenantGroupNetworkSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group network specialties to update
-          examples:
-          - - tenantgroupnetworkspecialty_1
-        tenantGroupLocationNetworkSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group location network specialties to update
-          examples:
-          - - tenantgrouplocationparticipationspecialty_1
-        tenantGroupFacilityLocationNetworkSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group facility locationnetwork specialties to update
-          examples:
-          - - tenantgroupfacilitylocationnetworkspecialty_1
-        tenantGroupFacilityNetworkSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group facility network specialties to update
-          examples:
-          - - tenantgroupfacilitynetworkspecialty_1
-        tenantGroupLocationSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group location specialties to update
-          examples:
-          - - tenantgrouplocationspecialty_1
-        tenantGroupPractitionerSpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group practitioner specialties to update
-          examples:
-          - - tenantgrouppractitionerspecialty_1
-        tenantGroupFacilitySpecialties:
-          type: array
-          items:
-            type: string
-          description: Tenant group facility specialties to update
-          examples:
-          - - tenantgroupfacilityspecialty_1
-    DayHours1:
-      type: object
-      required:
-      - day
-      - from
-      - to
-      properties:
-        day:
-          type: string
-          description: Day of the week
-        from:
-          type: string
-          description: Opening time (HH:mm)
-        to:
-          type: string
-          description: Closing time (HH:mm)
+            $ref: '#/components/schemas/GroupPractitionerRequest'
+          description: List of practitioners to associate with the group
+          minItems: 1
     UpdateGroupNetworksRequest:
       description: Request to update a group's network associations
       type: object
@@ -2454,144 +2630,6 @@ components:
             $ref: '#/components/schemas/UpdateGroupNetworkRequest'
           description: List of networks to associate with this group
           minItems: 1
-    LocalDateTime:
-      type: string
-      format: date-time
-    AddSpecialtyItem1:
-      type: object
-      required:
-      - tenantSpecialtyId
-      properties:
-        tenantSpecialtyId:
-          type: string
-          description: ID of the tenant specialty to associate
-          examples:
-          - ts_cardiology_001
-          pattern: \S
-        effectiveDate:
-          type: string
-          description: Effective date in YYYY-MM-DD format
-          examples:
-          - '2026-01-01'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        isPrimary:
-          type: boolean
-          description: Whether this specialty is primary
-          examples:
-          - false
-    GroupPractitionerAssociationResponse:
-      type: object
-      description: Response for a practitioner-group association
-      properties:
-        certifyPractitionerId:
-          type: string
-          description: Certify Practitioner ID
-          examples:
-          - prac-123
-        tenantGroupPractitionerId:
-          type: string
-          description: ID of the created/updated tenant group practitioner association
-          examples:
-          - tgp-789
-        locations:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupPractitionerLocationResponse'
-          description: List of location associations
-    LocationContact1:
-      type: object
-      required:
-      - type
-      - name
-      properties:
-        type:
-          type: string
-          description: Type of contact
-        name:
-          type: string
-          description: Name of the contact
-        mainPhoneNumber:
-          type: string
-          description: Main phone number
-        afterHoursPhoneNumber:
-          type: string
-          description: After hours phone number
-        email:
-          type: string
-          description: Email address
-        fax:
-          type: string
-          description: Fax number
-        tty:
-          type: string
-          description: TTY number
-    LocalDate:
-      type: string
-      format: date
-      examples:
-      - '2022-03-10'
-    UpdateGroupNetworkRequest:
-      description: Request to update a group's association with a specific network
-      type: object
-      required:
-      - networkId
-      properties:
-        networkId:
-          type: string
-          description: ID of the network
-          examples:
-          - network-123
-        networkData:
-          description: Network association data (status, terminationDate, effectiveDate, participationType, etc.)
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
     TerminateGroupSpecialtyResponse:
       description: Response after terminating group specialties from network participation
       type: object
@@ -2626,127 +2664,12 @@ components:
           examples:
           - - 207Q00000X
             - 208D00000X
-    CreateGroupRequest:
-      description: Request to create a new group with complete data
-      type: object
-      properties:
-        name:
-          type: string
-          description: Group name
-          examples:
-          - Acme Medical Group
-        npi:
-          type: string
-          pattern: ^\d{10}$
-          description: National Provider Identifier
-          examples:
-          - '1234567890'
-        tin:
-          type: string
-          description: Tax Identification Number
-          examples:
-          - 12-3456789
-        contacts:
-          type: array
-          items:
-            $ref: '#/components/schemas/Contact'
-          description: Group contacts
-          examples:
-          - - name: Jane Smith
-              email: jane@example.com
-              phone: 555-123-4567
-              title: Credentialing Manager
-        specialtyIds:
-          type: array
-          items:
-            type: string
-          description: Specialty IDs to associate with the group during creation (consistent with create practitioner pattern)
-        groupEffectiveDate:
-          description: Group effective date
-          type: string
-          examples:
-          - '2024-01-01'
-          $ref: '#/components/schemas/LocalDate'
-        externalGroupId:
-          type: string
-          description: External group ID from tenant system
-          examples:
-          - ext-group-123
-        addresses:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupAddressData'
-          description: Group addresses
-        networks:
-          type: array
-          items:
-            $ref: '#/components/schemas/NetworkAssociation'
-          description: Networks to associate with the group during creation
-        contactPerson:
-          description: Contact person information as JSON
-          type: object
-          examples:
-          - name: John Doe
-            email: john@example.com
-            phone: 555-123-4567
-          $ref: '#/components/schemas/JsonNode'
-        active:
-          type: boolean
-          description: Whether the tenant group is currently active
-          examples:
-          - true
-        npdbEnrollmentEnabled:
-          type: boolean
-          description: Whether NPDB enrollment is enabled
-          examples:
-          - true
-        credentialingDelegation:
-          type: boolean
-          description: Whether credentialing is delegated
-          examples:
-          - true
-    SpecialtyNotCreated:
-      description: A specialty association that could not be created at this level, with reason and message
+    AddGroupLocationRequest:
+      description: Request to add a new location to a group
       type: object
       required:
-      - level
-      - reason
-      - message
+      - locationData
       properties:
-        level:
-          description: The relationship level (GROUP, LOCATION, NETWORK_GROUP, NETWORK_LOCATION)
-          type: string
-          $ref: '#/components/schemas/SpecialtyAssociationLevel'
-        reason:
-          description: 'Reason code: MISSING_DEPENDENCY, DOWNSTREAM_ERROR, CONFLICT, VALIDATION_ERROR'
-          type: string
-          $ref: '#/components/schemas/SpecialtyNotCreatedReason'
-        message:
-          type: string
-          description: User-facing message explaining what went wrong and how to fix it
-    LocationSpecialty:
-      type: object
-      required:
-      - specialtyId
-      properties:
-        specialtyId:
-          type: string
-          description: ID of the specialty
-        effectiveDate:
-          type: string
-          description: Effective date for the specialty
-        isPrimary:
-          type: boolean
-          description: Whether this is the primary specialty
-    UpdateGroupLocationRequest:
-      description: Request to update an existing group location
-      type: object
-      required:
-      - tenantGroupLocationId
-      properties:
-        tenantGroupLocationId:
-          type: string
-          description: ID of the tenant group location to update
         locationData:
           description: Core location data (name, type, etc.)
           type: object
@@ -2762,31 +2685,31 @@ components:
         addresses:
           type: array
           items:
-            $ref: '#/components/schemas/LocationAddress1'
+            $ref: '#/components/schemas/LocationAddress'
           description: List of addresses for the location (physical, mailing, billing, etc.)
         locationSpecialities:
           type: array
           items:
-            $ref: '#/components/schemas/LocationSpecialty1'
+            $ref: '#/components/schemas/LocationSpecialty'
           description: List of location specialties
         contacts:
           type: array
           items:
-            $ref: '#/components/schemas/LocationContact1'
+            $ref: '#/components/schemas/LocationContact'
           description: List of contacts
         officeHours:
           description: Office hours for the location
           type: object
-          $ref: '#/components/schemas/OfficeHours1'
+          $ref: '#/components/schemas/OfficeHours'
         services:
           type: array
           items:
-            $ref: '#/components/schemas/LocationService1'
+            $ref: '#/components/schemas/LocationService'
           description: List of services offered at this location
         practiceLimitations:
           type: array
           items:
-            $ref: '#/components/schemas/PracticeLimitation1'
+            $ref: '#/components/schemas/PracticeLimitation'
           description: List of practice limitations
         accessibility:
           type: array
@@ -2810,131 +2733,6 @@ components:
         includePractitioners:
           type: boolean
           description: If true, enrolls all location practitioners to the networks with their respective specialties
-    OfficeHours1:
-      type: object
-      properties:
-        hours:
-          type: array
-          items:
-            $ref: '#/components/schemas/DayHours1'
-          description: List of office hours by day
-    GroupLocationNetworkRequest:
-      type: object
-      description: Request to associate a group location with a network
-      required:
-      - networkId
-      properties:
-        networkId:
-          type: string
-          description: ID of the network
-          examples:
-          - network-123
-        networkData:
-          description: Network association data (effectiveDate, terminationDate, status, etc.)
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    TerminateGroupNetworksRequest:
-      description: Terminate group participation in the given networks and cascade to practitioner/location network rows.
-      type: object
-      required:
-      - networkIds
-      - terminationDate
-      properties:
-        networkIds:
-          type: array
-          items:
-            type: string
-          description: Certify (core) network IDs to terminate the group from — same identifiers as other group/network APIs and Network.id in DAL.
-          minItems: 1
-        terminationDate:
-          type: string
-          description: Termination date (ISO-8601, YYYY-MM-DD)
-        terminationInformedDate:
-          type: string
-          description: Optional date the group was informed of termination (ISO-8601)
-        terminationReason:
-          type: string
-          description: Optional termination reason
-    LocationService:
-      type: object
-      required:
-      - serviceName
-      - serviceType
-      properties:
-        serviceName:
-          type: string
-          description: Service name
-        serviceType:
-          type: string
-          description: Service type
-        description:
-          type: string
-          description: Service description
-        available:
-          type: boolean
-          description: Whether service is currently available
-    LocationSpecialty1:
-      type: object
-      required:
-      - specialtyId
-      properties:
-        specialtyId:
-          type: string
-          description: ID of the specialty
-        effectiveDate:
-          type: string
-          description: Effective date for the specialty
-        isPrimary:
-          type: boolean
-          description: Whether this is the primary specialty
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    UpdateGroupLocationNetworkDatesResponse:
-      description: Response for updating effective dates of group location network associations
-      type: object
-      required:
-      - tenantGroupLocationId
-      - tenantGroupLocationNetworkIds
-      properties:
-        tenantGroupLocationId:
-          type: string
-          description: ID of the tenant group location that was updated
-          pattern: \S
-        tenantGroupLocationNetworkIds:
-          type: array
-          items:
-            type: string
-          description: IDs of updated tenant group location network associations
-    GroupPractitionerLocationRequest:
-      type: object
-      description: Request to associate a practitioner with a specific group location
-      required:
-      - tenantGroupLocationId
-      properties:
-        tenantGroupLocationId:
-          type: string
-          description: ID of the tenant group location
-          examples:
-          - loc-123
-        locationData:
-          description: Location-specific data for the practitioner
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        networks:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocationNetwork1'
-          description: List of networks to associate with this practitioner at this specific location
     AssociateGroupLocationNetworksRequest:
       description: Request to associate a group location with one or more networks
       type: object
@@ -2947,129 +2745,22 @@ components:
             $ref: '#/components/schemas/GroupLocationNetworkRequest'
           description: List of networks to associate with the group location
           minItems: 1
-    AssociateGroupPractitionersRequest:
-      description: Request to associate one or more practitioners with a group
+    DayHours1:
       type: object
       required:
-      - practitioners
+      - day
+      - from
+      - to
       properties:
-        practitioners:
-          type: array
-          items:
-            $ref: '#/components/schemas/GroupPractitionerRequest'
-          description: List of practitioners to associate with the group
-          minItems: 1
-    CredentialingContact:
-      type: object
-      description: Credentialing contact information
-      properties:
-        name:
+        day:
           type: string
-          description: Contact name
-          examples:
-          - Jane Smith
-        email:
+          description: Day of the week
+        from:
           type: string
-          description: Contact email
-          examples:
-          - jane@example.com
-        phone:
+          description: Opening time (HH:mm)
+        to:
           type: string
-          description: Contact phone
-          examples:
-          - 555-123-4567
-        title:
-          type: string
-          description: Contact title
-          examples:
-          - Credentialing Manager
-        department:
-          type: string
-          description: Contact department
-          examples:
-          - Credentialing
-    Contact:
-      type: object
-      description: Contact information
-      properties:
-        name:
-          type: string
-          description: Contact name
-          examples:
-          - Jane Smith
-        email:
-          type: string
-          description: Contact email
-          examples:
-          - jane@example.com
-        phone:
-          type: string
-          description: Contact phone
-          examples:
-          - 555-123-4567
-        title:
-          type: string
-          description: Contact title
-          examples:
-          - Credentialing Manager
-        department:
-          type: string
-          description: Contact department
-          examples:
-          - Credentialing
-    GroupLocationUpdateResponse:
-      type: object
-      properties:
-        tenantGroupId:
-          type: string
-        locationAssociations:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocationAssociationResult2'
-    TerminateGroupLocationRequest:
-      description: Request to terminate a group location
-      type: object
-      required:
-      - terminationDate
-      - consentConfirmed
-      properties:
-        terminationDate:
-          type: string
-          description: Termination date (ISO-8601 format, e.g., 2024-01-15). Must be >= start/effective date. Future dates allowed.
-          examples:
-          - '2024-01-15'
-          pattern: \S
-        terminationInformedDate:
-          type: string
-          description: Date when termination was informed (ISO-8601 format, e.g., 2024-01-15)
-          examples:
-          - '2024-01-15'
-        terminationReason:
-          type: string
-          description: Termination reason code. Used for compliance and audit purposes.
-          examples:
-          - FACILITY_CLOSED
-        consentConfirmed:
-          type: boolean
-          description: User consent confirmation that they understand the impact of this termination on the group, networks, plans, and practitioners
-        data:
-          description: Additional termination data
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    GroupNetworkUpdateResponse:
-      description: Response containing updated group-network associations
-      type: object
-      properties:
-        tenantGroupId:
-          type: string
-          description: ID of the tenant group
-          examples:
-          - tg-456
-        networkAssociations:
-          type: array
-          items:
-            $ref: '#/components/schemas/NetworkAssociationResult'
-          description: List of updated network associations
+          description: Closing time (HH:mm)
     Contact1:
       type: object
       description: Contact information
@@ -3099,6 +2790,315 @@ components:
           description: Contact department
           examples:
           - Credentialing
+    UpdateGroupNetworkRequest:
+      description: Request to update a group's association with a specific network
+      type: object
+      required:
+      - networkId
+      properties:
+        networkId:
+          type: string
+          description: ID of the network
+          examples:
+          - network-123
+        networkData:
+          description: Network association data (status, terminationDate, effectiveDate, participationType, etc.)
+          type: object
+          $ref: '#/components/schemas/JsonNode'
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    OfficeHours1:
+      type: object
+      properties:
+        hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/DayHours1'
+          description: List of office hours by day
+    TerminateGroupSpecialtyRequest:
+      description: 'Request to terminate one or more group specialties from network participation. Terminates at group-network association; optionally at group-location and group-level. Required: specialtyIds (standard Specialty IDs). Optional: networkIds (standard Network IDs to restrict scope).'
+      type: object
+      required:
+      - specialtyIds
+      - terminationEffectiveDate
+      - acknowledgementConfirmed
+      properties:
+        specialtyIds:
+          type: array
+          items:
+            type: string
+            pattern: \S
+          description: 'Required. List of Specialty IDs (standard/certify specialty identifiers) to terminate for this group. Each must be a specialty currently associated with the group. Obtain from: GET /specialties, or GET /groups/{id}/relationships/all (specialties with specialtyId).'
+          examples:
+          - - 207Q00000X
+            - 208D00000X
+          minItems: 1
+        networkIds:
+          type: array
+          items:
+            type: string
+          description: 'Optional. Network IDs (standard/certify network identifiers) to restrict termination to. If null or empty, terminates from all networks the group participates in. Obtain from: GET /networks or GET /groups/{id}/relationships/all (networks).'
+          examples:
+          - - net_001
+            - net_002
+        terminationInformedDate:
+          type: string
+          description: Termination informed date (ISO-8601 YYYY-MM-DD).
+          examples:
+          - '2024-01-15'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        terminationEffectiveDate:
+          type: string
+          description: Termination effective date (ISO-8601 YYYY-MM-DD). When the specialty termination takes effect.
+          examples:
+          - '2024-02-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        terminationReason:
+          type: string
+          description: Termination reason (e.g. code or free text).
+          examples:
+          - SPECIALTY_DISCONTINUED
+        acknowledgementConfirmed:
+          type: boolean
+          description: User acknowledgement that terminating specialty from the group will terminate it from its locations, participating networks and plans.
+        terminateAtGroupLocationSpecialties:
+          type: boolean
+          description: If true, also terminate the specialty at group-location level (TenantGroupLocationSpecialty).
+          default: true
+        terminateAtGroupLevel:
+          type: boolean
+          description: If true, also terminate the specialty at group level (TenantGroupSpecialty).
+          default: true
+    NetworkAssociation:
+      type: object
+      description: Network association information
+      required:
+      - networkName
+      properties:
+        networkName:
+          type: string
+          description: Network name
+          examples:
+          - Blue Cross Blue Shield Network
+        networkType:
+          type: string
+          description: Network type
+          examples:
+          - Commercial
+        networkEffectiveDate:
+          type: string
+          description: Network effective date
+          examples:
+          - '2024-01-01'
+        networkGroupStatus:
+          type: string
+          description: Group-network relationship status
+          examples:
+          - active
+        networkGroupTerminationDate:
+          type: string
+          description: Group-network termination date
+          examples:
+          - '2025-12-31'
+    LocalDateTime:
+      type: string
+      format: date-time
+    AssociateGroupLocationNetworksResponse:
+      description: Response for associating a group location with networks
+      type: object
+      properties:
+        tenantGroupLocationId:
+          type: string
+          description: ID of the group location
+          examples:
+          - loc-123
+        networks:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupLocationNetworkResponse'
+          description: List of created/updated network associations
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    LocationContact:
+      type: object
+      required:
+      - type
+      - name
+      properties:
+        type:
+          type: string
+          description: Type of contact
+        name:
+          type: string
+          description: Name of the contact
+        mainPhoneNumber:
+          type: string
+          description: Main phone number
+        afterHoursPhoneNumber:
+          type: string
+          description: After hours phone number
+        email:
+          type: string
+          description: Email address
+        fax:
+          type: string
+          description: Fax number
+        tty:
+          type: string
+          description: TTY number
+    NetworkAssociationResult:
+      type: object
+      description: Result of a single network association update
+      properties:
+        networkId:
+          type: string
+          description: ID of the network
+          examples:
+          - net-123
+        tenantGroupNetworkId:
+          type: string
+          description: ID of the tenant group network association
+          examples:
+          - tgn-789
+        status:
+          type: string
+          description: Indicates if this was a new association or an update
+          examples:
+          - updated
+    LocationSpecialty1:
+      type: object
+      required:
+      - specialtyId
+      properties:
+        specialtyId:
+          type: string
+          description: ID of the specialty
+        effectiveDate:
+          type: string
+          description: Effective date for the specialty
+        isPrimary:
+          type: boolean
+          description: Whether this is the primary specialty
+    AddSpecialtyItem1:
+      type: object
+      required:
+      - tenantSpecialtyId
+      properties:
+        tenantSpecialtyId:
+          type: string
+          description: ID of the tenant specialty to associate
+          examples:
+          - ts_cardiology_001
+          pattern: \S
+        effectiveDate:
+          type: string
+          description: Effective date in YYYY-MM-DD format
+          examples:
+          - '2026-01-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        isPrimary:
+          type: boolean
+          description: Whether this specialty is primary
+          examples:
+          - false
+    UpdateSpecialtyItem1:
+      type: object
+      required:
+      - tenantGroupSpecialtyId
+      properties:
+        tenantGroupSpecialtyId:
+          type: string
+          description: ID of the existing TenantGroupSpecialty record to update
+          examples:
+          - tgs_abc123
+          pattern: \S
+        newTenantSpecialtyId:
+          type: string
+          description: ID of the new TenantSpecialty to replace the current one
+          examples:
+          - ts_xyz789
+        effectiveDate:
+          type: string
+          description: New effective date in YYYY-MM-DD format
+          examples:
+          - '2026-01-15'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        isPrimary:
+          type: boolean
+          description: Whether this specialty is primary
+        atLeastOneFieldProvided:
+          type: boolean
+    SpecialtyNotCreatedReason:
+      type: string
+      enum:
+      - MISSING_DEPENDENCY
+      - DOWNSTREAM_ERROR
+      - CONFLICT
+      - VALIDATION_ERROR
+    GroupAddressData:
+      type: object
+      description: Group address information
+      properties:
+        addressType:
+          type: string
+          description: Address type
+          examples:
+          - billing
+        addressLine1:
+          type: string
+          description: Address line 1
+          examples:
+          - 123 Main Street
+        addressLine2:
+          type: string
+          description: Address line 2
+          examples:
+          - Suite 100
+        city:
+          type: string
+          description: City
+          examples:
+          - New York
+        state:
+          type: string
+          description: State
+          examples:
+          - NY
+        zip:
+          type: string
+          description: ZIP code
+          examples:
+          - '10001'
+        county:
+          type: string
+          description: County
+          examples:
+          - New York County
+        country:
+          type: string
+          description: Country
+          examples:
+          - US
+        isPrimary:
+          type: boolean
+          description: Whether this is the primary address
+          examples:
+          - true
   securitySchemes:
     jwt:
       type: http

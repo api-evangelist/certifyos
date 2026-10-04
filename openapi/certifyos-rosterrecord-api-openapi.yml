@@ -367,6 +367,13 @@ components:
           items:
             $ref: '#/components/schemas/DraftRowSaveFailure'
           description: Per-row failures (other rows may still have succeeded)
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
     RosterRowItem:
       type: object
       properties:
@@ -380,6 +387,30 @@ components:
           type: string
         updatedAt:
           type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    RosterRowsDraftBulkRequest:
+      description: Bulk draft save request
+      type: object
+      required:
+      - rows
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterRowDraftEntry'
+          description: Rows with edited data to persist
+          minItems: 1
     RosterRowsRevalidateResponse:
       description: Summary after confirm revalidation of VALIDATION_FAILED rows
       type: object
@@ -399,84 +430,6 @@ components:
         status:
           type: string
           description: Roster revalidation status (e.g. REVALIDATE when async dispatch accepted)
-    RosterRowsPage:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/RosterRowItem'
-        nextCursor:
-          type: string
-        pageSize:
-          type: integer
-          format: int32
-        hasMore:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    RosterRowsDraftBulkRequest:
-      description: Bulk draft save request
-      type: object
-      required:
-      - rows
-      properties:
-        rows:
-          type: array
-          items:
-            $ref: '#/components/schemas/RosterRowDraftEntry'
-          description: Rows with edited data to persist
-          minItems: 1
-    SmartFixTriggerResponse:
-      description: Aggregated Smart Fix response returned to the frontend
-      type: object
-      properties:
-        suggestions:
-          type: array
-          items:
-            $ref: '#/components/schemas/EnrichedSuggestion'
-          description: Per-error fix suggestions enriched with rowId
-        totalErrors:
-          type: integer
-          format: int32
-          description: Total validation errors sent to Smart Fix
-        totalFixed:
-          type: integer
-          format: int32
-          description: Errors for which a suggested_value was returned
-        totalSkipped:
-          type: integer
-          format: int32
-          description: Errors where no fix could be suggested
-        totalRowsProcessed:
-          type: integer
-          format: int32
-          description: Number of VALIDATION_FAILED rows processed
-        success:
-          type: boolean
-          description: True if all Smart Fix batches succeeded
-        batchErrors:
-          type: array
-          items:
-            type: string
-          description: Error messages from any failed batches
     JsonNode:
       type: object
       properties:
@@ -524,33 +477,18 @@ components:
           type: boolean
         binary:
           type: boolean
-    RosterRowDraftEntry:
-      description: Draft save payload for a single roster row
-      type: object
-      required:
-      - recordKey
-      - rowData
-      properties:
-        recordKey:
-          type: string
-          description: Stable row id from roster row list APIs (Spanner row_id)
-          pattern: \S
-        rowData:
-          description: 'Partial rowData object: top-level fields to merge into the existing stored rowData'
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     RosterRowsOffsetPage:
       type: object
       properties:
@@ -572,6 +510,21 @@ components:
           format: int32
         hasMore:
           type: boolean
+    RosterRowDraftEntry:
+      description: Draft save payload for a single roster row
+      type: object
+      required:
+      - recordKey
+      - rowData
+      properties:
+        recordKey:
+          type: string
+          description: Stable row id from roster row list APIs (Spanner row_id)
+          pattern: \S
+        rowData:
+          description: 'Partial rowData object: top-level fields to merge into the existing stored rowData'
+          type: object
+          $ref: '#/components/schemas/JsonNode'
     DraftRowSaveFailure:
       description: Per-row failure from a bulk draft save
       type: object
@@ -582,6 +535,20 @@ components:
         message:
           type: string
           description: Reason the row was not updated
+    RosterRowsPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterRowItem'
+        nextCursor:
+          type: string
+        pageSize:
+          type: integer
+          format: int32
+        hasMore:
+          type: boolean
     EnrichedSuggestion:
       type: object
       description: A Smart Fix suggestion with row_id for frontend correlation
@@ -617,6 +584,39 @@ components:
         rowIndex:
           type: string
           description: Spanner row_id (recordKey) for correlating back to RosterRowItem
+    SmartFixTriggerResponse:
+      description: Aggregated Smart Fix response returned to the frontend
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrichedSuggestion'
+          description: Per-error fix suggestions enriched with rowId
+        totalErrors:
+          type: integer
+          format: int32
+          description: Total validation errors sent to Smart Fix
+        totalFixed:
+          type: integer
+          format: int32
+          description: Errors for which a suggested_value was returned
+        totalSkipped:
+          type: integer
+          format: int32
+          description: Errors where no fix could be suggested
+        totalRowsProcessed:
+          type: integer
+          format: int32
+          description: Number of VALIDATION_FAILED rows processed
+        success:
+          type: boolean
+          description: True if all Smart Fix batches succeeded
+        batchErrors:
+          type: array
+          items:
+            type: string
+          description: Error messages from any failed batches
   securitySchemes:
     jwt:
       type: http
