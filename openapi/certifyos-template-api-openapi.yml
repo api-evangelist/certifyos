@@ -414,6 +414,36 @@ paths:
       - jwt: []
 components:
   schemas:
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    TemplateUploadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: '#/components/schemas/TemplateData'
+    PagedResponse1:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        links:
+          $ref: '#/components/schemas/PageLinks'
+        totalCount:
+          type: integer
+          format: int64
     SingleStepTemplateFlowResponse:
       type: object
       properties:
@@ -429,42 +459,83 @@ components:
           type: string
         schemaUrl:
           type: string
-    FieldSuggestion:
-      type: object
-      properties:
-        name:
-          type: string
-        suggestedMatches:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    Date:
-      type: string
-      format: date
     RosterJobType:
       type: string
       enum:
       - PRACTITIONER
       - FACILITY
+    Field:
+      type: object
+      properties:
+        name:
+          type: string
+        mappedKey:
+          type: string
+        mappedEntity:
+          type: string
+        entityGroup:
+          type: string
+        isRequired:
+          type: boolean
+        isStaticField:
+          type: boolean
+        isSingleSelect:
+          type: boolean
+        validationRegex:
+          type: string
+        description:
+          type: string
+        enum:
+          type: array
+          items:
+            type: string
+        singleSelect:
+          type: boolean
+    TemplateData:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        entities:
+          type: array
+          items:
+            type: string
+        allFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSuggestion'
+    RosterTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    ApproveTemplateResponse:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        status:
+          type: string
     JsonNode:
       type: object
       properties:
@@ -524,70 +595,13 @@ components:
       - OBJECT
       - POJO
       - STRING
-    TemplateUploadResponse:
+    ApiError1:
       type: object
       properties:
-        status:
-          type: string
-        data:
-          $ref: '#/components/schemas/TemplateData'
-    PagedResponse1:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        links:
-          $ref: '#/components/schemas/PageLinks'
-        totalCount:
-          type: integer
-          format: int64
-    TemplateData:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        entities:
+        errors:
           type: array
           items:
-            type: string
-        allFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldSuggestion'
-    Field:
-      type: object
-      properties:
-        name:
-          type: string
-        mappedKey:
-          type: string
-        mappedEntity:
-          type: string
-        entityGroup:
-          type: string
-        isRequired:
-          type: boolean
-        isStaticField:
-          type: boolean
-        isSingleSelect:
-          type: boolean
-        validationRegex:
-          type: string
-        description:
-          type: string
-        enum:
-          type: array
-          items:
-            type: string
-        singleSelect:
-          type: boolean
+            $ref: '#/components/schemas/ErrorObject1'
     PageLinks:
       type: object
       properties:
@@ -597,6 +611,15 @@ components:
           type: string
         prev:
           type: string
+    FieldSuggestion:
+      type: object
+      properties:
+        name:
+          type: string
+        suggestedMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
     TemplateUpdateRequest:
       type: object
       properties:
@@ -606,32 +629,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Field'
-    RosterTemplateResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-    ApproveTemplateResponse:
-      type: object
-      properties:
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        status:
-          type: string
+    Date:
+      type: string
+      format: date
   securitySchemes:
     jwt:
       type: http

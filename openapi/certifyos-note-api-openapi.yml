@@ -298,6 +298,18 @@ paths:
       - jwt: []
 components:
   schemas:
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
     NoteData:
       type: object
       description: Note data containing message content
@@ -309,14 +321,12 @@ components:
           description: The message content of the note
           examples:
           - This is a note message
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    CreateNoteRequest:
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    UpdateNoteRequest:
       type: object
       required:
       - message
@@ -324,56 +334,41 @@ components:
         message:
           type: string
           pattern: \S
-    NoteResponse:
+    GetNotesResponse:
+      description: Response containing a paginated list of notes
       type: object
-      description: Response containing note information
       properties:
-        id:
-          type: string
-          description: Unique identifier for the note
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of notes matching the filter criteria
           examples:
-          - note_123456
-        workflowId:
-          type: string
-          description: ID of the associated credentialing workflow
-          examples:
-          - cw_123456
+          - 100
         data:
-          description: Note data containing message
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteResponse'
+          description: Array of note records
+        links:
+          description: Pagination links for navigation
           type: object
-          $ref: '#/components/schemas/NoteData'
-        createdBy:
-          type: string
-          description: ID of the user who created the note
+          $ref: '#/components/schemas/PageLinks'
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
           examples:
-          - user_123456
-        createdByName:
-          type: string
-          description: Full name of the user who created the note
-          examples:
-          - John Doe
-        updatedBy:
-          type: string
-          description: ID of the user who last updated the note
-          examples:
-          - user_123456
-        updatedByName:
-          type: string
-          description: Full name of the user who last updated the note
-          examples:
-          - Jane Smith
-        createdAt:
-          description: Timestamp when the note was created
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
-        updatedAt:
-          description: Timestamp when the note was last updated
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
     JsonNode:
       type: object
       properties:
@@ -433,7 +428,7 @@ components:
       - OBJECT
       - POJO
       - STRING
-    UpdateNoteRequest:
+    CreateNoteRequest:
       type: object
       required:
       - message
@@ -441,53 +436,13 @@ components:
         message:
           type: string
           pattern: \S
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    ApiError1:
       type: object
       properties:
         errors:
           type: array
           items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    GetNotesResponse:
-      description: Response containing a paginated list of notes
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total count of notes matching the filter criteria
-          examples:
-          - 100
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/NoteResponse'
-          description: Array of note records
-        links:
-          description: Pagination links for navigation
-          type: object
-          $ref: '#/components/schemas/PageLinks'
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
+            $ref: '#/components/schemas/ErrorObject1'
     PageLinks:
       type: object
       properties:
@@ -497,11 +452,56 @@ components:
           type: string
         prev:
           type: string
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
+    NoteResponse:
+      type: object
+      description: Response containing note information
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the note
+          examples:
+          - note_123456
+        workflowId:
+          type: string
+          description: ID of the associated credentialing workflow
+          examples:
+          - cw_123456
+        data:
+          description: Note data containing message
+          type: object
+          $ref: '#/components/schemas/NoteData'
+        createdBy:
+          type: string
+          description: ID of the user who created the note
+          examples:
+          - user_123456
+        createdByName:
+          type: string
+          description: Full name of the user who created the note
+          examples:
+          - John Doe
+        updatedBy:
+          type: string
+          description: ID of the user who last updated the note
+          examples:
+          - user_123456
+        updatedByName:
+          type: string
+          description: Full name of the user who last updated the note
+          examples:
+          - Jane Smith
+        createdAt:
+          description: Timestamp when the note was created
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp when the note was last updated
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
   securitySchemes:
     jwt:
       type: http

@@ -63,6 +63,99 @@ paths:
       - jwt: []
 components:
   schemas:
+    AddressConfidence:
+      type: string
+      enum:
+      - HIGH
+      - MEDIUM
+      - LOW
+    StandardizeAddressRequest:
+      description: Input address to be standardized and validated
+      type: object
+      required:
+      - addressLine1
+      properties:
+        addressLine1:
+          type: string
+          description: Primary street line
+          examples:
+          - 123 Main Street
+          pattern: \S
+        addressLine2:
+          type: string
+          description: Secondary street line (apt, suite, unit, floor)
+          examples:
+          - Suite 100
+        city:
+          type: string
+          description: City
+          examples:
+          - New York
+        county:
+          type: string
+          description: County
+          examples:
+          - New York County
+        state:
+          type: string
+          description: State / province code
+          examples:
+          - NY
+        zip:
+          type: string
+          description: ZIP / postal code (5 or 5+4, hyphen-separated)
+          examples:
+          - '10001'
+          pattern: \d{5}(?:-\d{4})?
+        country:
+          type: string
+          description: ISO country code
+          examples:
+          - US
+          default: US
+        addressType:
+          type: string
+          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
+          examples:
+          - billing
+    AddressEnrichment:
+      type: object
+      description: Enrichment values attached to the standardized address
+      properties:
+        zip4:
+          type: string
+          description: ZIP+4 extension, if available
+          examples:
+          - '1234'
+        county:
+          type: string
+          description: County name, if available
+          examples:
+          - New York County
+        latitude:
+          type: number
+          format: double
+          description: Latitude in decimal degrees, if available
+        longitude:
+          type: number
+          format: double
+          description: Longitude in decimal degrees, if available
+        stateFips:
+          type: string
+          description: 2-digit state FIPS code, if available
+          examples:
+          - '36'
+        countyFips:
+          type: string
+          description: 5-digit county FIPS code, if available
+          examples:
+          - '36061'
+        formattedAddress:
+          type: string
+          description: Pretty-printed single-line address, if available
+        timezone:
+          type: string
+          description: IANA timezone ID, if available; always null until timezone enrichment ships
     StandardizeAddressResponse:
       description: Standardized address with confidence, validation status, and enrichment data
       type: object
@@ -118,105 +211,12 @@ components:
         formattedAddress:
           type: string
           description: Pretty-printed single-line address
-    StandardizeAddressRequest:
-      description: Input address to be standardized and validated
-      type: object
-      required:
-      - addressLine1
-      properties:
-        addressLine1:
-          type: string
-          description: Primary street line
-          examples:
-          - 123 Main Street
-          pattern: \S
-        addressLine2:
-          type: string
-          description: Secondary street line (apt, suite, unit, floor)
-          examples:
-          - Suite 100
-        city:
-          type: string
-          description: City
-          examples:
-          - New York
-        county:
-          type: string
-          description: County
-          examples:
-          - New York County
-        state:
-          type: string
-          description: State / province code
-          examples:
-          - NY
-        zip:
-          type: string
-          description: ZIP / postal code (5 or 5+4, hyphen-separated)
-          examples:
-          - '10001'
-          pattern: \d{5}(?:-\d{4})?
-        country:
-          type: string
-          description: ISO country code
-          examples:
-          - US
-          default: US
-        addressType:
-          type: string
-          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
-          examples:
-          - billing
     AddressValidationStatus:
       type: string
       enum:
       - VALID
       - PARTIAL
       - INVALID
-    AddressEnrichment:
-      type: object
-      description: Enrichment values attached to the standardized address
-      properties:
-        zip4:
-          type: string
-          description: ZIP+4 extension, if available
-          examples:
-          - '1234'
-        county:
-          type: string
-          description: County name, if available
-          examples:
-          - New York County
-        latitude:
-          type: number
-          format: double
-          description: Latitude in decimal degrees, if available
-        longitude:
-          type: number
-          format: double
-          description: Longitude in decimal degrees, if available
-        stateFips:
-          type: string
-          description: 2-digit state FIPS code, if available
-          examples:
-          - '36'
-        countyFips:
-          type: string
-          description: 5-digit county FIPS code, if available
-          examples:
-          - '36061'
-        formattedAddress:
-          type: string
-          description: Pretty-printed single-line address, if available
-        timezone:
-          type: string
-          description: IANA timezone ID, if available; always null until timezone enrichment ships
-    AddressConfidence:
-      type: string
-      enum:
-      - HIGH
-      - MEDIUM
-      - LOW
   securitySchemes:
     jwt:
       type: http

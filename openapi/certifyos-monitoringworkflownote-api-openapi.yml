@@ -298,14 +298,46 @@ paths:
       - jwt: []
 components:
   schemas:
-    ApiError1:
+    ErrorObject1:
       type: object
       properties:
-        errors:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+    CreateNoteRequest1:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    GetNotesResponse1:
+      description: Response containing a paginated list of notes
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of notes matching the filter criteria
+          examples:
+          - 100
+        data:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorObject1'
-    CreateNoteRequest1:
+            $ref: '#/components/schemas/NoteResponse1'
+          description: Array of note records
+        links:
+          description: Pagination links for navigation
+          type: object
+          $ref: '#/components/schemas/PageLinks'
+    UpdateNoteRequest1:
       type: object
       required:
       - message
@@ -363,14 +395,38 @@ components:
           examples:
           - '2024-01-01T00:00:00Z'
           $ref: '#/components/schemas/Instant'
-    UpdateNoteRequest1:
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    NoteData1:
       type: object
+      description: Note data containing message content
       required:
       - message
       properties:
         message:
           type: string
-          pattern: \S
+          description: The message content of the note
+          examples:
+          - This is a note message
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
     JsonNode:
       type: object
       properties:
@@ -430,45 +486,13 @@ components:
       - OBJECT
       - POJO
       - STRING
-    NoteData1:
-      type: object
-      description: Note data containing message content
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          description: The message content of the note
-          examples:
-          - This is a note message
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    ApiError1:
       type: object
       properties:
         errors:
           type: array
           items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
+            $ref: '#/components/schemas/ErrorObject1'
     PageLinks:
       type: object
       properties:
@@ -478,30 +502,6 @@ components:
           type: string
         prev:
           type: string
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    GetNotesResponse1:
-      description: Response containing a paginated list of notes
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total count of notes matching the filter criteria
-          examples:
-          - 100
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/NoteResponse1'
-          description: Array of note records
-        links:
-          description: Pagination links for navigation
-          type: object
-          $ref: '#/components/schemas/PageLinks'
   securitySchemes:
     jwt:
       type: http

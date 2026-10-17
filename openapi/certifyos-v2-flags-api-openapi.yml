@@ -249,6 +249,25 @@ paths:
       - BearerAuth: []
 components:
   schemas:
+    ReadStatus:
+      type: string
+      enum:
+      - seen
+      - unseen
+      - all
+    FlagMarkReadAllRequestV2Dto:
+      type: object
+      properties:
+        flag_ids:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          example: Reason while marking flag as read
+      required:
+      - flag_ids
+      - reason
     ProviderFlagResponseDto:
       type: object
       properties:
@@ -277,25 +296,6 @@ components:
       - actionSource
       - createdAt
       - flagType
-    FlagMarkReadAllRequestV2Dto:
-      type: object
-      properties:
-        flag_ids:
-          type: array
-          items:
-            type: string
-        reason:
-          type: string
-          example: Reason while marking flag as read
-      required:
-      - flag_ids
-      - reason
-    ReadStatus:
-      type: string
-      enum:
-      - seen
-      - unseen
-      - all
   securitySchemes:
     BearerAuth:
       scheme: bearer

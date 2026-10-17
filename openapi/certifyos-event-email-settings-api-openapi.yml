@@ -536,22 +536,78 @@ components:
           items:
             type: string
           description: 'Primary outcome(s): "Positive" and/or "Negative". Null or empty = both.'
-    EventEmailSettingsModeResponse:
+    EventEmailSettingsLogoSettingsRequest:
+      description: Request to update context-level logo settings for event emails
       type: object
-      description: Event email settings for a specific context/mode
+      properties:
+        logoUrl:
+          type: string
+          description: Logo URL for this context
+        logoWidth:
+          type: string
+          description: Logo width for this context
+    EventEmailTypeSettingsDto:
+      type: object
+      description: Settings for a specific event email type
+      required:
+      - type
+      - template
+      - enabled
+      properties:
+        type:
+          type: string
+          description: Event email type
+          enum:
+          - initiated
+          - approved
+          - denied
+          - cancelled
+          - psvReady
+          pattern: \S
+        template:
+          description: Email template for this event type
+          type: object
+          $ref: '#/components/schemas/EventEmailTemplateDto'
+        enabled:
+          type: boolean
+          description: Whether this event email type is enabled
+    EventEmailTemplateDto:
+      type: object
+      description: Event email template with subject and body
+      required:
+      - subject
+      - bodyHtml
+      properties:
+        subject:
+          type: string
+          description: Email subject line
+        bodyHtml:
+          type: string
+          description: Email body HTML content
+    EventEmailRecipientPreferencesRequest:
+      description: Request to update context-level recipient preferences for event emails.
+      type: object
       required:
       - recipientPreferences
-      - typeSettings
       properties:
         recipientPreferences:
-          description: Recipient preferences
+          description: Recipient preferences for event emails
           type: object
           $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
-        typeSettings:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventEmailTypeSettingsDto'
-          description: Settings for each event type
+    EventEmailSettingsLogoUrlRequest:
+      description: Request to update context-level logo URL for event emails
+      type: object
+      properties:
+        logoUrl:
+          type: string
+          description: Logo URL for this context
+    EventEmailSettingsCcEmailRequest:
+      description: Request to update context-level CC email for event emails
+      type: object
+      properties:
+        ccEmail:
+          type: string
+          description: CC email for this context
     EventEmailSettingsResponse:
       description: Event email settings response
       type: object
@@ -591,41 +647,22 @@ components:
           items:
             $ref: '#/components/schemas/EventEmailTypeSettingsDto'
           description: Settings for each event type
-    EventEmailTypeSettingsDto:
+    EventEmailSettingsModeResponse:
       type: object
-      description: Settings for a specific event email type
-      required:
-      - type
-      - template
-      - enabled
-      properties:
-        type:
-          type: string
-          description: Event email type
-          enum:
-          - initiated
-          - approved
-          - denied
-          - cancelled
-          - psvReady
-          pattern: \S
-        template:
-          description: Email template for this event type
-          type: object
-          $ref: '#/components/schemas/EventEmailTemplateDto'
-        enabled:
-          type: boolean
-          description: Whether this event email type is enabled
-    EventEmailRecipientPreferencesRequest:
-      description: Request to update context-level recipient preferences for event emails.
-      type: object
+      description: Event email settings for a specific context/mode
       required:
       - recipientPreferences
+      - typeSettings
       properties:
         recipientPreferences:
-          description: Recipient preferences for event emails
+          description: Recipient preferences
           type: object
           $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+        typeSettings:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventEmailTypeSettingsDto'
+          description: Settings for each event type
     EventEmailSettingsContextResponse:
       type: object
       description: Event email settings grouped by mode for a context
@@ -652,19 +689,6 @@ components:
           items:
             type: string
           description: 'MMO outcome filter: primary outcomes to send for. When the workflow has both approved and denied plan UDFs, the complementary outcome email is also sent (e.g. filter Positive still sends denied plans email if present, and filter Negative still sends approved plans email if present). Null or empty = no restriction.'
-    EventEmailTemplateDto:
-      type: object
-      description: Event email template with subject and body
-      required:
-      - subject
-      - bodyHtml
-      properties:
-        subject:
-          type: string
-          description: Email subject line
-        bodyHtml:
-          type: string
-          description: Email body HTML content
     EventEmailRecipientPreferencesDto:
       description: Recipient preferences for event emails
       type: object
@@ -681,13 +705,22 @@ components:
         credentialingOfficeManager:
           type: boolean
           description: Send to credentialing office manager
-    EventEmailGlobalSettingsResponse:
-      description: Global event email settings applied across contexts
+    EventEmailSettingsConfigResponse:
+      description: Event email settings configuration grouped by context and global settings
       type: object
       properties:
-        ccEmail:
-          type: string
-          description: Global CC email applied to all event emails
+        practitioner:
+          description: Practitioner event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        facility:
+          description: Facility event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+        global:
+          description: Global event email settings
+          type: object
+          $ref: '#/components/schemas/EventEmailGlobalSettingsResponse'
     EventEmailSettingsRequest:
       description: Request to create or update event email settings. Context and mode are specified in the URL path.
       type: object
@@ -707,46 +740,13 @@ components:
           items:
             $ref: '#/components/schemas/EventEmailTypeSettingsDto'
           description: Settings for each event type (should include all 5 types)
-    EventEmailSettingsLogoUrlRequest:
-      description: Request to update context-level logo URL for event emails
-      type: object
-      properties:
-        logoUrl:
-          type: string
-          description: Logo URL for this context
-    EventEmailSettingsLogoSettingsRequest:
-      description: Request to update context-level logo settings for event emails
-      type: object
-      properties:
-        logoUrl:
-          type: string
-          description: Logo URL for this context
-        logoWidth:
-          type: string
-          description: Logo width for this context
-    EventEmailSettingsConfigResponse:
-      description: Event email settings configuration grouped by context and global settings
-      type: object
-      properties:
-        practitioner:
-          description: Practitioner event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
-        facility:
-          description: Facility event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
-        global:
-          description: Global event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailGlobalSettingsResponse'
-    EventEmailSettingsCcEmailRequest:
-      description: Request to update context-level CC email for event emails
+    EventEmailGlobalSettingsResponse:
+      description: Global event email settings applied across contexts
       type: object
       properties:
         ccEmail:
           type: string
-          description: CC email for this context
+          description: Global CC email applied to all event emails
   securitySchemes:
     jwt:
       type: http

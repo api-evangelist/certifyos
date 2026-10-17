@@ -231,6 +231,28 @@ paths:
       - jwt: []
 components:
   schemas:
+    UdfSchemaResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        schema:
+          $ref: '#/components/schemas/JsonNode'
+        version:
+          type: integer
+          format: int32
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
     ApiError:
       description: Standard API error response containing a list of error objects
       type: object
@@ -240,9 +262,6 @@ components:
           items:
             $ref: '#/components/schemas/ErrorObject'
           description: List of error objects describing validation or processing failures
-    Date:
-      type: string
-      format: date
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -268,24 +287,6 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    EntityType:
-      type: string
-      enum:
-      - practitioner
-      - facility
-      - location
-      - group
-      - group_practitioner_location
-      - tenant_group
-      - tenant_group_practitioners
-      - tenant_facility_location
-      - tenant_group_facility
-      - tenant_group_facility_location
-      - tenant_group_practitioner_network
-      - tenant_group_location_practitioner_network
-      - tenant_group_location
-      - tenant_group_network
-      - tenant_group_facility_network
     JsonNode:
       type: object
       properties:
@@ -345,28 +346,27 @@ components:
       - OBJECT
       - POJO
       - STRING
-    UdfSchemaResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantId:
-          type: string
-        entityType:
-          $ref: '#/components/schemas/EntityType'
-        schema:
-          $ref: '#/components/schemas/JsonNode'
-        version:
-          type: integer
-          format: int32
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
+    EntityType:
+      type: string
+      enum:
+      - practitioner
+      - facility
+      - location
+      - group
+      - group_practitioner_location
+      - tenant_group
+      - tenant_group_practitioners
+      - tenant_facility_location
+      - tenant_group_facility
+      - tenant_group_facility_location
+      - tenant_group_practitioner_network
+      - tenant_group_location_practitioner_network
+      - tenant_group_location
+      - tenant_group_network
+      - tenant_group_facility_network
+    Date:
+      type: string
+      format: date
   securitySchemes:
     jwt:
       type: http

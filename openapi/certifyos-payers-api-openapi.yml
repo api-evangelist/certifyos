@@ -187,16 +187,7 @@ paths:
       - jwt: []
 components:
   schemas:
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
-    PayerRequest:
+    PayerResponse:
       type: object
       properties:
         id:
@@ -207,14 +198,16 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
-        dataToValidate:
-          $ref: '#/components/schemas/JsonNode'
-    CreatePayerRequest:
+    GetAllPayersResponse:
       type: object
       properties:
+        totalCount:
+          type: integer
+          format: int64
         data:
-          $ref: '#/components/schemas/Payer.schema'
-          type: object
+          type: array
+          items:
+            $ref: '#/components/schemas/Payer.schema'
     JsonNode:
       type: object
       properties:
@@ -262,28 +255,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    GetAllPayersResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payer.schema'
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -300,7 +271,34 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    PayerResponse:
+    SourceSystem.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
+      title: Source System Enum
+      description: Specifies the origin system of a record.
+      type: string
+      enum:
+      - API
+      - File Upload
+    CreatePayerRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Payer.schema'
+          type: object
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    PayerRequest:
       type: object
       properties:
         id:
@@ -310,6 +308,8 @@ components:
         sourceId:
           type: string
         data:
+          $ref: '#/components/schemas/JsonNode'
+        dataToValidate:
           $ref: '#/components/schemas/JsonNode'
     Payer.schema:
       $schema: https://json-schema.org/draft/2020-12/schema

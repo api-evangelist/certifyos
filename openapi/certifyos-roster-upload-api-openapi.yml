@@ -126,70 +126,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    SingleStepTemplateFlowResponse:
-      type: object
-      properties:
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        status:
-          type: string
-        templateId:
-          type: string
-        templateUrl:
-          type: string
-        schemaUrl:
-          type: string
-    SaveMappingsRequest:
-      type: object
-      properties:
-        updateExistingTemplate:
-          type: boolean
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        mappings:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        templateName:
-          type: string
-        templateDescription:
-          type: string
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
     GetUploadMappingsResponse:
       type: object
       properties:
@@ -205,6 +141,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Field'
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     RosterJobType:
       type: string
       enum:
@@ -237,6 +182,46 @@ components:
             type: string
         singleSelect:
           type: boolean
+    SingleStepTemplateFlowResponse:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        status:
+          type: string
+        templateId:
+          type: string
+        templateUrl:
+          type: string
+        schemaUrl:
+          type: string
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
     GetUploadMappingsRequest:
       type: object
       properties:
@@ -248,6 +233,21 @@ components:
           $ref: '#/components/schemas/RosterJobType'
         compareAgainstTemplate:
           type: boolean
+    SaveMappingsRequest:
+      type: object
+      properties:
+        updateExistingTemplate:
+          type: boolean
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+        templateName:
+          type: string
+        templateDescription:
+          type: string
   securitySchemes:
     jwt:
       type: http

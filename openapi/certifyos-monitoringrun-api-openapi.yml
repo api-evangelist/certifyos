@@ -296,6 +296,31 @@ paths:
       - jwt: []
 components:
   schemas:
+    CreateMonitoringWorkflowRunRequest:
+      type: object
+      required:
+      - monitoringRunId
+      properties:
+        monitoringRunId:
+          type: string
+        nextPageToken:
+          type: string
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
     UpdateMonitoringRunRequest:
       description: Request to update a monitoring run
       type: object
@@ -376,31 +401,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    CreateMonitoringWorkflowRunRequest:
-      type: object
-      required:
-      - monitoringRunId
-      properties:
-        monitoringRunId:
-          type: string
-        nextPageToken:
-          type: string
     CreateMonitoringRunRequest:
       type: object
       properties:

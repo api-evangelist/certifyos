@@ -396,6 +396,57 @@ components:
       - classificationSource
       - specialtyCategory
       additionalProperties: false
+    CreateNuccSpecialtyRequest:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/NuccSpecialty.schema'
+          type: object
+    NuccSpecialty.schema:
+      $schema: https://json-schema.org/draft/2020-12/schema
+      $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
+      title: NuccSpecialty
+      description: Represents the NUCC specialty information options for a healthcare provider.
+      type: object
+      properties:
+        classification:
+          type: string
+          description: The classification of the NUCC specialty
+          minLength: 1
+        specialization:
+          type:
+          - string
+          - 'null'
+          description: The specific specialization within the NUCC classification
+        category:
+          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
+          description: The category of the NUCC specialty (Individual or Non-individual)
+        displayName:
+          type: string
+          description: The human-readable name of the NUCC specialty
+          minLength: 1
+        specialtyNuccTaxonomyCode:
+          type: string
+          description: The NUCC taxonomy code associated with the specialty
+          minLength: 1
+      required:
+      - classification
+      - category
+      - specialtyNuccTaxonomyCode
+      - displayName
+      additionalProperties: false
+    CreateSpecialtyRequest:
+      type: object
+      properties:
+        nuccSpecialtyId:
+          type: string
+        abmsSpecialtyId:
+          type: string
+        hsdSpecialtyId:
+          type: string
+        data:
+          $ref: '#/components/schemas/Specialty.schema'
+          type: object
     NuccSpecialtyCategory.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/enums/NuccSpecialtyCategory.schema.json
@@ -405,15 +456,6 @@ components:
       enum:
       - Individual
       - Non-Individual
-    CreateNuccSpecialtyRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/NuccSpecialty.schema'
-          type: object
-    Date:
-      type: string
-      format: date
     JsonNode:
       type: object
       properties:
@@ -461,30 +503,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    CreateSpecialtyRequest:
-      type: object
-      properties:
-        nuccSpecialtyId:
-          type: string
-        abmsSpecialtyId:
-          type: string
-        hsdSpecialtyId:
-          type: string
-        data:
-          $ref: '#/components/schemas/Specialty.schema'
-          type: object
     BadRequestErrorResponse:
       description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
@@ -501,39 +519,21 @@ components:
           description: Detailed error information with specific validation failures
           type: array
           $ref: '#/components/schemas/JsonNode'
-    NuccSpecialty.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/NuccSpecialty.schema.json
-      title: NuccSpecialty
-      description: Represents the NUCC specialty information options for a healthcare provider.
-      type: object
-      properties:
-        classification:
-          type: string
-          description: The classification of the NUCC specialty
-          minLength: 1
-        specialization:
-          type:
-          - string
-          - 'null'
-          description: The specific specialization within the NUCC classification
-        category:
-          $ref: '#/components/schemas/NuccSpecialtyCategory.schema'
-          description: The category of the NUCC specialty (Individual or Non-individual)
-        displayName:
-          type: string
-          description: The human-readable name of the NUCC specialty
-          minLength: 1
-        specialtyNuccTaxonomyCode:
-          type: string
-          description: The NUCC taxonomy code associated with the specialty
-          minLength: 1
-      required:
-      - classification
-      - category
-      - specialtyNuccTaxonomyCode
-      - displayName
-      additionalProperties: false
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    Date:
+      type: string
+      format: date
   securitySchemes:
     jwt:
       type: http

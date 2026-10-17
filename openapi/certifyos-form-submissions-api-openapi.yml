@@ -301,115 +301,6 @@ components:
           description: The date and time when the form submission was last updated
           examples:
           - '2025-01-01T12:00:00Z'
-    CreateFormSubmissionRequest:
-      description: Request payload for creating a form submission
-      type: object
-      required:
-      - data
-      properties:
-        data:
-          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
-          examples:
-          - {}
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
-    TenantOptions:
-      description: Per-tenant options for multi-tenant form submission fan-out
-      type: object
-      properties:
-        createPractitioner:
-          type: boolean
-          description: When true, creates a tenant practitioner crosswalk in addition to the portal crosswalk. Requires practitionerData to be present in the request.
-          default: false
-        createFacility:
-          type: boolean
-          description: When true, creates a tenant facility crosswalk in addition to the portal crosswalk. Requires facilityData to be present in the request.
-          default: false
-    MultiTenantFormSubmissionResponse:
-      description: Response for a multi-tenant form submission
-      type: object
-      properties:
-        formSubmissionId:
-          type: string
-          description: Unique identifier of the canonical form submission record
-          examples:
-          - sub_a1b2c3d4
-        status:
-          type: string
-          description: 'Aggregated status across all tenants: success, partial_success, or failed'
-          examples:
-          - partial_success
-        tenantResults:
-          type: array
-          items:
-            $ref: '#/components/schemas/TenantSubmissionResult'
-          description: Per-tenant processing results
-        gcsUploadStarted:
-          type: boolean
-          description: Reserved for GCS document upload dispatch. Always false in this release; will reflect actual Cloud Task dispatch in a follow-up PR.
-          examples:
-          - false
-    CreateMultiTenantFormSubmissionRequest:
-      description: Request payload for creating a multi-tenant form submission
-      type: object
-      required:
-      - data
-      - tenantIds
-      properties:
-        data:
-          description: A flexible object for storing any data related to a form submission. May contain practitionerData or facilityData (but not both) as nested objects, plus submissionPdfUrl, supportingDocuments, and any other form fields.
-          examples:
-          - {}
-        tenantIds:
-          type: array
-          items:
-            type: string
-          description: List of tenant IDs to fan out to. Must contain at least one entry.
-          examples:
-          - - tenant_blue_cross
-            - tenant_presbyterian
-          minItems: 1
-        options:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/TenantOptions'
-          description: Per-tenant options controlling crosswalk creation. Keys are tenant IDs. Tenants absent from this map default to createPractitioner=false and createFacility=false.
-          examples:
-          - tenant_blue_cross:
-              createPractitioner: true
-              createFacility: false
     TenantSubmissionResult:
       type: object
       description: Result of processing a single tenant in a multi-tenant form submission
@@ -443,6 +334,68 @@ components:
           description: Human-readable error detail when status is failed
           examples:
           - Missing required payer field
+    CreateMultiTenantFormSubmissionRequest:
+      description: Request payload for creating a multi-tenant form submission
+      type: object
+      required:
+      - data
+      - tenantIds
+      properties:
+        data:
+          description: A flexible object for storing any data related to a form submission. May contain practitionerData or facilityData (but not both) as nested objects, plus submissionPdfUrl, supportingDocuments, and any other form fields.
+          examples:
+          - {}
+        tenantIds:
+          type: array
+          items:
+            type: string
+          description: List of tenant IDs to fan out to. Must contain at least one entry.
+          examples:
+          - - tenant_blue_cross
+            - tenant_presbyterian
+          minItems: 1
+        options:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/TenantOptions'
+          description: Per-tenant options controlling crosswalk creation. Keys are tenant IDs. Tenants absent from this map default to createPractitioner=false and createFacility=false.
+          examples:
+          - tenant_blue_cross:
+              createPractitioner: true
+              createFacility: false
+    ApiError:
+      description: Standard API error response containing a list of error objects
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    MultiTenantFormSubmissionResponse:
+      description: Response for a multi-tenant form submission
+      type: object
+      properties:
+        formSubmissionId:
+          type: string
+          description: Unique identifier of the canonical form submission record
+          examples:
+          - sub_a1b2c3d4
+        status:
+          type: string
+          description: 'Aggregated status across all tenants: success, partial_success, or failed'
+          examples:
+          - partial_success
+        tenantResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantSubmissionResult'
+          description: Per-tenant processing results
+        gcsUploadStarted:
+          type: boolean
+          description: Reserved for GCS document upload dispatch. Always false in this release; will reflect actual Cloud Task dispatch in a follow-up PR.
+          examples:
+          - false
     FormSubmissionSubmittedByResponse:
       type: object
       description: Information about who submitted the form
@@ -456,6 +409,53 @@ components:
           description: The user information of the person who submitted the form
           examples:
           - {}
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          description: HTTP status code for this error
+          examples:
+          - 400
+        reason:
+          type: string
+          description: Error reason/code
+          examples:
+          - VALIDATION_ERROR
+        title:
+          type: string
+          description: Error title/summary
+          examples:
+          - 'Validation failed for field: eventTypes'
+        detail:
+          type: string
+          description: Detailed error message
+          examples:
+          - eventTypes is required and cannot be empty or null
+    CreateFormSubmissionRequest:
+      description: Request payload for creating a form submission
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          description: A flexible object for storing any data related to a form submission. This can include details about the form, the submitted data, and metadata about the submission process.
+          examples:
+          - {}
+    TenantOptions:
+      description: Per-tenant options for multi-tenant form submission fan-out
+      type: object
+      properties:
+        createPractitioner:
+          type: boolean
+          description: When true, creates a tenant practitioner crosswalk in addition to the portal crosswalk. Requires practitionerData to be present in the request.
+          default: false
+        createFacility:
+          type: boolean
+          description: When true, creates a tenant facility crosswalk in addition to the portal crosswalk. Requires facilityData to be present in the request.
+          default: false
   securitySchemes:
     jwt:
       type: http

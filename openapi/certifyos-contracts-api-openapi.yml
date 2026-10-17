@@ -238,6 +238,27 @@ paths:
       - jwt: []
 components:
   schemas:
+    PageLinks:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
     Contract:
       type: object
       properties:
@@ -263,33 +284,6 @@ components:
           $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
         clinicalAndQuality:
           $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
-    ContractClinicalAndQualityInfo:
-      type: object
-      properties:
-        hasQualityProgram:
-          type: boolean
-        qualityProgramInitiatives:
-          type: string
-        averageStarsAndPmpmBonus:
-          type: string
-        hasMlrTarget:
-          type: boolean
-        mlrTargetDescription:
-          type: string
-        performanceReportingRequirements:
-          type: string
-        credentialingDelegation:
-          type: boolean
-        recredentialingInterval:
-          type: string
-        referralRequirements:
-          type: boolean
-        priorAuthorizationRequired:
-          type: boolean
-        panelSizeLimits:
-          type: string
-        providerRosterUpdateFrequency:
-          type: string
     ContractGeneralInfo:
       type: object
       properties:
@@ -319,13 +313,6 @@ components:
           type: string
         planId:
           type: string
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
     ContractFinancialInfo:
       type: object
       properties:
@@ -371,6 +358,33 @@ components:
         appPenalty:
           type: string
         telehealthNoShow:
+          type: string
+    ContractClinicalAndQualityInfo:
+      type: object
+      properties:
+        hasQualityProgram:
+          type: boolean
+        qualityProgramInitiatives:
+          type: string
+        averageStarsAndPmpmBonus:
+          type: string
+        hasMlrTarget:
+          type: boolean
+        mlrTargetDescription:
+          type: string
+        performanceReportingRequirements:
+          type: string
+        credentialingDelegation:
+          type: boolean
+        recredentialingInterval:
+          type: string
+        referralRequirements:
+          type: boolean
+        priorAuthorizationRequired:
+          type: boolean
+        panelSizeLimits:
+          type: string
+        providerRosterUpdateFrequency:
           type: string
     PagedContractResponse:
       type: object
@@ -419,27 +433,13 @@ components:
           type: string
         billingTerminationDate:
           type: string
-    ErrorObject1:
+    ApiError1:
       type: object
       properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
   securitySchemes:
     jwt:
       type: http

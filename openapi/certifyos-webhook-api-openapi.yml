@@ -374,6 +374,72 @@ paths:
       - jwt: []
 components:
   schemas:
+    WebhookEventType:
+      type: string
+      enum:
+      - credential_workflow.status.changed
+      - facility_credential_workflow.status.changed
+    TriggerResponse:
+      description: Response for manual webhook event triggering
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        eventType:
+          description: Event type that was triggered
+          type: string
+          $ref: '#/components/schemas/WebhookEventType'
+    GetWebhooksResponse:
+      description: Response containing a paginated list of webhooks
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total count of webhooks
+          examples:
+          - 100
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WebhookResponse'
+          description: Array of webhook records
+    WebhookOauthConfiguration:
+      description: 'OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.'
+      type: object
+      required:
+      - tokenUrl
+      - clientId
+      - clientSecret
+      properties:
+        tokenUrl:
+          type: string
+          description: OAuth token endpoint URL
+          examples:
+          - https://auth.example.com/oauth/token
+          pattern: ''
+        clientId:
+          type: string
+          description: OAuth client ID
+          pattern: \S
+        clientSecret:
+          type: string
+          description: OAuth client secret
+          pattern: \S
+        scope:
+          type: string
+          description: OAuth scope(s) to request, space-separated
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional headers to send with the token request
+        resource:
+          type: string
+          description: Resource to request
+          examples:
+          - resource
     Webhook.data.schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       $id: https://schemas.certifyos.com/entities/Webhook.data.schema.json
@@ -426,6 +492,11 @@ components:
           items:
             $ref: '#/components/schemas/ErrorObject'
           description: List of error objects describing validation or processing failures
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -451,97 +522,6 @@ components:
           description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    WebhookOauthConfiguration:
-      description: 'OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.'
-      type: object
-      required:
-      - tokenUrl
-      - clientId
-      - clientSecret
-      properties:
-        tokenUrl:
-          type: string
-          description: OAuth token endpoint URL
-          examples:
-          - https://auth.example.com/oauth/token
-          pattern: ''
-        clientId:
-          type: string
-          description: OAuth client ID
-          pattern: \S
-        clientSecret:
-          type: string
-          description: OAuth client secret
-          pattern: \S
-        scope:
-          type: string
-          description: OAuth scope(s) to request, space-separated
-        headers:
-          type: object
-          additionalProperties:
-            type: string
-          description: Additional headers to send with the token request
-        resource:
-          type: string
-          description: Resource to request
-          examples:
-          - resource
-    TriggerResponse:
-      description: Response for manual webhook event triggering
-      type: object
-      properties:
-        message:
-          type: string
-          description: Success message
-        eventType:
-          description: Event type that was triggered
-          type: string
-          $ref: '#/components/schemas/WebhookEventType'
-    WebhookEventType:
-      type: string
-      enum:
-      - credential_workflow.status.changed
-      - facility_credential_workflow.status.changed
-    WebhookResponse:
-      type: object
-      description: Response containing a single webhook
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the webhook
-          examples:
-          - webhook-123
-        tenantId:
-          type: string
-          description: ID of the tenant
-          examples:
-          - tenant-123
-        data:
-          $ref: '#/components/schemas/Webhook.data.schema'
-          description: Webhook data
-          type: object
-        createdBy:
-          type: string
-          description: ID of the user who created the webhook
-          examples:
-          - user-123
-        updatedBy:
-          type: string
-          description: ID of the user who updated the webhook
-          examples:
-          - user-123
-        createdAt:
-          description: Timestamp of the webhook creation
-          type: string
-          examples:
-          - '2021-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
-        updatedAt:
-          description: Timestamp of the webhook update
-          type: string
-          examples:
-          - '2021-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
     JsonNode:
       type: object
       properties:
@@ -624,27 +604,46 @@ components:
             Invalid payloads will return a 400 Bad Request with detailed validation error messages.'
           type: object
           $ref: '#/components/schemas/JsonNode'
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
+    WebhookResponse:
       type: object
+      description: Response containing a single webhook
       properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
+        id:
+          type: string
+          description: Unique identifier for the webhook
           examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
+          - webhook-123
+        tenantId:
+          type: string
+          description: ID of the tenant
+          examples:
+          - tenant-123
+        data:
+          $ref: '#/components/schemas/Webhook.data.schema'
+          description: Webhook data
+          type: object
+        createdBy:
+          type: string
+          description: ID of the user who created the webhook
+          examples:
+          - user-123
+        updatedBy:
+          type: string
+          description: ID of the user who updated the webhook
+          examples:
+          - user-123
+        createdAt:
+          description: Timestamp of the webhook creation
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          description: Timestamp of the webhook update
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          $ref: '#/components/schemas/Instant'
     WebhookRequest:
       description: Request to create a new webhook
       type: object
@@ -694,21 +693,22 @@ components:
           description: 'Optional OAuth client-credentials configuration. When provided, a token is minted before each delivery and sent as Authorization: Bearer <token>.'
           type: object
           $ref: '#/components/schemas/WebhookOauthConfiguration'
-    GetWebhooksResponse:
-      description: Response containing a paginated list of webhooks
+    BadRequestErrorResponse:
+      description: Standard error response structure for 400 Bad Request validation and client errors
       type: object
       properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total count of webhooks
-          examples:
-          - 100
-        data:
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/WebhookResponse'
-          description: Array of webhook records
+            type: string
+          description: List of error messages
+          examples:
+          - - Validation failed
+            - Required field missing
+        errorDetails:
+          description: Detailed error information with specific validation failures
+          type: array
+          $ref: '#/components/schemas/JsonNode'
   securitySchemes:
     jwt:
       type: http
