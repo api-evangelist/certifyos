@@ -1,0 +1,308 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer ATC API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: ATC
+  description: Adds / Terms / Changes counts from PDM
+paths:
+  /api/v1/atc/counts:
+    get:
+      summary: Adds / Terms / Changes counts
+      description: 'Returns how many providers were added, changed, terminated or deleted for the caller''s
+
+        tenant in a date range, split by level (net-new, group, network, location), entity type
+
+        (practitioner, facility, group) and source (roster, platform, credentialing, monitoring,
+
+        script, unknown). Counts are on event time and are a lower bound (completeness = best_effort).'
+      operationId: getAtcCounts
+      tags:
+      - ATC
+      parameters:
+      - description: Exclusive end, ISO-8601 with offset
+        example: '2026-10-01T00:00:00Z'
+        required: true
+        name: end
+        in: query
+        schema:
+          type: string
+      - description: 'Entity type filter: PRACTITIONER, FACILITY, GROUP (repeatable or comma-separated)'
+        name: entity_types
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - description: Count level terminations caused by a global termination (default true)
+        name: include_cascaded
+        in: query
+        schema:
+          type: boolean
+      - description: Count script-attributed events (default false)
+        name: include_scripts
+        in: query
+        schema:
+          type: boolean
+      - description: 'Source filter: ROSTER, PLATFORM, CREDENTIALING, MONITORING, SCRIPT, UNKNOWN (repeatable or comma-separated)'
+        name: sources
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - description: Inclusive start, ISO-8601 with offset
+        example: '2026-09-01T00:00:00Z'
+        required: true
+        name: start
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Counts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtcCounts'
+        '400':
+          description: Bad Request - missing or invalid start/end, unknown entity_types or sources value, range too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions, or the feature is disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Egress service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    Terms:
+      type: object
+      properties:
+        global:
+          type: integer
+          format: int64
+        from_network:
+          type: integer
+          format: int64
+        from_group:
+          type: integer
+          format: int64
+        from_location:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+    Adds:
+      type: object
+      properties:
+        net_new:
+          type: integer
+          format: int64
+        to_network:
+          type: integer
+          format: int64
+        to_group:
+          type: integer
+          format: int64
+        to_location:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+    Totals:
+      type: object
+      properties:
+        adds:
+          type: integer
+          format: int64
+        changes:
+          type: integer
+          format: int64
+        terms:
+          type: integer
+          format: int64
+        deleted:
+          type: integer
+          format: int64
+    Deleted:
+      type: object
+      properties:
+        entity:
+          type: integer
+          format: int64
+        from_network:
+          type: integer
+          format: int64
+        from_group:
+          type: integer
+          format: int64
+        from_location:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+    Range:
+      type: object
+      properties:
+        start:
+          type: string
+          description: Inclusive start, ISO-8601 with offset
+        end:
+          type: string
+          description: Exclusive end, ISO-8601 with offset
+        basis:
+          type: string
+          description: EVENT_TIME
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    Changes:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    AtcCounts:
+      type: object
+      description: Add / Change / Term / Delete counts for a tenant and date range.
+      properties:
+        range:
+          $ref: '#/components/schemas/Range'
+        freshness:
+          $ref: '#/components/schemas/Freshness'
+        filters:
+          $ref: '#/components/schemas/Filters'
+        entities:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Entity'
+        totals:
+          $ref: '#/components/schemas/Totals'
+    Filters:
+      type: object
+      properties:
+        entity_types:
+          type: array
+          items:
+            type: string
+        sources:
+          type: array
+          items:
+            type: string
+        include_cascaded:
+          type: boolean
+        include_scripts:
+          type: boolean
+    Entity:
+      type: object
+      properties:
+        adds:
+          $ref: '#/components/schemas/Adds'
+        changes:
+          $ref: '#/components/schemas/Changes'
+        terms:
+          $ref: '#/components/schemas/Terms'
+        deleted:
+          $ref: '#/components/schemas/Deleted'
+    Freshness:
+      type: object
+      properties:
+        as_of:
+          type:
+          - string
+          - 'null'
+          description: Watermark of the last successful refresh, null before the first
+        lag_minutes:
+          type:
+          - integer
+          - 'null'
+          format: int64
+          description: Minutes between the watermark and now
+        completeness:
+          type: string
+          description: 'best_effort: counts are a lower bound'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

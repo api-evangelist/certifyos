@@ -21,20 +21,29 @@ tags:
 paths:
   /test/health:
     get:
-      summary: Check DAL Health
-      description: Tests connectivity to the Data Access Layer
+      summary: Probe reactive DAL connectivity for diagnostics
+      description: 'Sends a test probe to the Data Access Layer (DAL) using the reactive client and returns a plain-text status string. This is a developer/diagnostic endpoint — it is not a general-purpose platform health check; for Quarkus SmallRye readiness and liveness probes, use /q/health instead. When to use: call only to verify that the API layer can reach the DAL during development, deployment validation, or incident triage. Preconditions: a valid JWT and a tenant-id header are required. The tenant-id header is validated as present by the request interceptor, but its value is not forwarded to the DAL — the endpoint always passes hardcoded values (testOrgId, testUserId) to the downstream health check, so the caller''s tenant context has no effect on the probe result. What you get back: a text/plain body. On a successful DAL round-trip the body is "DAL Health (Reactive): ". On a downstream DAL error the failure is recovered and the body is "Error calling DAL: ", still returned with a 200 status rather than a non-2xx status.'
       operationId: getHealthStatus
       responses:
         '200':
-          description: Health check completed
+          description: 'Diagnostic probe result as plain text. On a successful DAL round-trip the body is "DAL Health (Reactive): <health>"; if the downstream call fails, the error is recovered and the body is "Error calling DAL: <message>" while the status remains 200.'
+          content:
+            text/plain:
+              examples:
+                healthy:
+                  value: 'DAL Health (Reactive): UP'
+                dalUnreachable:
+                  value: 'Error calling DAL: connection refused'
+        '400':
+          description: tenant-id header missing.
           content:
             text/plain: {}
         '401':
-          description: Unauthorized - Authentication required
+          description: 'Authentication failed — the JWT is missing, expired, or invalid. Obtain a valid token and retry. Note: this endpoint currently carries no authentication/authorization annotations, so this response is not reachable under the present configuration; documented for forward compatibility in case auth is added later.'
           content:
             text/plain: {}
         '503':
-          description: Service Unavailable - DAL service is down
+          description: 'The reactive DAL client could not be reached. Note: the current handler recovers downstream failures into a 200 response, so this status may not be emitted by the endpoint itself.'
           content:
             text/plain: {}
       tags:

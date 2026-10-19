@@ -1,0 +1,174 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Anchor Recomputation API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AnchorRecomputation
+  description: Manual Anchor Date recomputation after a group configuration change.
+paths:
+  /api/v1/anchor-groups/recomputations/{bulkActionId}/resume:
+    post:
+      summary: Resume a stalled recomputation run
+      description: 'Re-enqueues the next batch of a run whose chain broke, continuing from its cursor. Idempotent: the cursor decides where work restarts, so resuming twice — or resuming a run that turned out to be healthy — cannot skip or repeat members. A finished run is left alone.'
+      operationId: anchorGroupRecomputationResume
+      tags:
+      - AnchorRecomputation
+      parameters:
+      - name: bulkActionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Next batch queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorRecomputationRunResponse'
+        '204':
+          description: Run is already finished, or another writer owns the chain
+        '404':
+          description: No such anchor-recomputation run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Recomputation is switched off (NSCP_RECOMPUTE_DISABLED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Caller lacks anchor-group bulk:recompute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Not Authorized
+      security:
+      - jwt: []
+  /api/v1/anchor-groups/{anchorGroupId}/recompute:
+    post:
+      summary: Recompute every member's Anchor Date
+      description: 'Queues a recomputation of the Anchor Date of every practitioner in the group, applying the group''s current configuration to the members already in it. Returns as soon as the run is recorded — the work runs in sequential batches behind Cloud Tasks, and the returned runId is how it is followed. Safe to call twice: each call starts its own run, and a run writes nothing where a practitioner''s Anchor Date has not moved.'
+      operationId: anchorGroupRecompute
+      tags:
+      - AnchorRecomputation
+      parameters:
+      - name: anchorGroupId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Recomputation queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorRecomputationRunResponse'
+        '403':
+          description: Caller lacks anchor-group bulk:recompute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: No such anchor group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Recomputation is switched off (NSCP_RECOMPUTE_DISABLED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Not Authorized
+      security:
+      - jwt: []
+components:
+  schemas:
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    AnchorRecomputationRunResponse:
+      type: object
+      required:
+      - runId
+      description: A queued Anchor Date recomputation run.
+      properties:
+        runId:
+          type: string
+          description: Id of the recomputation run, for following its progress.
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,434 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Anchor Override API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AnchorOverride
+  description: Anchor Date Operations override writes and history (internal).
+paths:
+  /api/v1/anchor-group-practitioners/{anchorGroupPractitionerId}/history:
+    get:
+      summary: A practitioner's anchor history, newest first
+      description: 'Backs the panel''s Recent Changes list and supplies the Review callout''s previous -> current values, which the panel cannot derive: it reads current state only, so ''what it was before'' exists nowhere but these events. Ordered by commit time, newest first. The audit store is written asynchronously, so a change saved seconds ago may not appear yet; the endpoint returns what exists rather than waiting. Shared-workflow events (entityType SHARED_RECORD and SHARED_CREDENTIALING_WORKFLOW) are not returned, and totalCount excludes them.'
+      operationId: anchorOverrideHistory
+      tags:
+      - AnchorOverride
+      parameters:
+      - description: Anchor group practitioner id
+        required: true
+        name: anchorGroupPractitionerId
+        in: path
+        schema:
+          type: string
+      - description: Optional audit event type filter; an unknown value returns an empty page
+        name: eventType
+        in: query
+        schema:
+          type: string
+      - description: Page number (0-based)
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Page size (max 100)
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: History page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorHistoryPage'
+        '400':
+          description: Invalid pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /api/v1/anchor-group-practitioners/{anchorGroupPractitionerId}/override-state:
+    delete:
+      summary: Remove a practitioner's override
+      description: 'Hands the record back to the platform (PRD 3i/4i): the manual date is cleared and every participation row goes back to NULL, which means ''follows eligibility''. The effective date becomes the platform''s CURRENT calculated value, not the one that was in force when the override was made (PRD 5.14). This is the only transition back to AUTOMATIC.'
+      operationId: anchorOverrideRemove
+      tags:
+      - AnchorOverride
+      parameters:
+      - description: Anchor group practitioner id
+        required: true
+        name: anchorGroupPractitionerId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: What was persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverrideOutcome'
+        '404':
+          description: No such record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The record changed while the operator was editing; nothing was written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+    put:
+      summary: Apply a practitioner's override state
+      description: 'The body is the COMPLETE desired state, which is why this is a PUT: a partial body would have to say something about tenants it does not mention, and every available answer is wrong. An empty participatingTenantIds list is meaningful — zero participation is an override that voids the anchor, not the absence of one. The record is re-read inside the save and validated against what was read, never against the panel''s copy; every violation is returned at once.'
+      operationId: anchorOverrideApply
+      tags:
+      - AnchorOverride
+      parameters:
+      - description: Anchor group practitioner id
+        required: true
+        name: anchorGroupPractitionerId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OverrideStateRequest'
+        required: true
+      responses:
+        '200':
+          description: What was persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverrideOutcome'
+        '404':
+          description: No such record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The record changed while the operator was editing; nothing was written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '422':
+          description: One error object per violation; nothing was written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '400':
+          description: Bad Request
+      security:
+      - jwt: []
+  /api/v1/anchor-group-practitioners/{anchorGroupPractitionerId}/review-resolution:
+    post:
+      summary: Acknowledge a raised review, keeping the override as it is
+      description: Writes the review half and nothing else — both dates and participation are untouched. It deliberately does not go through the save path, which would re-derive the date from current scheduling dates and could silently move a stored value on what is meant to be an acknowledgement.
+      operationId: anchorOverrideResolveReview
+      tags:
+      - AnchorOverride
+      parameters:
+      - description: Anchor group practitioner id
+        required: true
+        name: anchorGroupPractitionerId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: What was persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OverrideOutcome'
+        '404':
+          description: No such record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The record changed while the operator was editing; nothing was written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    LocalDate:
+      type: string
+      format: date
+      examples:
+      - '2022-03-10'
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    Source:
+      type: string
+      enum:
+      - NSCP
+      - DAL
+    AnchorHistoryEntry:
+      type: object
+      description: One audit event in a practitioner's anchor history.
+      properties:
+        id:
+          type: string
+          description: Event id.
+        eventType:
+          type: string
+          description: Audit event type.
+        entityType:
+          type: string
+          description: Entity the event is about.
+        previousValue:
+          $ref: '#/components/schemas/JsonNode'
+          type: array
+          description: Value before the change; shape depends on eventType.
+        newValue:
+          $ref: '#/components/schemas/JsonNode'
+          type: array
+          description: Value after the change; shape depends on eventType.
+        reason:
+          type: string
+          description: Recorded reason, when the producer set one.
+        triggeringEvent:
+          type: string
+          description: What triggered the change.
+        metadata:
+          $ref: '#/components/schemas/JsonNode'
+          type: array
+          description: 'Producer context for the event; keys depend on eventType. For ANCHOR_REVIEW_REQUIRED: source, drift (computedDateMoved, eligibleSetMoved, triggeringTenantId) and repeat.'
+        actor:
+          type: string
+          description: Internal user id, or SYSTEM.
+        actorName:
+          type: string
+          description: The actor's full name, resolved at read time. Null when the lookup found nothing or failed; the panel falls back to the id.
+        occurredAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Commit time of the change.
+        source:
+          $ref: '#/components/schemas/Source'
+          type: string
+          description: Which audit store the entry came from.
+    AnchorHistoryPage:
+      type: object
+      description: A page of anchor history entries, newest first.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnchorHistoryEntry'
+          description: History entries, newest first.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total entries, when knowable across both stores.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    OverrideStateRequest:
+      type: object
+      description: The complete desired override state for one practitioner.
+      properties:
+        participatingTenantIds:
+          type: array
+          items:
+            type: string
+          description: Tenants that should participate; empty means zero participation.
+        manualOverrideAnchorDate:
+          type: string
+          examples:
+          - '2028-02-01'
+          description: Manual override anchor date (yyyy-MM-dd).
+    OverrideOutcome:
+      type: object
+      required:
+      - anchorGroupPractitionerId
+      description: The persisted result of an override write.
+      properties:
+        anchorGroupPractitionerId:
+          type: string
+          description: Anchor group practitioner id.
+        effectiveAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Effective anchor date after the write (yyyy-MM-dd).
+        manualOverrideAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Stored manual override anchor date (yyyy-MM-dd).
+        controlStatus:
+          type: string
+          description: Who owns the date — AUTOMATIC or MANUAL. Written on every write.
+        reviewStatus:
+          type: string
+          description: Whether review is required — REQUIRED or NOT_REQUIRED. Written on every write.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Commit timestamp of this write.
+        participatingTenantIds:
+          type: array
+          items:
+            type: string
+          description: Tenants participating after the write.
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

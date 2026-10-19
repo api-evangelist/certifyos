@@ -1,0 +1,177 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Shared Timeline Event API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: SharedTimelineEvent
+  description: A shared credentialing workflow's status history (read-only).
+paths:
+  /api/v1/anchor-groups/{anchorGroupId}/shared-credentialing-workflows/{sharedCredWorkflowId}/timeline-events:
+    get:
+      summary: List a shared workflow's timeline events
+      description: The group's status history, newest first. Each entry is the derived shared status at the moment it changed and the user whose action caused it.
+      operationId: sharedWorkflowListTimelineEvents
+      tags:
+      - SharedTimelineEvent
+      parameters:
+      - description: Anchor Group id
+        required: true
+        name: anchorGroupId
+        in: path
+        schema:
+          type: string
+      - description: Shared credentialing workflow id
+        required: true
+        name: sharedCredWorkflowId
+        in: path
+        schema:
+          type: string
+      - description: Page number (0-based)
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Page size (max 100)
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: A page of timeline events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedTimelineEventPagedResponse'
+        '400':
+          description: Invalid pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Not authenticated
+        '404':
+          description: No such shared workflow in this anchor group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: The shared credentialing read is not enabled in this environment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    SharedTimelineEventPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated list of shared workflow timeline events.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedTimelineEvent'
+          description: The page of timeline events, newest first.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total events across all pages.
+    SharedTimelineEvent:
+      type: object
+      required:
+      - id
+      - status
+      description: One entry in a shared workflow's status history.
+      properties:
+        id:
+          type: string
+          description: Event id.
+        status:
+          type: string
+          examples:
+          - PSV_READY
+          description: The group's derived status at this event.
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: When the event was appended.
+        createdBy:
+          type: string
+          description: The user whose action produced the status change.
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

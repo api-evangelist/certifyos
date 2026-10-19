@@ -1,0 +1,669 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Agent Runs API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AgentRuns
+  description: Pass-through proxy to the agentOS application-release agent
+paths:
+  /agent/practitioners/{practitionerId}/runs:
+    post:
+      summary: Start an application-release run for a practitioner
+      operationId: agentRunsStartRun
+      tags:
+      - AgentRuns
+      parameters:
+      - name: practitionerId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id, or the request body is not a valid JSON object
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured) or agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token); api-layer never called agentOS'
+          content:
+            application/json: {}
+        '202':
+          description: Accepted - agentOS's response, passed through unchanged; the run itself proceeds asynchronously
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, credentialingWorkflowId is missing/blank, credentialingWorkflowId does not belong to the caller's tenant, credentialingWorkflowId does not belong to the path practitionerId, or the practitioner id is unknown to agentOS
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. this practitioner already has a run in progress)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. an invalid state in statesToCredential)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}:
+    get:
+      summary: Get an agentOS run record
+      operationId: agentRunsGetRun
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on this run fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/answers:
+    post:
+      summary: Submit answers to one or more open questions
+      operationId: agentRunsSubmitAnswers
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. the run is not currently suspended awaiting answers)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. an answer does not match an open question, or the run's state is stale)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/events:
+    get:
+      summary: Get a run's activity log, cursor-paginated
+      operationId: agentRunsGetRunEvents
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/proposals:
+    get:
+      summary: List a run's proposals plus its handoff state
+      operationId: agentRunsGetRunProposals
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/proposals/approve-all:
+    post:
+      summary: Approve every pending proposal on a run
+      operationId: agentRunsApproveAllProposals
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. no proposals are currently pending)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. the run's state is stale relative to this decision)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/proposals/deny-all:
+    post:
+      summary: Deny every pending proposal on a run
+      operationId: agentRunsDenyAllProposals
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. no proposals are currently pending)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. the run's state is stale relative to this decision)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/proposals/{proposalId}/approve:
+    post:
+      summary: Approve one proposal
+      operationId: agentRunsApproveProposal
+      tags:
+      - AgentRuns
+      parameters:
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id or proposal_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. the proposal is no longer pending)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. the run's state is stale relative to this decision)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/proposals/{proposalId}/deny:
+    post:
+      summary: Deny one proposal
+      operationId: agentRunsDenyProposal
+      tags:
+      - AgentRuns
+      parameters:
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id or proposal_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. the proposal is no longer pending)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. the run's state is stale relative to this decision)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/questions:
+    get:
+      summary: Get a run's current suspension/open questions
+      operationId: agentRunsGetQuestions
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/resume:
+    post:
+      summary: Resume a suspended run after its questions are answered
+      operationId: agentRunsResume
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. the run is not currently suspended)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. open questions remain unanswered)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/runs/{runId}/take-over:
+    post:
+      summary: Claim human ownership of a live run
+      operationId: agentRunsTakeOver
+      tags:
+      - AgentRuns
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured), agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token), or agentos_credential_rejected (agentOS rejected api-layer''s own bearer token, after one retry with a freshly fetched credential, on the tenant-ownership precheck fetch)'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - agentOS integration is off, this tenant is not enrolled for the credentialing agent, the run belongs to a different tenant, or agentOS itself has no record of this run_id
+          content:
+            application/json: {}
+        '409':
+          description: Conflict - agentOS's response, passed through unchanged (e.g. the run is already taken over, or is no longer live)
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. the run's state is stale relative to this action)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /agent/workflows/agent-state:
+    post:
+      summary: Batch agentState lookup by workflow/practitioner ids
+      operationId: agentRunsGetAgentStateBatch
+      tags:
+      - AgentRuns
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '400':
+          description: Bad Request - missing or blank tenant-id, or the request body is not a well-formed JSON object with a non-empty workflowIds array of at most 200 string ids (the frontend's own agent-service.getWorkflowsAgentState never sends anything else -- see requireWorkflowIds's javadoc)
+          content:
+            application/json: {}
+        '502':
+          description: Bad Gateway - a network/timeout failure reaching agentOS, or a genuine 5xx from agentOS itself
+          content:
+            application/json: {}
+        '503':
+          description: 'Service Unavailable - agentos_not_configured (no credential configured) or agentos_credential_unavailable (m2m mode: Auth0 unreachable and no still-valid cached token); api-layer never called agentOS'
+          content:
+            application/json: {}
+        '200':
+          description: OK - agentOS's response, passed through unchanged
+          content:
+            application/json: {}
+        '404':
+          description: 'Not Found - agentOS integration is off, this tenant is not enrolled (tenant-level: the caller''s own enrollment in the section''s user list is not checked on this route, unlike every other agent-runs route -- see CredentialingAgentConfigGate.isSectionEnabledForTenant), or a workflowIds entry does not belong to the caller''s tenant'
+          content:
+            application/json: {}
+        '422':
+          description: Unprocessable Entity - agentOS's response, passed through unchanged (e.g. too_many_ids or invalid_ids)
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

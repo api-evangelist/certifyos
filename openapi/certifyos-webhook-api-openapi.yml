@@ -198,7 +198,22 @@ paths:
         - `facility_credential_workflow.status.changed` - Triggered automatically when a facility credentialing workflow status changes (timeline event is created).
 
 
-        You can subscribe to multiple different event types in a single webhook.'
+        - `form.submission.submitted` - Triggered when a form submission is received by POST /forms/submissions.
+
+
+        - `roster_job.status.changed` - Triggered when a roster job reaches a client-facing status (PENDING_CORRECTION, PENDING_APPROVAL, IMPORTED, FAILED).
+
+
+        - `facility.global_termination.completed` - Triggered once per facility when a facility global termination (POST /facilities/terminate) completes. Payload: `certifyFacilityId`, `facilityName`, `npi`, `tin`, `terminationDate`, `terminationReason`, `status`. A global termination ends everything the facility has, so there is no per-location detail. `facilityName`, `npi` and `tin` are read from the facility and are `null` when unavailable.
+
+
+        - `practitioner.terminated` - Triggered when a practitioner is terminated, for all 9 `terminationType` values accepted by PUT /practitioners/terminate (including `FULL_EXIT`, the full-departure case) and for roster STOP rows. Payload: `certifyPractitionerId`, `npi`, `terminationType`, `terminationDate`, `terminationReason`; keys are always present, with an explicit `null` where a value is unknown or not applicable. Note that PUT /practitioners/terminate-partial emits one event per terminated scope, so a single request there can produce several events.
+
+
+        You can subscribe to multiple different event types in a single webhook.
+
+
+        **Custom event types are accepted.** `eventTypes` is an open namespace: any lowercase `domain.entity.action` value of 2-4 dot-separated segments may be registered, and triggered with POST /webhooks/events. Matching is exact and case-sensitive.'
       operationId: createWebhook
       tags:
       - Webhook
@@ -224,7 +239,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WebhookResponse'
         '400':
-          description: Invalid request data. Returns validation errors for deserialization failures (e.g., invalid enum values) or constraint violations (e.g., empty eventTypes, mixed event types, invalid URL format).
+          description: Invalid request data. Returns constraint violations for an empty eventTypes list, an event type that is not 2-4 lowercase dot-separated segments, or an invalid URL format, as well as validation errors for deserialization failures.
           content:
             application/json:
               schema:
@@ -233,6 +248,159 @@ paths:
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /webhooks/events:
+    post:
+      summary: Trigger a webhook event for a tenant's subscriptions
+      description: 'Publishes an event to every active webhook in the tenant that subscribes to the given event type. Delivery is asynchronous: a 202 means the event was accepted and handed to the delivery pipeline, not that subscribers have received it.
+
+
+        **Event types are an open namespace.** Any lowercase `domain.entity.action` value of 2-4 dot-separated segments is accepted. The value is not checked against a list of known events — a webhook receives the event if, and only if, it was registered for that exact string. Matching is exact and case-sensitive: a webhook registered only for `facility_credential_workflow.status.changed` does not receive `credential_workflow.status.changed`.
+
+
+        **`matchedWebhooks` is not a delivery receipt.** It reports how many active subscriptions matched at the moment the request was accepted. Delivery repeats the lookup, so the set can change in between. Its purpose is to surface typos: because the namespace is open, a misspelled event type is accepted and then matches nothing. `matchedWebhooks: 0` is the signal — it is still a 202, because having no subscribers is a valid state. A value of `-1` means the subscription lookup itself failed; the event was still published.
+
+
+        **Tenant scoping.** The event is published for the tenant in the `tenant-id` header, and the caller must hold `webhook:trigger` in that tenant. A caller cannot trigger events for a tenant it does not have access to.
+
+
+        **Payload limits.** `eventData` is delivered verbatim and is not schema-validated. It must serialize to no more than `webhook.trigger-api.max-payload-bytes` (256 KiB by default); a larger payload is rejected with 400 and nothing is published.
+
+
+        **What subscribers receive:**
+
+
+        ```json
+
+        {
+
+        "eventType": "domain.entity.action",
+
+        "timestamp": "2026-09-23T09:15:00Z",
+
+        "data": { /* your eventData, verbatim */ }
+
+        }
+
+        ```
+
+        with `Content-Type: application/json`, `User-Agent: CertifyOS-Webhook-Delivery/1.0`, an `Idempotency-Key` that is stable across retries, and any headers configured on the subscription.'
+      operationId: triggerWebhookEvent
+      tags:
+      - Webhook
+      parameters:
+      - description: Tenant ID
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      requestBody:
+        description: Event type and payload to deliver
+        content:
+          application/json:
+            examples:
+              genericEvent:
+                value:
+                  eventType: domain.entity.action
+                  eventData:
+                    id: abc123
+                    status: completed
+            schema:
+              $ref: '#/components/schemas/TriggerEventRequest'
+        required: true
+      responses:
+        '202':
+          description: Event accepted for asynchronous delivery
+          content:
+            application/json:
+              examples:
+                matched:
+                  summary: Event matched three subscriptions
+                  value:
+                    eventId: '11827280442334'
+                    eventType: domain.entity.action
+                    matchedWebhooks: 3
+                    message: Event accepted for delivery
+                noSubscribers:
+                  summary: Accepted, but nothing is subscribed - check for a typo
+                  value:
+                    eventId: '11827280442335'
+                    eventType: domain.entity.actoin
+                    matchedWebhooks: 0
+                    message: Event accepted for delivery
+              schema:
+                $ref: '#/components/schemas/TriggerEventResponse'
+        '400':
+          description: Malformed event type, missing eventData, or payload over the size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Caller lacks webhook:trigger in this tenant
+        '503':
+          description: The trigger API is disabled in this environment (webhook.trigger-api.enabled=false)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+      security:
+      - jwt: []
+  /webhooks/replay/practitioner-terminated:
+    post:
+      summary: Replay practitioner.terminated webhooks for given practitioners
+      description: 'Accepts a list of `certifyPractitionerId`s and asynchronously republishes the `practitioner.terminated` event for each one. Returns 202 immediately; replay runs in the background and there is no polling endpoint to track completion. Progress is logged server-side under the `[termination-webhook-replay]` prefix.
+
+
+        Each event is rebuilt from the practitioner''s current record (`npi`, `terminationDate`, `terminationReason`), so subscribers receive the same payload shape as the original delivery. **Exception:** `terminationType` is not persisted with the termination and cannot be reconstructed — the replayed payload carries the `terminationType` supplied in this request, or an explicit `null` when it is omitted.
+
+
+        A practitioner with no recorded `terminationDate` is skipped rather than published: there is no termination to report. Ids that cannot be loaded are logged and skipped so one bad entry cannot abort the batch.
+
+
+        **This delivers to live subscriber endpoints.** Replays are published on the dedicated overflow queue so a large batch cannot starve normal single-event delivery, and are capped at 500 practitioners per request.'
+      operationId: replayPractitionerTerminatedWebhooks
+      tags:
+      - Webhook
+      parameters:
+      - description: Tenant ID
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplayTerminationWebhooksRequest'
+        required: true
+      responses:
+        '202':
+          description: Replay accepted and processing in the background
+          content:
+            application/json:
+              examples:
+                replayAccepted:
+                  value:
+                    message: Webhook replay accepted. Processing 2 practitioners in the background.
+                    practitionerCount: 2
+        '400':
+          description: Invalid request - empty certifyPractitionerIds, a blank id, or more than 500 entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
         '500':
           description: Internal Server Error - An unexpected error occurred
       security:
@@ -256,6 +424,18 @@ paths:
 
 
         - `facility_credential_workflow.status.changed` → https://schemas.certifyos.com/webhook-events/facility-credential-workflow-status-changed.schema.json
+
+
+        - `form.submission.submitted` → data: { form: { id, versionId, label }, submissionId } (published by POST /forms/submissions; not schema-validated on this path yet)
+
+
+        - `roster_job.status.changed` → roster job status-change metadata (rosterJobId, client-facing status, record counts, exportUrl); not schema-validated on this path yet
+
+
+        - `facility.global_termination.completed` → data: { certifyFacilityId, facilityName, npi, tin, terminationDate, terminationReason, status } (published by POST /facilities/terminate; not schema-validated on this path yet)
+
+
+        - `practitioner.terminated` → data: { certifyPractitionerId, npi, terminationType, terminationDate, terminationReason } (published by PUT /practitioners/terminate and by roster STOP rows; not schema-validated on this path yet). To re-drive real terminations rather than hand-build one here, use POST /webhooks/replay/practitioner-terminated.
 
 
         **What the webhook receiver will receive:**
@@ -294,7 +474,31 @@ paths:
         ```
 
 
-        The `data` field contains the `eventData` from your request payload. The `timestamp` is automatically set to the current time when the event is delivered.'
+        The `data` field contains the `eventData` from your request payload. The `timestamp` is automatically set to the current time when the event is delivered.
+
+
+        **Example delivered body — `form.submission.submitted`:**
+
+
+        ```json
+
+        {
+
+        "eventType": "form.submission.submitted",
+
+        "timestamp": "2026-04-21T06:25:51Z",
+
+        "data": {
+
+        "form": { "id": "...", "versionId": "...", "label": "practitioner" },
+
+        "submissionId": "..."
+
+        }
+
+        }
+
+        ```'
       operationId: triggerManualWebhookEvent
       tags:
       - Webhook
@@ -358,75 +562,284 @@ paths:
       responses:
         '204':
           description: Webhook successfully deleted
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - User does not have required permissions
         '404':
           description: Webhook not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - User does not have required permissions
         '500':
           description: Internal Server Error - An unexpected error occurred
       security:
       - jwt: []
 components:
   schemas:
-    WebhookEventType:
-      type: string
-      enum:
-      - credential_workflow.status.changed
-      - facility_credential_workflow.status.changed
     TriggerResponse:
-      description: Response for manual webhook event triggering
       type: object
+      description: Response for manual webhook event triggering
       properties:
         message:
           type: string
           description: Success message
         eventType:
-          description: Event type that was triggered
           type: string
-          $ref: '#/components/schemas/WebhookEventType'
-    GetWebhooksResponse:
-      description: Response containing a paginated list of webhooks
+          description: Event type that was triggered. The set of values can grow as new event types are added, so clients should tolerate values they do not recognise.
+          x-extensible-enum:
+          - credential_workflow.status.changed
+          - facility_credential_workflow.status.changed
+          - form.submission.submitted
+          - facility.global_termination.completed
+          - practitioner.terminated
+          - roster_job.status.changed
+    ErrorObject:
       type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    WebhookResponse:
+      type: object
+      description: Response containing a single webhook
+      properties:
+        id:
+          type: string
+          examples:
+          - webhook-123
+          description: Unique identifier for the webhook
+        tenantId:
+          type: string
+          examples:
+          - tenant-123
+          description: ID of the tenant
+        data:
+          $ref: https://schemas.certifyos.com/entities/Webhook.data.schema.json
+          type: object
+          description: Webhook data
+        createdBy:
+          type: string
+          examples:
+          - user-123
+          description: ID of the user who created the webhook
+        updatedBy:
+          type: string
+          examples:
+          - user-123
+          description: ID of the user who updated the webhook
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          description: Timestamp of the webhook creation
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2021-01-01T00:00:00Z'
+          description: Timestamp of the webhook update
+    TriggerEventRequest:
+      type: object
+      required:
+      - eventType
+      - eventData
+      description: Request to trigger a webhook event for all of a tenant's matching subscriptions
+      properties:
+        eventType:
+          type: string
+          examples:
+          - domain.entity.action
+          maxLength: 100
+          pattern: ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$
+          description: Event type to trigger. Any lowercase domain.entity.action value of 2-4 segments is accepted; webhooks registered for this exact value receive it.
+        eventData:
+          type: object
+          description: Arbitrary JSON payload delivered verbatim as the 'data' member of the webhook envelope. Not schema-validated - any JSON object is accepted.
+    GetWebhooksResponse:
+      type: object
+      description: Response containing a paginated list of webhooks
       properties:
         totalCount:
           type: integer
           format: int64
-          description: Total count of webhooks
           examples:
           - 100
+          description: Total count of webhooks
         data:
           type: array
           items:
             $ref: '#/components/schemas/WebhookResponse'
           description: Array of webhook records
+    WebhookRequest:
+      type: object
+      required:
+      - webhookUrl
+      - eventTypes
+      description: Request to create a new webhook
+      properties:
+        webhookUrl:
+          type: string
+          examples:
+          - https://example.com/webhook
+          pattern: ^https?://[^\s]+$
+          description: The URL where webhook events will be sent
+        eventTypes:
+          type: array
+          minItems: 1
+          examples:
+          - - credential_workflow.status.changed
+            - domain.entity.action
+          items:
+            type: string
+            maxLength: 100
+            pattern: ^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,3}$
+          description: "Event types this webhook should receive. A webhook receives an event if, and only if, the event type matches one of these strings **exactly** (case-sensitive).\n\n\n**Open namespace.** Any lowercase `domain.entity.action` value of 2-4 dot-separated segments is accepted, so you can subscribe to your own events and publish them via POST /webhooks/events without a change to this service.\n\n\n**Event types published by CertifyOS:**\n\n- `credential_workflow.status.changed` - Triggered automatically when a credentialing workflow status changes (timeline event is created). See webhook-api-credential-workflow-events.md for detailed payload structure and documentation.\n\n- `facility_credential_workflow.status.changed` - Triggered automatically when a facility credentialing workflow status changes.\n\n- `form.submission.submitted` - Triggered when a form submission is received by POST /forms/submissions.\n\n- `roster_job.status.changed` - Triggered when a roster job reaches a client-facing status (PENDING_CORRECTION, PENDING_APPROVAL, IMPORTED, FAILED).\n\n- `facility.global_termination.completed` - Triggered once per facility when a facility global termination (POST /facilities/terminate) completes. Payload: `certifyFacilityId`, `facilityName`, `npi`, `tin`, `terminationDate`, `terminationReason`, `status`. A global termination ends everything the facility has, so there is no per-location detail. `facilityName`, `npi` and `tin` are read from the facility and are `null` when unavailable. \n\n- `practitioner.terminated` - Triggered when a practitioner is terminated via PUT /practitioners/terminate (any of the 9 `terminationType` values, including `FULL_EXIT`) or by a roster STOP row. Payload: `certifyPractitionerId`, `npi`, `terminationType`, `terminationDate`, `terminationReason`. Keys are always present; a value that is unknown or not applicable is sent as an explicit `null`."
+        headers:
+          type: object
+          examples:
+          - Authorization: Bearer token
+            X-Custom-Header: custom-value
+          additionalProperties:
+            type: string
+          description: Custom headers to include in webhook requests
+        isActive:
+          type: boolean
+          examples:
+          - true
+          description: Whether the webhook is active. Defaults to true if not provided
+        oauthConfiguration:
+          $ref: '#/components/schemas/WebhookOauthConfiguration'
+          type: object
+          description: 'Optional OAuth client-credentials configuration. When provided, a token is minted before each delivery and sent as Authorization: Bearer <token>.'
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    ManualWebhookEventRequest:
+      type: object
+      required:
+      - eventType
+      - eventData
+      description: Request payload for manual webhook event triggering
+      properties:
+        eventType:
+          $ref: '#/components/schemas/WebhookEventType'
+          type: string
+          examples:
+          - credential_workflow.status.changed
+          description: 'Event type identifier. Each event type has a corresponding JSON Schema that defines
+
+            the required structure for eventData. See WebhookEventType enum for available event types.'
+        eventData:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: 'Event-specific payload data. Currently only `credential_workflow.status.changed` is validated against a published JSON Schema on this path: invalid payloads for that type return a 400 Bad Request with detailed validation error messages (see the Supported Event Types and Schemas section above for its schema URL). Other event types (e.g. `facility_credential_workflow.status.changed`, `form.submission.submitted`, `facility.global_termination.completed`, `practitioner.terminated`) are not schema-validated here today and are published as provided.'
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    WebhookEventType:
+      type: string
+      enum:
+      - credential_workflow.status.changed
+      - facility_credential_workflow.status.changed
+      - form.submission.submitted
+      - facility.global_termination.completed
+      - practitioner.terminated
+      - roster_job.status.changed
+    TriggerEventResponse:
+      type: object
+      description: Result of accepting a webhook event for asynchronous delivery
+      properties:
+        eventId:
+          type: string
+          examples:
+          - '11827280442334'
+          description: Pub/Sub message ID for this event. Correlates with delivery logs and with the Idempotency-Key sent to subscribers.
+        eventType:
+          type: string
+          examples:
+          - domain.entity.action
+          description: Event type that was accepted
+        matchedWebhooks:
+          type: integer
+          format: int32
+          examples:
+          - 3
+          description: Active webhooks matching this event type at accept time. Not a delivery guarantee. A value of 0 usually means the event type is misspelled or nothing is subscribed to it; -1 means the subscription lookup failed and the count is unknown (the event was still published).
+        message:
+          type: string
+          examples:
+          - Event accepted for delivery
+          description: Human-readable outcome
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
     WebhookOauthConfiguration:
-      description: 'OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.'
       type: object
       required:
       - tokenUrl
       - clientId
       - clientSecret
+      description: 'OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.'
       properties:
         tokenUrl:
           type: string
-          description: OAuth token endpoint URL
           examples:
           - https://auth.example.com/oauth/token
           pattern: ''
+          description: OAuth token endpoint URL
         clientId:
           type: string
-          description: OAuth client ID
           pattern: \S
+          description: OAuth client ID
         clientSecret:
           type: string
-          description: OAuth client secret
           pattern: \S
+          description: OAuth client secret
         scope:
           type: string
           description: OAuth scope(s) to request, space-separated
@@ -437,91 +850,30 @@ components:
           description: Additional headers to send with the token request
         resource:
           type: string
-          description: Resource to request
           examples:
           - resource
-    Webhook.data.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Webhook.data.schema.json
-      title: Webhook
-      description: Schema for webhook data payload
+          description: Resource to request
+    ReplayTerminationWebhooksRequest:
       type: object
-      unevaluatedProperties: false
+      required:
+      - certifyPractitionerIds
+      description: Request to replay practitioner.terminated webhooks for already-terminated practitioners
       properties:
-        webhookUrl:
-          type: string
-          format: uri
-          description: The URL endpoint where webhook events will be sent
-          minLength: 1
-          maxLength: 2048
-          pattern: ^https?://
-        eventTypes:
+        certifyPractitionerIds:
           type: array
-          description: List of event types that will trigger this webhook
+          maxItems: 500
+          minItems: 1
+          examples:
+          - - cert_9d2e3f4a5b6c4d7e8f9a
+            - cert_1a2b3c4d5e6f7a8b9c0d
           items:
             type: string
-            minLength: 1
-            maxLength: 100
-            pattern: ^[a-z0-9._-]+$
-          uniqueItems: true
-          minItems: 0
-          maxItems: 100
-        headers:
-          anyOf:
-          - type: object
-            description: Custom HTTP headers to include in webhook requests
-            additionalProperties:
-              type: string
-            maxProperties: 50
-          - type: 'null'
-          description: Custom HTTP headers to include in webhook requests (optional)
-        isActive:
-          type: boolean
-          description: Whether the webhook is currently active and will receive events
-          default: true
-      required:
-      - webhookUrl
-      - eventTypes
-      - isActive
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
+          description: Practitioners to replay the termination event for. Each must already be terminated; ids with no recorded terminationDate are skipped.
+        terminationType:
           type: string
-          description: Error reason/code
           examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
+          - FULL_EXIT
+          description: 'Termination type to stamp on the replayed events. Optional: `terminationType` is not persisted with the termination, so it cannot be reconstructed. When omitted the replayed payload carries an explicit `null` for this field; every other field is rebuilt from the practitioner''s current record.'
     JsonNode:
       type: object
       properties:
@@ -581,134 +933,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    ManualWebhookEventRequest:
-      description: Request payload for manual webhook event triggering
-      type: object
-      required:
-      - eventType
-      - eventData
-      properties:
-        eventType:
-          description: 'Event type identifier. Each event type has a corresponding JSON Schema that defines
-
-            the required structure for eventData. See WebhookEventType enum for available event types.'
-          type: string
-          examples:
-          - credential_workflow.status.changed
-          $ref: '#/components/schemas/WebhookEventType'
-        eventData:
-          description: 'Event-specific payload data. Must conform to the JSON Schema for the specified eventType.
-
-            See the Supported Event Types and Schemas section above for the schema URL corresponding to each event type.
-
-            Invalid payloads will return a 400 Bad Request with detailed validation error messages.'
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    WebhookResponse:
-      type: object
-      description: Response containing a single webhook
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the webhook
-          examples:
-          - webhook-123
-        tenantId:
-          type: string
-          description: ID of the tenant
-          examples:
-          - tenant-123
-        data:
-          $ref: '#/components/schemas/Webhook.data.schema'
-          description: Webhook data
-          type: object
-        createdBy:
-          type: string
-          description: ID of the user who created the webhook
-          examples:
-          - user-123
-        updatedBy:
-          type: string
-          description: ID of the user who updated the webhook
-          examples:
-          - user-123
-        createdAt:
-          description: Timestamp of the webhook creation
-          type: string
-          examples:
-          - '2021-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
-        updatedAt:
-          description: Timestamp of the webhook update
-          type: string
-          examples:
-          - '2021-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
-    WebhookRequest:
-      description: Request to create a new webhook
-      type: object
-      required:
-      - webhookUrl
-      - eventTypes
-      properties:
-        webhookUrl:
-          type: string
-          description: The URL where webhook events will be sent
-          examples:
-          - https://example.com/webhook
-          pattern: ^https?://[^\s]+$
-        eventTypes:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEventType'
-          description: 'List of event types that this webhook should receive. You can subscribe to multiple different event types in a single webhook.
-
-
-
-            **Available Event Types:**
-
-
-            - `credential_workflow.status.changed` - Triggered automatically when a credentialing workflow status changes (timeline event is created). See webhook-api-credential-workflow-events.md for detailed payload structure and documentation.
-
-
-            - `facility_credential_workflow.status.changed` - Triggered automatically when a facility credentialing workflow status changes.'
-          examples:
-          - - credential_workflow.status.changed
-            - facility_credential_workflow.status.changed
-          minItems: 1
-        headers:
-          type: object
-          additionalProperties:
-            type: string
-          description: Custom headers to include in webhook requests
-          examples:
-          - Authorization: Bearer token
-            X-Custom-Header: custom-value
-        isActive:
-          type: boolean
-          description: Whether the webhook is active. Defaults to true if not provided
-          examples:
-          - true
-        oauthConfiguration:
-          description: 'Optional OAuth client-credentials configuration. When provided, a token is minted before each delivery and sent as Authorization: Bearer <token>.'
-          type: object
-          $ref: '#/components/schemas/WebhookOauthConfiguration'
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
   securitySchemes:
     jwt:
       type: http

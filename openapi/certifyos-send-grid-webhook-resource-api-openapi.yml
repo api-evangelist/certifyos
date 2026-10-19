@@ -21,28 +21,66 @@ tags:
 paths:
   /outreach/sendgrid/webhook/email-status:
     post:
-      summary: Handle email delivery status events from SendGrid Event Webhook
-      description: Receives email delivery status events (delivered, bounced, opened, clicked, etc.) from SendGrid's Event Webhook. This is a public endpoint that does not require authentication.
+      summary: Receive SendGrid delivery-status events for outreaches
+      description: 'Accepts a batch of email delivery-status events (delivered, bounced, opened, clicked, dropped, deferred, etc.) posted by SendGrid''s Event Webhook and applies each one to the matching outreach email record. Configure this URL in SendGrid''s Event Webhook settings for outreach sender identities; use the sibling POST /outreach/sendgrid/webhook/incoming-parse endpoint instead for inbound reply emails. The request body must be a non-empty JSON array of event objects; each event should carry outreach context (`tenantId`/`emailId`/`outreachId`) as top-level fields or nested under a `custom_args` object, and falls back to matching by `sg_message_id` alone when that context is absent. This call returns 200 immediately after starting processing: the delivery-status updates and the best-effort audit copy (raw payload to Cloud Storage plus a WebhookRawBlob record) all happen asynchronously in the background after the response is sent, so a 200 does not guarantee any individual event was actually applied. A body that is not a JSON array, an empty array, or an array with no event carrying a usable `sg_message_id`/`event` pair is not treated as an error - it still returns 200 and applies nothing. This is a public endpoint that does not require authentication; no tenant-id header is used.'
       operationId: handleSendGridEmailStatus
       requestBody:
+        description: A JSON array of SendGrid Event Webhook objects. SendGrid batches multiple events per delivery, so a single request commonly carries events for several messages.
         content:
           application/json:
+            examples:
+              eventBatch:
+                value:
+                - email: jane.doe@example-clinic.com
+                  timestamp: '1700000000'
+                  event: delivered
+                  category: credentialing-outreach
+                  sgMessageId: 14c5d75ce93.filterdrecv.recvd-1-B.0
+                - email: jane.doe@example-clinic.com
+                  timestamp: '1700000032'
+                  event: open
+                  sgMessageId: 14c5d75ce93.filterdrecv.recvd-1-B.0
+                - email: john.smith@example-clinic.com
+                  timestamp: '1700000090'
+                  event: bounce
+                  status: 5.1.1
+                  reason: 550 5.1.1 The email account does not exist
+                  sgMessageId: 9b2f1a.filterdrecv.recvd-1-B.0
             schema:
-              type: string
+              type: array
+              items:
+                $ref: '#/components/schemas/SendGridEvent'
         required: true
       responses:
         '200':
-          description: Webhook event processed successfully
+          description: 'Processing was started (or intentionally skipped for an empty/invalid batch). The JSON body is a bare string, not an object: "Processing N email status update events" when at least one event carried a usable sg_message_id/event pair (updates continue in the background); "No events to process" when the body was not a non-empty JSON array; or "No valid events to process" when it was an array but no event carried a usable sg_message_id/event pair. None of these are errors.'
           content:
-            application/json: {}
-        '400':
-          description: Bad Request - Invalid payload format
+            application/json:
+              examples:
+                processingStarted:
+                  value: '"Processing 3 email status update events"'
+              schema:
+                type: string
+        '401':
+          description: Returned only when the event-webhook public key is configured and the request's signature/timestamp headers (X-Twilio-Email-Event-Webhook-Signature/-Timestamp, or their X-SendGrid-Webhook-* equivalents) are missing or fail verification against that key; skipped entirely when no key is configured. Resend the webhook with a valid signature from the configured SendGrid key pair.
           content:
-            application/json: {}
+            application/json:
+              examples:
+                invalidSignature:
+                  value: '"Invalid or missing webhook signature"'
+              schema:
+                type: string
         '500':
-          description: Internal Server Error - Webhook processing failed
+          description: 'Returned when the body could not be parsed as JSON or an unexpected failure occurred while starting processing. The JSON body is a bare string: "Error processing webhook: <cause>". Configure SendGrid to retry this webhook on 5xx.'
           content:
-            application/json: {}
+            application/json:
+              examples:
+                processingFailed:
+                  value: '"Error processing webhook: Failed to process email status webhook: Unexpected end-of-input"'
+              schema:
+                type: string
+        '400':
+          description: Bad Request
       tags:
       - Send Grid Webhook Resource
       parameters:
@@ -54,10 +92,11 @@ paths:
           type: string
   /outreach/sendgrid/webhook/incoming-parse:
     post:
-      summary: Handle incoming email from SendGrid Inbound Parse Webhook
-      description: Receives and processes incoming emails forwarded by SendGrid's Inbound Parse Webhook. This is a public endpoint that does not require authentication.
+      summary: Receive an inbound email reply via SendGrid Inbound Parse
+      description: Accepts a multipart/form-data payload from SendGrid's Inbound Parse Webhook representing an email a practitioner or provider sent in reply to an outreach message, resolves which outreach it replies to, and creates an inbound correspondence record threading the reply to that outreach; the raw payload is also stored in Cloud Storage (best-effort, does not affect the response) for audit and replay. Configure this URL as the Inbound Parse destination for the domain that receives practitioner/provider replies; use the sibling POST /outreach/sendgrid/webhook/email-status endpoint instead for delivery-status notifications such as bounces, opens, and clicks - this endpoint does not process those. `to` must contain an address at the domain configured for inbound parsing, and `from` must contain a parseable email address; `text`, `html`, `subject`, and `headers` are all optional, and a reply with neither `text` nor `html` is stored with an empty body. The reply is first matched to its parent outreach email via the `Message-ID`/`In-Reply-To`/`References` headers; if no match is found, matching falls back to identifiers encoded in the `to` address, or to the optional `emailId`/`outreachId`/`workflowId`/`tenantId` form fields when supplied. Attachments arrive as additional multipart parts named attachment1, attachment2, and so on, and are uploaded to Cloud Storage before the correspondence record is created; a call that cannot resolve a parent outreach persists nothing beyond the best-effort raw-payload copy. This is a public endpoint that does not require authentication; no tenant-id header is used.
       operationId: parseSendgridIncomingEmail
       requestBody:
+        description: Multipart form data representing the parsed inbound email, as posted by SendGrid's Inbound Parse Webhook. Attachments, if any, arrive as additional parts named attachment1, attachment2, and so on.
         content:
           multipart/form-data:
             schema:
@@ -86,9 +125,32 @@ paths:
         required: true
       responses:
         '200':
-          description: OK
+          description: 'The reply was threaded and stored. The plain-text response body is "Email processed successfully. ID: <correspondenceId>", where <correspondenceId> is the ID of the newly created inbound correspondence record.'
           content:
-            application/json: {}
+            text/plain:
+              examples:
+                processed:
+                  value: 'Email processed successfully. ID: corr_7f3a9c21'
+              schema:
+                type: string
+        '401':
+          description: Returned only when an inbound-parse public key is configured and the request is missing the X-Twilio-Email-Event-Webhook-Signature/-Timestamp headers (or their X-SendGrid-Webhook-* equivalents); skipped entirely when no public key is configured. Resend the webhook with the required signature headers present.
+          content:
+            text/plain:
+              examples:
+                missingSignature:
+                  value: Missing webhook signature headers
+              schema:
+                type: string
+        '500':
+          description: 'Returned for any processing failure, including an unparseable `from` address, a `to` address that does not match the configured inbound-parse domain, an unresolvable parent outreach or email thread, or a downstream storage failure; the plain-text body is "Error processing email: <cause>". Configure SendGrid to retry this webhook on 5xx so a transient downstream failure gets redelivered.'
+          content:
+            text/plain:
+              examples:
+                processingFailed:
+                  value: 'Error processing email: Could not find outreach for workflowId: wf_8823, tenantId: tenant_001'
+              schema:
+                type: string
         '400':
           description: Bad Request
       tags:
@@ -101,6 +163,73 @@ paths:
         schema:
           type: string
 components:
+  schemas:
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    SendGridEvent:
+      type: object
+      description: A single SendGrid Event Webhook object describing one delivery-status occurrence (delivered, bounce, open, click, etc.) for one recipient of one send.
+      properties:
+        email:
+          type: string
+          examples:
+          - jane.doe@example-clinic.com
+          description: Recipient email address the event applies to.
+        timestamp:
+          type: string
+          examples:
+          - '1700000000'
+          description: Unix epoch seconds, as a string, at which SendGrid recorded the event; see getEventTime() to convert to an Instant.
+        event:
+          type: string
+          examples:
+          - delivered
+          description: SendGrid event type, e.g. delivered, open, click, bounce, dropped, deferred, spamreport, unsubscribe, group_unsubscribe, group_resubscribe.
+        category:
+          type: string
+          examples:
+          - credentialing-outreach
+          description: Category tag attached to the originating send, if one was set.
+        sgMessageId:
+          type: string
+          examples:
+          - 14c5d75ce93.filterdrecv.recvd-1-B.0
+          description: SendGrid's message identifier for the originating send, delivered on the wire as sg_message_id; used to correlate this event back to the outreach email that generated it.
+        smtp-id:
+          type: string
+          examples:
+          - <14c5d75ce93.dfd.64b469@ismtpd-555>
+          description: The smtp-id header of the originating message, if present.
+        response:
+          type: string
+          examples:
+          - 250 2.0.0 OK
+          description: Raw SMTP response text from the receiving mail server; present on delivered, bounce, and deferred events.
+        attempt:
+          type: string
+          examples:
+          - '1'
+          description: Delivery attempt number, as a string; present on deferred events.
+        status:
+          type: string
+          examples:
+          - 5.1.1
+          description: SMTP status/response code; present on bounce and deferred events.
+        reason:
+          type: string
+          examples:
+          - 550 5.1.1 The email account does not exist
+          description: Human-readable reason for the event; present on bounce, dropped, and deferred events.
+        type:
+          type: string
+          examples:
+          - bounce
+          description: Bounce classification, e.g. bounce vs blocked; present on bounce events.
+        eventTime:
+          $ref: '#/components/schemas/Instant'
   securitySchemes:
     jwt:
       type: http

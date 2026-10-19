@@ -21,9 +21,12 @@ tags:
 paths:
   /file/download:
     get:
+      summary: Stream a GCS file as a binary CSV attachment
+      description: 'Retrieves a file from the configured Google Cloud Storage bucket by its object path and streams it back to the caller as a binary attachment. The response carries a Content-Disposition: attachment; filename="data.csv" header, which triggers a browser download using the static filename data.csv regardless of the original object name. Use this endpoint when you need the raw file bytes, such as offering the original CSV for download; use GET /file/read instead when you need the file parsed into structured JSON. Supply the path query parameter with the GCS object name (for example, imports/my-file.csv) and a valid JWT. On success returns HTTP 200 with the file content as text/csv.'
       operationId: downloadFile
       parameters:
-      - name: path
+      - description: GCS object name (key) of the file to download, for example imports/my-file.csv. The file is looked up in the configured GCS bucket. No default is applied when omitted.
+        name: path
         in: query
         schema:
           type: string
@@ -35,35 +38,51 @@ paths:
           type: string
       responses:
         '200':
-          description: File downloaded successfully
+          description: The requested file streamed as text/csv, with a Content-Disposition attachment header using the static filename data.csv.
           content:
-            text/csv: {}
-        '400':
-          description: Bad Request - Invalid file path
-          content:
-            text/csv: {}
+            text/csv:
+              examples:
+                csvDownload:
+                  value: 'npi,firstName,lastName,specialty
+
+                    1234567890,Jane,Doe,Cardiology
+
+                    1987654321,John,Smith,
+
+                    '
         '401':
-          description: Unauthorized - Authentication required
+          description: Authentication failed. Supply a valid JWT bearer token.
           content:
-            text/csv: {}
+            text/plain:
+              examples:
+                unauthorized:
+                  value: Unauthorized
         '404':
-          description: File not found
+          description: The file could not be retrieved from GCS. There is no path validation on this endpoint; the server currently maps any retrieval failure — including an invalid or non-existent path — to this status, so a 404 does not necessarily mean the object is absent.
           content:
-            text/csv: {}
+            text/plain:
+              examples:
+                notFound:
+                  value: 'Error: Object imports/my-file.csv not found in bucket'
         '500':
-          description: Internal Server Error - File download failed
+          description: An unexpected server error occurred while streaming the file. The exact response body is not guaranteed by the endpoint's own error handling; it may be produced by the underlying framework's default error handler. Retry; if the problem persists, contact support.
           content:
-            text/csv: {}
+            text/plain:
+              examples:
+                downloadFailed:
+                  value: Internal Server Error
       security:
       - jwt: []
-      summary: Download File
       tags:
       - File Storage Resource
   /file/read:
     get:
+      summary: Parse a GCS CSV file into JSON headers and rows
+      description: 'Retrieves a CSV file from the configured Google Cloud Storage bucket by its object path, parses it with the server-side CSV parser, and returns a FileParserResponse. The response has two fields: headers, an ordered array of column-name strings, and rows, an array of objects keyed by column name whose values are strings or null. Empty cells in the source CSV are normalized to null. Use this endpoint when you need the CSV as machine-readable structured data, such as rendering rows in a table or validating column presence before processing; use GET /file/download instead when you need the raw file bytes. Supply the path query parameter with the GCS object name (for example, imports/my-file.csv) and a valid JWT. On success returns HTTP 200 with the parsed JSON body.'
       operationId: readFile
       parameters:
-      - name: path
+      - description: GCS object name (key) of the CSV file to read, for example imports/my-file.csv. The file is looked up in the configured GCS bucket. No default is applied when omitted.
+        name: path
         in: query
         schema:
           type: string
@@ -75,34 +94,60 @@ paths:
           type: string
       responses:
         '200':
-          description: File content parsed successfully
+          description: The parsed CSV as a FileParserResponse containing headers (ordered column names) and rows (per-row objects keyed by column name, with empty cells represented as null).
           content:
-            application/json: {}
-        '400':
-          description: Bad Request - Invalid file path
-          content:
-            application/json: {}
+            application/json:
+              examples:
+                parsedCsv:
+                  value:
+                    headers:
+                    - npi
+                    - firstName
+                    - lastName
+                    - specialty
+                    rows:
+                    - npi: '1234567890'
+                      firstName: Jane
+                      lastName: Doe
+                      specialty: Cardiology
+                    - npi: '1987654321'
+                      firstName: John
+                      lastName: Smith
+                      specialty: Family Medicine
+              schema:
+                $ref: '#/components/schemas/FileParserResponse'
         '401':
-          description: Unauthorized - Authentication required
+          description: Authentication failed. Supply a valid JWT bearer token.
           content:
-            application/json: {}
+            text/plain:
+              examples:
+                unauthorized:
+                  value: Unauthorized
         '404':
-          description: File not found
+          description: The file could not be retrieved or parsed. The server currently maps any failure while fetching or parsing the object — including a missing object, an unreadable path, or empty file content — to this status, so a 404 does not necessarily mean the object is absent.
           content:
-            application/json: {}
+            text/plain:
+              examples:
+                notFound:
+                  value: 'Error: Object imports/my-file.csv not found in bucket'
         '500':
-          description: Internal Server Error - File processing failed
+          description: An unexpected server error occurred while parsing the file. The exact response body is not guaranteed by the endpoint's own error handling; it may be produced by the underlying framework's default error handler. Retry; if the problem persists, contact support.
           content:
-            application/json: {}
+            text/plain:
+              examples:
+                processingError:
+                  value: Internal Server Error
       security:
       - jwt: []
-      summary: Read File
       tags:
       - File Storage Resource
   /file/upload:
     post:
+      summary: Upload a CSV file to GCS imports prefix
+      description: 'Accepts a file via multipart/form-data and stores it in the configured Google Cloud Storage bucket under imports/, where is taken verbatim from the uploaded file''s name. The upload is retried up to a configured number of attempts (default 3) with exponential backoff before failing. No CSV validation is performed server-side, and there is no overwrite protection: uploading a file whose name matches an existing object overwrites it. A successful upload emits no event and triggers no asynchronous job. Use this endpoint to stage a file in GCS before referencing it by path from GET /file/read or GET /file/download. Send a multipart/form-data request with a single field named exactly file, along with a valid JWT.'
       operationId: uploadFile
       requestBody:
+        description: Multipart form data with a single field named file containing the CSV to upload.
         content:
           multipart/form-data:
             schema:
@@ -113,24 +158,48 @@ paths:
                   format: binary
         required: true
       responses:
-        '201':
-          description: File uploaded successfully
-          content: {}
+        '200':
+          description: The file was stored in GCS; the plain-text response body contains "File uploaded to GCS".
+          content:
+            text/plain:
+              examples:
+                uploaded:
+                  value: File uploaded to GCS
         '400':
-          description: Bad Request - No file uploaded
-          content: {}
+          description: No file was supplied, or the uploaded file has no filename. Send a multipart/form-data field named file containing a valid file.
+          content:
+            text/plain:
+              examples:
+                noFile:
+                  value: No file uploaded
         '401':
-          description: Unauthorized - Authentication required
-          content: {}
+          description: Authentication failed. Supply a valid JWT bearer token.
+          content:
+            text/plain:
+              examples:
+                unauthorized:
+                  value: Unauthorized
         '415':
-          description: Unsupported Media Type - Invalid file type
-          content: {}
+          description: The request Content-Type is not multipart/form-data. Submit the file as multipart/form-data.
+          content:
+            application/json:
+              examples:
+                unsupportedMediaType:
+                  value:
+                    errors:
+                    - httpStatus: 415
+                      reason: Unsupported Media Type
+                      title: Request Failed
+                      detail: An error occurred processing your request
         '500':
-          description: Internal Server Error - File upload failed
-          content: {}
+          description: The upload failed after all retry attempts were exhausted. Retry later; if the problem persists, contact support.
+          content:
+            text/plain:
+              examples:
+                uploadFailed:
+                  value: 'Error uploading file: Failed to upload file to bucket: certify-imports/imports/providers.csv after 3 attempts'
       security:
       - jwt: []
-      summary: Upload Csv File
       tags:
       - File Storage Resource
       parameters:
@@ -141,6 +210,20 @@ paths:
         schema:
           type: string
 components:
+  schemas:
+    FileParserResponse:
+      type: object
+      properties:
+        headers:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: string
   securitySchemes:
     jwt:
       type: http

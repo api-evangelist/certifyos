@@ -22,8 +22,8 @@ tags:
 paths:
   /roles:
     get:
-      summary: Get All Roles
-      description: Returns all roles for the current tenant
+      summary: List all roles for a tenant
+      description: Returns every role belonging to the tenant identified by the required `tenant-id` header. Use this to populate role-selection UIs or to audit which roles exist before assigning one to a user. Requires the `tenant-id` header; the request returns 400 if the header is absent or blank. The response is a paginated envelope containing a `data` array of role objects, a `totalCount`, and `links` for navigation.
       operationId: getAllRoles
       tags:
       - Role
@@ -37,21 +37,97 @@ paths:
           description: Roles retrieved successfully
           content:
             application/json:
+              examples:
+                rolesList:
+                  summary: Tenant with multiple roles
+                  value:
+                    data:
+                    - id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                      name: Business Admin
+                      tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                      description: Full access to all operations
+                      createdAt: '2026-01-15T09:30:00Z'
+                      updatedAt: '2026-02-03T14:12:45Z'
+                      createdBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                      updatedBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                    - id: 9c858901-8a57-4791-81fe-4c455b099bc9
+                      name: Credentialing Reviewer
+                      tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                      description: Read-only access to credentialing workflows
+                      createdAt: '2026-01-20T11:05:00Z'
+                      updatedAt: '2026-01-20T11:05:00Z'
+                      createdBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                      updatedBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                    totalCount: 2
+                    links:
+                      self: /roles
+                emptyRolesList:
+                  summary: Tenant with no roles defined yet
+                  value:
+                    data: []
+                    totalCount: 0
+                    links:
+                      self: /roles
               schema:
                 $ref: '#/components/schemas/RoleListResponseDto'
         '400':
           description: Bad request - Invalid request parameters or missing required headers
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  summary: Request is missing the required tenant-id header
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to read roles
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - Failed to retrieve roles. The response body is a flat `{"error": "..."}` object, not the structured ApiError shape used elsewhere.'
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Failed to retrieve roles
+              schema:
+                type: object
       security:
       - jwt: []
     post:
-      summary: Create Role
-      description: Creates a new role
+      summary: Create a new role for a tenant
+      description: Creates a new role under the tenant identified by the required `tenant-id` header. Use this to define a named grouping of permissions that can later be assigned to users; to modify an existing role use `PATCH /roles/{roleId}`. The request body accepts a `name` and an optional `description` for the new role. Returns 201 with the created role object including the server-assigned `id`, `tenantId`, `createdAt`, and `createdBy` fields. Returns 400 if the `tenant-id` header is absent or blank.
       operationId: createRole
       tags:
       - Role
@@ -61,8 +137,14 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Role create payload
         content:
           application/json:
+            examples:
+              createRole:
+                value:
+                  name: Credentialing Reviewer
+                  description: Read-only access to credentialing workflows and audit logs
             schema:
               $ref: '#/components/schemas/RoleCreateRequest'
         required: true
@@ -71,22 +153,69 @@ paths:
           description: Role created successfully
           content:
             application/json:
+              examples:
+                roleCreated:
+                  value:
+                    id: 9c858901-8a57-4791-81fe-4c455b099bc9
+                    name: Credentialing Reviewer
+                    tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                    description: Read-only access to credentialing workflows and audit logs
+                    createdAt: '2026-01-20T11:05:00Z'
+                    updatedAt: '2026-01-20T11:05:00Z'
+                    createdBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                    updatedBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
               schema:
                 $ref: '#/components/schemas/RoleResponseDto'
         '400':
           description: Bad request - Invalid request data or missing required fields
+          content:
+            application/json:
+              examples:
+                invalidRoleBody:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: name'
+                      detail: name is required and cannot be blank
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to create roles
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: Internal server error - An unexpected error occurred while processing the request. No response body is returned.
       security:
       - jwt: []
   /roles/{roleId}:
     patch:
-      summary: Update Role
-      description: Updates an existing role
+      summary: Update an existing role's fields
+      description: 'Updates the role identified by `roleId` under the tenant specified by the required `tenant-id` header. Use this to change a role''s name or description after creation; to create a new role use `POST /roles`. This is a full replacement, not a partial merge: any field omitted from the request body (`name` or `description`) is cleared on the role rather than left unchanged, so callers must resend the current value for any field they do not intend to change. Returns 200 with the full updated role object (`RoleResponseDto`). Returns 400 if the `tenant-id` header is absent or blank. Note: if the role does not exist, the current implementation returns 500 rather than 404 (tracked in CP-36405).'
       operationId: updateRole
       tags:
       - Role
@@ -101,8 +230,14 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Role update payload. Replaces the role's name and description; omitting description clears it, name is required.
         content:
           application/json:
+            examples:
+              updateRole:
+                value:
+                  name: Credentialing Reviewer
+                  description: Read and comment access to credentialing workflows
             schema:
               $ref: '#/components/schemas/RoleUpdateRequest'
         required: true
@@ -111,28 +246,73 @@ paths:
           description: Role updated successfully
           content:
             application/json:
+              examples:
+                roleUpdated:
+                  value:
+                    id: 9c858901-8a57-4791-81fe-4c455b099bc9
+                    name: Credentialing Reviewer
+                    tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                    description: Read and comment access to credentialing workflows
+                    createdAt: '2026-01-20T11:05:00Z'
+                    updatedAt: '2026-02-05T16:40:22Z'
+                    createdBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                    updatedBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
               schema:
                 $ref: '#/components/schemas/RoleResponseDto'
         '400':
           description: Bad request - Invalid request parameters or missing required headers
+          content:
+            application/json:
+              examples:
+                invalidRoleBody:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: name'
+                      detail: name is required and cannot be blank
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to update roles
-        '404':
-          description: Role not found - The specified role ID does not exist
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - An unexpected error occurred while processing the request. No response body is returned. Note: a non-existent role ID currently also surfaces here as a 500 rather than a 404, since not-found conditions are not distinguished from other failures (tracked in CP-36405).'
       security:
       - jwt: []
     get:
-      summary: Get Role by ID
-      description: Retrieves a specific role by its ID
+      summary: Fetch a single role by its ID
+      description: 'Returns the full details of the role identified by `roleId` within the tenant specified by the required `tenant-id` header. Use this when you already hold a role ID and need the role''s name, description, and metadata; to list all available roles use `GET /roles`. The `roleId` path parameter is the string identifier returned when the role was created (e.g. `"role-123-456-789"`). Returns a single role object (`RoleResponseDto`) on success. Returns 400 if the `tenant-id` header is absent or blank. Note: if no role with the given ID exists, the current implementation returns 500 rather than 404 (tracked in CP-36405); verify the ID against `GET /roles` to find valid values.'
       operationId: getRoleById
       tags:
       - Role
       parameters:
-      - description: ID of Role to fetch
+      - description: Identifier of the role to fetch, as returned in the `id` field when the role was created (e.g. `role-123-456-789`). Must reference a role that exists within the tenant.
         required: true
         name: roleId
         in: path
@@ -147,23 +327,69 @@ paths:
           description: Role retrieved successfully
           content:
             application/json:
+              examples:
+                role:
+                  value:
+                    id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    name: Business Admin
+                    tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                    description: Full access to all operations
+                    createdAt: '2026-01-15T09:30:00Z'
+                    updatedAt: '2026-02-03T14:12:45Z'
+                    createdBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+                    updatedBy: b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
               schema:
                 $ref: '#/components/schemas/RoleResponseDto'
         '400':
           description: Bad request - Invalid request parameters or missing required headers
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  summary: Request is missing the required tenant-id header
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to read roles
-        '404':
-          description: Role not found - The specified role ID does not exist
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - An unexpected error occurred while processing the request. No response body is returned. Note: a non-existent role ID currently also surfaces here as a 500 rather than a 404, since not-found conditions are not distinguished from other failures (tracked in CP-36405).'
       security:
       - jwt: []
     delete:
-      summary: Delete Role
-      description: Deletes a role by its ID
+      summary: Permanently delete a role
+      description: 'Deletes the role identified by `roleId` under the tenant specified by the required `tenant-id` header. Use this to remove a role that is no longer needed; the role must exist at the time of the call. Returns 204 with no response body on success. Returns 400 if the `tenant-id` header is absent or blank. Note: if the role does not exist, the current implementation returns 500 rather than 404 (tracked in CP-36405); verify the ID via `GET /roles`.'
       operationId: deleteRole
       tags:
       - Role
@@ -182,20 +408,55 @@ paths:
           description: Role deleted successfully
         '400':
           description: Bad request - Invalid request parameters or missing required headers
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  summary: Request is missing the required tenant-id header
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to delete roles
-        '404':
-          description: Role not found - The specified role ID does not exist
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - An unexpected error occurred while processing the request. No response body is returned. Note: a non-existent role ID currently also surfaces here as a 500 rather than a 404, since not-found conditions are not distinguished from other failures (tracked in CP-36405).'
       security:
       - jwt: []
   /roles/{roleId}/permissions:
     get:
-      summary: Get Role Permissions
-      description: Returns all permissions assigned to a role with permission details
+      summary: List all permissions assigned to a role
+      description: 'Returns the full list of permissions currently assigned to the role identified by `roleId` within the tenant specified by the required `tenant-id` header. Use this to inspect what a role grants before assigning it to a user, or to determine which permissions need to be added or removed. The `roleId` is the string identifier returned when the role was created. Returns an array of permission objects (`PermissionResponseDto`) — the array will be empty if no permissions are assigned. Returns 400 if the `tenant-id` header is absent or blank. Note: if the role does not exist, the current implementation returns 500 rather than 404 (tracked in CP-36405).'
       operationId: getRolePermissions
       tags:
       - Role
@@ -214,25 +475,75 @@ paths:
           description: Permissions retrieved successfully
           content:
             application/json:
+              examples:
+                permissionsAssigned:
+                  summary: Role with permissions assigned
+                  value:
+                  - id: 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+                    resource: practitioner
+                    action: read
+                    description: Allows reading practitioner profiles
+                  - id: 7a1e9c3d-8b2f-4a6e-9d3c-1f5b7e2a4c88
+                    resource: user
+                    action: invite
+                    description: Allows inviting new users to the tenant
+                noPermissionsAssigned:
+                  summary: Role with no permissions assigned yet
+                  value: []
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/PermissionResponseDto'
         '400':
           description: Bad request - Invalid request parameters or missing required headers
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  summary: Request is missing the required tenant-id header
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to read role permissions
-        '404':
-          description: Role not found - The specified role ID does not exist
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - An unexpected error occurred while processing the request. No response body is returned. Note: a non-existent role ID currently also surfaces here as a 500 rather than a 404, since not-found conditions are not distinguished from other failures (tracked in CP-36405).'
       security:
       - jwt: []
     post:
-      summary: Add Permissions to Role
-      description: Adds permissions to a role without removing existing ones
+      summary: Add permissions to a role without removing existing ones
+      description: 'Adds one or more permissions to the role identified by `roleId`, leaving any existing permissions intact. Use this when you want to expand a role''s permission set without affecting what it already has; to simultaneously add and remove permissions in one call use `PATCH /roles/{roleId}/permissions/bulk`. Requires the `tenant-id` header (returns 400 if absent or blank). The request body must include a `permissionIds` array of permission ID strings; obtain valid permission IDs from the permissions list endpoints. Returns 200 with the complete, updated list of all permissions now assigned to the role — not just the newly added ones. Note: if the role does not exist, the current implementation returns 500 rather than 404 (tracked in CP-36405).'
       operationId: addRolePermissions
       tags:
       - Role
@@ -247,8 +558,15 @@ paths:
         schema:
           type: string
       requestBody:
+        description: IDs of the permissions to add to the role
         content:
           application/json:
+            examples:
+              addRolePermissions:
+                value:
+                  permissionIds:
+                  - 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+                  - 7a1e9c3d-8b2f-4a6e-9d3c-1f5b7e2a4c88
             schema:
               $ref: '#/components/schemas/RolePermissionAddRequest'
         required: true
@@ -257,26 +575,71 @@ paths:
           description: Permissions added successfully
           content:
             application/json:
+              examples:
+                permissionsAfterAdd:
+                  value:
+                  - id: 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+                    resource: practitioner
+                    action: read
+                    description: Allows reading practitioner profiles
+                  - id: 7a1e9c3d-8b2f-4a6e-9d3c-1f5b7e2a4c88
+                    resource: user
+                    action: invite
+                    description: Allows inviting new users to the tenant
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/PermissionResponseDto'
         '400':
           description: Bad request - Invalid request data or missing required fields
+          content:
+            application/json:
+              examples:
+                invalidPermissionIds:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: permissionIds'
+                      detail: permissionIds must contain at least one valid permission id
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to update role permissions
-        '404':
-          description: Role not found - The specified role ID does not exist
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - An unexpected error occurred while processing the request. No response body is returned. Note: a non-existent role ID currently also surfaces here as a 500 rather than a 404, since not-found conditions are not distinguished from other failures (tracked in CP-36405).'
       security:
       - jwt: []
   /roles/{roleId}/permissions/bulk:
     patch:
-      summary: Bulk Update Role Permissions
-      description: Adds and/or removes permissions from a role in a single operation. Returns all permissions with details.
+      summary: Add and remove role permissions in one call
+      description: 'Modifies the permission set of the role identified by `roleId` by adding and/or removing permissions in a single request. This is not a single atomic operation: the implementation reads the role''s current permissions, merges the requested `add`/`remove` changes, and then writes the result back as a separate step (no transaction or rollback); concurrent calls for the same role may race, and one call''s changes can be silently overwritten by another (tracked in CP-36406). Use this instead of separate add/remove calls when you need to both grant and revoke permissions in one operation; to only add permissions use `POST /roles/{roleId}/permissions`. Requires the `tenant-id` header (returns 400 if absent or blank). The request body accepts two optional arrays of permission ID strings: `add` (permissions to grant) and `remove` (permissions to revoke). Permissions in `remove` that are not currently assigned are silently ignored. If both `add` and `remove` include the same ID, the permission is added (remove is applied before add). Returns 200 with the complete, updated list of all permissions assigned to the role after the operation. Note: if the role does not exist, the current implementation returns 500 rather than 404 (tracked in CP-36405).'
       operationId: bulkUpdateRolePermissions
       tags:
       - Role
@@ -291,8 +654,16 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Permission IDs to add and/or remove from the role in a single operation
         content:
           application/json:
+            examples:
+              bulkUpdateRolePermissions:
+                value:
+                  add:
+                  - 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+                  remove:
+                  - 9e21c453-9f18-4e6b-8a2f-6d4c1b9e0a77
             schema:
               $ref: '#/components/schemas/RolePermissionBulkUpdateRequest'
         required: true
@@ -301,133 +672,182 @@ paths:
           description: Permissions updated successfully
           content:
             application/json:
+              examples:
+                permissionsAfterBulkUpdate:
+                  summary: Permissions remaining after the add/remove operation
+                  value:
+                  - id: 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+                    resource: practitioner
+                    action: read
+                    description: Allows reading practitioner profiles
+                allPermissionsRemoved:
+                  summary: No permissions remain on the role after the operation
+                  value: []
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/PermissionResponseDto'
         '400':
           description: Bad request - Invalid request data or missing required fields
+          content:
+            application/json:
+              examples:
+                invalidPermissionIds:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: permissionIds'
+                      detail: permissionIds must contain at least one valid permission id
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: Missing or invalid JWT bearer token
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have the required permissions to update role permissions
-        '404':
-          description: Role not found - The specified role ID does not exist
+          content:
+            application/json:
+              examples:
+                insufficientPermissions:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'Internal server error - An unexpected error occurred while processing the request. No response body is returned. Note: a non-existent role ID currently also surfaces here as a 500 rather than a 404, since not-found conditions are not distinguished from other failures (tracked in CP-36405).'
       security:
       - jwt: []
 components:
   schemas:
-    RoleUpdateRequest:
-      description: Request body for updating a role
+    ErrorObject:
       type: object
+      description: Individual error object containing details about a specific validation or processing error
       properties:
-        name:
-          type: string
-          maxLength: 100
-          description: Role name
+        httpStatus:
+          type: integer
+          format: int32
           examples:
-          - Business Admin
-        description:
+          - 400
+          description: HTTP status code for this error
+        reason:
           type: string
-          maxLength: 500
-          description: Role description
           examples:
-          - Full access to all operations
-    RoleCreateRequest:
-      description: Request body for creating a new role
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    PageLinks:
       type: object
+      description: HATEOAS-style pagination links.
       properties:
-        name:
+        self:
           type: string
-          maxLength: 100
-          description: Role name
-          examples:
-          - Business Admin
-        description:
+          description: Link to the current page.
+        next:
           type: string
-          maxLength: 500
-          description: Role description
-          examples:
-          - Full access to all operations
+          description: Link to the next page; null on the last page.
+        prev:
+          type: string
+          description: Link to the previous page; null on the first page.
+    OffsetDateTime:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T12:15:50-04:00'
     RoleResponseDto:
       type: object
       description: Role information response
       properties:
         id:
           type: string
-          description: Role ID
           examples:
-          - role-123-456-789
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          description: Role ID
         name:
           type: string
-          description: Role name
           examples:
           - Business Admin
+          description: Role name
         tenantId:
           type: string
-          description: Tenant ID
           examples:
-          - tenant-123-456-789
+          - 8f14e45f-ceea-467e-9906-ccfb98d21f95
+          description: Tenant ID
         description:
           type: string
-          description: Role description
           examples:
           - Full access to all operations
+          description: Role description
         createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          examples:
+          - '2026-01-15T09:30:00Z'
           description: Creation timestamp
-          type: string
-          $ref: '#/components/schemas/OffsetDateTime'
         updatedAt:
-          description: Last update timestamp
-          type: string
           $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          examples:
+          - '2026-02-03T14:12:45Z'
+          description: Last update timestamp
         createdBy:
           type: string
-          description: Created by
           examples:
-          - user-123-456-789
+          - b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+          description: ID of the user who created the role
         updatedBy:
           type: string
-          description: Updated by
           examples:
-          - user-123-456-789
-    OffsetDateTime:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T12:15:50-04:00'
-    RolePermissionAddRequest:
-      type: object
-      properties:
-        permissionIds:
-          type: array
-          items:
-            type: string
+          - b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+          description: ID of the user who last updated the role
     RolePermissionBulkUpdateRequest:
       type: object
+      description: Request body for adding and/or removing permissions from a role in a single operation
       properties:
         add:
           type: array
+          examples:
+          - - 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
           items:
             type: string
+          description: IDs of permissions to add to the role. Omit or leave empty if only removing.
         remove:
           type: array
+          examples:
+          - - 9e21c453-9f18-4e6b-8a2f-6d4c1b9e0a77
           items:
             type: string
-    PageLinks1:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
+          description: IDs of permissions to remove from the role. Omit or leave empty if only adding.
     RoleListResponseDto:
-      description: Paginated list of roles
       type: object
+      description: Paginated list of roles
       properties:
         data:
           type: array
@@ -439,41 +859,100 @@ components:
           format: int64
           description: Total number of roles
         links:
-          description: Pagination links
+          $ref: '#/components/schemas/PageLinks'
           type: object
-          $ref: '#/components/schemas/PageLinks1'
+          description: Pagination links
+    RolePermissionAddRequest:
+      type: object
+      required:
+      - permissionIds
+      description: Request body for adding permissions to a role without removing existing ones
+      properties:
+        permissionIds:
+          type: array
+          examples:
+          - - 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+            - 7a1e9c3d-8b2f-4a6e-9d3c-1f5b7e2a4c88
+          items:
+            type: string
+          description: IDs of the permissions to add to the role
     PermissionResponseDto:
       type: object
       description: Permission information response
       properties:
         id:
           type: string
-          description: Permission ID
           examples:
           - perm-123-456-789
+          description: Server-assigned unique identifier for the permission.
         resource:
           type: string
-          description: Resource name
           examples:
           - user
+          description: Name of the resource this permission governs (e.g. 'user', 'roster'). Mirrors the resource value supplied when the permission was created or last replaced.
         action:
           type: string
-          description: Action name
           examples:
           - read
+          description: Name of the action this permission grants on the resource (e.g. 'read', 'create'). Mirrors the action value supplied when the permission was created or last replaced.
         description:
           type: string
-          description: Permission description
           examples:
           - Allows reading user profiles
+          description: Human-readable explanation of what the permission allows. Optional; may be null if it was not supplied at creation.
         createdAt:
-          description: Creation timestamp
-          type: string
           $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          description: Timestamp the permission was created, in ISO-8601 format.
         updatedAt:
-          description: Last update timestamp
-          type: string
           $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          description: Timestamp the permission was last updated, in ISO-8601 format.
+    RoleUpdateRequest:
+      type: object
+      required:
+      - name
+      description: 'Request body for updating a role. This is a full replacement, not a partial merge: any field omitted (`name` or `description`) is cleared on the role rather than left unchanged.'
+      properties:
+        name:
+          type: string
+          examples:
+          - Credentialing Reviewer
+          maxLength: 100
+          description: Role name
+        description:
+          type: string
+          examples:
+          - Read and comment access to credentialing workflows
+          maxLength: 500
+          description: Role description
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    RoleCreateRequest:
+      type: object
+      required:
+      - name
+      description: Request body for creating a new role
+      properties:
+        name:
+          type: string
+          examples:
+          - Credentialing Reviewer
+          maxLength: 100
+          description: Role name
+        description:
+          type: string
+          examples:
+          - Read-only access to credentialing workflows and audit logs
+          maxLength: 500
+          description: Role description
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,88 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Anchor Group Tenant API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AnchorGroupTenant
+  description: Tenants enrolled in an Anchor Group (read-only).
+paths:
+  /api/v1/anchor-groups/{anchorGroupId}/tenants:
+    get:
+      summary: List the tenants enrolled in an Anchor Group
+      description: Options for the inventory's Tenant filter, ordered by name.
+      operationId: anchorOperationsListGroupTenants
+      tags:
+      - AnchorGroupTenant
+      parameters:
+      - description: Anchor Group id
+        required: true
+        name: anchorGroupId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Enrolled tenants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorGroupTenantPagedResponse'
+        '401':
+          description: Not authenticated
+      security:
+      - jwt: []
+components:
+  schemas:
+    AnchorGroupTenantPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated list of Anchor Group tenants.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnchorGroupTenant'
+          description: Tenants enrolled in the Anchor Group.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total enrolled tenants across all pages.
+    AnchorGroupTenant:
+      type: object
+      required:
+      - tenantId
+      description: A tenant enrolled in an Anchor Group.
+      properties:
+        tenantId:
+          type: string
+          description: Tenant id.
+        tenantName:
+          type: string
+          description: Tenant display name.
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

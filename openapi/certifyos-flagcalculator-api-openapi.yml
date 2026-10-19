@@ -22,88 +22,116 @@ tags:
 paths:
   /flag-calculator:
     post:
-      summary: Calculate flags for a monitoring workflow
-      description: Calculates flags for a monitoring workflow based on practitioner data and manages flag lifecycle (create/update/deactivate) according to the comparison with existing flags
+      summary: Run synchronous flag calculation for a monitoring workflow
+      description: 'Evaluates practitioner data against a monitoring workflow and creates, updates, or deactivates flags based on the difference from the current flag state, returning counts of flags created, updated, deactivated, and a total. Call this endpoint to trigger on-demand, synchronous flag calculation for a single monitoring workflow — do not use it for bulk or event-driven recalculation, which separate Kafka-driven consumers handle instead. If the workflow''s status is REVIEWED_BY_CERTIFYOS, the endpoint accepts the request but performs no flag evaluation, does not update lastFlagCalculationTimestamp, and returns all-zero counts (verified: calculateFlagsWithTenantId returns early for workflows whose status is in MonitoringWorkflowConstants.COMPLETED_WORKFLOW_STATUSES). The monitoring workflow identified by monitoringWorkflowId must already exist and belong to the tenant identified by the required tenant-id header, or the call returns 404. Pass sections in the request body to limit calculation to a subset of the accepted section names; omitting it or passing an empty array calculates flags across all sections, and any unrecognized section name is silently ignored rather than rejected. The X-Monitoring-Api-Key header is only enforced while the monitoring.api-key-enabled kill-switch is turned on (off by default) — when enforced, a missing or mismatched key returns 401. On a real (non-no-op) evaluation, lastFlagCalculationTimestamp is written back to the monitoring workflow record. Repeated calls re-evaluate flags from current practitioner data each time — the call is safe to retry after a transient error, but successive successful calls may produce different flag counts if the underlying practitioner data changed between calls.'
       operationId: calculateFlags
       tags:
       - FlagCalculator
       parameters:
-      - description: Tenant ID
+      - description: Shared secret checked against the monitoring.api-key configuration property. Only enforced while the monitoring.api-key-enabled kill-switch is turned on (off by default); when enforcement is enabled, a missing or mismatched key returns 401.
+        name: X-Monitoring-Api-Key
+        in: header
+        schema:
+          type: string
+      - description: Tenant ID that the monitoring workflow identified by monitoringWorkflowId must belong to; required on every call.
         in: header
         required: true
         name: tenant-id
         schema:
           type: string
-      - description: User ID for service-to-service calls
+      - description: Optional ID of the calling user, used to attribute service-to-service calls. When omitted, no user context is attached to the operation.
         required: false
         name: user-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Identifies the monitoring workflow to calculate flags for and, optionally, which practitioner data sections to limit the calculation to.
         content:
           application/json:
+            examples:
+              allSections:
+                summary: Calculate flags across all sections
+                value:
+                  monitoringWorkflowId: mw_1234567890
+                  sections: []
+              specificSections:
+                summary: Limit calculation to specific sections
+                value:
+                  monitoringWorkflowId: mw_1234567890
+                  sections:
+                  - licenses
+                  - boardCertifications
             schema:
               $ref: '#/components/schemas/FlagCalculatorRequest'
         required: true
       responses:
         '200':
-          description: Successfully calculated flags
+          description: 'A summary of the flag calculation outcome: how many flags were created, updated, and deactivated, plus the resulting total. All four counters are 0 when the workflow''s status is REVIEWED_BY_CERTIFYOS — flag evaluation is skipped for that status (see the operation description).'
           content:
             application/json:
+              examples:
+                flagsCalculated:
+                  summary: Flags created, updated, and deactivated during evaluation
+                  value:
+                    monitoringWorkflowId: mw_1234567890
+                    flagsCreated: 5
+                    flagsUpdated: 3
+                    flagsDeactivated: 2
+                    totalFlags: 8
               schema:
                 $ref: '#/components/schemas/FlagCalculatorResponse'
         '400':
-          description: Invalid request parameters
+          description: Bad Request - the request body is missing monitoringWorkflowId or is otherwise malformed. Verify the request body matches the FlagCalculatorRequest schema.
           content:
             application/json:
+              examples:
+                missingWorkflowId:
+                  summary: Request body is missing the required monitoringWorkflowId
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: BAD_REQUEST
+                      title: Invalid request
+                      detail: monitoringWorkflowId is required
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - User does not have required permissions
-        '404':
-          description: Monitoring workflow not found
+          description: Unauthorized - the X-Monitoring-Api-Key header is missing or does not match the configured monitoring.api-key, and the monitoring.api-key-enabled kill-switch is turned on. Verify the header value against the configured key.
           content:
             application/json:
+              examples:
+                invalidApiKey:
+                  summary: X-Monitoring-Api-Key header missing or mismatched
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Invalid or missing API key
+                      detail: Invalid or missing API key
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not Found - no monitoring workflow exists with the given monitoringWorkflowId for the tenant identified by tenant-id. Verify the workflow ID and the tenant-id header.
+          content:
+            application/json:
+              examples:
+                workflowNotFound:
+                  summary: No monitoring workflow with this ID for this tenant
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Monitoring workflow not found
+                      detail: The specified monitoring workflow does not exist
               schema:
                 $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal Server Error - An unexpected error occurred
+          description: Internal Server Error - an unexpected error occurred while calculating flags. Retry the request; if the error persists, contact support.
       security:
       - jwt: []
 components:
   schemas:
-    FlagCalculatorRequest:
-      description: Request to calculate flags for a monitoring workflow
-      type: object
-      required:
-      - monitoringWorkflowId
-      properties:
-        monitoringWorkflowId:
-          type: string
-          description: ID of the monitoring workflow to calculate flags for
-          examples:
-          - mw_1234567890
-          pattern: \S
-        sections:
-          type: array
-          items:
-            type: string
-          description: Array of sections to calculate flags for. If not provided or empty, all sections' flags are calculated
-          examples:
-          - - licenses
-            - education
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -111,57 +139,89 @@ components:
         httpStatus:
           type: integer
           format: int32
-          description: HTTP status code for this error
           examples:
           - 400
+          description: HTTP status code for this error
         reason:
           type: string
-          description: Error reason/code
           examples:
           - VALIDATION_ERROR
+          description: Error reason/code
         title:
           type: string
-          description: Error title/summary
           examples:
           - 'Validation failed for field: eventTypes'
+          description: Error title/summary
         detail:
           type: string
-          description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    FlagCalculatorResponse:
-      description: Response from flag calculator operation
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    FlagCalculatorRequest:
       type: object
+      required:
+      - monitoringWorkflowId
+      description: Request body for POST /flag-calculator, identifying the monitoring workflow to evaluate and, optionally, which practitioner data sections to limit the calculation to.
+      properties:
+        monitoringWorkflowId:
+          type: string
+          examples:
+          - mw_1234567890
+          pattern: \S
+          description: ID of the monitoring workflow to calculate flags for. Must reference a workflow that already exists and belongs to the tenant identified by the tenant-id header, or the call returns 404.
+        sections:
+          type: array
+          examples:
+          - - licenses
+            - educationTraining
+          items:
+            type: string
+          description: 'Practitioner data sections to limit flag calculation to. Valid values: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, nppes, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments. If omitted or empty, flags are calculated across all sections. Any value outside this list is silently ignored rather than rejected — it will not cause a 400 and will not match any flags.'
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    FlagCalculatorResponse:
+      type: object
+      description: 'Result of a POST /flag-calculator call: how many flags were created, updated, and deactivated, plus the resulting total. All four counters are 0 when the workflow''s status is REVIEWED_BY_CERTIFYOS, since flag evaluation is skipped for that status.'
       properties:
         flagsCreated:
           type: integer
           format: int32
-          description: Number of flags created
           examples:
           - 5
+          description: Number of flags newly created during this evaluation. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path).
         flagsUpdated:
           type: integer
           format: int32
-          description: Number of flags updated
           examples:
           - 3
+          description: Number of existing flags whose state changed during this evaluation. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path).
         flagsDeactivated:
           type: integer
           format: int32
-          description: Number of flags deactivated
           examples:
           - 2
+          description: Number of previously active flags deactivated during this evaluation. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path).
         totalFlags:
           type: integer
           format: int32
-          description: Total number of flags after calculation
           examples:
           - 8
+          description: Total number of active flags on the workflow after this evaluation completed. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path).
         monitoringWorkflowId:
           type: string
-          description: ID of the monitoring workflow
           examples:
           - mw_1234567890
+          description: ID of the monitoring workflow this result belongs to; echoes the monitoringWorkflowId from the request.
   securitySchemes:
     jwt:
       type: http

@@ -22,31 +22,50 @@ tags:
 paths:
   /facilities:
     post:
-      summary: Create a new facility
-      description: Upserts CoreFacility from payload and creates/updates TenantFacility for the tenant.
+      summary: Create a facility for the tenant
+      description: Creates a CoreFacility and its TenantFacility association for the tenant (create path; certifyFacilityId is not yet known). Use this to establish a new facility record; use PUT /facilities/{id} instead when the certifyFacilityId is already known. A crosswalk ID is generated from the facility's tenant-scoped identity (NPI+TIN, NCPDP, externalId, or an address hash, depending on tenant identity configuration) — this crosswalk, not any single submitted field, is what the platform treats as the facility's unique identity key. Request body is validated against the facility-upsert JSON Schema and, for tenants configured with isFacilityExternalIdAsCrosswalk=true, against additional externalId/address-hash uniqueness rules (see FacilityValidationService). The primary address, if present, may be standardized via the address cleanser before being persisted. When facility.upsert.sync-survivorship.enabled is true (default), a synchronous (not queued/async) survivorship call is also triggered to the core data layer. Returns HTTP 201 with an ID map only (crosswalkId, corefacilityId, tenantfacilityId, and related batch-alias IDs) — not the full facility object; call GET /facilities/{id} afterwards to read back the created record. See PUT /facilities/{id} for the update path. Tenant UDF values go under `userDefinedFields`, keyed by the field names returned by `GET /udf-schemas/entity-type/facility`; UDF keys sent at the top level of the payload are rejected with 400.
       operationId: facilityUpsert
       tags:
       - Facility
       parameters:
-      - name: tenant-id
+      - description: Tenant ID
         in: header
+        required: true
+        name: tenant-id
         schema:
           type: string
       requestBody:
+        description: Facility create payload
         content:
           application/json:
+            examples:
+              createFacility:
+                value:
+                  name: Acme Medical Center
+                  npi: '1234567890'
+                  tin: '123456789'
+                  facilityType: Hospital
+                  addresses:
+                  - address1: 123 Main St
+                    city: Springfield
+                    state: IL
+                    zipcode: '62704'
+                    country: US
+                    isPrimary: true
+                  userDefinedFields:
+                    udfBatchDescription: Batch 2026-10
             schema:
-              $ref: '#/components/schemas/JsonNode'
+              $ref: '#/components/schemas/FacilityUpsertRequest'
         required: true
       responses:
         '201':
-          description: Facility successfully created or updated
+          description: Facility successfully created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/FacilityUpsertResponse'
         '400':
-          description: Invalid request body
+          description: 'Invalid request body. One of: a list of JSON Schema validation messages; {"errors": ["..."]} from tenant-specific validation (e.g. externalId/address-hash rules); or a plain-string message for other invalid requests (e.g. duplicate NPI/TIN, missing name/npi/tin).'
           content:
             application/json: {}
         '401':
@@ -66,8 +85,8 @@ paths:
       security:
       - jwt: []
     get:
-      summary: Find Facility by filter criteria with pagination
-      description: 'Returns a paginated list of all Facilities. Supports both offset-based (page/size) pagination. Filtering by credentialingCycle, nextCredentialingDate, credentialingStatus, and User Defined Fields (UDFs) is supported through the filter parameter. UDF fields can be filtered using the path format: `data.userDefinedFields.{fieldName}` for simple fields or `data.userDefinedFields.{parent}.{child}` for nested fields.'
+      summary: Search facilities by filter criteria with pagination
+      description: 'Returns a paginated list of facilities matching the supplied filter criteria. Use this to search or list facilities for a tenant; use GET /facilities/{id} instead when you already know the facility identifier. Supports offset-based pagination via page/size. Search by Roster (CP-35452): the rosterIds query param filters to facilities belonging to one or more selected rosters; combines with other filters using AND logic. Filtering by credentialingCycle, nextCredentialingDate, credentialingStatus, and User Defined Fields (UDFs) is supported through the filter parameter. UDF fields can be filtered using the path format: `data.userDefinedFields.{fieldName}` for simple fields or `data.userDefinedFields.{parent}.{child}` for nested fields.'
       operationId: facilityFindMany
       tags:
       - Facility
@@ -82,7 +101,7 @@ paths:
         in: query
         schema:
           type: string
-      - description: "Filter criteria as JSON (must be URL encoded). Multiple filters are combined with AND logic.\n\n**Filterable Fields:**\n\n**Credentialing Fields:**\n- `credentialingCycle` (String): Credentialing cycle type - `INITIAL` or `RECREDENTIALING` (eq, neq, in, nin, contains)\n- `nextCredentialingDate` (Date): Next credentialing date in ISO format `YYYY-MM-DD` (eq, neq, gt, gte, lt, lte, in, nin)\n- `credentialingStatus` (String): Current credentialing status (eq, neq, in, nin, contains)\n\n**User Defined Fields (UDFs):**\n- `userDefinedFields.*` (Dynamic): Any user-defined field stored in `data.userDefinedFields` object\n  - **Field Path Format**: Use `userDefinedFields.{fieldName}` or `userDefinedFields.{fieldName}.{subfield}` for nested fields\n  - **Important**: Clients should use only the `userDefinedFields.*` format (without `data.` prefix).\n    The backend automatically transforms `userDefinedFields.*` to `data.userDefinedFields.*` internally.\n  - **Supported Operations** (varies by field type):\n    - **String fields**: `eq`, `neq`, `in`, `nin`, `contains`\n    - **Numeric fields**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n    - **Array fields**: `eq`, `in` (checks if array contains the value)\n    - **Boolean fields**: `eq`, `neq`\n  - **Examples**: `userDefinedFields.market`, `userDefinedFields.location.region`\n\n**Other Data Fields:**\n- `data.*` (Any): Any data field (eq, neq, in, nin, contains, gt, gte, lt, lte)\n\n**Operations:**\n- **String**: `eq`, `neq`, `in`, `nin`, `contains`\n- **Date**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n- **Numeric**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n- **Array**: `eq`, `in` (checks if array contains the value)\n- **Boolean**: `eq`, `neq`\n\n**Examples:**\n\n**Credentialing Filters:**\n```json\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"}}\n{\"nextCredentialingDate\":{\"gte\":\"2025-01-01\"}}\n{\"credentialingStatus\":{\"eq\":\"CRED_APPROVED\"}}\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"},\"nextCredentialingDate\":{\"gte\":\"2025-01-01\",\"lte\":\"2025-12-31\"}}\n{\"credentialingStatus\":{\"in\":[\"CRED_APPROVED\",\"PSV_READY\"]},\"credentialingCycle\":{\"eq\":\"RECREDENTIALING\"}}\n```\n\n**User Defined Fields (UDFs):**\n```json\n{\"userDefinedFields.market\":{\"eq\":\"MARKET1\"}}\n{\"userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n{\"userDefinedFields.location.region\":{\"eq\":\"NORTH\"}}\n```\n**Note**: Clients must use the `userDefinedFields.*` format (without `data.` prefix).\nThe backend automatically transforms these to `data.userDefinedFields.*` internally.\n\n**Combined Filters:**\n```json\n{\"credentialingStatus\":{\"eq\":\"CRED_APPROVED\"},\"userDefinedFields.market\":{\"eq\":\"MARKET1\"}}\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"},\"nextCredentialingDate\":{\"gte\":\"2025-01-01\"},\"userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n```\n\n**Notes:**\n- Filter must be URL encoded when sent as query parameter\n- `tenantId` from header always takes precedence (cannot be overridden)\n- Credentialing fields are derived from the most recent CRED_APPROVED timeline event\n- Date format must be ISO 8601: `YYYY-MM-DD`\n- String operations are case-sensitive\n- UDF field names are case-sensitive - use exact field names as stored in your data\n- UDF fields are dynamically supported - any field under `userDefinedFields.*` can be filtered\n  (use `userDefinedFields.*` format, not `data.userDefinedFields.*`)\n- UDF nested fields are supported using dot notation: `userDefinedFields.parent.child`\n"
+      - description: "Filter criteria as JSON (must be URL encoded). Multiple filters are combined with AND logic.\n\n**Filterable Fields:**\n\n**Credentialing Fields:**\n- `credentialingCycle` (String): Credentialing cycle type - `INITIAL` or `RECREDENTIALING` (eq, neq, in, nin, contains)\n- `nextCredentialingDate` (Date): Next credentialing date in ISO format `YYYY-MM-DD` (eq, neq, gt, gte, lt, lte, in, nin)\n- `credentialingStatus` (String): Current credentialing status (eq, neq, in, nin, contains)\n\n**User Defined Fields (UDFs):**\n- `userDefinedFields.*` (Dynamic): Any user-defined field stored in `data.userDefinedFields` object\n  - **Field Path Format**: Use `userDefinedFields.{fieldName}` or `userDefinedFields.{fieldName}.{subfield}` for nested fields\n  - **Important**: Clients should use only the `userDefinedFields.*` format (without `data.` prefix).\n    The backend automatically transforms `userDefinedFields.*` to `data.userDefinedFields.*` internally.\n  - **Supported Operations** (varies by field type):\n    - **String fields**: `eq`, `neq`, `in`, `nin`, `contains`\n    - **Numeric fields**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n    - **Array fields**: `eq`, `in` (checks if array contains the value)\n    - **Boolean fields**: `eq`, `neq`\n  - **Examples**: `userDefinedFields.market`, `userDefinedFields.location.region`\n\n**Other Data Fields:**\n- `data.ncpdpId` (String): Pharmacy NCPDP identifier (eq, in, contains) — prefer query params `ncpdpId` / `ncpdpIdContains` for simple cases\n- `data.*` (Any): Any data field (eq, neq, in, nin, contains, gt, gte, lt, lte)\n\n**Operations:**\n- **String**: `eq`, `neq`, `in`, `nin`, `contains`\n- **Date**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n- **Numeric**: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`\n- **Array**: `eq`, `in` (checks if array contains the value)\n- **Boolean**: `eq`, `neq`\n\n**Examples:**\n\n**Credentialing Filters:**\n```json\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"}}\n{\"nextCredentialingDate\":{\"gte\":\"2025-01-01\"}}\n{\"credentialingStatus\":{\"eq\":\"CRED_APPROVED\"}}\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"},\"nextCredentialingDate\":{\"gte\":\"2025-01-01\",\"lte\":\"2025-12-31\"}}\n{\"credentialingStatus\":{\"in\":[\"CRED_APPROVED\",\"PSV_READY\"]},\"credentialingCycle\":{\"eq\":\"RECREDENTIALING\"}}\n```\n\n**NCPDP Filters:**\n```json\n{\"data.ncpdpId\":{\"eq\":\"2334234\"}}\n{\"data.ncpdpId\":{\"in\":[\"1111111\",\"3333333\"]}}\n{\"data.ncpdpId\":{\"contains\":\"342\"}}\n```\n\n**User Defined Fields (UDFs):**\n```json\n{\"userDefinedFields.market\":{\"eq\":\"MARKET1\"}}\n{\"userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n{\"userDefinedFields.location.region\":{\"eq\":\"NORTH\"}}\n```\n**Note**: Clients must use the `userDefinedFields.*` format (without `data.` prefix).\nThe backend automatically transforms these to `data.userDefinedFields.*` internally.\n\n**Combined Filters:**\n```json\n{\"credentialingStatus\":{\"eq\":\"CRED_APPROVED\"},\"userDefinedFields.market\":{\"eq\":\"MARKET1\"}}\n{\"credentialingCycle\":{\"eq\":\"INITIAL\"},\"nextCredentialingDate\":{\"gte\":\"2025-01-01\"},\"userDefinedFields.market\":{\"in\":[\"MARKET1\",\"MARKET2\"]}}\n```\n\n**Notes:**\n- Filter must be URL encoded when sent as query parameter\n- `tenantId` from header always takes precedence (cannot be overridden)\n- Credentialing fields are derived from the most recent CRED_APPROVED timeline event\n- Date format must be ISO 8601: `YYYY-MM-DD`\n- String operations are case-sensitive\n- UDF field names are case-sensitive - use exact field names as stored in your data\n- UDF fields are dynamically supported - any field under `userDefinedFields.*` can be filtered\n  (use `userDefinedFields.*` format, not `data.userDefinedFields.*`)\n- UDF nested fields are supported using dot notation: `userDefinedFields.parent.child`\n"
         name: filter
         in: query
         schema:
@@ -94,6 +113,16 @@ paths:
           type: string
       - description: Filter by facility name
         name: name
+        in: query
+        schema:
+          type: string
+      - description: Filter by NCPDP ID (exact match). Accepts one 7-digit value, or multiple values separated by comma/newline/tab/semicolon/space for {@code in} matching (CP-33006). Each value must be exactly 7 digits.
+        name: ncpdpId
+        in: query
+        schema:
+          type: string
+      - description: Filter by NCPDP ID substring ({@code contains}). Does not require a full 7-digit value (CP-33006). Prefer {@code ncpdpId} for exact UI search.
+        name: ncpdpIdContains
         in: query
         schema:
           type: string
@@ -109,6 +138,11 @@ paths:
           type: integer
           format: int32
           default: '0'
+      - description: 'Search by Roster (CP-35452): comma-separated roster UUIDs. May contain one or more values, max facility.roster-search.max-ids (default 20). Combines with other query params and `filter` using AND logic. Omit or leave blank for a standard (non-roster) list request.'
+        name: rosterIds
+        in: query
+        schema:
+          type: string
       - description: Number of items per page in offset-based pagination. Defaults to 10 if not specified.
         name: size
         in: query
@@ -130,6 +164,26 @@ paths:
           description: List of Facilities
           content:
             application/json:
+              examples:
+                standardList:
+                  value:
+                    data:
+                    - id: cf_9f1b2c3d
+                      name: Acme Medical Center
+                      npi: '1234567890'
+                    totalCount: 1
+                bulkNpiSearch:
+                  value:
+                    data:
+                    - id: cf_9f1b2c3d
+                      name: Acme Medical Center
+                      npi: '1234567890'
+                    totalCount: 1
+                    identifiersSearched: 2
+                    matchedCount: 1
+                    notFoundCount: 1
+                    unmatchedIdentifiers:
+                    - '9999999999'
               schema:
                 $ref: '#/components/schemas/PagedResponse'
         '401':
@@ -148,10 +202,96 @@ paths:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
+  /facilities/supporting-documents/bulk:
+    post:
+      summary: Bulk upload supporting documents to multiple facilities
+      description: 'Uploads one or more files exactly once each and links them as shared supporting-document attachments (source: "Bulk") to every selected facility. Facilities may be selected explicitly via certifyFacilityIds (JSON string form field), or via isSelectAll=true plus a filter JSON string (same encoding as GET /facilities). When isSelectAll is true, certifyFacilityIds is ignored; when false, filter is ignored. Target set size is capped (default 1000; see api-layer.facility.bulk-document-upload.max-facilities). HTTP 200 is returned for both full and partial success: per-file and per-facility outcomes are reported independently in the response body. When the feature kill switch is off, the endpoint returns 404 with an empty body (CP-35450).'
+      operationId: bulkCreateFacilitySupportingDocuments
+      tags:
+      - Facility
+      parameters:
+      - description: Tenant identifier
+        in: header
+        required: true
+        name: tenant-id
+        schema:
+          type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                fileType:
+                  type: string
+                state:
+                  type: string
+                expirationDate:
+                  type: string
+                certifyFacilityIds:
+                  type: string
+                filter:
+                  type: string
+                isSelectAll:
+                  type: boolean
+                  default: false
+        required: true
+      responses:
+        '200':
+          description: Bulk upload processed (full or partial success); see body for per-file and per-facility outcomes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkFacilitySupportingDocumentUploadResponse'
+        '400':
+          description: 'Bad request - missing files/fileType, invalid certifyFacilityIds/filter JSON, no facilities resolved, or too many facilities targeted. Body shape is {"error": "<message>"}.'
+          content:
+            application/json:
+              schema:
+                type: object
+                examples:
+                - error: fileType is required.
+                properties:
+                  error:
+                    type: string
+                    examples:
+                    - fileType is required.
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Not Found - bulk supporting-document upload is disabled for this environment (empty body)
+          content:
+            application/json: {}
+        '500':
+          description: 'Internal server error. Body shape is {"error": "<message>"}.'
+          content:
+            application/json:
+              schema:
+                type: object
+                examples:
+                - error: Failed to process bulk supporting document upload.
+                properties:
+                  error:
+                    type: string
+                    examples:
+                    - Failed to process bulk supporting document upload.
+      security:
+      - jwt: []
   /facilities/tenant-facility-specialties/specialty:
     patch:
-      summary: Update a tenant facility specialty record
-      description: Updates a TenantFacilitySpecialty record (Level 1) by replacing the tenant_specialty_id, updating the effective date, or both. At least one of newTenantSpecialtyId or effectiveDate must be provided. Does not trigger termination events or lifecycle changes.
+      summary: Correct a facility-level specialty record
+      description: Updates a TenantFacilitySpecialty record (Level 1) by replacing the tenant_specialty_id, updating the effective date, or both. At least one of newTenantSpecialtyId or effectiveDate must be provided. Use this for data-correction scenarios where a facility's direct specialty association needs to be updated without triggering credentialing lifecycle events — it does not propagate changes to group, location, or network specialty records. For corrections that need to cascade to group-level records, use PATCH /facilities/tenant-group-facility-specialties/specialty instead. Does not trigger termination events or lifecycle changes. Returns the raw updated record (id, tenantSpecialtyId, data) as an untyped JSON object, not a curated response DTO.
       operationId: updateTenantFacilitySpecialty
       tags:
       - Facility
@@ -171,12 +311,21 @@ paths:
           description: Specialty updated successfully
           content:
             application/json:
+              examples:
+                specialtyCorrected:
+                  value:
+                    id: tfs_001
+                    tenantSpecialtyId: spec_cardiology
+                    data:
+                      effectiveDate: '2026-08-01'
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -188,21 +337,27 @@ paths:
         '404':
           description: Tenant facility specialty not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '409':
           description: Conflict - Facility already has this specialty
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/tenant-group-facility-location-specialties/specialty:
     patch:
       summary: Correct the specialty at the group-facility-location level
-      description: Resolves the FK chain from TenantGroupFacilityLocationSpecialty (Level 4) to the parent TenantGroupFacilitySpecialty (Level 3) and replaces its tenant_specialty_id. Does not trigger termination events.
+      description: Resolves the FK chain from TenantGroupFacilityLocationSpecialty (Level 4) to the parent TenantGroupFacilitySpecialty (Level 3) and replaces its tenant_specialty_id by updating that Level-3 record. Use this for data-correction scenarios where a group-facility-location specialty record is linked to the wrong specialty and you need to scope the correction to a single location without cascading across all locations — for the broader group-facility correction, use PATCH /facilities/tenant-group-facility-specialties/specialty instead. Does not trigger termination events. Because this operation delegates to the Level-3 update, the response body is shaped like the Level-3 record (id, tenantSpecialtyId, data) — not a Level-4-specific record.
       operationId: correctTenantGroupFacilityLocationSpecialty
       tags:
       - Facility
@@ -222,12 +377,21 @@ paths:
           description: Specialty corrected successfully
           content:
             application/json:
+              examples:
+                specialtyCorrected:
+                  value:
+                    id: tgfs_001
+                    tenantSpecialtyId: spec_cardiology
+                    data:
+                      effectiveDate: '2026-08-01'
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -239,21 +403,27 @@ paths:
         '404':
           description: Group facility location specialty not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '409':
           description: Conflict - Group facility already has this specialty
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/tenant-group-facility-network-specialties/specialty:
     patch:
       summary: Correct the specialty at the group-facility-network level
-      description: Resolves the FK chain from TenantGroupFacilityNetworkSpecialty (Level 5) to the parent TenantGroupFacilitySpecialty (Level 3) and replaces its tenant_specialty_id. Does not trigger termination events.
+      description: Resolves the FK chain from TenantGroupFacilityNetworkSpecialty (Level 5) to the parent TenantGroupFacilitySpecialty (Level 3) and replaces its tenant_specialty_id by updating that Level-3 record. Use this for data-correction scenarios where a group-facility-network specialty record is linked to the wrong specialty and you need to scope the correction to a single network association without cascading across all locations — for the broader group-facility correction, use PATCH /facilities/tenant-group-facility-specialties/specialty instead. Does not trigger termination events. Because this operation delegates to the Level-3 update, the response body is shaped like the Level-3 record (id, tenantSpecialtyId, data) — not a Level-5-specific record.
       operationId: correctTenantGroupFacilityNetworkSpecialty
       tags:
       - Facility
@@ -273,12 +443,21 @@ paths:
           description: Specialty corrected successfully
           content:
             application/json:
+              examples:
+                specialtyCorrected:
+                  value:
+                    id: tgfs_001
+                    tenantSpecialtyId: spec_cardiology
+                    data:
+                      effectiveDate: '2026-08-01'
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -290,21 +469,27 @@ paths:
         '404':
           description: Group facility network specialty not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '409':
           description: Conflict - Group facility already has this specialty
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/tenant-group-facility-specialties/specialty:
     patch:
       summary: Correct the specialty on a group facility specialty record
-      description: Replaces the tenant_specialty_id on a TenantGroupFacilitySpecialty record (Level 3) in data-correction mode. Cascades to Levels 4, 5, 6 via FK chain. Does not trigger termination events.
+      description: Replaces the tenant_specialty_id on a TenantGroupFacilitySpecialty record (Level 3) in data-correction mode. Use this for data-correction scenarios where a group-level facility specialty association is incorrect and the correction must propagate to its child records — cascades to the group-facility-location and group-facility-network specialty records (Levels 4, 5) that are children of this association via FK chain. For correcting only a facility-level (non-group) record, use PATCH /facilities/tenant-facility-specialties/specialty instead. Does not trigger termination events. Returns the raw updated Level-3 record (id, tenantSpecialtyId, data) as an untyped JSON object.
       operationId: correctTenantGroupFacilitySpecialty
       tags:
       - Facility
@@ -324,12 +509,21 @@ paths:
           description: Specialty corrected successfully
           content:
             application/json:
+              examples:
+                specialtyCorrected:
+                  value:
+                    id: tgfs_001
+                    tenantSpecialtyId: spec_cardiology
+                    data:
+                      effectiveDate: '2026-08-01'
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -341,21 +535,152 @@ paths:
         '404':
           description: Tenant group facility specialty not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '409':
           description: Conflict - Group facility already has this specialty
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
+  /facilities/terminate:
+    post:
+      summary: Globally terminate one or more facilities
+      description: 'Terminates each facility without the caller naming a group, network or location: every active group, network and location relationship across all of the facility''s locations ends and the facility''s tenant-level record is terminated with the given date and reason (and, when supplied, terminationInformedDate: the date the termination notice was provided, stored beside the termination date on the same records and restored by a rollback). Practitioner relationships are never changed. Supply certifyLocationId to terminate only that location (the group affiliation ends too when it was the facility''s last location in it, and the tenant-level record stays active). Relationships that already carry a termination (any termination date, past, today or future) are left exactly as they were and reported as skipped: a future-dated termination is a regular termination, and a wrong date is corrected by rolling the request back and terminating again. Open credentialing workflows are cancelled immediately, whatever the effective date; the response says how many. The cancellation is the Credentialing API''s own operation and is simply called: if it passes the termination stands, if it fails (for example for a tabled workflow) the termination is reversed and the error carries the cancel failure''s message (502 for a single facility, because a dependency failed; several facilities report it per facility as a failed item). Rolling a request back restores the records only; it does not reopen workflows. A single facility is processed synchronously and an already-terminated facility is rejected with 409; several facilities succeed or fail independently and the response reports each. Use the returned requestId with POST /facilities/terminations/{requestId}/rollback to undo exactly what this request changed. A webhook (facility.global_termination.completed) is sent once per terminated facility.'
+      operationId: terminateFacilitiesGlobal
+      tags:
+      - Facility
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Facilities to terminate with reason, effective date and consent
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TerminateFacilitiesRequest'
+        required: true
+      responses:
+        '200':
+          description: Termination processed; per-facility results in items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalTerminationResponse'
+        '400':
+          description: Validation failed (missing reason naming the field, bad date, no consent, too many ids)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '409':
+          description: The single facility is already terminated and has no active relationship left to end, or a facility of the request already has a termination in progress (nothing was created; retry once the earlier request has finished)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '502':
+          description: A single facility's open credentialing workflow could not be cancelled (a dependency failed), so the termination was reversed; the detail carries the cancel failure's message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
             application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Facility not found, or the feature is not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
+  /facilities/terminations/{requestId}/rollback:
+    post:
+      summary: Roll back a facility global termination request
+      description: 'Restores exactly the relationship rows the given termination request changed, to their exact prior values, and nothing else. All-or-nothing: if any row has since changed or cannot be safely restored, nothing is touched and 409 names the blocking rows. Rows the request skipped because they were already terminated are not touched. Does not reinstate NPDB enrollment or monitoring (these do not apply to facilities) and does not reopen cancelled credentialing workflows.'
+      operationId: rollbackFacilityTermination
+      tags:
+      - Facility
+      parameters:
+      - description: Id of the termination request to roll back
+        required: true
+        name: requestId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Request rolled back
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalTerminationRollbackResponse'
+        '400':
+          description: The request is not a facility termination or has nothing to roll back
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Termination request not found, or the feature is not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '409':
+          description: Rollback blocked (a row changed since the termination) or the request is not in a rollbackable state; nothing was changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/{certifyFacilityId}/groups/{certifyGroupId}/effective-date:
     put:
       summary: Update effective dates for facility-group association
-      description: 'Updates the effective start date and/or termination date for a facility-group association. Optionally cascades the date change to network participation based on the cascadeToNetworkParticipation flag. If terminationDate is provided, it must be after the effectiveDate. Mirrors the practitioner-group precedent endpoint with one deliberate divergence: the request body carries an optional changeReason field per facility-resource convention.'
+      description: 'Updates the effective start date and/or termination date for a facility-group association. Use this to adjust when a facility''s membership in a group begins or ends; use PUT .../groups/{certifyGroupId}/networks/{networkId}/effective-date to independently adjust a single network enrollment date within that group association instead. Optionally cascades the date change to network participation based on the cascadeToNetworkParticipation flag — this cascade is best-effort: if it fails, the failure is swallowed and does not fail the request or change the response, so a 200 does not guarantee the cascade itself succeeded. If terminationDate is provided, it must be after the effectiveDate. Mirrors the practitioner-group precedent endpoint with one deliberate divergence: the request body carries an optional changeReason field per facility-resource convention. Returns the raw updated TenantGroupFacility record as an untyped JSON object, not a curated response DTO.'
       operationId: updateFacilityGroupEffectiveDate
       tags:
       - Facility
@@ -388,8 +713,18 @@ paths:
           description: Facility-group effective date successfully updated
           content:
             application/json:
+              examples:
+                effectiveDateUpdated:
+                  value:
+                    id: tgf_001
+                    tenantGroupId: grp_abc123
+                    tenantFacilityId: tf_abc123
+                    certifyFacilityId: cf_9f1b2c3d
+                    data:
+                      effectiveDate: '2026-08-01'
+                      terminationDate: null
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Invalid request body, missing required parameters, or validation failure
           content:
@@ -424,8 +759,8 @@ paths:
       - jwt: []
   /facilities/{certifyFacilityId}/groups/{certifyGroupId}/networks/{networkId}/effective-date:
     put:
-      summary: Update effective dates for a single facility-group-network association
-      description: 'Updates the effective start date and/or termination date for a single TenantGroupFacilityNetwork (TGFN) leaf row independently of its parent TenantGroupFacility association. The service-layer enforces a cross-level invariant: the request effectiveDate cannot precede the parent facility-group effectiveDate. CP-28250 phase-2 / sub-task CP-28250-Phase2-BE.'
+      summary: Update effective date for a facility-group-network enrollment
+      description: 'Updates the effective start date and/or termination date for a single TenantGroupFacilityNetwork (TGFN) leaf row independently of its parent TenantGroupFacility association. Use this when you need to adjust a network enrollment date without changing the parent facility-group association dates; use PUT .../groups/{certifyGroupId}/effective-date to change the parent facility-group dates (which can optionally cascade to network records) instead. The service-layer enforces a cross-level invariant: the request effectiveDate cannot precede the parent facility-group effectiveDate. Returns the raw updated TenantGroupFacilityNetwork record as an untyped JSON object, not a curated response DTO. CP-28250 phase-2 / sub-task CP-28250-Phase2-BE.'
       operationId: updateFacilityGroupNetworkEffectiveDate
       tags:
       - Facility
@@ -464,8 +799,17 @@ paths:
           description: Facility-group-network effective date successfully updated
           content:
             application/json:
+              examples:
+                effectiveDateUpdated:
+                  value:
+                    id: tgfn_001
+                    tenantGroupId: grp_abc123
+                    networkId: net-xyz789
+                    data:
+                      effectiveDate: '2026-08-01'
+                      terminationDate: null
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Invalid request body, missing required parameters, format violation, or cross-level validation failure (request effectiveDate before parent facility-group effectiveDate)
           content:
@@ -500,8 +844,8 @@ paths:
       - jwt: []
   /facilities/{certifyFacilityId}/locations:
     post:
-      summary: Add a location to a facility
-      description: Creates a new location and associates it with the specified facility.
+      summary: Add a new location to a facility
+      description: Creates a new location record and associates it with the specified facility. Use this to register a new physical location under an existing facility; to update an existing location's attributes, use PUT /facilities/{certifyFacilityId}/locations/{certifyLocationId} instead. The facility identified by certifyFacilityId must already exist. The request body is validated against a JSON schema; a 400 is returned if validation fails. Returns HTTP 201 with a batch alias ID map (e.g. corelocation, tenantfacilitylocation, and related address IDs) plus a message field — not the full created location record; call the location's read endpoint afterwards if you need the complete record.
       operationId: facilityAddLocation
       tags:
       - Facility
@@ -517,22 +861,42 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Location create payload
         content:
           application/json:
+            examples:
+              createLocation:
+                value:
+                  locationType: Office
+                  isPrimaryLocation: false
+                  address:
+                    address1: 456 Oak Ave
+                    city: Springfield
+                    state: IL
+                    zipcode: '62704'
+                    country: US
             schema:
-              $ref: '#/components/schemas/JsonNode'
+              type: object
         required: true
       responses:
         '201':
           description: Location successfully created and associated with facility
           content:
             application/json:
+              examples:
+                locationCreated:
+                  value:
+                    corelocation: loc_4d5e6f
+                    tenantfacilitylocation: tfl_001
+                    message: Location successfully created and associated with facility
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Invalid request body
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -544,7 +908,9 @@ paths:
         '404':
           description: Facility not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
@@ -556,7 +922,7 @@ paths:
   /facilities/{certifyFacilityId}/locations/{certifyLocationId}:
     put:
       summary: Update a facility location (simple CoreLocation fields)
-      description: 'Updates allowed CoreLocation fields for a location linked to the facility. Requires consentAcknowledged: true. Includes contacts, office hours, ADA, limitations, isPrimaryLocation (primary indicator), optional userDefinedFields (full replace of that object on CoreLocation data), and optional specialityDetails (same shape as add-location; syncs TenantFacilityLocationSpecialty via replace semantics). Location name and service address cannot be changed via this API (crosswalk safety). The authenticated user is the actor (updated_by); scoped effective-date PATCH and cascade to group/network denormalized rows are not part of this endpoint.'
+      description: 'Updates allowed CoreLocation fields for a location linked to the facility. Requires consentAcknowledged: true. Includes contacts, office hours, ADA, limitations, isPrimaryLocation (primary indicator), optional userDefinedFields (full replace of that object on CoreLocation data), and optional specialityDetails (same shape as add-location; syncs TenantFacilityLocationSpecialty via replace semantics). When api-layer.facility.location-tfl-contacts.enabled is on, contacts is stored on the facility''s TenantFacilityLocation (data.contacts, the list replaces the stored one; [] clears it) instead of CoreLocation, needs no crosswalkId, and is validated with facility-location-tfl-contacts.schema.json (flat objects, string or null values, at most 50 items, an all-blank item is rejected with 400 INVALID_CONTACT). Location name and service address cannot be changed via this API (crosswalk safety). The authenticated user is the actor (updated_by); scoped effective-date PATCH and cascade to group/network denormalized rows are not part of this endpoint.'
       operationId: facilityUpdateLocation
       tags:
       - Facility
@@ -578,22 +944,39 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Location update payload
         content:
           application/json:
+            examples:
+              updateLocation:
+                value:
+                  consentAcknowledged: true
+                  isPrimaryLocation: true
+                  officeHours: Mon-Fri 9am-5pm
             schema:
-              $ref: '#/components/schemas/JsonNode'
+              type: object
         required: true
       responses:
         '200':
           description: Location successfully updated
           content:
             application/json:
+              examples:
+                locationUpdated:
+                  value:
+                    certifyLocationId: loc_4d5e6f
+                    message: Location updated successfully
+                    updatedFields:
+                    - officeHours
+                    - isPrimaryLocation
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '400':
           description: Invalid request body
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -616,10 +999,86 @@ paths:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
+  /facilities/{certifyFacilityId}/locations/{certifyLocationId}/networks/{networkId}/effective-date:
+    put:
+      summary: Update effective date for facility location network participation (TGLFN)
+      description: Updates the effective start date on TenantGroupLocationFacilityNetwork rows for this facility at the given practice location and network. Updates all intrinsic group memberships (no group picker). Does not create rows or modify TGLN/TGFN. CP-29886.
+      operationId: updateFacilityLocationNetworkEffectiveDate
+      tags:
+      - Facility
+      parameters:
+      - description: Certify facility ID
+        required: true
+        name: certifyFacilityId
+        in: path
+        schema:
+          type: string
+      - description: Certify location ID
+        required: true
+        name: certifyLocationId
+        in: path
+        schema:
+          type: string
+      - description: Network ID
+        required: true
+        name: networkId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: Effective date and optional change reason
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFacilityLocationNetworkEffectiveDateRequest'
+        required: true
+      responses:
+        '200':
+          description: Facility location network effective date successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateFacilityLocationNetworkEffectiveDateResponse'
+        '400':
+          description: Invalid request or validation failure (date format, floors, termination ordering)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '404':
+          description: Facility, location, or TGLFN participation row not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error during request processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
   /facilities/{certifyFacilityId}/locations/{certifyLocationId}/terminate:
     post:
       summary: Terminate a facility location (full or network-only)
-      description: 'Supports two modes controlled by which dates are provided in the request body: (1) Full termination — provide facilityTerminationDate to terminate the facility–location relationship and cascade to all network/plan participation records in one atomic batch. (2) Network-only termination — omit facilityTerminationDate and provide networkTerminationDate. Only network/plan participation records (TenantGroupLocationNetwork, TenantGroupLocationFacilityNetwork) are terminated; the facility–location record itself remains active. Optionally scope to a single network by providing networkId. At least one date field is required. Does not terminate TenantGroupFacilityNetwork (whole-facility network enrollment).'
+      description: 'Supports two modes controlled by which dates are provided in the request body: (1) Full termination — provide facilityTerminationDate to terminate the facility–location relationship and cascade to all network/plan participation records in one atomic batch. (2) Network-only termination — omit facilityTerminationDate and provide networkTerminationDate. Terminates TenantGroupLocationFacilityNetwork (TGLFN) for this facility at the location and cascades to plan and practitioner network participation (TenantGroupLocationNetworkPlan, TenantGroupLocationPractitionerNetwork, TenantGroupPractitionerNetwork). Does not write TenantGroupLocationNetwork (TGLN). The facility–location record itself remains active. Optionally scope to a single network by providing networkId. At least one date field is required. Does not terminate TenantGroupFacilityNetwork (whole-facility network enrollment).'
       operationId: terminateFacilityLocation
       tags:
       - Facility
@@ -685,7 +1144,7 @@ paths:
   /facilities/{certifyFacilityId}/locations/{certifyLocationId}/termination-impact:
     get:
       summary: Preview facility location termination impact
-      description: Returns the location name, address summary, networks/plans the location participates in via the facility, and whether the location is already terminated.
+      description: 'Returns a read-only pre-flight summary of what would be affected if the specified facility location were terminated: the location name, address summary, the networks (and optional plan ids) the location participates in via the facility, and whether the location is already terminated. Use this before calling POST .../locations/{certifyLocationId}/terminate to understand the scope of the change — this endpoint makes no changes itself.'
       operationId: getFacilityLocationTerminationImpact
       tags:
       - Facility
@@ -735,9 +1194,140 @@ paths:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
+  /facilities/{certifyFacilityId}/locations/{tenantGroupLocationId}/networks/{networkId}/npi-par-date:
+    put:
+      summary: Update location-network billing NPI and participation date for a facility…
+      description: 'As of CP-36570: updates NPI and/or participation date on TenantGroupLocationNetwork and TenantGroupLocationFacilityNetwork for this facility at the specified location-network, writing the `addressType2Npi` array on both (supports multiple NPIs per location-network). Preferred: pass `npiEntries` with the location-network''s complete NPI set — it REPLACES the stored array, so an NPI omitted from the list is deleted (the only way to remove one) and an entry without `npiParticipationDate` is stored with no date. Deprecated: the scalar `npi`/`npiParticipationDate` fields still work (repeat the call to add/update additional NPIs; `npi` is required to disambiguate `npiParticipationDate` when more than one NPI exists) but are mutually exclusive with `npiEntries` in the same request.'
+      operationId: updateFacilityLocationNetworkNpiParDate
+      tags:
+      - Facility
+      parameters:
+      - description: Certify facility ID
+        required: true
+        name: certifyFacilityId
+        in: path
+        schema:
+          type: string
+      - description: Network ID
+        required: true
+        name: networkId
+        in: path
+        schema:
+          type: string
+      - description: Tenant group location ID
+        required: true
+        name: tenantGroupLocationId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: NPI and/or participation date to update
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationNetworkNpiParDateRequest'
+        required: true
+      responses:
+        '200':
+          description: Facility location-network NPI successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateFacilityLocationNetworkNpiParDateResponse'
+        '400':
+          description: Invalid request body or missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '404':
+          description: Facility, location, or network association not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
+  /facilities/{certifyFacilityId}/terminations/rollback:
+    post:
+      summary: Roll back a facility termination by its exact date and reason
+      description: 'For a termination that has no global termination request id (it predates the global termination framework, so there is no provenance to restore from). Clears the termination from every relationship row of the facility whose termination date AND reason match the request exactly. Fails closed: both fields are required, and if any terminated row has a blank reason (so it cannot be attributed to one event) or no row matches, nothing is changed. Rows from a different termination event are left alone. Does not reinstate NPDB enrollment or monitoring (these do not apply to facilities) and does not reopen cancelled credentialing workflows.'
+      operationId: rollbackFacilityTerminationByValue
+      tags:
+      - Facility
+      parameters:
+      - description: Certify facility id
+        required: true
+        name: certifyFacilityId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: The exact termination date and reason to undo
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackFacilityTerminationByValueRequest'
+        required: true
+      responses:
+        '200':
+          description: Termination rolled back
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RollbackFacilityTerminationByValueResponse'
+        '400':
+          description: Missing date or reason, or no row matches them
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Facility not found, or the feature is not enabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '409':
+          description: Ambiguous match (a terminated row has a blank reason); nothing was changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
   /facilities/{id}:
     put:
       summary: Update a facility and its tenant association
+      description: Updates the CoreFacility identified by the path certifyFacilityId and its TenantFacility association for the tenant (update path). Use this when the certifyFacilityId is already known; use POST /facilities instead to create a new facility. Stored identity fields not present in the payload are merged in before validation, then the same crosswalk identity used at create time is re-resolved and updated — retrying this call with the same payload is safe and updates the same rows (idempotent). Request body is validated against the same facility-upsert JSON Schema and tenant-specific rules used by POST /facilities. Returns HTTP 201 (not 200) on success — this matches the create endpoint's status code by historical convention rather than by REST semantics for an update; treat any 2xx as success rather than branching on the exact code. Response body is the same ID map as create (crosswalkId, corefacilityId, tenantfacilityId, etc.), not the full facility object. See POST /facilities for the create path.
       operationId: facilityUpdate
       tags:
       - Facility
@@ -748,15 +1338,25 @@ paths:
         in: path
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant ID
         in: header
+        required: true
+        name: tenant-id
         schema:
           type: string
       requestBody:
+        description: Facility update payload
         content:
           application/json:
+            examples:
+              updateFacility:
+                value:
+                  name: Acme Medical Center
+                  npi: '1234567890'
+                  tin: '123456789'
+                  facilityType: Hospital
             schema:
-              $ref: '#/components/schemas/JsonNode'
+              $ref: '#/components/schemas/FacilityUpsertRequest'
         required: true
       responses:
         '201':
@@ -764,9 +1364,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                $ref: '#/components/schemas/FacilityUpsertResponse'
         '400':
-          description: Invalid request body
+          description: 'Invalid request body. One of: a list of JSON Schema validation messages; {"errors": ["..."]} from tenant-specific validation (e.g. externalId/address-hash rules); or a plain-string message for other invalid requests.'
           content:
             application/json: {}
         '401':
@@ -790,8 +1390,8 @@ paths:
       security:
       - jwt: []
     get:
-      summary: Get a facility by their ID
-      description: Returns a single facility by their ID
+      summary: Retrieve a single facility by ID
+      description: 'Returns the complete facility record for the given certify facility id, scoped to the calling tenant, as it exists in the Facility Operational View. Use this when you already know the facility identifier; use GET /facilities to search or list facilities instead. Preconditions: supply the tenant-id header; id must be a valid Certify facility identifier for that tenant. Returns an untyped JSON object built from the CoreFacility Operational View data — a top-level id plus name, npi, tin, dba, facilityType, externalId, delegationStatus, businessPurpose, userDefinedFields, addresses, emails, phoneNumbers, and array fields for licenses, certifications, insurances, accreditations, specialties, sanctions, siteVisits, medicareStarRatings, appVerifications, performanceIndicators, npdbReports, nppes, and supportingDocuments — plus credentialing fields (credentialingStatus, nextCredentialingDate, credentialingCycle, credentialingDecisionDate, credentialingStatusLastUpdatedDate) merged in at read time. When facility global termination is enabled, the tenant-level termination fields terminationDate, terminationReason and terminationInformedDate (the date the termination notice was provided) are merged in too, only when the tenant record has them, and win over a stale Operational View copy. Soft-deleted entries are filtered out of accreditations, insurances, certifications, and licenses. Locations are not embedded here — use GET /facilities/{id}/relationships/all for a facility''s group, network, location, and practitioner relationships.'
       operationId: facilityGet
       tags:
       - Facility
@@ -812,8 +1412,30 @@ paths:
           description: Facility successfully retrieved
           content:
             application/json:
+              examples:
+                facility:
+                  value:
+                    id: cf_9f1b2c3d
+                    name: Acme Medical Center
+                    npi: '1234567890'
+                    tin: '123456789'
+                    dba: Acme Medical
+                    facilityType: Hospital
+                    delegationStatus: Direct
+                    credentialingStatus: CRED_APPROVED
+                    nextCredentialingDate: '2027-03-01'
+                    addresses:
+                    - address1: 123 Main St
+                      city: Springfield
+                      state: IL
+                      zipcode: '62704'
+                      country: US
+                      isPrimary: true
+                    specialties:
+                    - specialty: Cardiology
+                      primarySpecialty: true
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -838,8 +1460,8 @@ paths:
       - jwt: []
   /facilities/{id}/accreditations:
     put:
-      summary: Update accreditations for a facility (OV)
-      description: Replaces all accreditations for the given facility in the Operational View. Does not affect active credentialing workflow snapshots.
+      summary: Replace all accreditations for a facility
+      description: Replaces the complete set of accreditations for the specified facility in the Operational View (the live, editable roster data). Records not present in the new list are removed — sending the same list twice produces the same result (idempotent). Use this to bulk-synchronize a facility's accreditation data; this endpoint does not affect snapshots captured inside active credentialing workflow runs — those are managed separately through the credentialing workflow. Returns only a confirmation message, not the replaced records or their IDs.
       operationId: updateFacilityAccreditations
       tags:
       - Facility
@@ -868,11 +1490,17 @@ paths:
         '200':
           description: Accreditations updated successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                accreditationsUpdated:
+                  value:
+                    message: accreditations updated successfully
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -884,17 +1512,21 @@ paths:
         '404':
           description: Facility not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/{id}/certificates:
     put:
-      summary: Update certificates for a facility (OV)
-      description: Replaces all certificates for the given facility in the Operational View. Does not affect active credentialing workflow snapshots.
+      summary: Replace all certificates for a facility
+      description: Replaces the complete set of certificates for the specified facility in the Operational View (the live, editable roster data). Records not present in the new list are removed — sending the same list twice produces the same result (idempotent). Use this to bulk-synchronize a facility's certificate data; this endpoint does not affect snapshots captured inside active credentialing workflow runs — those are managed separately through the credentialing workflow. Returns only a confirmation message, not the replaced records or their IDs.
       operationId: updateFacilityCertificates
       tags:
       - Facility
@@ -923,11 +1555,17 @@ paths:
         '200':
           description: Certificates updated successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                certificatesUpdated:
+                  value:
+                    message: certificates updated successfully
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -939,17 +1577,21 @@ paths:
         '404':
           description: Facility not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/{id}/insurances:
     put:
-      summary: Update insurances for a facility (OV)
-      description: Replaces all insurances for the given facility in the Operational View. Does not affect active credentialing workflow snapshots.
+      summary: Replace all insurances for a facility
+      description: Replaces the complete set of insurance records for the specified facility in the Operational View (the live, editable roster data). Records not present in the new list are removed — sending the same list twice produces the same result (idempotent). Use this to bulk-synchronize a facility's insurance data; this endpoint does not affect snapshots captured inside active credentialing workflow runs — those are managed separately through the credentialing workflow. Returns only a confirmation message, not the replaced records or their IDs.
       operationId: updateFacilityInsurances
       tags:
       - Facility
@@ -978,11 +1620,17 @@ paths:
         '200':
           description: Insurances updated successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                insurancesUpdated:
+                  value:
+                    message: insurances updated successfully
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -994,17 +1642,21 @@ paths:
         '404':
           description: Facility not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/{id}/licenses:
     put:
-      summary: Update licenses for a facility (OV)
-      description: Replaces all licenses for the given facility in the Operational View. Does not affect active credentialing workflow snapshots.
+      summary: Replace all licenses for a facility
+      description: Replaces the complete set of license records for the specified facility in the Operational View (the live, editable roster data). Records not present in the new list are removed — sending the same list twice produces the same result (idempotent). Use this to bulk-synchronize a facility's license data; this endpoint does not affect snapshots captured inside active credentialing workflow runs — those are managed separately through the credentialing workflow. Returns only a confirmation message, not the replaced records or their IDs.
       operationId: updateFacilityLicenses
       tags:
       - Facility
@@ -1033,11 +1685,17 @@ paths:
         '200':
           description: Licenses updated successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                licensesUpdated:
+                  value:
+                    message: licenses updated successfully
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -1049,17 +1707,21 @@ paths:
         '404':
           description: Facility not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /facilities/{id}/networks:
     post:
-      summary: Associate facility with a network
-      description: Associates a facility with a network following the roster ingestion pattern. The network must belong to a group (groupId provided in request body). If the facility is not associated with the group, the group association will also be created simultaneously. Validates that the network belongs to the specified group before creating the association. Creates or updates a TenantGroupFacilityNetwork relationship.
+      summary: Associate a facility with a network
+      description: 'Associates a facility with a network following the roster ingestion pattern. The network must belong to a group (groupId provided in request body). If the facility is not associated with the group, the group association will also be created simultaneously. Validates that the network belongs to the specified group before creating the association. Supports three request shapes, each with different conflict behavior: (1) legacy single networkId — always upserts the TenantGroupFacilityNetwork relationship with no pre-check, silently updating an existing association rather than rejecting it; (2) bulk networkIds or (3) grouped networkAssociations — both explicitly check for an existing active association per facility-network and per facility-location-network pair first, and return 409 Conflict if one already exists rather than silently updating it. Choose the bulk/grouped shapes when you need to detect pre-existing associations instead of upserting over them.'
       operationId: associateFacilityWithNetwork
       tags:
       - Facility
@@ -1104,6 +1766,12 @@ paths:
             application/json: {}
         '404':
           description: Facility, group, or network not found, or network does not belong to the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '409':
+          description: Conflict - active facility or facility location network association already exists
           content:
             application/json:
               schema:
@@ -1186,7 +1854,8 @@ paths:
       - jwt: []
   /facilities/{id}/relationships/all:
     get:
-      summary: Get all the relationships of the facility
+      summary: Get all relationships for a facility
+      description: 'Returns a single, deeply-nested snapshot of every relationship a facility participates in — groups (groupMemberships[]), the networks and contracts under each group (facilityNetworks[]), the facility''s locations both independent of any group (tenantFacilityLocations[]) and nested under each group (groupMemberships[].facilityLocations[] with their own network/plan participation), and practitioners. Use this to get a comprehensive view of a facility''s associations in a single call instead of querying individual relationship endpoints separately. Note: practitioners are only present nested under groupMemberships[].facilityLocations[].practitionersAtLocation[] (i.e. scoped to a specific group-location) — there is no facility-wide practitioner roster field on this endpoint; a prior facility-wide practitioner array was intentionally removed to avoid oversized rows, so consumers needing the full practitioner roster for a facility must call a dedicated practitioner endpoint instead.'
       operationId: getAllFacilityRelationships
       tags:
       - Facility
@@ -1207,8 +1876,28 @@ paths:
           description: All the relationships that the facility belongs to successfully retrieved
           content:
             application/json:
+              examples:
+                relationships:
+                  value:
+                    tenantFacilityId: tf_abc123
+                    certifyFacilityId: cf_9f1b2c3d
+                    tenantId: tenant_123
+                    tenantFacilityLocations:
+                    - id: tfl_001
+                      locationId: loc_4d5e6f
+                    groupMemberships:
+                    - id: tgf_001
+                      tenantGroupId: grp_abc123
+                      facilityNetworks:
+                      - networkId: net-xyz789
+                        status: Active
+                      facilityLocations:
+                      - id: tgfl_001
+                        tenantGroupLocationId: tgl_001
+                        practitionersAtLocation:
+                        - tenantGroupPractitionerId: tgp_001
               schema:
-                $ref: '#/components/schemas/JsonNode'
+                type: object
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -1231,10 +1920,92 @@ paths:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
+  /facilities/{id}/relationships/locations:
+    get:
+      summary: List TGFL-anchored location associations for a facility
+      description: 'Returns a paginated list of all tenant_group_facility_locations (TGFL) associations for the given facility. Each item in data[] contains the TGFL anchor row plus flat sibling entities: tenantGroupFacility, tenantFacility, tenantGroup, tenantGroupLocation, groupLocation, locationEntityAddresses, and tenantGroupLocationFacilityNetworks (TGLFN). All entity foreign-key references are wrapped as objects ({id, data}) to allow future schema evolution without breaking consumers. certifyGroupId: restrict to TGFLs whose group resolves to this certify group id. networkId: restrict to TGFLs that have a matching TGLFN row for this network id (EXISTS semantics — TGFL rows are never duplicated); the TGLFN array on each item is also filtered to the requested network when set. locationSearch: restrict to TGFLs whose resolved location name contains this text (case-insensitive substring match). Blank/omitted = no filter. Note: operationId retains the legacy plural form for OpenAPI stability; the Java method is getFacilityLocationRelationships.'
+      operationId: getFacilityLocationsRelationships
+      tags:
+      - Facility
+      parameters:
+      - description: Certify facility id. Maps to the OV entityId (certify_facility_id).
+        example: '1234567890'
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Filter by certify group id. Only TGFLs whose group resolves to this id are returned. Omit to include all groups.
+        example: grp-abc-123
+        name: certifyGroupId
+        in: query
+        schema:
+          type: string
+      - description: Filter by location name (case-insensitive substring match against the resolved location name). Omit/blank to include all locations.
+        example: main street
+        name: locationSearch
+        in: query
+        schema:
+          type: string
+      - description: Filter by network id. Only TGFLs that have a matching TGLFN row for this network id are returned (EXISTS semantics — TGFL rows are never duplicated). The tenantGroupLocationFacilityNetworks array on each item is also filtered to this network when set. Omit to include all networks.
+        example: net-xyz-456
+        name: networkId
+        in: query
+        schema:
+          type: string
+      - description: 'Page number (0-based), for offset-based pagination. Default: 0.'
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: 'Page size (clamped to max 100). Default: 50.'
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '50'
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated TGFL location associations successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacilityLocationsPagedResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json: {}
+        '404':
+          description: Facility OV not found for the given certify facility id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+      security:
+      - jwt: []
   /facilities/{id}/specialties:
     patch:
       summary: Batch add and update facility specialties
-      description: Applies multiple specialty updates and additions to a facility in a single request. Updates modify existing TenantFacilitySpecialty records (specialty FK, effective date, isPrimary). Additions create new specialty associations at the facility level.
+      description: Applies a batch of specialty updates and additions to a facility in a single request. Use this when you need to modify multiple specialty associations at once; for a single new specialty, use POST /facilities/{id}/specialties instead. Updates modify existing TenantFacilitySpecialty records (specialty FK, effective date, isPrimary) and are applied as one all-or-nothing batch — if that batch call fails, the entire request fails, with no partial-success path for updates. Additions create new specialty associations at the facility level and are processed independently — a failure on one addition is captured in the response's errors array and does not stop or fail the other additions.
       operationId: manageFacilitySpecialties
       tags:
       - Facility
@@ -1261,6 +2032,19 @@ paths:
           description: Specialties managed successfully
           content:
             application/json:
+              examples:
+                batchResult:
+                  value:
+                    updatedSpecialties:
+                    - id: tfs_001
+                      tenantSpecialtyId: spec_cardiology
+                      isPrimary: true
+                    addedSpecialties:
+                    - facilitySpecialty:
+                        id: tfs_002
+                        tenantSpecialtyId: spec_oncology
+                      notCreated: []
+                    errors: []
               schema:
                 $ref: '#/components/schemas/ManageFacilitySpecialtiesResponse'
         '400':
@@ -1285,7 +2069,7 @@ paths:
       - jwt: []
     post:
       summary: Add a specialty to a facility
-      description: Adds a new specialty to an existing facility. Optionally cascades into facility location, group, group-location, and group-network specialty levels.
+      description: 'Adds a new specialty association to an existing facility. Use this to associate a single specialty with a facility; to apply multiple specialty changes in one call, use PATCH /facilities/{id}/specialties instead. Cascade to each additional level is not a separate flag — it is triggered purely by which optional ID fields are present in the request body: certifyLocationId alone cascades to the facility-location level; certifyGroupId cascades to the group level; certifyLocationId together with locationSpecialtyEffectiveDate cascades to the group-location level; certifyNetworkId cascades to the group-network level. Cascade levels are attempted independently — a failure on one level does not roll back or block the others; any level that fails is reported in the notCreated array of the response rather than failing the whole request.'
       operationId: facilityAddSpecialty
       tags:
       - Facility
@@ -1312,6 +2096,13 @@ paths:
           description: Facility specialty successfully created
           content:
             application/json:
+              examples:
+                specialtyCreated:
+                  value:
+                    facilitySpecialty:
+                      id: tfs_001
+                      tenantSpecialtyId: spec_cardiology
+                    notCreated: []
               schema:
                 $ref: '#/components/schemas/AssociateFacilitySpecialtyResponse'
         '400':
@@ -1336,7 +2127,8 @@ paths:
       - jwt: []
   /facilities/{id}/supporting-documents:
     put:
-      summary: Update or Delete a supporting document for a facility
+      summary: Replace a facility's supporting documents
+      description: Replaces the complete set of supporting documents for the specified facility — this is a full-array replace, not a per-item update-or-delete operation. There is no action field on the request items; every submitted item is written as-is, and any existing document not present in the submitted array is removed. To remove one document, resend the full array with that item omitted; to remove all documents, submit an empty array. The underlying stored file is never deleted from GCS by this call — only the metadata entry is removed from the facility's document list, so the file itself remains in storage. To attach a new document without affecting existing ones, use POST /facilities/{id}/supporting-documents instead, which appends rather than replaces.
       operationId: updateFacilitySupportingDocument
       tags:
       - Facility
@@ -1353,7 +2145,7 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Array of supporting document records
+        description: Full replacement array of supporting document records. Any existing document not present in this array is removed (its metadata entry only — the underlying stored file is not deleted). Submit an empty array to remove all documents.
         content:
           application/json:
             schema:
@@ -1363,13 +2155,19 @@ paths:
         required: true
       responses:
         '200':
-          description: Supporting documents deleted successfully
+          description: Supporting documents updated successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                documentsUpdated:
+                  value:
+                    message: supporting documents updated successfully
         '400':
           description: Bad request - Invalid input
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
           description: Unauthorized - Authentication required
           content:
@@ -1381,15 +2179,20 @@ paths:
         '404':
           description: Facility not found
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
     post:
-      summary: Create a new supporting document for a facility
+      summary: Attach a new supporting document to a facility
+      description: Uploads and attaches a new supporting document to the specified facility. Use this to add a document for the first time; to update or remove an existing document, use PUT /facilities/{id}/supporting-documents instead (see that endpoint's description for its full-array-replace semantics). The file is uploaded as multipart/form-data and its bytes are read directly into GCS by this service — there is no pre-signed-URL pattern. There is no MIME-type allowlist; size is bounded only by the service's global request-body limits (currently 500MB body / 250MB per form attribute), not by a document-specific limit. fileType is a free-form optional string with no enforced enum or whitelist — callers may send any value. Returns HTTP 201 with only a message and the stored fileName — no document ID or file URL is returned by this endpoint.
       operationId: createFacilitySupportingDocument
       tags:
       - Facility
@@ -1423,7 +2226,7 @@ paths:
         required: true
       responses:
         '201':
-          description: Supporting documents updated successfully
+          description: Supporting document created successfully
           content:
             application/json:
               schema:
@@ -1445,160 +2248,96 @@ paths:
         '500':
           description: Internal server error
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
 components:
   schemas:
-    SpecialtyNotCreatedReason:
+    TerminateFacilityNetworkResponse:
+      type: object
+      required:
+      - certifyFacilityId
+      - networkId
+      - terminationDate
+      - terminatedLocationsCount
+      - terminatedPractitionersCount
+      description: Response for terminating a facility's participation in a network
+      properties:
+        certifyFacilityId:
+          type: string
+          examples:
+          - cf_9f1b2c3d
+          description: Certify facility ID that was terminated
+        networkId:
+          type: string
+          examples:
+          - net-xyz789
+          description: Network ID the facility was terminated from
+        terminationDate:
+          type: string
+          examples:
+          - '2026-08-01'
+          description: Effective termination date applied to all cascaded records
+        terminatedLocationsCount:
+          type: integer
+          format: int32
+          examples:
+          - 3
+          description: Number of facility-location network records terminated (TenantGroupLocationFacilityNetwork)
+        terminatedPractitionersCount:
+          type: integer
+          format: int32
+          examples:
+          - 12
+          description: Number of practitioner network records terminated (TenantGroupLocationPractitionerNetwork + TenantGroupPractitionerNetwork)
+    SpecialtyAssociationLevel:
       type: string
       enum:
-      - MISSING_DEPENDENCY
-      - DOWNSTREAM_ERROR
-      - CONFLICT
-      - VALIDATION_ERROR
-    UpdateSpecialtyItem:
+      - GROUP
+      - LOCATION
+      - NETWORK_GROUP
+      - NETWORK_LOCATION
+    PageLinks:
       type: object
-      required:
-      - tenantFacilitySpecialtyId
+      description: HATEOAS-style pagination links.
       properties:
-        tenantFacilitySpecialtyId:
+        self:
           type: string
-          description: ID of the existing TenantFacilitySpecialty record to update
-          examples:
-          - tfs_abc123
-          pattern: \S
-        newTenantSpecialtyId:
+          description: Link to the current page.
+        next:
           type: string
-          description: ID of the new TenantSpecialty to replace the current one
-          examples:
-          - ts_xyz789
+          description: Link to the next page; null on the last page.
+        prev:
+          type: string
+          description: Link to the previous page; null on the first page.
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+        workflowId:
+          type: string
+        section:
+          type: string
+        opIndex:
+          type: integer
+          format: int32
+    UpdateFacilityLocationNetworkEffectiveDateRequest:
+      type: object
+      properties:
         effectiveDate:
           type: string
-          description: New effective date in YYYY-MM-DD format
-          examples:
-          - '2026-01-15'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        isPrimary:
-          type: boolean
-          description: Whether this specialty is primary
-    FacilityCertificateOvRequest:
-      description: Facility certificate payload for full-array replace in CoreFacility data.certifications (OV)
-      type: object
-      properties:
-        id:
-          type: string
-          description: Optional client-side id
-        certificateType:
-          type: string
-          description: Certificate type
-          examples:
-          - Board Certification
-        number:
-          type: string
-          description: Certificate number
-          examples:
-          - CERT-12345
-        status:
-          type: string
-          description: Certificate status
-          examples:
-          - Active
-        issuingAuthority:
-          type: string
-          description: Issuing authority
-          examples:
-          - American Board of Internal Medicine
-        issueDate:
-          type: string
-          description: Issue date (YYYY-MM-DD)
-          examples:
-          - '2020-01-01'
-        expirationDate:
-          type: string
-          description: Expiration date (YYYY-MM-DD)
-          examples:
-          - '2030-01-01'
-        source:
-          type: string
-          description: Source field
-          examples:
-          - Primary Source
-        attachments:
-          description: Optional attachment array
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        action:
-          type: string
-          description: Set to delete for soft-delete
-          examples:
-          - delete
-        deletedAt:
-          type: string
-          description: Soft-delete timestamp
-        deletedBy:
-          type: string
-          description: Soft-delete actor
-        createdAt:
-          type: string
-          description: Created timestamp
-        createdBy:
-          type: string
-          description: Created by
-        updatedAt:
-          type: string
-          description: Updated timestamp
-        updatedBy:
-          type: string
-          description: Updated by
-        verifiedDate:
-          type: string
-          description: Verified date
-        verifiedBy:
-          type: string
-          description: Verified by
-    TenantGroupFacilityLocationSpecialtyResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantGroupFacilityLocationId:
-          type: string
-        tenantGroupFacilitySpecialtyId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-    CorrectFacilitySpecialtyRequest:
-      type: object
-      required:
-      - tenantFacilitySpecialtyId
-      properties:
-        tenantFacilitySpecialtyId:
-          type: string
-          description: ID of the existing TenantFacilitySpecialty record to update
-          examples:
-          - tfs_abc123
-          pattern: \S
-        newTenantSpecialtyId:
-          type: string
-          description: ID of the new TenantSpecialty to replace the current one. Optional if effectiveDate or isPrimary is provided.
-          examples:
-          - ts_xyz789
-        effectiveDate:
-          type: string
-          description: New effective date for the specialty record in ISO format (YYYY-MM-DD). Optional if newTenantSpecialtyId or isPrimary is provided.
-          examples:
-          - '2026-01-15'
-        isPrimary:
-          type: boolean
-          description: Whether this specialty should be marked as primary. Optional if newTenantSpecialtyId or effectiveDate is provided.
-          examples:
-          - true
         changeReason:
           type: string
-          description: Optional human-readable reason for the change, captured for audit trail.
-          examples:
-          - Correcting specialty mapping per annual review
     TenantGroupFacilityNetworkSpecialtyResponse:
       type: object
       properties:
@@ -1610,148 +2349,154 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    TerminateFacilityNetworkRequest:
-      description: Request to terminate a facility's participation in a network
+    FacilityLocationTerminationImpactResponse:
       type: object
-      required:
-      - terminationDate
+      description: Preview of networks/plans and address for facility location termination
       properties:
-        terminationDate:
+        certifyLocationId:
           type: string
-          description: Effective termination date (ISO-8601 format). Can be a past, present, or future date.
           examples:
-          - '2026-04-01'
-        terminationInformedDate:
+          - loc_4d5e6f
+          description: Certify location ID
+        locationName:
           type: string
-          description: Date the termination notice was provided (ISO-8601 format)
           examples:
-          - '2026-03-01'
-        terminationReason:
+          - Main Street Clinic
+          description: Display name for the location, if available
+        serviceAddressSummary:
           type: string
-          description: 'Reason for termination (free text). Common values include: Contract Expired, Voluntary Withdrawal, Compliance Issue, Administrative Action, Other, Non-Renewal.'
           examples:
-          - Contract Expired
-        comments:
-          type: string
-          description: Optional free-text comments or notes about the termination; persisted on terminated network records when provided.
+          - 123 Main St, Springfield, IL 62704
+          description: Summary of the service address, if available
+        alreadyTerminated:
+          type: boolean
           examples:
-          - Facility requested withdrawal effective end of Q1 2026
-    ApiError1:
-      type: object
-      properties:
-        errors:
+          - false
+          description: True if this location is already terminated at the facility
+        networks:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorObject1'
-    FacilityInsuranceOvRequest:
-      description: Facility insurance payload for full-array replace in CoreFacility data.insurances (OV)
+            $ref: '#/components/schemas/FacilityLocationNetworkImpact'
+          description: Networks (and optional plan ids) the location participates in via the facility
+    TerminateFacilitiesRequest:
+      type: object
+      required:
+      - facilityIds
+      - reason
+      - effectiveDate
+      - consentConfirmed
+      description: Request to globally terminate one or more facilities
+      properties:
+        facilityIds:
+          type: array
+          minItems: 1
+          examples:
+          - - fac-abc123
+          items:
+            type: string
+            maxLength: 36
+            pattern: \S
+          description: Certify facility ids to terminate (1..N, subject to the configured maximum)
+        reason:
+          type: string
+          examples:
+          - Facility closed
+          maxLength: 1024
+          pattern: \S
+          description: Reason for the termination (required)
+        effectiveDate:
+          type: string
+          examples:
+          - '2026-04-01'
+          description: Effective termination date (ISO-8601). May be past, present or future; a future-dated termination is a regular termination (open credentialing workflows are cancelled immediately, and a repeat request is rejected as already terminated until this one is rolled back).
+        consentConfirmed:
+          type: boolean
+          examples:
+          - true
+          description: User must acknowledge impact before termination
+        certifyLocationId:
+          type: string
+          examples:
+          - loc-123
+          maxLength: 36
+          description: Optional. When set, terminates only this location's relationships (the group affiliation ends too if this was the facility's last location in the group); the facility's tenant-level record is not terminated. Omit for a global termination.
+        terminationInformedDate:
+          type: string
+          examples:
+          - '2026-03-01'
+          description: Optional. Date the termination notice was provided (ISO-8601). Stored with the termination date, on the same records, and returned by GET /facilities/{id}. Format is validated like the location and network termination requests; no ordering against effectiveDate is enforced. Rolling the request back restores the value the records had before.
+    TenantGroupFacilityLocationSpecialtyResponse:
       type: object
       properties:
         id:
           type: string
-          description: Optional client-side id
-        policyNumber:
+        tenantGroupFacilityLocationId:
           type: string
-          description: Policy number (Number field in UI)
-          examples:
-          - POL-12345
-        type:
+        tenantGroupFacilitySpecialtyId:
           type: string
-          description: Insurance type
-          examples:
-          - General Liability
-        status:
-          type: string
-          description: Insurance status
-          examples:
-          - Active
-        effectiveDate:
-          type: string
-          description: Effective date (YYYY-MM-DD)
-          examples:
-          - '2025-01-01'
-        expirationDate:
-          type: string
-          description: Expiration date (YYYY-MM-DD)
-          examples:
-          - '2026-01-01'
-        occurrenceCoverageAmount:
-          type: string
-          description: Occurrence coverage amount, numeric when present
-          examples:
-          - '1000000'
-        aggregateCoverageAmount:
-          type: string
-          description: Aggregate coverage amount, numeric when present
-          examples:
-          - '2000000'
-        unlimitedCoverage:
-          type: boolean
-          description: Unlimited coverage flag
-          examples:
-          - false
-        carrierName:
-          type: string
-          description: Carrier name
-          examples:
-          - ABC Insurance
-        source:
-          type: string
-          description: Source field
-          examples:
-          - Manual entry
-        attachments:
-          description: Optional attachment array
-          type: object
+        data:
           $ref: '#/components/schemas/JsonNode'
-        action:
+    AssociateFacilityNetworkRequest:
+      type: object
+      required:
+      - groupId
+      description: Request to associate a facility with one or more networks
+      properties:
+        groupId:
           type: string
-          description: Set to delete for soft-delete
           examples:
-          - delete
-        deletedAt:
+          - group-123
+          pattern: \S
+          description: ID of the group that the network belongs to
+        networkId:
           type: string
-          description: Soft-delete timestamp
-        deletedBy:
+          examples:
+          - network-456
+          description: Single network ID (legacy). Mutually exclusive with networkIds.
+        networkIds:
+          type: array
+          examples:
+          - - network-456
+            - network-789
+          items:
+            type: string
+          description: Bulk network IDs (CP-32346). Mutually exclusive with networkId.
+        includeAllActiveFacilityLocations:
+          type: boolean
+          description: When true, associate all active facility locations under the facility/group
+        facilityLocationIds:
+          type: array
+          examples:
+          - - loc-1
+            - loc-2
+          items:
+            type: string
+          description: Certify location IDs to associate (optional when includeAllActiveFacilityLocations is true)
+        networkEffectiveDate:
           type: string
-          description: Soft-delete actor
-        createdAt:
+          examples:
+          - '2026-04-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Effective date for facility and location network associations
+        groupEffectiveDate:
           type: string
-          description: Created timestamp
-        createdBy:
-          type: string
-          description: Created by
-        updatedAt:
-          type: string
-          description: Updated timestamp
-        updatedBy:
-          type: string
-          description: Updated by
-        verifiedDate:
-          type: string
-          description: Verified date
-        verifiedBy:
-          type: string
-          description: Verified by
-    SpecialtyAssociationLevel:
-      type: string
-      enum:
-      - GROUP
-      - LOCATION
-      - NETWORK_GROUP
-      - NETWORK_LOCATION
+          examples:
+          - '2026-03-15'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Effective date for the TenantGroupFacility relationship
+        networkAssociations:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkAssociationEntry'
+          description: 'Grouped network associations (CP-32346): one entry per network, each with its own effective date. Allows associating multiple networks with different effective dates in a single request. Mutually exclusive with networkId/networkIds.'
+        legacySingleNetworkRequest:
+          type: boolean
+        groupedNetworkRequest:
+          type: boolean
+        bulkNetworkRequest:
+          type: boolean
+        networkInputValid:
+          type: boolean
     TenantGroupFacilitySpecialtyResponse:
       type: object
       properties:
@@ -1763,75 +2508,30 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
-    SupportingDocumentUpdateRequest1:
+    FacilityUpsertResponse:
       type: object
-      required:
-      - fileUrl
+      description: Result of a facility create/update. Always includes crosswalkId, corefacilityId, and tenantfacilityId. May include additional batch-alias keys (e.g. facilityentityaddressId) depending on which optional sections were submitted.
       properties:
-        fileUrl:
-          type: string
-          description: URL of the supporting document file
-          examples:
-          - https://storage.example.com/documents/certificate.pdf
-          pattern: \S
-        fileType:
-          type: string
-          description: Type of the supporting document
-          examples:
-          - PDF
-        originalFileName:
-          type: string
-          description: Original name of the uploaded file
-          examples:
-          - facility_license.pdf
-        createdAt:
-          description: Date when the document was created
+        crosswalkId:
           type: string
           examples:
-          - '2022-01-15'
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-          description: Email of the user who created the document
-          examples:
-          - user@example.com
-        state:
-          type: string
-          description: State associated with the document
-          examples:
-          - CA
-        expirationDate:
-          description: Expiration date of the document
+          - 1234567890-123456789
+          description: Crosswalk ID generated for the CoreFacility record
+        corefacilityId:
           type: string
           examples:
-          - '2025-12-31'
-          $ref: '#/components/schemas/Date'
-        source:
+          - cf_abc123
+          description: Certify facility ID of the upserted CoreFacility record
+        tenantfacilityId:
           type: string
-          description: Source of the document
           examples:
-          - manual
-    FacilityLocationTerminationImpactResponse:
-      description: Preview of networks/plans and address for facility location termination
-      type: object
-      properties:
-        certifyLocationId:
+          - tf_abc123
+          description: ID of the upserted TenantFacility record
+        facilityentityaddressId:
           type: string
-          description: Certify location ID
-        locationName:
-          type: string
-          description: Display name for the location, if available
-        serviceAddressSummary:
-          type: string
-          description: Summary of the service address, if available
-        alreadyTerminated:
-          type: boolean
-          description: True if this location is already terminated at the facility
-        networks:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityLocationNetworkImpact'
-          description: Networks (and optional plan ids) the location participates in via the facility
+          examples:
+          - fea_abc123
+          description: ID of the upserted FacilityEntityAddress record; present only when an office, billing, or mailing address was submitted
     CorrectGroupFacilitySpecialtyRequest:
       type: object
       required:
@@ -1840,241 +2540,131 @@ components:
       properties:
         tenantGroupFacilitySpecialtyId:
           type: string
-          description: ID of the existing TenantGroupFacilitySpecialty record to correct
           examples:
           - tgfs_abc123
           pattern: \S
+          description: ID of the existing TenantGroupFacilitySpecialty record to correct
         newTenantSpecialtyId:
           type: string
-          description: ID of the new TenantSpecialty to replace the current one
           examples:
           - ts_xyz789
           pattern: \S
+          description: ID of the new TenantSpecialty to replace the current one
         changeReason:
           type: string
-          description: Optional human-readable reason for the change, captured for audit trail.
           examples:
           - Correcting specialty mapping per annual review
-    FacilityAccreditationOvRequest:
-      description: Facility accreditation payload for full-array replace in CoreFacility data.accreditations (OV)
+          description: Optional human-readable reason for the change, captured for audit trail.
+    SupportingDocumentUpdateRequest1:
       type: object
+      required:
+      - fileUrl
       properties:
-        id:
+        fileUrl:
           type: string
-          description: Optional client-side id
-        idNumber:
-          type: string
-          description: Accreditation ID number
-        accreditationBody:
-          type: string
-          description: Accrediting body
           examples:
-          - Joint Commission
-        status:
+          - https://storage.example.com/documents/certificate.pdf
+          pattern: \S
+          description: URL of the supporting document file
+        fileType:
           type: string
-          description: Accreditation status
           examples:
-          - Active
-        effectiveDate:
+          - PDF
+          description: Type of the supporting document
+        originalFileName:
           type: string
-          description: Effective date (YYYY-MM-DD)
-        expirationDate:
-          type: string
-          description: Expiration date (YYYY-MM-DD)
-        source:
-          type: string
-          description: Source
-        attachments:
-          description: Optional attachment array
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-        action:
-          type: string
-          description: Set to delete for soft-delete
           examples:
-          - delete
-        deletedAt:
-          type: string
-          description: Soft-delete timestamp
-        deletedBy:
-          type: string
-          description: Soft-delete actor
+          - facility_license.pdf
+          description: Original name of the uploaded file
         createdAt:
+          $ref: '#/components/schemas/Date'
           type: string
-          description: Created timestamp
+          examples:
+          - '2022-01-15'
+          description: Date when the document was created
         createdBy:
           type: string
-          description: Created by
-        updatedAt:
-          type: string
-          description: Updated timestamp
-        updatedBy:
-          type: string
-          description: Updated by
-        verifiedDate:
-          type: string
-          description: Verified date
-        verifiedBy:
-          type: string
-          description: Verified by
-    CorrectGroupFacilityLocationSpecialtyRequest:
-      type: object
-      required:
-      - tenantGroupFacilityLocationSpecialtyId
-      - newTenantSpecialtyId
-      properties:
-        tenantGroupFacilityLocationSpecialtyId:
-          type: string
-          description: ID of the TenantGroupFacilityLocationSpecialty record
           examples:
-          - tgfls_abc123
-          pattern: \S
-        newTenantSpecialtyId:
+          - user@example.com
+          description: Email of the user who created the document
+        state:
           type: string
-          description: ID of the new TenantSpecialty to replace the current one
           examples:
-          - ts_xyz789
-          pattern: \S
-        changeReason:
+          - CA
+          description: State associated with the document
+        expirationDate:
+          $ref: '#/components/schemas/Date'
           type: string
-          description: Optional human-readable reason for the change, captured for audit trail.
           examples:
-          - Correcting specialty mapping per annual review
-    FacilityLocationNetworkImpact:
-      type: object
-      description: One network and optional plan participation
-      properties:
-        networkId:
+          - '2025-12-31'
+          description: Expiration date of the document
+        source:
           type: string
-          description: Certify network ID
-        planIds:
-          type: array
-          items:
-            type: string
-          description: Certify plan IDs when participation is plan-scoped (may be empty)
-    TerminateFacilityNetworkResponse:
-      description: Response for terminating a facility's participation in a network
+          examples:
+          - manual
+          description: Source of the document
+    UpdateFacilityLocationNetworkEffectiveDateResponse:
       type: object
-      required:
-      - certifyFacilityId
-      - networkId
-      - terminationDate
-      - terminatedLocationsCount
-      - terminatedPractitionersCount
       properties:
         certifyFacilityId:
           type: string
-          description: Certify facility ID that was terminated
+        certifyLocationId:
+          type: string
         networkId:
           type: string
-          description: Network ID the facility was terminated from
-        terminationDate:
-          type: string
-          description: Effective termination date applied to all cascaded records
-        terminatedLocationsCount:
-          type: integer
-          format: int32
-          description: Number of facility-location network records terminated (TenantGroupLocationFacilityNetwork)
-        terminatedPractitionersCount:
-          type: integer
-          format: int32
-          description: Number of practitioner network records terminated (TenantGroupLocationPractitionerNetwork + TenantGroupPractitionerNetwork)
-    UpdateFacilityGroupEffectiveDateRequest:
-      type: object
-      properties:
-        effectiveDate:
-          type: string
-        terminationDate:
-          type: string
-        cascadeToNetworkParticipation:
-          type: boolean
-        changeReason:
-          type: string
-    TenantFacilityLocationSpecialtyResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantFacilityLocationId:
-          type: string
-        tenantId:
-          type: string
-        tenantSpecialtyId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        data:
-          $ref: '#/components/schemas/JsonNode'
-    AssociateFacilityNetworkRequest:
-      description: Request to associate a facility with a network
-      type: object
-      required:
-      - groupId
-      - networkId
-      properties:
-        groupId:
-          type: string
-          description: ID of the group that the network belongs to
-          examples:
-          - group-123
-          pattern: \S
-        networkId:
-          type: string
-          description: ID of the network to associate with
-          examples:
-          - network-456
-          pattern: \S
-        networkEffectiveDate:
-          type: string
-          description: Effective date for the facility-network association
-          examples:
-          - '2026-04-01'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        groupEffectiveDate:
-          type: string
-          description: Effective date for the TenantGroupFacility relationship
-          examples:
-          - '2026-03-15'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-    AssociateFacilitySpecialtyResponse:
-      type: object
-      properties:
-        facilitySpecialty:
-          description: Response from creating the facility specialty association
-          type: object
-          $ref: '#/components/schemas/TenantFacilitySpecialtyResponse'
-        facilityLocationSpecialty:
-          description: Response from creating the facility location specialty association
-          type: object
-          $ref: '#/components/schemas/TenantFacilityLocationSpecialtyResponse'
-        groupFacilitySpecialty:
-          description: Response from creating the group facility specialty association
-          type: object
-          $ref: '#/components/schemas/TenantGroupFacilitySpecialtyResponse'
-        groupFacilityLocationSpecialty:
-          description: Response from creating the group facility location specialty association
-          type: object
-          $ref: '#/components/schemas/TenantGroupFacilityLocationSpecialtyResponse'
-        groupFacilityNetworkSpecialty:
-          description: Response from creating the group facility network specialty association
-          type: object
-          $ref: '#/components/schemas/TenantGroupFacilityNetworkSpecialtyResponse'
-        notCreated:
+        updatedTenantGroupLocationFacilityNetworkIds:
           type: array
           items:
-            $ref: '#/components/schemas/SpecialtyNotCreated'
-          description: Specialty associations that could not be created. Empty when all requested levels succeeded.
-    UpdateFacilityGroupNetworkEffectiveDateRequest:
+            type: string
+    BulkFacilitySupportingDocumentUploadResponse:
       type: object
+      description: Aggregated result of a bulk facility supporting-document upload
       properties:
-        effectiveDate:
+        batchId:
           type: string
-        terminationDate:
+          examples:
+          - b1f2c3d4-5678-90ab-cdef-1234567890ab
+          description: Unique identifier for this bulk upload batch
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkUploadFileResult'
+          description: Per-file upload outcome, one entry per submitted file
+        linkResults:
+          $ref: '#/components/schemas/BulkUploadLinkResults'
+          type: object
+          description: Aggregated outcome of linking uploaded files to target facilities
+    FacilityUpsertBusinessPurpose:
+      type: object
+      description: Facility business purpose flags
+      properties:
+        isForCredentialing:
+          $ref: '#/components/schemas/FacilityUpsertBusinessPurposeFlag'
+          type: object
+          description: States if the facility is enabled for credentialing
+        isForMonitoring:
+          $ref: '#/components/schemas/FacilityUpsertBusinessPurposeFlag'
+          type: object
+          description: States if the facility is enabled for monitoring
+    SpecialtyNotCreated:
+      type: object
+      required:
+      - level
+      - reason
+      - message
+      description: A specialty association that could not be created at this level, with reason and message
+      properties:
+        level:
+          $ref: '#/components/schemas/SpecialtyAssociationLevel'
           type: string
-        changeReason:
+          description: The relationship level (GROUP, LOCATION, NETWORK_GROUP, NETWORK_LOCATION)
+        reason:
+          $ref: '#/components/schemas/SpecialtyNotCreatedReason'
           type: string
+          description: 'Reason code: MISSING_DEPENDENCY, DOWNSTREAM_ERROR, CONFLICT, VALIDATION_ERROR'
+        message:
+          type: string
+          description: User-facing message explaining what went wrong and how to fix it
     TenantFacilitySpecialtyResponse:
       type: object
       properties:
@@ -2092,156 +2682,72 @@ components:
           $ref: '#/components/schemas/Date'
         data:
           $ref: '#/components/schemas/JsonNode'
-    AssociateFacilityNetworkResponse:
-      description: Response containing facility-network association result
+    FacilityInsuranceOvRequest:
       type: object
-      properties:
-        tenantGroupFacilityId:
-          type: string
-          description: ID of the tenant group facility
-          examples:
-          - tgf-456
-        tenantGroupFacilityNetworkId:
-          type: string
-          description: ID of the tenant group facility network association
-          examples:
-          - tgfn-789
-        networkId:
-          type: string
-          description: ID of the network that was associated
-          examples:
-          - net-123
-        status:
-          type: string
-          description: Indicates the result of the association
-          examples:
-          - created
-    PagedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        totalCount:
-          type: integer
-          format: int64
-        identifiersSearched:
-          type: integer
-          format: int64
-        matchedCount:
-          type: integer
-          format: int64
-        notFoundCount:
-          type: integer
-          format: int64
-        unmatchedIdentifiers:
-          type: array
-          items:
-            type: string
-    AddSpecialtyItem:
-      type: object
-      required:
-      - tenantSpecialtyId
-      properties:
-        tenantSpecialtyId:
-          type: string
-          description: ID of the tenant specialty to associate
-          examples:
-          - ts_cardiology_001
-          pattern: \S
-        effectiveDate:
-          type: string
-          description: Effective date in YYYY-MM-DD format
-          examples:
-          - '2026-01-01'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        isPrimary:
-          type: boolean
-          description: Whether this specialty is primary
-          examples:
-          - false
-    SupportingDocumentResponse:
-      description: Response for facility supporting document operations
-      type: object
-      properties:
-        message:
-          type: string
-          description: Success message
-          examples:
-          - File uploaded and facility record updated successfully
-        fileName:
-          type: string
-          description: Name of the uploaded file
-          examples:
-          - facility_license.pdf
-    FacilityLicenseOvRequest:
-      description: Facility license payload for full-array replace in CoreFacility data.licenses (OV)
-      type: object
+      description: Facility insurance payload for full-array replace in CoreFacility data.insurances (OV)
       properties:
         id:
           type: string
           description: Optional client-side id
-        licenseNumber:
+        policyNumber:
           type: string
-          description: License number
           examples:
-          - LIC-10001
-        state:
-          type: string
-          description: US state code
-          examples:
-          - TX
-        licenseType:
-          type: string
-          description: License type
-          examples:
-          - Facility
-        licenseStatus:
-          type: string
-          description: License status
-          examples:
-          - Active
-        licenseSource:
-          type: string
-          description: Source
-          examples:
-          - Manual entry
-        issueDate:
-          type: string
-          description: Issue date (YYYY-MM-DD)
-          examples:
-          - '2020-01-01'
-        expirationDate:
-          type: string
-          description: Expiration date (YYYY-MM-DD)
-          examples:
-          - '2030-01-01'
-        reportDate:
-          type: string
-          description: Report date (YYYY-MM-DD)
-          examples:
-          - '2020-01-01'
-        flaggedDate:
-          type: string
-          description: Flagged date (YYYY-MM-DD)
-        url:
-          type: string
-          description: Reference URL
-        licenseNumberVariations:
-          type: string
-          description: Alternate license numbers
+          - POL-12345
+          description: Policy number (Number field in UI)
         type:
           type: string
-          description: Legacy type field when present on stored rows
+          examples:
+          - General Liability
+          description: Insurance type
+        status:
+          type: string
+          examples:
+          - Active
+          description: Insurance status
+        effectiveDate:
+          type: string
+          examples:
+          - '2025-01-01'
+          description: Effective date (YYYY-MM-DD)
+        expirationDate:
+          type: string
+          examples:
+          - '2026-01-01'
+          description: Expiration date (YYYY-MM-DD)
+        occurrenceCoverageAmount:
+          type: string
+          examples:
+          - '1000000'
+          description: Occurrence coverage amount, numeric when present
+        aggregateCoverageAmount:
+          type: string
+          examples:
+          - '2000000'
+          description: Aggregate coverage amount, numeric when present
+        unlimitedCoverage:
+          type: boolean
+          examples:
+          - false
+          description: Unlimited coverage flag
+        carrierName:
+          type: string
+          examples:
+          - ABC Insurance
+          description: Carrier name
+        source:
+          type: string
+          examples:
+          - Manual entry
+          description: Source field
         attachments:
-          description: Optional attachment payload
-          type: object
           $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: Optional attachment array
         action:
           type: string
-          description: Set to delete for soft-delete
           examples:
           - delete
+          description: Set to delete for soft-delete
         deletedAt:
           type: string
           description: Soft-delete timestamp
@@ -2266,133 +2772,6 @@ components:
         verifiedBy:
           type: string
           description: Verified by
-      required:
-      - expirationDate
-      - reportDate
-    ManageFacilitySpecialtiesRequest:
-      type: object
-      properties:
-        updates:
-          type: array
-          items:
-            $ref: '#/components/schemas/UpdateSpecialtyItem'
-          description: Existing specialties to update
-        additions:
-          type: array
-          items:
-            $ref: '#/components/schemas/AddSpecialtyItem'
-          description: New specialties to add
-        changeReason:
-          type: string
-          description: Optional reason for change, applied to all operations
-          examples:
-          - Correcting specialty mappings per annual review
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    CreateFacilitySpecialtyRequest:
-      type: object
-      required:
-      - tenantSpecialtyId
-      - facilitySpecialtyIsPrimary
-      properties:
-        tenantSpecialtyId:
-          type: string
-          description: ID of the tenant specialty
-          examples:
-          - ts_123456
-          pattern: \S
-        facilitySpecialtyEffectiveDate:
-          type: string
-          description: Effective date for the facility specialty (YYYY-MM-DD)
-          examples:
-          - '2024-01-01'
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        facilitySpecialtyIsPrimary:
-          type: boolean
-          description: Indicates if the specialty is primary
-          examples:
-          - true
-        certifyLocationId:
-          type: string
-          description: Certify location ID to associate the specialty at the facility-location level
-          examples:
-          - loc_123456
-        facilityLocationSpecialtyEffectiveDate:
-          type: string
-          description: Effective date for the facility location specialty (YYYY-MM-DD)
-          examples:
-          - '2024-01-01'
-        facilityLocationSpecialtyIsPrimary:
-          type: boolean
-          description: Indicates if the location specialty is primary
-          examples:
-          - true
-        certifyGroupId:
-          type: string
-          description: Certify group ID to associate the specialty at the group-facility level
-          examples:
-          - grp_123456
-        certifyNetworkId:
-          type: string
-          description: Certify network ID to associate the specialty at the group-facility-network level (requires certifyGroupId)
-          examples:
-          - net_123456
-        groupSpecialtyEffectiveDate:
-          type: string
-          description: Effective date for the group facility specialty (YYYY-MM-DD)
-        locationSpecialtyEffectiveDate:
-          type: string
-          description: Effective date for the group facility location specialty (YYYY-MM-DD). Triggers group-location specialty creation when both certifyGroupId and certifyLocationId are provided.
-        networkSpecialtyEffectiveDate:
-          type: string
-          description: Effective date for the group facility network specialty (YYYY-MM-DD)
-    ManageFacilitySpecialtiesResponse:
-      type: object
-      properties:
-        updatedSpecialties:
-          type: array
-          items:
-            $ref: '#/components/schemas/JsonNode'
-          description: Results from updated specialty records
-        addedSpecialties:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssociateFacilitySpecialtyResponse'
-          description: Results from newly added specialty associations
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/SpecialtyNotCreated'
-          description: Operations that failed, empty when all succeeded
-    SpecialtyNotCreated:
-      description: A specialty association that could not be created at this level, with reason and message
-      type: object
-      required:
-      - level
-      - reason
-      - message
-      properties:
-        level:
-          description: The relationship level (GROUP, LOCATION, NETWORK_GROUP, NETWORK_LOCATION)
-          type: string
-          $ref: '#/components/schemas/SpecialtyAssociationLevel'
-        reason:
-          description: 'Reason code: MISSING_DEPENDENCY, DOWNSTREAM_ERROR, CONFLICT, VALIDATION_ERROR'
-          type: string
-          $ref: '#/components/schemas/SpecialtyNotCreatedReason'
-        message:
-          type: string
-          description: User-facing message explaining what went wrong and how to fix it
     JsonNode:
       type: object
       properties:
@@ -2440,49 +2819,303 @@ components:
           type: boolean
         binary:
           type: boolean
-    TerminateFacilityLocationResponse:
-      description: Result of terminating a facility location from the facility. Integer counts are the number of operations included in the termination batch before execution (attempted), not a post-hoc validation of each DAL operation result.
+    UpdateLocationNetworkNpiParDateRequest:
       type: object
+      description: Request to update location-network NPI and participation date
       properties:
-        certifyFacilityId:
+        npi:
           type: string
-          description: Certify facility ID
-        certifyLocationId:
+          deprecated: true
+          examples:
+          - '1234567890'
+          description: 'Deprecated: use npiEntries to upsert one or more NPIs in a single call. 10-digit location billing NPI to upsert into the addressType2Npi array. Omit or null to leave unchanged (only valid when the location-network has exactly one existing NPI); empty string clears the entire array. Mutually exclusive with npiEntries.'
+        npiParticipationDate:
           type: string
-          description: Certify location ID
-        facilityTerminationDate:
+          deprecated: true
+          examples:
+          - '2024-06-15'
+          description: 'Deprecated: use npiEntries instead. NPI participation date (ISO-8601 YYYY-MM-DD). Omit or null to leave unchanged; empty string clears. Mutually exclusive with npiEntries.'
+        npiEntries:
+          type: array
+          items:
+            $ref: '#/components/schemas/NpiParDateEntry'
+          description: 'Preferred over npi/npiParticipationDate. FULL REPLACEMENT of the addressType2Npi array: send every NPI this location-network should have, as any stored NPI omitted from the list is deleted (this is how an NPI is removed) and an entry omitting npiParticipationDate clears that NPI''s date. Mutually exclusive with npi/npiParticipationDate — set exactly one of the two shapes, never both.'
+    FacilityUpsertAddress:
+      type: object
+      description: A single facility address
+      properties:
+        address1:
           type: string
-          description: Facility–location termination date applied
-        networkTerminationDate:
+          description: Address line 1
+        address2:
           type: string
-          description: Network/plan termination date applied
-        terminatedLocationFacilityNetworks:
-          type: integer
-          format: int32
-          description: Attempted TenantGroupLocationFacilityNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
-        terminatedLocationNetworks:
-          type: integer
-          format: int32
-          description: Attempted TenantGroupLocationNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
-        terminatedLocationNetworkPlans:
-          type: integer
-          format: int32
-          description: Attempted TenantGroupLocationNetworkPlan UPDATE operations (pre-batch; not verified per-op against DAL response)
-        terminatedLocationPractitionerNetworks:
-          type: integer
-          format: int32
-          description: Attempted TenantGroupLocationPractitionerNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
-        terminatedPractitionerNetworks:
-          type: integer
-          format: int32
-          description: Attempted TenantGroupPractitionerNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
-        terminatedGroupFacilityLocations:
-          type: integer
-          format: int32
-          description: TenantGroupFacilityLocation rows in scope for this location (pre-batch count)
-        tenantFacilityLocationUpdated:
+          description: Address line 2
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          description: State
+        country:
+          type: string
+          description: Country
+        zipcode:
+          type: string
+          description: Zip code
+        source:
+          type: string
+          description: Source of the address
+        type:
+          type: string
+          description: Type of address
+        createdAt:
+          type: string
+          format: date-time
+          description: The date the record was created
+        createdBy:
+          type: string
+          description: The user who created the record
+        updatedAt:
+          type: string
+          format: date-time
+          description: The date the record was last updated
+        updatedBy:
+          type: string
+          description: The user who last updated the record
+        isPrimary:
           type: boolean
-          description: Whether TenantFacilityLocation was updated
+          description: States if the address is the primary address for the facility
+        zipExtension:
+          type: string
+          description: ZIP+4 extension returned by the address cleanser (CP-28784)
+        latitude:
+          type: number
+          format: double
+          description: Latitude returned by the address cleanser (CP-28784)
+        longitude:
+          type: number
+          format: double
+          description: Longitude returned by the address cleanser (CP-28784)
+        stateFips:
+          type: string
+          description: State FIPS code returned by the address cleanser (CP-28784)
+        countyFips:
+          type: string
+          description: County FIPS code returned by the address cleanser (CP-28784)
+        formattedAddress:
+          type: string
+          description: Fully formatted address returned by the address cleanser (CP-28784)
+    TerminationRequestStatus:
+      type: string
+      enum:
+      - PENDING
+      - COMPLETED
+      - PARTIALLY_FAILED
+      - IN_PROGRESS
+      - ROLLED_BACK
+      - ROLLBACK_FAILED
+    FacilityLicenseOvRequest:
+      type: object
+      required:
+      - expirationDate
+      - reportDate
+      description: Facility license payload for full-array replace in CoreFacility data.licenses (OV)
+      properties:
+        id:
+          type: string
+          description: Optional client-side id
+        licenseNumber:
+          type: string
+          examples:
+          - LIC-10001
+          description: License number
+        state:
+          type: string
+          examples:
+          - TX
+          description: US state code
+        licenseType:
+          type: string
+          examples:
+          - Facility
+          description: License type
+        licenseStatus:
+          type: string
+          examples:
+          - Active
+          description: License status
+        licenseSource:
+          type: string
+          examples:
+          - Manual entry
+          description: Source
+        issueDate:
+          type: string
+          examples:
+          - '2020-01-01'
+          description: Issue date (YYYY-MM-DD)
+        expirationDate:
+          type: string
+          examples:
+          - '2030-01-01'
+          description: Expiration date (YYYY-MM-DD)
+        reportDate:
+          type: string
+          examples:
+          - '2020-01-01'
+          description: Report date (YYYY-MM-DD)
+        flaggedDate:
+          type: string
+          description: Flagged date (YYYY-MM-DD)
+        url:
+          type: string
+          description: Reference URL
+        licenseNumberVariations:
+          type: string
+          description: Alternate license numbers
+        type:
+          type: string
+          description: Legacy type field when present on stored rows
+        attachments:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: Optional attachment payload
+        action:
+          type: string
+          examples:
+          - delete
+          description: Set to delete for soft-delete
+        deletedAt:
+          type: string
+          description: Soft-delete timestamp
+        deletedBy:
+          type: string
+          description: Soft-delete actor
+        createdAt:
+          type: string
+          description: Created timestamp
+        createdBy:
+          type: string
+          description: Created by
+        updatedAt:
+          type: string
+          description: Updated timestamp
+        updatedBy:
+          type: string
+          description: Updated by
+        verifiedDate:
+          type: string
+          description: Verified date
+        verifiedBy:
+          type: string
+          description: Verified by
+    FacilityAccreditationOvRequest:
+      type: object
+      description: Facility accreditation payload for full-array replace in CoreFacility data.accreditations (OV)
+      properties:
+        id:
+          type: string
+          description: Optional client-side id
+        idNumber:
+          type: string
+          description: Accreditation ID number
+        accreditationBody:
+          type: string
+          examples:
+          - Joint Commission
+          description: Accrediting body
+        status:
+          type: string
+          examples:
+          - Active
+          description: Accreditation status
+        effectiveDate:
+          type: string
+          description: Effective date (YYYY-MM-DD)
+        expirationDate:
+          type: string
+          description: Expiration date (YYYY-MM-DD)
+        source:
+          type: string
+          description: Source
+        attachments:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: Optional attachment array
+        action:
+          type: string
+          examples:
+          - delete
+          description: Set to delete for soft-delete
+        deletedAt:
+          type: string
+          description: Soft-delete timestamp
+        deletedBy:
+          type: string
+          description: Soft-delete actor
+        createdAt:
+          type: string
+          description: Created timestamp
+        createdBy:
+          type: string
+          description: Created by
+        updatedAt:
+          type: string
+          description: Updated timestamp
+        updatedBy:
+          type: string
+          description: Updated by
+        verifiedDate:
+          type: string
+          description: Verified date
+        verifiedBy:
+          type: string
+          description: Verified by
+    FacilityLocationRelationship:
+      type: object
+      required:
+      - tenantGroupFacilityLocation
+      description: One tenant_group_facility_locations (TGFL) association with all flat sibling entities. Represents a facility's participation at a group-scoped location.
+      properties:
+        tenantGroupFacilityLocation:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: 'The anchor tenant_group_facility_locations row. id is the pagination unit. data carries: effectiveDate, terminationDate, status, terminationReason, terminationInformedDate, comments, isPrimary.'
+        tenantGroupFacility:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The tenant_group_facilities row linking the facility to the group. id is the tenantGroupFacilityId used by termination and edit flows.
+        tenantFacility:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The tenant_facilities row for this facility. id is the tenantFacilityId required by termination flows.
+        tenantGroup:
+          $ref: '#/components/schemas/FacilityTenantGroupRef'
+          type: object
+          description: The tenant_groups row. data.groupId is the certify group id — use for group-scope filtering. The nested group ref carries the group name/NPI/TIN display enrichment (group.data.name/npi/tin); null until DAL enrichment populates it.
+        tenantGroupLocation:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The tenant_group_locations row that links the group to the location. id is the tenantGroupLocationId used by location-level termination flows.
+        groupLocation:
+          $ref: '#/components/schemas/FacilityGroupLocationRef'
+          type: object
+          description: The group_locations row. data.locationId is the certify location id; data.groupId is the certify group id cross-reference. The nested location ref carries the location name/bed count/contacts/office hours display enrichment (location.data.name/bedCount/...); null until DAL enrichment populates it.
+        locationEntityAddresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityLocationEntityAddressRef'
+          description: Address rows for this location (location_entity_addresses). Includes service and office addresses. Each entry's own data blob carries addressType/isPrimary; the nested entityAddress ref carries the hydrated address fields (addressLine1/2, city, state, zip, county, country); entityAddress is null until DAL enrichment populates that join.
+        tenantGroupLocationFacilityNetworks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityNetworkParticipationRef'
+          description: Network-participation rows at this group-location (tenant_group_location_facility_networks, TGLFN). Each entry pairs a TGLFN record with its referenced network entity. When the networkId filter is active on the request, only the matching TGLFN entry is included here.
+        tenantGroupLocationNetworks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityNetworkParticipationRef'
+          description: Network-participation rows at this group-location, sourced from tenant_group_location_networks (TGLN) — the legacy group-location-scoped network table also read by GET /facilities/{id}/relationships/all. Serves as a fallback source for facilities that predate tenant_group_location_facility_networks (TGLFN, CP-29886) and therefore have no TGLFN rows yet. When the networkId filter is active on the request, only the matching TGLN entry is included here.
     CorrectGroupFacilityNetworkSpecialtyRequest:
       type: object
       required:
@@ -2491,40 +3124,467 @@ components:
       properties:
         tenantGroupFacilityNetworkSpecialtyId:
           type: string
-          description: ID of the TenantGroupFacilityNetworkSpecialty record
           examples:
           - tgfns_abc123
           pattern: \S
+          description: ID of the TenantGroupFacilityNetworkSpecialty record
         newTenantSpecialtyId:
           type: string
-          description: ID of the new TenantSpecialty to replace the current one
           examples:
           - ts_xyz789
           pattern: \S
+          description: ID of the new TenantSpecialty to replace the current one
         changeReason:
           type: string
-          description: Optional human-readable reason for the change, captured for audit trail.
           examples:
           - Correcting specialty mapping per annual review
-    TerminateFacilityLocationRequest:
-      description: Request to terminate a facility location from the facility
+          description: Optional human-readable reason for the change, captured for audit trail.
+    GlobalTerminationRollbackResponse:
       type: object
+      description: Result of rolling back a global termination request
+      properties:
+        requestId:
+          type: string
+          description: The request that was rolled back
+        status:
+          type: string
+          description: ROLLED_BACK
+        itemsRolledBack:
+          type: integer
+          format: int32
+          description: Items restored
+        rowsRestored:
+          type: integer
+          format: int32
+          description: Relationship rows restored to their prior values
+        entityIds:
+          type: array
+          items:
+            type: string
+          description: Entity ids restored
+    FacilityLocationNetworkImpact:
+      type: object
+      description: One network and optional plan participation
+      properties:
+        networkId:
+          type: string
+          examples:
+          - net-xyz789
+          description: Certify network ID
+        planIds:
+          type: array
+          examples:
+          - - plan_abc123
+          items:
+            type: string
+          description: Certify plan IDs when participation is plan-scoped (may be empty)
+    AssociateFacilityNetworkResponse:
+      type: object
+      description: Response containing facility-network association result
+      properties:
+        tenantGroupFacilityId:
+          type: string
+          examples:
+          - tgf-456
+          description: ID of the tenant group facility
+        tenantGroupFacilityNetworkId:
+          type: string
+          examples:
+          - tgfn-789
+          description: ID of the tenant group facility network association (legacy / first network)
+        networkId:
+          type: string
+          examples:
+          - net-123
+          description: ID of the network that was associated (legacy / first network)
+        status:
+          type: string
+          examples:
+          - created
+          description: Indicates the result of the association
+        facilityNetworkCount:
+          type: integer
+          format: int32
+          examples:
+          - 2
+          description: Number of facility-network associations created or updated
+        locationNetworkCount:
+          type: integer
+          format: int32
+          examples:
+          - 4
+          description: Number of facility-location-network associations created
+        associations:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityNetworkAssociationItem'
+          description: Per-network association details for bulk requests
+    NpiParDateEntry:
+      type: object
+      required:
+      - npi
+      description: A single NPI / participation-date pair in the addressType2Npi array
+      properties:
+        npi:
+          type: string
+          examples:
+          - '1234567890'
+          description: 10-digit location billing NPI.
+        npiParticipationDate:
+          type: string
+          examples:
+          - '2024-06-15'
+          description: NPI participation date (ISO-8601 YYYY-MM-DD). Omit, null, or empty string leaves this NPI with no participation date — since npiEntries replaces the whole array, an omitted date is not carried over from the stored entry.
+    FacilityLocationEntityAddressRef:
+      type: object
+      required:
+      - id
+      description: Location-entity-address bridge row paired with the referenced hydrated entity_addresses entity.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the location_entity_addresses row.
+        data:
+          type: object
+          description: Bridge row operational-value data blob (e.g. addressType, isPrimary).
+        entityAddress:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The hydrated entity_addresses row this bridge row points at. null until DAL enrichment populates this join.
+    TerminateFacilityLocationResponse:
+      type: object
+      description: Result of terminating a facility location from the facility. Integer counts are the number of operations included in the termination batch before execution (attempted), not a post-hoc validation of each DAL operation result.
+      properties:
+        certifyFacilityId:
+          type: string
+          examples:
+          - cf_9f1b2c3d
+          description: Certify facility ID
+        certifyLocationId:
+          type: string
+          examples:
+          - loc_4d5e6f
+          description: Certify location ID
+        facilityTerminationDate:
+          type: string
+          examples:
+          - '2026-08-01'
+          description: Facility–location termination date applied
+        networkTerminationDate:
+          type: string
+          examples:
+          - '2026-08-01'
+          description: Network/plan termination date applied
+        terminatedLocationFacilityNetworks:
+          type: integer
+          format: int32
+          examples:
+          - 2
+          description: Attempted TenantGroupLocationFacilityNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
+        terminatedLocationNetworks:
+          type: integer
+          format: int32
+          examples:
+          - 2
+          description: Attempted TenantGroupLocationNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
+        terminatedLocationNetworkPlans:
+          type: integer
+          format: int32
+          examples:
+          - 1
+          description: Attempted TenantGroupLocationNetworkPlan UPDATE operations (pre-batch; not verified per-op against DAL response)
+        terminatedLocationPractitionerNetworks:
+          type: integer
+          format: int32
+          examples:
+          - 5
+          description: Attempted TenantGroupLocationPractitionerNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
+        terminatedPractitionerNetworks:
+          type: integer
+          format: int32
+          examples:
+          - 5
+          description: Attempted TenantGroupPractitionerNetwork UPDATE operations (pre-batch; not verified per-op against DAL response)
+        terminatedGroupFacilityLocations:
+          type: integer
+          format: int32
+          examples:
+          - 1
+          description: TenantGroupFacilityLocation rows in scope for this location (pre-batch count)
+        tenantFacilityLocationUpdated:
+          type: boolean
+          examples:
+          - true
+          description: Whether TenantFacilityLocation was updated
+    BulkUploadLinkResults:
+      type: object
+      description: Aggregated outcome of linking uploaded files to target facilities
+      properties:
+        totalFacilities:
+          type: integer
+          format: int32
+          description: Total number of facilities targeted by this batch
+        successCount:
+          type: integer
+          format: int32
+          description: Number of facilities successfully linked to the uploaded files
+        failureCount:
+          type: integer
+          format: int32
+          description: Number of facilities that failed to link
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkUploadFailedLink'
+          description: Details for each facility that failed to link
+    GlobalTerminationResponse:
+      type: object
+      description: Result of a global termination request
+      properties:
+        requestId:
+          type: string
+          description: Id of the global termination request; use it to roll the request back
+        status:
+          $ref: '#/components/schemas/TerminationRequestStatus'
+          type: string
+          description: COMPLETED or PARTIALLY_FAILED
+        entityType:
+          type: string
+          description: Entity type of the request
+        effectiveDate:
+          type: string
+          description: Effective date, yyyy-MM-dd
+        itemCount:
+          type: integer
+          format: int32
+          description: Number of entities in the request
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalTerminationItemResult'
+          description: Per-entity results
+    CreateFacilitySpecialtyRequest:
+      type: object
+      required:
+      - tenantSpecialtyId
+      - facilitySpecialtyIsPrimary
+      properties:
+        tenantSpecialtyId:
+          type: string
+          examples:
+          - ts_123456
+          pattern: \S
+          description: ID of the tenant specialty
+        facilitySpecialtyEffectiveDate:
+          type: string
+          examples:
+          - '2024-01-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Effective date for the facility specialty (YYYY-MM-DD)
+        facilitySpecialtyIsPrimary:
+          type: boolean
+          examples:
+          - true
+          description: Indicates if the specialty is primary
+        certifyLocationId:
+          type: string
+          examples:
+          - loc_123456
+          description: Certify location ID to associate the specialty at the facility-location level
+        facilityLocationSpecialtyEffectiveDate:
+          type: string
+          examples:
+          - '2024-01-01'
+          description: Effective date for the facility location specialty (YYYY-MM-DD)
+        facilityLocationSpecialtyIsPrimary:
+          type: boolean
+          examples:
+          - true
+          description: Indicates if the location specialty is primary
+        certifyGroupId:
+          type: string
+          examples:
+          - grp_123456
+          description: Certify group ID to associate the specialty at the group-facility level
+        certifyNetworkId:
+          type: string
+          examples:
+          - net_123456
+          description: Certify network ID to associate the specialty at the group-facility-network level (requires certifyGroupId)
+        groupSpecialtyEffectiveDate:
+          type: string
+          description: Effective date for the group facility specialty (YYYY-MM-DD)
+        locationSpecialtyEffectiveDate:
+          type: string
+          description: Effective date for the group facility location specialty (YYYY-MM-DD). Triggers group-location specialty creation when both certifyGroupId and certifyLocationId are provided.
+        networkSpecialtyEffectiveDate:
+          type: string
+          description: Effective date for the group facility network specialty (YYYY-MM-DD)
+    SupportingDocumentResponse:
+      type: object
+      description: Response for facility supporting document operations
+      properties:
+        message:
+          type: string
+          examples:
+          - File uploaded and facility record updated successfully
+          description: Success message
+        fileName:
+          type: string
+          examples:
+          - facility_license.pdf
+          description: Name of the uploaded file
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+          description: The page of results for this request.
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Total number of records matching the request, across all pages.
+        identifiersSearched:
+          type: integer
+          format: int64
+          examples:
+          - 2
+          description: Count of identifiers submitted for a bulk-identifier search (e.g. bulk NPI search). Omitted/null for standard (non-bulk) list requests.
+        matchedCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Count of submitted identifiers that matched a record. Omitted/null for standard (non-bulk) list requests.
+        notFoundCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Count of submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
+        unmatchedIdentifiers:
+          type: array
+          examples:
+          - - '9999999999'
+          items:
+            type: string
+          description: Submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
+    FacilityNetworkParticipationRef:
+      type: object
+      required:
+      - id
+      description: TGLFN network-participation record paired with the referenced network entity.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the TGLFN row.
+        data:
+          type: object
+          description: TGLFN operational-value data blob (e.g. effectiveDate, terminationDate, status).
+        network:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The network this participation references.
+    SkippedRow:
+      type: object
+      properties:
+        entityTable:
+          type: string
+        rowId:
+          type: string
+        existingTerminationDate:
+          type: string
+        existingTerminationReason:
+          type: string
+    FacilityTenantGroupRef:
+      type: object
+      required:
+      - id
+      description: Tenant group record paired with the referenced group (core_groups_ov) display entity.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the tenant_groups row.
+        data:
+          type: object
+          description: Tenant group operational-value data blob (e.g. groupId, email, website).
+        group:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The groups (core_groups_ov) entity this tenant group resolves to. null until DAL enrichment populates this join.
+    UpdateFacilityGroupNetworkEffectiveDateRequest:
+      type: object
+      properties:
+        effectiveDate:
+          type: string
+        terminationDate:
+          type: string
+        changeReason:
+          type: string
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    BulkUploadFileResult:
+      type: object
+      description: Outcome of uploading a single file in a bulk batch
+      properties:
+        originalFileName:
+          type: string
+          examples:
+          - license.pdf
+          description: Original file name as submitted
+        fileUrl:
+          type: string
+          description: GCS path of the uploaded file; present only when status is success
+        status:
+          type: string
+          enum:
+          - success
+          - failed
+          examples:
+          - success
+          description: Upload status
+        error:
+          type: string
+          description: Failure reason; present only when status is failed
+    SpecialtyNotCreatedReason:
+      type: string
+      enum:
+      - MISSING_DEPENDENCY
+      - DOWNSTREAM_ERROR
+      - CONFLICT
+      - VALIDATION_ERROR
+    Date:
+      type: string
+      format: date
+    TerminateFacilityLocationRequest:
+      type: object
+      required:
+      - consentConfirmed
+      description: Request to terminate a facility location from the facility
       properties:
         facilityTerminationDate:
           type: string
-          description: Effective termination date for the facility–location relationship (ISO-8601). When omitted, only network participation is terminated (network-only mode).
           examples:
           - '2026-04-01'
+          description: Effective termination date for the facility–location relationship (ISO-8601). When omitted, only network participation is terminated (network-only mode).
         networkTerminationDate:
           type: string
-          description: Effective termination date for network and plan participation for this location (ISO-8601). Required when facilityTerminationDate is omitted.
           examples:
           - '2026-04-01'
+          description: Effective termination date for network and plan participation for this location (ISO-8601). Required when facilityTerminationDate is omitted.
         terminationReason:
           type: string
-          description: Reason for termination. Optional in all termination modes — both full-facility and network-only callers may omit this field.
           examples:
           - Contract Expired
+          description: Reason for termination. Optional in all termination modes — both full-facility and network-only callers may omit this field.
         terminationInformedDate:
           type: string
           description: Date the termination notice was provided (ISO-8601)
@@ -2533,17 +3593,768 @@ components:
           description: Optional comments persisted on terminated records
         consentConfirmed:
           type: boolean
-          description: User must acknowledge impact before termination
           examples:
           - true
+          description: User must acknowledge impact before termination
         networkId:
           type: string
           description: When provided in network-only mode (facilityTerminationDate is null), scopes termination to this specific network ID only. When omitted in network-only mode, all networks for the location are terminated.
+        continuityOfCare:
+          type: boolean
+          examples:
+          - false
+          description: Whether Continuity of Care applies for this termination. Defaults to false when omitted.
+    RollbackFacilityTerminationByValueResponse:
+      type: object
+      description: Result of a value-match facility termination rollback
+      properties:
+        certifyFacilityId:
+          type: string
+          description: The facility that was restored
+        rowsRestored:
+          type: integer
+          format: int32
+          description: Relationship rows whose termination was cleared
+    TenantFacilityLocationSpecialtyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantFacilityLocationId:
+          type: string
+        tenantId:
+          type: string
+        tenantSpecialtyId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        data:
+          $ref: '#/components/schemas/JsonNode'
+    ManageFacilitySpecialtiesRequest:
+      type: object
+      properties:
+        updates:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpdateSpecialtyItem'
+          description: Existing specialties to update
+        additions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddSpecialtyItem'
+          description: New specialties to add
+        changeReason:
+          type: string
+          examples:
+          - Correcting specialty mappings per annual review
+          description: Optional reason for change, applied to all operations
+    FacilityCertificateOvRequest:
+      type: object
+      description: Facility certificate payload for full-array replace in CoreFacility data.certifications (OV)
+      properties:
+        id:
+          type: string
+          description: Optional client-side id
+        certificateType:
+          type: string
+          examples:
+          - Board Certification
+          description: Certificate type
+        number:
+          type: string
+          examples:
+          - CERT-12345
+          description: Certificate number
+        status:
+          type: string
+          examples:
+          - Active
+          description: Certificate status
+        issuingAuthority:
+          type: string
+          examples:
+          - American Board of Internal Medicine
+          description: Issuing authority
+        issueDate:
+          type: string
+          examples:
+          - '2020-01-01'
+          description: Issue date (YYYY-MM-DD)
+        expirationDate:
+          type: string
+          examples:
+          - '2030-01-01'
+          description: Expiration date (YYYY-MM-DD)
+        source:
+          type: string
+          examples:
+          - Primary Source
+          description: Source field
+        attachments:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: Optional attachment array
+        action:
+          type: string
+          examples:
+          - delete
+          description: Set to delete for soft-delete
+        deletedAt:
+          type: string
+          description: Soft-delete timestamp
+        deletedBy:
+          type: string
+          description: Soft-delete actor
+        createdAt:
+          type: string
+          description: Created timestamp
+        createdBy:
+          type: string
+          description: Created by
+        updatedAt:
+          type: string
+          description: Updated timestamp
+        updatedBy:
+          type: string
+          description: Updated by
+        verifiedDate:
+          type: string
+          description: Verified date
+        verifiedBy:
+          type: string
+          description: Verified by
+    AssociateFacilitySpecialtyResponse:
+      type: object
+      properties:
+        facilitySpecialty:
+          $ref: '#/components/schemas/TenantFacilitySpecialtyResponse'
+          type: object
+          description: Response from creating the facility specialty association
+        facilityLocationSpecialty:
+          $ref: '#/components/schemas/TenantFacilityLocationSpecialtyResponse'
+          type: object
+          description: Response from creating the facility location specialty association; omitted when certifyLocationId was not supplied in the request
+        groupFacilitySpecialty:
+          $ref: '#/components/schemas/TenantGroupFacilitySpecialtyResponse'
+          type: object
+          description: Response from creating the group facility specialty association; omitted when certifyGroupId was not supplied in the request
+        groupFacilityLocationSpecialty:
+          $ref: '#/components/schemas/TenantGroupFacilityLocationSpecialtyResponse'
+          type: object
+          description: Response from creating the group facility location specialty association; omitted unless both certifyLocationId and locationSpecialtyEffectiveDate were supplied in the request
+        groupFacilityNetworkSpecialty:
+          $ref: '#/components/schemas/TenantGroupFacilityNetworkSpecialtyResponse'
+          type: object
+          description: Response from creating the group facility network specialty association; omitted when certifyNetworkId was not supplied in the request
+        notCreated:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialtyNotCreated'
+          description: Specialty associations that could not be created. Empty when all requested levels succeeded.
+    FacilityUpsertContact:
+      type: object
       required:
-      - consentConfirmed
-    Date:
+      - name
+      - type
+      - phone
+      description: A single facility contact
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Contact name
+        type:
+          type: string
+          minLength: 1
+          description: Contact type
+        phone:
+          type: string
+          minLength: 7
+          description: Contact phone number
+        email:
+          type: string
+          format: email
+          description: Contact email address
+        fax:
+          type: string
+          description: Contact fax number
+    JsonNodeType:
       type: string
-      format: date
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    FacilityGroupLocationRef:
+      type: object
+      required:
+      - id
+      description: Group location record paired with the referenced location (core_locations_ov) display entity.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the group_locations row.
+        data:
+          type: object
+          description: Group location operational-value data blob (e.g. locationId, groupId).
+        location:
+          $ref: '#/components/schemas/FacilityEntityRef'
+          type: object
+          description: The locations (core_locations_ov) entity this group location resolves to. null until DAL enrichment populates this join.
+    UpdateSpecialtyItem:
+      type: object
+      required:
+      - tenantFacilitySpecialtyId
+      properties:
+        tenantFacilitySpecialtyId:
+          type: string
+          examples:
+          - tfs_abc123
+          pattern: \S
+          description: ID of the existing TenantFacilitySpecialty record to update
+        newTenantSpecialtyId:
+          type: string
+          examples:
+          - ts_xyz789
+          description: ID of the new TenantSpecialty to replace the current one
+        effectiveDate:
+          type: string
+          examples:
+          - '2026-01-15'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: New effective date in YYYY-MM-DD format
+        isPrimary:
+          type: boolean
+          description: Whether this specialty is primary
+    FacilityNetworkAssociationItem:
+      type: object
+      description: Result of associating one network (and optional location-network rows)
+      properties:
+        networkId:
+          type: string
+          examples:
+          - net-123
+          description: Network ID
+        tenantGroupFacilityNetworkId:
+          type: string
+          examples:
+          - tgfn-789
+          description: TenantGroupFacilityNetwork ID
+        tenantGroupLocationFacilityNetworkIds:
+          type: array
+          examples:
+          - - tglfn-1
+          items:
+            type: string
+          description: Created TenantGroupLocationFacilityNetwork IDs
+    TerminateFacilityNetworkRequest:
+      type: object
+      required:
+      - terminationDate
+      description: Request to terminate a facility's participation in a network
+      properties:
+        terminationDate:
+          type: string
+          examples:
+          - '2026-04-01'
+          description: Effective termination date (ISO-8601 format). Can be a past, present, or future date.
+        terminationInformedDate:
+          type: string
+          examples:
+          - '2026-03-01'
+          description: Date the termination notice was provided (ISO-8601 format)
+        terminationReason:
+          type: string
+          examples:
+          - Contract Expired
+          description: 'Reason for termination (free text). Common values include: Contract Expired, Voluntary Withdrawal, Compliance Issue, Administrative Action, Other, Non-Renewal.'
+        comments:
+          type: string
+          examples:
+          - Facility requested withdrawal effective end of Q1 2026
+          description: Optional free-text comments or notes about the termination; persisted on terminated network records when provided.
+        continuityOfCare:
+          type: boolean
+          examples:
+          - false
+          description: Whether Continuity of Care applies for this termination. Defaults to false when omitted.
+    FacilityUpsertRequest:
+      type: object
+      required:
+      - name
+      description: 'Facility create/upsert payload. Top-level required: name only (matches facility-upsert.schema.json). npi and tin are required for default tenants; Pharmacy facilities use ncpdpId; external-id and address-hash modes follow FacilityValidationService rules. If initialCredentialingDate is provided, lastCredentialingDate is also required.'
+      properties:
+        facilityId:
+          type: string
+          examples:
+          - cf_abc123
+          description: Certify facility ID; only relevant for update flows
+        name:
+          type: string
+          minLength: 1
+          examples:
+          - Acme Medical Center
+          description: Facility name
+        npi:
+          type: string
+          examples:
+          - '1234567890'
+          pattern: ^\d{10}$
+          description: 10-digit National Provider Identifier. Required for default tenants; optional for Pharmacy (ncpdpId) and some external-id / address-hash flows.
+        tin:
+          type: string
+          examples:
+          - '123456789'
+          pattern: ^\d{9}$
+          description: 9-digit Tax Identification Number. Required for default tenants; optional for Pharmacy (ncpdpId) and some external-id / address-hash flows.
+        ncpdpId:
+          type: string
+          examples:
+          - '1234567'
+          description: NCPDP identifier for Pharmacy facilities (CP-33224). Required when facilityType is Pharmacy.
+        facilityType:
+          type: string
+          examples:
+          - Hospital
+          description: Facility type
+        facilityEffectiveDate:
+          type: string
+          format: date
+          examples:
+          - '2024-01-01'
+          description: Effective date of the facility (YYYY-MM-DD)
+        externalId:
+          type: string
+          description: External identifier for the facility, used as crosswalk for some tenants
+        dba:
+          type: string
+          description: Doing-business-as name
+        attestationDate:
+          type: string
+          format: date
+          examples:
+          - '2024-01-01'
+          description: Attestation date (YYYY-MM-DD)
+        effectiveDate:
+          type: string
+          format: date
+          examples:
+          - '2024-01-01'
+          description: Effective date (YYYY-MM-DD)
+        delegationStatus:
+          type: string
+          enum:
+          - Delegated
+          - Direct
+          description: Delegation status of the facility
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityUpsertAddress'
+          description: Addresses associated with the facility
+        businessPurpose:
+          $ref: '#/components/schemas/FacilityUpsertBusinessPurpose'
+          type: object
+          description: Facility business purpose flags
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityUpsertContact'
+          description: Contacts associated with the facility
+        serviceAddress:
+          $ref: '#/components/schemas/FacilityUpsertTypedAddress'
+          type: object
+          description: Primary service address. When provided, addressLine1, city, state, and zip are required.
+        officeAddress:
+          $ref: '#/components/schemas/FacilityUpsertTypedAddress'
+          type: object
+          description: Office address
+        billingAddress:
+          $ref: '#/components/schemas/FacilityUpsertTypedAddress'
+          type: object
+          description: Billing address
+        mailingAddress:
+          $ref: '#/components/schemas/FacilityUpsertTypedAddress'
+          type: object
+          description: Mailing address
+        irsAddress:
+          $ref: '#/components/schemas/FacilityUpsertTypedAddress'
+          type: object
+          description: IRS/W9 address
+        userDefinedFields:
+          type: object
+          description: Custom tenant-defined fields. Replaces the entire userDefinedFields object (PUT semantics).
+        lastCredentialingDate:
+          type: string
+          format: date
+          description: Date of the last credentialing (YYYY-MM-DD). Required when initialCredentialingDate is provided.
+        initialCredentialingDate:
+          type: string
+          format: date
+          description: Date the facility was initially credentialed (YYYY-MM-DD)
+        nextCredentialingDate:
+          type: string
+          format: date
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Date of the next credentialing due (YYYY-MM-DD)
+        groupDetails:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityUpsertGroupDetail'
+          description: Tenant group associations for the facility
+    UpdateFacilityGroupEffectiveDateRequest:
+      type: object
+      properties:
+        effectiveDate:
+          type: string
+        terminationDate:
+          type: string
+        cascadeToNetworkParticipation:
+          type: boolean
+        changeReason:
+          type: string
+    CorrectGroupFacilityLocationSpecialtyRequest:
+      type: object
+      required:
+      - tenantGroupFacilityLocationSpecialtyId
+      - newTenantSpecialtyId
+      properties:
+        tenantGroupFacilityLocationSpecialtyId:
+          type: string
+          examples:
+          - tgfls_abc123
+          pattern: \S
+          description: ID of the TenantGroupFacilityLocationSpecialty record
+        newTenantSpecialtyId:
+          type: string
+          examples:
+          - ts_xyz789
+          pattern: \S
+          description: ID of the new TenantSpecialty to replace the current one
+        changeReason:
+          type: string
+          examples:
+          - Correcting specialty mapping per annual review
+          description: Optional human-readable reason for the change, captured for audit trail.
+    ManageFacilitySpecialtiesResponse:
+      type: object
+      properties:
+        updatedSpecialties:
+          type: array
+          items:
+            type: object
+          description: Results from updated specialty records
+        addedSpecialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssociateFacilitySpecialtyResponse'
+          description: Results from newly added specialty associations
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecialtyNotCreated'
+          description: Operations that failed, empty when all succeeded
+    BulkUploadFailedLink:
+      type: object
+      description: A single facility that failed to link during a bulk upload
+      properties:
+        certifyFacilityId:
+          type: string
+          examples:
+          - cf_abc123
+          description: Certify facility ID that failed to link
+        error:
+          type: string
+          description: Failure reason
+    GlobalTerminationItemResult:
+      type: object
+      description: Outcome of one entity in a global termination request
+      properties:
+        itemId:
+          type: string
+          description: Item id
+        entityId:
+          type: string
+          description: Entity id this item targeted
+        status:
+          $ref: '#/components/schemas/TerminationItemStatus'
+          type: string
+          description: SUCCEEDED, FAILED or SKIPPED_ALREADY_TERMINATED
+        errorDetail:
+          type: string
+          description: Failure or skip detail
+        rowsTerminated:
+          type: integer
+          format: int32
+          description: Number of relationship rows ended
+        skippedRows:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkippedRow'
+          description: Rows left untouched because they were already terminated
+        credentialingWorkflows:
+          type: string
+          description: CANCELLED when open credentialing workflows were cancelled (immediately, whatever the effective date), NONE when there were none. If the cancellation fails the facility is not terminated and the item is FAILED, with the cancel failure's message
+        workflowsCancelled:
+          type: integer
+          format: int32
+          description: Number of credentialing workflows cancelled
+    UpdateFacilityLocationNetworkNpiParDateResponse:
+      type: object
+      description: Response after updating facility location-network NPI and participation date
+      properties:
+        tenantGroupLocationId:
+          type: string
+          examples:
+          - tgl-123
+          description: Tenant group location ID
+        networkId:
+          type: string
+          examples:
+          - net-456
+          description: Network ID
+        tenantGroupLocationNetworkId:
+          type: string
+          examples:
+          - tgln-789
+          description: Updated TenantGroupLocationNetwork ID
+        tenantGroupLocationFacilityNetworkId:
+          type: string
+          examples:
+          - tglfn-012
+          description: Primary updated TenantGroupLocationFacilityNetwork ID
+        facilityNetworkRowsUpdated:
+          type: integer
+          format: int32
+          examples:
+          - 1
+          description: Count of facility-network rows updated at this location-network
+    TerminationItemStatus:
+      type: string
+      enum:
+      - PENDING
+      - IN_PROGRESS
+      - COMPLETING
+      - SUCCEEDED
+      - FAILED
+      - SKIPPED_ALREADY_TERMINATED
+    FacilityUpsertNetworkLink:
+      type: object
+      required:
+      - networkId
+      description: A network association for a facility group
+      properties:
+        networkId:
+          type: string
+          minLength: 1
+          description: Network ID
+        effectiveDate:
+          type: string
+          format: date
+          description: Effective date of the network association (YYYY-MM-DD)
+    NetworkAssociationEntry:
+      type: object
+      required:
+      - networkId
+      description: A single network with its own effective date
+      properties:
+        networkId:
+          type: string
+          examples:
+          - network-456
+          pattern: \S
+          description: Network ID for this association
+        effectiveDate:
+          type: string
+          examples:
+          - '2026-04-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Effective date applied to this network
+    FacilityUpsertBusinessPurposeFlag:
+      type: object
+      description: A business purpose flag and its reason
+      properties:
+        value:
+          type: boolean
+          description: The flag value
+        reason:
+          type: string
+          description: The reason for the flag value
+    FacilityUpsertGroupDetail:
+      type: object
+      required:
+      - tenantGroupId
+      description: A tenant group association for the facility
+      properties:
+        tenantGroupId:
+          type: string
+          description: Tenant group ID
+        effectiveDate:
+          type: string
+          format: date
+          description: Effective date of the group association (YYYY-MM-DD)
+        networkLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityUpsertNetworkLink'
+          description: Network associations for this group
+    CorrectFacilitySpecialtyRequest:
+      type: object
+      required:
+      - tenantFacilitySpecialtyId
+      properties:
+        tenantFacilitySpecialtyId:
+          type: string
+          examples:
+          - tfs_abc123
+          pattern: \S
+          description: ID of the existing TenantFacilitySpecialty record to update
+        newTenantSpecialtyId:
+          type: string
+          examples:
+          - ts_xyz789
+          description: ID of the new TenantSpecialty to replace the current one. Optional if effectiveDate or isPrimary is provided.
+        effectiveDate:
+          type: string
+          examples:
+          - '2026-01-15'
+          description: New effective date for the specialty record in ISO format (YYYY-MM-DD). Optional if newTenantSpecialtyId or isPrimary is provided.
+        isPrimary:
+          type: boolean
+          examples:
+          - true
+          description: Whether this specialty should be marked as primary. Optional if newTenantSpecialtyId or effectiveDate is provided.
+        changeReason:
+          type: string
+          examples:
+          - Correcting specialty mapping per annual review
+          description: Optional human-readable reason for the change, captured for audit trail.
+    FacilityLocationsPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated list of TGFL-anchored facility location associations.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityLocationRelationship'
+          description: Items on the current page.
+        links:
+          $ref: '#/components/schemas/PageLinks'
+          type: object
+          description: HATEOAS-style navigation links (self, next, prev).
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of matching TGFL records (across all pages).
+    FacilityUpsertTypedAddress:
+      type: object
+      description: A single-purpose facility address
+      properties:
+        addressLine1:
+          type: string
+          description: Address line 1
+        addressLine2:
+          type: string
+          description: Address line 2
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          examples:
+          - CA
+          pattern: ^[A-Z]{2}$
+          description: Two-letter US state code
+        county:
+          type: string
+          description: County
+        country:
+          type: string
+          description: Country
+        zip:
+          type: string
+          description: Zip code
+        zipExtension:
+          type: string
+          description: ZIP+4 extension returned by the address cleanser (CP-28784)
+        latitude:
+          type: number
+          format: double
+          description: Latitude returned by the address cleanser (CP-28784)
+        longitude:
+          type: number
+          format: double
+          description: Longitude returned by the address cleanser (CP-28784)
+        stateFips:
+          type: string
+          description: State FIPS code returned by the address cleanser (CP-28784)
+        countyFips:
+          type: string
+          description: County FIPS code returned by the address cleanser (CP-28784)
+        formattedAddress:
+          type: string
+          description: Fully formatted address returned by the address cleanser (CP-28784)
+    AddSpecialtyItem:
+      type: object
+      required:
+      - tenantSpecialtyId
+      properties:
+        tenantSpecialtyId:
+          type: string
+          examples:
+          - ts_cardiology_001
+          pattern: \S
+          description: ID of the tenant specialty to associate
+        effectiveDate:
+          type: string
+          examples:
+          - '2026-01-01'
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Effective date in YYYY-MM-DD format
+        isPrimary:
+          type: boolean
+          examples:
+          - false
+          description: Whether this specialty is primary
+    FacilityEntityRef:
+      type: object
+      required:
+      - id
+      description: Reference to a related entity with its unique id and OV data blob.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the related entity.
+        data:
+          type: object
+          description: Operational-value data blob (schema-on-read; keys vary by entity type).
+    RollbackFacilityTerminationByValueRequest:
+      type: object
+      required:
+      - terminationDate
+      - terminationReason
+      description: Identifies the exact termination to undo on one facility, by its date and reason
+      properties:
+        terminationDate:
+          type: string
+          examples:
+          - '2026-04-01'
+          pattern: \S
+          description: Termination date of the termination to undo (ISO-8601)
+        terminationReason:
+          type: string
+          maxLength: 1024
+          pattern: \S
+          description: Termination reason of the termination to undo, exactly as recorded
   securitySchemes:
     jwt:
       type: http

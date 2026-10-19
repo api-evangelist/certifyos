@@ -22,64 +22,101 @@ tags:
 paths:
   /tenant-specialties:
     get:
-      summary: Get all tenant specialties
-      description: Retrieves a list of all tenant specialties with optional filtering by name
+      summary: List specialties configured for the tenant
+      description: 'Returns the specialties that have been configured for the tenant identified by the `tenant-id` header.
+
+
+        **What it does:** Fetches a page of tenant specialty records — each record links a global specialty definition to this tenant and may carry tenant-specific metadata.
+
+
+        **When to use:** Use this endpoint to display or enumerate specialties active for a tenant. To narrow results to a specific classification taxonomy, use `GET /tenant-specialties/by-classification` instead.
+
+
+        **How to call it:** Supply the required `tenant-id` header. The `name` query parameter is accepted but is not currently forwarded to the data layer — it has no effect on the returned results (tracked as a known limitation, not fixed by this documentation change). Pagination is not exposed: every call returns a fixed first page of up to 10 records regardless of how many tenant specialties exist for the tenant.
+
+
+        **What you get back:** A JSON object containing a `data` array of tenant specialty objects and a `totalCount` integer reflecting the full count before pagination. Requires the `READ_TENANT_SPECIALTY` permission.'
       operationId: getTenantSpecialties
       tags:
       - Tenant Specialty
       parameters:
-      - description: Filter tenant specialties by name
+      - description: Filter tenant specialties by name. Accepted but not currently applied by the data layer — has no effect on results.
         example: Cardiology
         in: query
         name: name
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the query.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
-        required: true
       responses:
-        '200':
-          description: Successfully retrieved list of tenant specialties
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  totalCount:
-                    type: integer
-                    format: int64
-                  data:
-                    $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
-                    type: array
-                $ref: '#/components/schemas/TenantSpecialty.schema'
-        '400':
-          description: Invalid request parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
-          description: Unauthorized - Authentication required
+          description: Unauthorized - the request is missing a valid JWT.
         '403':
-          description: Forbidden - User does not have required permissions
+          description: Forbidden - the caller lacks the READ_TENANT_SPECIALTY permission for this tenant.
         '500':
-          description: Internal Server Error - An unexpected error occurred
+          description: Internal Server Error - an unexpected error occurred while retrieving the list.
+        '200':
+          description: The (fixed first page of the) tenant's specialties, plus the total count before pagination.
+          content:
+            application/json:
+              examples:
+                tenantSpecialtyList:
+                  value:
+                    totalCount: 2
+                    data:
+                    - displayName: Cardiology
+                      description: Diagnosis and treatment of heart conditions.
+                      changeReason: Initial tenant onboarding
+                    - displayName: Dermatology
+                      description: Diagnosis and treatment of skin conditions.
+                      changeReason: Initial tenant onboarding
+              schema:
+                $ref: '#/components/schemas/GetTenantSpecialtiesResponse'
+        '400':
+          description: Missing or invalid `tenant-id` header.
+          content:
+            application/json:
+              examples:
+                missingTenantIdHeader:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: getTenantSpecialties.tenantId'
+                      detail: must not be null
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
     post:
-      summary: Create a new tenant specialty
-      description: Creates a new tenant specialty
+      summary: Add a specialty to the tenant's configuration
+      description: 'Creates a new tenant specialty record, associating a global specialty with the tenant identified by the `tenant-id` header.
+
+
+        **What it does:** Persists a tenant-scoped specialty entry. A tenant specialty is distinct from a global specialty — it represents the tenant''s adoption of a specialty for use in their credentialing workflows.
+
+
+        **When to use:** Call this after confirming the referenced global specialty exists. Do not call this if a tenant specialty for the same specialty already exists for the tenant (check with `GET /tenant-specialties` first) — this operation does not check for an existing record and is not idempotent; submitting the same payload twice creates a second, duplicate record.
+
+
+        **How to call it:** Supply the required `tenant-id` header. The request body must include a non-empty `specialtyId`; a missing or blank `specialtyId` returns 400 before any other validation occurs. The `data` field is additionally validated against the `TenantSpecialty` JSON Schema; schema violations also return 400. Requires the `CREATE_TENANT_SPECIALTY` permission.
+
+
+        **What you get back:** On success (201) the created tenant specialty object is returned, including the server-assigned `id`. No `Location` header is emitted.'
       operationId: createTenantSpecialty
       tags:
       - Tenant Specialty
       parameters:
-      - name: tenant-id
+      - description: Tenant identifier that owns the new record.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
-        required: true
       requestBody:
         content:
           application/json:
@@ -87,10 +124,26 @@ paths:
               $ref: '#/components/schemas/CreateTenantSpecialtyRequest'
         required: true
       responses:
+        '401':
+          description: Unauthorized - the request is missing a valid JWT.
+        '403':
+          description: Forbidden - the caller lacks the CREATE_TENANT_SPECIALTY permission for this tenant.
+        '500':
+          description: Internal Server Error - an unexpected error occurred while creating the record.
         '201':
-          description: Successfully created the tenant specialty
+          description: The newly created tenant specialty, including its server-assigned `id`. No `Location` header is returned.
           content:
             application/json:
+              examples:
+                tenantSpecialtyCreated:
+                  value:
+                    id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    tenantId: acme-health
+                    specialtyId: 9c858901-8a57-4791-81fe-4c455b099bc9
+                    data:
+                      displayName: Cardiology
+                      description: Diagnosis and treatment of heart conditions.
+                      changeReason: Initial tenant onboarding
               schema:
                 type: object
                 properties:
@@ -101,97 +154,143 @@ paths:
                   specialtyId:
                     type: string
                   data:
-                    $ref: '#/components/schemas/JsonNode'
-                $ref: '#/components/schemas/TenantSpecialty.schema'
+                    $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+                    type: object
         '400':
-          description: Invalid request data
+          description: Missing `tenant-id` header, missing/blank `specialtyId`, or `data` failing TenantSpecialty JSON Schema validation.
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestErrorResponse'
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - User does not have required permissions
-        '500':
-          description: Internal Server Error - An unexpected error occurred
+              examples:
+                missingTenantIdHeader:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: createTenantSpecialty.tenantId'
+                      detail: must not be null
+                missingSpecialtyId:
+                  value:
+                    error: Specialty ID is required
+                invalidSchemaData:
+                  value:
+                    error: 'Invalid request data: $.data.displayName: is missing but it is required'
       security:
       - jwt: []
   /tenant-specialties/by-classification:
     get:
-      summary: Get tenant specialties by classification source and category
-      description: Retrieves tenant specialties filtered by classification source and category
+      summary: List tenant specialties matching a classification and category
+      description: 'Returns tenant specialties for the current tenant that belong to a given classification source and category within that source.
+
+
+        **What it does:** Filters the tenant''s specialty list by a classification taxonomy. For example, a classification source of `nucc` combined with a category of `Individual` returns only specialties belonging to that NUCC grouping. Both parameters are required, free-text strings — they are not validated against an enum or fixed value set, either in this service or the data layer.
+
+
+        **Aggregating across sources:** Pass `classificationSource=ALL` to return specialties matching the given `category` across every classification source configured for the tenant. Results are not deduplicated: the same specialty can legitimately belong to more than one classification source, and each occurrence is returned. `ALL` is handled by the underlying data layer, not validated or special-cased here — any other free-text value is still passed through unchanged, as before.
+
+
+        **Sort order:** Results are always returned sorted by specialty display name, ascending (case-sensitive, data-layer-enforced). This ordering applies to every `classificationSource` value, including `ALL`, and cannot be overridden by the caller — there is no sort query parameter.
+
+
+        **When to use:** Use this endpoint when you need specialties scoped to a specific taxonomy rather than the full tenant specialty list. Use `GET /tenant-specialties` when you need all specialties regardless of classification.
+
+
+        **How to call it:** Supply the required `tenant-id` header plus both `classificationSource` and `category` query parameters. Omitting either returns 400. Requires the `READ_TENANT_SPECIALTY` permission.
+
+
+        **What you get back:** A list of matching tenant specialty objects, sorted by display name ascending (see above), each including its `classificationSource`, `specialtyCategory`, and `taxonomyCode`. Results are served from a cache with a 5-minute TTL that is not invalidated on writes — a specialty created, updated, or deleted (including changes that affect `ALL`''s aggregated set) may take up to 5 minutes to be reflected here.'
       operationId: getTenantSpecialtiesByClassification
       tags:
       - Tenant Specialty
       parameters:
-      - description: Category to filter by
+      - description: Category to filter by within the classification source (e.g. "Individual"). Free text — not restricted to a fixed set of values.
         example: Individual
         in: query
         required: true
         name: category
         schema:
           type: string
-      - description: Classification source to filter by
+      - description: Classification source to filter by (e.g. "nucc"), or the special value "ALL" to aggregate specialties across every classification source for the tenant (not deduplicated — the same specialty may appear once per source it belongs to). Otherwise free text — not restricted to a fixed set of values.
         example: nucc
         in: query
         required: true
         name: classificationSource
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the query.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
-        required: true
       responses:
-        '200':
-          description: Successfully retrieved tenant specialties by classification
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  totalCount:
-                    type: integer
-                    format: int64
-                  data:
-                    $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
-                    type: array
-                $ref: '#/components/schemas/TenantSpecialty.schema'
-        '400':
-          description: Invalid request parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
-          description: Unauthorized - Authentication required
+          description: Unauthorized - the request is missing a valid JWT.
         '403':
-          description: Forbidden - User does not have required permissions
+          description: Forbidden - the caller lacks the READ_TENANT_SPECIALTY permission for this tenant.
         '500':
-          description: Internal Server Error - An unexpected error occurred
+          description: Internal Server Error - an unexpected error occurred while retrieving the list.
+        '200':
+          description: The tenant specialties matching the given classification source (or, for `classificationSource=ALL`, the union across all sources, not deduplicated) and category, sorted by display name ascending. May reflect data up to 5 minutes stale (see caching note above).
+          content:
+            application/json:
+              examples:
+                tenantSpecialtiesByClassification:
+                  value:
+                    totalCount: 1
+                    data:
+                    - displayName: Cardiology
+                      description: Diagnosis and treatment of heart conditions.
+                      changeReason: Initial tenant onboarding
+              schema:
+                $ref: '#/components/schemas/GetTenantSpecialtiesResponse'
+        '400':
+          description: Missing `tenant-id` header, `classificationSource`, or `category`.
+          content:
+            application/json:
+              examples:
+                missingClassificationSource:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: classificationSource'
+                      detail: must not be null
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
   /tenant-specialties/{id}:
     put:
-      summary: Update a tenant specialty
-      description: Updates an existing tenant specialty
+      summary: Replace a tenant specialty's data in full
+      description: 'Replaces the stored data for an existing tenant specialty. This is a full-replacement operation — fields not included in the request body are cleared, not preserved.
+
+
+        **What it does:** Overwrites the tenant specialty identified by `{id}` with the supplied payload. The data layer performs a replace, not a merge, so callers must supply all fields they wish to retain.
+
+
+        **When to use:** Use this to update any attribute of a tenant specialty after it has been created.
+
+
+        **How to call it:** Supply the required `tenant-id` header and the tenant specialty `id` as a path segment (an opaque, server-assigned string). The request body is validated against the `TenantSpecialty` JSON Schema on the `data` field; validation failures return 400. The same request schema is used as for `POST`. Requires the `UPDATE_TENANT_SPECIALTY` permission. Returns 404 if no specialty with the given `id` exists for the supplied `tenant-id` — the record is looked up before any write is attempted.
+
+
+        **What you get back:** On success (200) the full updated tenant specialty object is returned. This operation is idempotent — sending the same payload twice produces the same state.'
       operationId: updateTenantSpecialty
       tags:
       - Tenant Specialty
       parameters:
-      - description: ID of the tenant specialty to update
+      - description: Opaque, server-assigned identifier of the tenant specialty to replace.
         in: path
         required: true
         name: id
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the update.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
-        required: true
       requestBody:
         content:
           application/json:
@@ -199,10 +298,26 @@ paths:
               $ref: '#/components/schemas/CreateTenantSpecialtyRequest'
         required: true
       responses:
+        '401':
+          description: Unauthorized - the request is missing a valid JWT.
+        '403':
+          description: Forbidden - the caller lacks the UPDATE_TENANT_SPECIALTY permission for this tenant.
+        '500':
+          description: Internal Server Error - an unexpected error occurred while replacing the record.
         '200':
-          description: Successfully updated the tenant specialty
+          description: The full tenant specialty object after replacement.
           content:
             application/json:
+              examples:
+                tenantSpecialtyReplaced:
+                  value:
+                    id: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+                    tenantId: acme-health
+                    specialtyId: 9c858901-8a57-4791-81fe-4c455b099bc9
+                    data:
+                      displayName: Cardiology
+                      description: Diagnosis and treatment of heart conditions, updated.
+                      changeReason: Corrected description
               schema:
                 type: object
                 properties:
@@ -213,112 +328,233 @@ paths:
                   specialtyId:
                     type: string
                   data:
-                    $ref: '#/components/schemas/JsonNode'
-                $ref: '#/components/schemas/TenantSpecialty.schema'
+                    $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+                    type: object
         '400':
-          description: Invalid request data
+          description: Missing `tenant-id` header, or `data` failing TenantSpecialty JSON Schema validation.
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestErrorResponse'
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - User does not have required permissions
-        '500':
-          description: Internal Server Error - An unexpected error occurred
+              examples:
+                missingTenantIdHeader:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: updateTenantSpecialty.tenantId'
+                      detail: must not be null
+                invalidSchemaData:
+                  value:
+                    error: 'Invalid request data: $.data.displayName: is missing but it is required'
+        '404':
+          description: No tenant specialty exists with the given `id` for the supplied `tenant-id`.
+          content:
+            application/json:
+              examples:
+                tenantSpecialtyNotFound:
+                  value:
+                    error: Resource not found
       security:
       - jwt: []
     get:
-      summary: Get tenant specialty by ID
-      description: Retrieves a single tenant specialty by its ID
+      summary: Fetch a single tenant specialty by its ID
+      description: 'Returns the detail of a single tenant specialty record belonging to the tenant identified by the `tenant-id` header.
+
+
+        **What it does:** Retrieves one tenant specialty by its unique identifier, including its tenant-specific metadata (display name, description, change reason).
+
+
+        **When to use:** Use this when you already hold the `id` of a tenant specialty (for example, from a prior `GET /tenant-specialties` response) and need its detail. Do not use this as a lookup-by-name or lookup-by-classification — use the list or by-classification endpoints for those.
+
+
+        **How to call it:** Supply the required `tenant-id` header and the tenant specialty `id` as a path segment. `id` is an opaque, server-assigned string (assigned as a UUIDv4 by the data layer at creation time); the API does not otherwise constrain its format. Requires the `READ_TENANT_SPECIALTY` permission.
+
+
+        **What you get back:** The tenant specialty''s entity content (display name, description, change reason) on 200. Returns 404 if no specialty with the given `id` exists for the supplied `tenant-id`.'
       operationId: getTenantSpecialty
       tags:
       - Tenant Specialty
       parameters:
-      - description: ID of the tenant specialty to retrieve
+      - description: Opaque, server-assigned identifier of the tenant specialty to retrieve.
         in: path
         required: true
         name: id
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the lookup.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
-        required: true
       responses:
+        '401':
+          description: Unauthorized - the request is missing a valid JWT.
+        '403':
+          description: Forbidden - the caller lacks the READ_TENANT_SPECIALTY permission for this tenant.
+        '500':
+          description: Internal Server Error - an unexpected error occurred while retrieving the record.
         '200':
-          description: Successfully retrieved the tenant specialty
+          description: The tenant specialty matching the given `id`.
           content:
             application/json:
+              examples:
+                tenantSpecialty:
+                  value:
+                    data:
+                      displayName: Cardiology
+                      description: Diagnosis and treatment of heart conditions.
+                      changeReason: Initial tenant onboarding
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  tenantId:
-                    type: string
-                  specialtyId:
-                    type: string
-                  data:
-                    $ref: '#/components/schemas/JsonNode'
-                $ref: '#/components/schemas/TenantSpecialty.schema'
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - User does not have required permissions
+                $ref: '#/components/schemas/GetTenantSpecialtyResponse'
         '404':
-          description: Tenant specialty not found
+          description: No tenant specialty exists with the given `id` for the supplied `tenant-id`.
           content:
-            application/json: {}
-        '500':
-          description: Internal Server Error - An unexpected error occurred
+            application/json:
+              examples:
+                tenantSpecialtyNotFound:
+                  value:
+                    error: Resource not found
       security:
       - jwt: []
     delete:
-      summary: Delete a tenant specialty
-      description: Deletes a tenant specialty by ID
+      summary: Remove a specialty from the tenant's configuration
+      description: 'Permanently removes a tenant specialty record from the tenant''s configuration. This is a hard delete — the row is removed, not flagged inactive — and cannot be undone.
+
+
+        **What it does:** Deletes the tenant specialty identified by `{id}` under the tenant identified by the `tenant-id` header. If the specialty is still referenced by a practitioner-specialty or facility-specialty association, the delete is rejected by a database-level constraint and surfaces as 400 (see below) rather than succeeding or cascading. Deleting a specialty that is only referenced by a tenant-group-specialty association is **not** blocked and will leave that association pointing at a deleted record.
+
+
+        **When to use:** Use this when a specialty is no longer applicable to the tenant and should be removed from all specialty selection surfaces. Verify the specialty is not actively assigned to a practitioner or facility before calling, since the request will otherwise fail. This operation is not idempotent: calling it a second time for the same `id` returns 404, not another 204.
+
+
+        **How to call it:** Supply the required `tenant-id` header and the tenant specialty `id` as a path segment (an opaque, server-assigned string). Requires the `DELETE_TENANT_SPECIALTY` permission.
+
+
+        **What you get back:** Returns 204 with no response body on success. Returns 404 if no specialty with the given `id` exists for the supplied `tenant-id`. Returns 400 if the specialty is still referenced by a practitioner-specialty or facility-specialty association.'
       operationId: deleteTenantSpecialty
       tags:
       - Tenant Specialty
       parameters:
-      - description: ID of the tenant specialty to delete
+      - description: Opaque, server-assigned identifier of the tenant specialty to delete.
         in: path
         required: true
         name: id
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the delete.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
-        required: true
       responses:
-        '204':
-          description: Successfully deleted the tenant specialty
         '401':
-          description: Unauthorized - Authentication required
+          description: Unauthorized - the request is missing a valid JWT.
         '403':
-          description: Forbidden - User does not have required permissions
-        '404':
-          description: Tenant specialty not found
-          content:
-            application/json: {}
+          description: Forbidden - the caller lacks the DELETE_TENANT_SPECIALTY permission for this tenant.
         '500':
-          description: Internal Server Error - An unexpected error occurred
+          description: Internal Server Error - an unexpected error occurred while deleting the record.
+        '204':
+          description: The tenant specialty was permanently deleted.
+        '400':
+          description: Missing `tenant-id` header, or the specialty is still referenced by a practitioner-specialty or facility-specialty association and cannot be deleted.
+          content:
+            application/json:
+              examples:
+                missingTenantIdHeader:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: deleteTenantSpecialty.tenantId'
+                      detail: must not be null
+                specialtyInUse:
+                  value:
+                    error: Invalid request data
+        '404':
+          description: No tenant specialty exists with the given `id` for the supplied `tenant-id`.
+          content:
+            application/json:
+              examples:
+                tenantSpecialtyNotFound:
+                  value:
+                    error: Resource not found
       security:
       - jwt: []
 components:
   schemas:
+    GetTenantSpecialtyResponse:
+      type: object
+      properties:
+        data:
+          $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+          type: object
+          description: The tenant specialty record.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
     CreateTenantSpecialtyRequest:
       type: object
+      required:
+      - specialtyId
       properties:
         specialtyId:
           type: string
+          description: Identifier of the global specialty this tenant specialty is based on. Required and must reference an existing global specialty; a missing or blank value is rejected with 400 before any other validation runs.
         data:
-          $ref: '#/components/schemas/TenantSpecialty.schema'
+          $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
           type: object
+          description: Tenant-specific metadata for this specialty (e.g. display name, description, change reason). Validated against the TenantSpecialty JSON Schema; on PUT this value fully replaces any previously stored data — fields omitted here are cleared, not preserved.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    GetTenantSpecialtiesResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of tenant specialty records matching the query, before pagination. Note the underlying list endpoints return at most a single fixed page of results, so this may exceed the number of items in `data`.
+        data:
+          type: array
+          items:
+            $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+            type: object
+            properties:
+              jsonNode:
+                $ref: '#/components/schemas/JsonNode'
+          description: The page of matching tenant specialty records.
     JsonNode:
       type: object
       properties:
@@ -366,42 +602,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    TenantSpecialty.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
-      title: TenantSpecialty
-      description: Represents a specialty associated with a tenant.
-      type: object
-      properties:
-        displayName:
-          type: string
-          description: Display name for the specialty.
-          minLength: 1
-        description:
-          type: string
-          description: Detailed description of the specialty.
-        changeReason:
-          type: string
-          description: Reason for any change to the specialty.
-      required:
-      - displayName
-      additionalProperties: false
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
     JsonNodeType:
       type: string
       enum:

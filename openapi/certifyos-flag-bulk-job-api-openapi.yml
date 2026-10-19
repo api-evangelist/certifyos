@@ -1,0 +1,369 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Flag Bulk Job API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Flag Bulk Job
+  description: Background bulk flag status moves
+paths:
+  /flags/bulk-jobs:
+    get:
+      summary: List bulk flag jobs
+      description: The tenant's jobs, newest first.
+      operationId: listFlagBulkJobs
+      tags:
+      - Flag Bulk Job
+      parameters:
+      - description: Zero-based page number
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Page size, 1 to 100
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: A page of jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagBulkJobPage'
+        '400':
+          description: page below 0, or size outside 1 to 100
+      security:
+      - jwt: []
+    post:
+      summary: Move every flag matching a filter as a background job
+      description: Snapshots the oldest min(expectedCount, 2000) flags matching filter, whose single source status is filter["data.status"].eq, and moves them to targetStatus in the background in chunks. Returns 202 with the RUNNING job; poll GET /flags/bulk-jobs/{id}. A flag whose status changed after the snapshot is not moved and is counted as skipped. The transition and the caller's permission for it are checked once; the list's needsVerification and internal-flag-type visibility rules are applied to the filter. One running job per tenant.
+      operationId: createFlagBulkJob
+      tags:
+      - Flag Bulk Job
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFlagBulkJobRequest'
+        required: true
+      responses:
+        '202':
+          description: The job, RUNNING
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagBulkJob'
+        '400':
+          description: filter missing, attested not true, expectedCount below 1, no single data.status eq in filter (SOURCE_STATUS_REQUIRED), unknown targetStatus, or no flag matches (NO_MATCHING_FLAGS)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: The caller lacks the permission for this source-to-target transition, or cannot see needsVerification flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: INVALID_TRANSITION (no such transition, including from closed) or BULK_JOB_ALREADY_ACTIVE (the tenant already has a running job)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: 'BULK_JOB_DISABLED: bulk flag jobs are turned off by configuration'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /flags/bulk-jobs/active:
+    get:
+      summary: Get the tenant's running bulk flag job
+      description: 200 with the running job, or 204 when there is none.
+      operationId: getActiveFlagBulkJob
+      tags:
+      - Flag Bulk Job
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The running job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagBulkJob'
+        '204':
+          description: No running job
+        '400':
+          description: The tenant-id header is missing
+      security:
+      - jwt: []
+  /flags/bulk-jobs/{id}:
+    get:
+      summary: Get a bulk flag job
+      description: The job; skippedFlagIds are included once it has finished.
+      operationId: getFlagBulkJob
+      tags:
+      - Flag Bulk Job
+      parameters:
+      - description: Job ID
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlagBulkJob'
+        '404':
+          description: No such job for this tenant
+      security:
+      - jwt: []
+components:
+  schemas:
+    CreateFlagBulkJobRequest:
+      type: object
+      required:
+      - filter
+      - expectedCount
+      - targetStatus
+      - attested
+      description: Request to move every flag matching a filter, up to 2,000, as a background job
+      properties:
+        filter:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: 'Flags list filter; must contain exactly one source status as {"data.status": {"eq": "<status>"}}'
+        expectedCount:
+          type: integer
+          format: int32
+          examples:
+          - 355
+          description: The match count the user saw; the job acts on the oldest min(expectedCount, 2000) flags still matching at submit
+        targetStatus:
+          type: string
+          examples:
+          - seen
+          description: Status to move the flags to
+        comment:
+          type: string
+          description: Optional reason, recorded on every moved flag's history
+        attested:
+          type: boolean
+          examples:
+          - true
+          description: The policy attestation; must be true
+    FlagBulkJobPage:
+      type: object
+      description: A page of bulk flag jobs, newest first
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagBulkJob'
+        totalCount:
+          type: integer
+          format: int64
+          description: All jobs of the tenant
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    FlagBulkJob:
+      type: object
+      description: A bulk flag job; progress is processedCount / totalCount
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          description: RUNNING, COMPLETED or FAILED
+        fromStatus:
+          type: string
+        targetStatus:
+          type: string
+        comment:
+          type: string
+          description: Reason text, recorded on every moved flag's history
+        requestedCount:
+          type: integer
+          format: int64
+          description: The match count the user saw when submitting
+        totalCount:
+          type: integer
+          format: int64
+          description: 'Ids snapshotted at submit: the oldest matches, at most 2,000'
+        processedCount:
+          type: integer
+          format: int64
+          description: Snapshot ids already run (moved or skipped)
+        updatedCount:
+          type: integer
+          format: int64
+          description: Flags moved to targetStatus
+        skippedCount:
+          type: integer
+          format: int64
+          description: 'Snapshot ids not moved: status changed or flag deleted since the snapshot'
+        skippedFlagIds:
+          type: array
+          items:
+            type: string
+          description: The skipped ids; only on GET /flags/bulk-jobs/{id} once the job has finished
+        initiatedByEmail:
+          type: string
+        createdAt:
+          type: string
+        finishedAt:
+          type: string
+        errorCode:
+          type: string
+          description: STALLED (the run stopped heartbeating) or EXECUTE_ERROR (a chunk kept failing)
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

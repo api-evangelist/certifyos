@@ -22,13 +22,23 @@ tags:
 paths:
   /templates:
     post:
-      summary: Process and upload a template
-      description: Uploads a new template file with metadata for processing
+      summary: Start legacy two-step template upload with field suggestions
+      description: 'Creates a template record with status `in-progress`, uploads the raw file to GCS as `template.csv`, and runs column-to-field suggestion matching against the file''s header row, returning ranked mapping suggestions per column.
+
+
+        **When to use:** Use this as step 1 of the legacy two-step flow when you want to inspect and edit the suggested field mappings before approving. If the mapping is already known, use `POST /templates/single-step` instead, which does everything in one call. After this call you must call `PUT /templates/{id}` to confirm the column mappings and then `PUT /templates/{id}/approve` to finalize the template.
+
+
+        **How:** Send a `multipart/form-data` request with the required `tenant-id` header and fields: `name` (display name), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP` - `GROUP` requires the tenant''s `supportGroupRosters` configuration, otherwise 400), `description` (optional), and `file` - a roster-shaped CSV whose header row supplies the column names to match. Unlike the single-step endpoint, no `.csv` extension check is applied here; the file is parsed as CSV regardless of its name. Columns with a previously confirmed mapping in the tenant''s column-mapping cache return that single high-confidence match; all other columns are fuzzy-matched against the system-field catalog.
+
+
+        **Returns:** A `TemplateUploadResponse` with `status` `in-progress` and a `data` object carrying the new template''s `id`, the per-column suggestions (`fields`), the full mappable field catalog for the roster type (`allFields`), and entity-group hints (`entities`). The template is not yet usable for roster uploads until the confirm and approve steps complete.'
       operationId: processTemplate
       tags:
       - Template
       parameters:
-      - description: Tenant identifier
+      - description: Tenant the template is created in; scopes all reads and writes.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
@@ -52,13 +62,219 @@ paths:
         required: true
       responses:
         '200':
-          description: Template processed successfully
+          description: The new template's ID plus per-column mapping suggestions and the full field catalog to review before confirming mappings.
           content:
             application/json:
+              examples:
+                suggestionsGenerated:
+                  value:
+                    status: in-progress
+                    data:
+                      id: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+                      name: Q3 Practitioner Roster
+                      entities:
+                      - practitioner
+                      - location
+                      - enrollment
+                      - group
+                      allFields:
+                      - name: First Name
+                        mappedKey: firstName
+                        mappedEntity: practitioner
+                        isRequired: true
+                        isStaticField: false
+                        isSingleSelect: false
+                      fields:
+                      - name: First Name
+                        suggestedMatches:
+                        - name: First Name
+                          mappedKey: firstName
+                          mappedEntity: practitioner
+                          isRequired: true
+                          isStaticField: false
+                          isSingleSelect: false
               schema:
                 $ref: '#/components/schemas/TemplateUploadResponse'
         '400':
-          description: Invalid input or request
+          description: The requested `GROUP` type is not enabled for the tenant, or the request is otherwise malformed. The `errors` list carries the cause; correct the request and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `CREATE_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a GCS or data-layer outage, or an unparseable file). Safe to retry once the underlying issue clears; a retry creates a new template record.
+      security:
+      - jwt: []
+    get:
+      summary: List tenant-scoped templates with filters
+      description: 'Returns a paginated list of roster templates belonging to the requesting tenant.
+
+
+        **When to use:** Call this to browse available templates before creating a roster upload, or to check the processing status of previously created templates. For a single template''s full details use `GET /templates/{id}`; for the ordered column definitions of a scratch-built template use `GET /templates/{id}/columns`.
+
+
+        **How:** Supply the required `tenant-id` header. Page with `page` (0-based) and `size` (defaults to 50 when omitted or non-positive, silently clamped to a maximum of 100). Filter with `status` (exact, case-sensitive match; the values written by this API are `in-progress`, `success`, and `failure`), `type` (exact, case-sensitive match: `PRACTITIONER`, `FACILITY`, or `GROUP`), and/or `templateName` (case-insensitive substring match).
+
+
+        **Returns:** A paginated envelope whose `data` items are template records; each record''s `data` object includes the template''s name, type, status, and a `mappingsUrl` - a V4-signed GCS download URL for the column-mappings file, valid for 7 days, generated at request time and never stored. Each record also carries `createdByName` and `createdByEmail`, the creator''s display name and email resolved in one bounded batch lookup per page (CP-39764); either is `null` when it could not be resolved, and clients fall back to the raw `createdBy` id. The envelope''s `links` is always `null` on this endpoint; `totalCount` carries the number of matches across all pages. Read-only; no state is changed.'
+      operationId: getTemplates
+      tags:
+      - Template
+      parameters:
+      - description: 0-based page number for offset pagination. Omitted or negative values are treated as the first page.
+        example: 0
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Records per page. Defaults to 50 when omitted or non-positive; values above 100 are silently clamped to 100.
+        example: 50
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Only return templates with this processing status. Exact, case-sensitive match; values written by this API are `in-progress`, `success`, and `failure`. Omit to include all statuses.
+        example: success
+        name: status
+        in: query
+        schema:
+          type: string
+      - description: Only return templates whose name contains this text (case-insensitive substring match). Omit to include all names.
+        example: practitioner
+        name: templateName
+        in: query
+        schema:
+          type: string
+      - description: Only return templates of this roster type. Exact, case-sensitive match against `PRACTITIONER`, `FACILITY`, or `GROUP`. Omit to include all types.
+        example: PRACTITIONER
+        name: type
+        in: query
+        schema:
+          type: string
+      - description: Tenant whose templates are listed; results never include other tenants' templates.
+        example: tenant_001
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: One page of the tenant's templates matching the filters, each with a request-time signed `mappingsUrl` injected into its `data` object.
+          content:
+            application/json:
+              examples:
+                templatesPage:
+                  value:
+                    data:
+                    - id: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+                      tenantId: tenant_001
+                      createdAt: '2026-06-12T09:31:44.000Z'
+                      createdBy: auth0|64f1c2d3e4b5a6
+                      createdByName: Jordan Reyes
+                      createdByEmail: jordan.reyes@example.com
+                      updatedAt: '2026-06-12T09:35:02.000Z'
+                      updatedBy: auth0|64f1c2d3e4b5a6
+                      data:
+                        templateName: Q3 Practitioner Roster
+                        description: Practitioner roster for Q3 delegated group onboarding
+                        status: success
+                        type: PRACTITIONER
+                        template: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+                        schema: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+                        mappingsUrl: https://storage.googleapis.com/certifyos-roster/roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/mappings.csv?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Expires=604800
+                    totalCount: 12
+              schema:
+                $ref: '#/components/schemas/PagedTemplateResponse'
+        '400':
+          description: The pagination or filter parameters were rejected by the data layer (for example a malformed value). Correct the query parameters and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `READ_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a GCS or data-layer outage). Safe to retry; the operation is read-only.
+      security:
+      - jwt: []
+  /templates/created-by:
+    get:
+      summary: List distinct roster-template creators for the Created by filter
+      description: 'Returns the distinct `createdBy` values across the tenant''s roster templates, each resolved to the creator''s display name and email where possible (CP-39764), for the Manage Templates "Created by" filter dropdown. Filter the list with `createdBy` matched against each entry''s raw `id`.
+
+
+        The data layer has no DISTINCT, so this pages through the tenant''s templates server-side and dedupes; the scan is bounded and `truncated` is `true` when the page cap was hit and the list may be incomplete. Name/email resolution is best-effort: unresolved creators (deleted users, Auth0 subjects, guest markers) return `null` name and email and clients fall back to the raw id. Read-only.'
+      operationId: listRosterTemplateCreators
+      tags:
+      - Template
+      parameters:
+      - description: Tenant whose template creators are listed.
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Distinct creators in first-seen order, with the truncation signal.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateCreatorsResponse'
+        '400':
+          description: The `tenant-id` header is missing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `READ_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure. Safe to retry; read-only.
+      security:
+      - jwt: []
+  /templates/fields:
+    get:
+      summary: Get available system fields for a roster type
+      description: Returns the catalog of mappable Certify attributes for the given roster type. Used by the 'create template from scratch' builder to populate the attribute dropdown.
+      operationId: getTemplateFields
+      tags:
+      - Template
+      parameters:
+      - description: Roster type (PRACTITIONER, FACILITY, or GROUP)
+        required: true
+        name: type
+        in: query
+        schema:
+          $ref: '#/components/schemas/RosterJobType'
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Fields retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Field'
+        '400':
+          description: Invalid or missing roster type
           content:
             application/json:
               schema:
@@ -71,40 +287,61 @@ paths:
           description: Internal server error
       security:
       - jwt: []
-    get:
-      summary: Get list of templates
-      description: Retrieve paginated and filtered list of templates
-      operationId: getTemplates
+  /templates/scratch:
+    post:
+      summary: Create a roster template from scratch
+      description: Creates a roster template from a UI-built list of column definitions, without uploading a file. Each column maps a CSV header name to a Certify attribute. A column's optional `notes` is stored in the `Notes` column of the template's mappings CSV (CP-40246).
+      operationId: createTemplateFromScratch
       tags:
       - Template
       parameters:
-      - description: Page number for pagination
-        name: page
-        in: query
-        schema:
-          type: integer
-          format: int32
-      - description: Page size for pagination
-        name: size
-        in: query
-        schema:
-          type: integer
-          format: int32
-      - description: Filter by template status
-        name: status
-        in: query
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
         schema:
           type: string
-      - description: Filter by template name
-        name: templateName
-        in: query
-        schema:
-          type: string
-      - description: Filter by template type
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScratchTemplateRequest'
+        required: true
+      responses:
+        '200':
+          description: Template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
+        '400':
+          description: Invalid request (missing type, no columns, duplicate names, unmapped/unknown attributes)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/scratch/required-fields:
+    get:
+      summary: Get the required-field policy for the scratch-template builder
+      description: Returns the tenant-aware required-field policy (mandatory attributes, identity one-of groups, and service-address co-requisite groups) for the given roster type. The builder uses it to mirror the server-side validation the create/update endpoints enforce.
+      operationId: getScratchRequiredFieldPolicy
+      tags:
+      - Template
+      parameters:
+      - description: Roster type (PRACTITIONER, FACILITY, or GROUP)
+        required: true
         name: type
         in: query
         schema:
-          type: string
+          $ref: '#/components/schemas/RosterJobType'
       - description: Tenant identifier
         required: true
         name: tenant-id
@@ -113,13 +350,56 @@ paths:
           type: string
       responses:
         '200':
-          description: List of templates retrieved successfully
+          description: Policy retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PagedResponse1'
+                $ref: '#/components/schemas/RequiredFieldPolicyResponse'
         '400':
-          description: Invalid query parameters
+          description: Invalid or missing roster type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/scratch/suggest-mappings:
+    post:
+      summary: Suggest column-to-attribute mappings for a not-yet-created template
+      description: Given a list of column names parsed client-side from an uploaded file (CP-31960), returns ranked mapping suggestions per column. Columns with a confirmed prior mapping in the tenant-scoped column mapping cache are returned as a single high-confidence suggestion; all other columns are fuzzy-matched against system fields.
+      operationId: suggestColumnMappings
+      tags:
+      - Template
+      parameters:
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestColumnMappingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Suggestions generated successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FieldSuggestion'
+        '400':
+          description: Invalid input or request
           content:
             application/json:
               schema:
@@ -134,13 +414,23 @@ paths:
       - jwt: []
   /templates/single-step:
     post:
-      summary: Process and upload a template in single step
-      description: Uploads a new template file with metadata for processing
+      summary: Upload and fully approve a template in one call
+      description: 'Executes the complete template workflow in a single request: creates the template record, uploads `template.csv` and `mappings.csv` to GCS, records a column mapping per CSV row, generates the JSON validation schema (`schema.json`), and sets the template status to `success`.
+
+
+        **When to use:** Prefer this endpoint when the column-to-field mapping is known in advance and no human review of suggestions is needed. Use the legacy two-step flow (`POST /templates` then `PUT /templates/{id}` then `PUT /templates/{id}/approve`) when you need to inspect or adjust auto-suggested mappings before committing.
+
+
+        **How:** Send a `multipart/form-data` request with the required `tenant-id` header and fields: `name` (display name), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP` - `GROUP` requires the tenant''s `supportGroupRosters` configuration, otherwise 400), `description` (optional), and `file`. The file must have a `.csv` extension (400 otherwise) and is a *mappings-definition* CSV: each row defines one roster column (header name, mapped Certify attribute, required flag, optional multiple-value group and separator). Every row must carry a mapped attribute; rows with missing mapping keys cause a 400.
+
+
+        **Returns:** A `SingleStepTemplateFlowResponse` with the new `templateId`, the resolved `fields`, the final `status` (`success`, or `failure` if schema generation failed - the record then stays `in-progress`), and the GCS object paths `schemaUrl` and `templateUrl` (paths, not signed URLs). On `success` the template is immediately usable for roster uploads.'
       operationId: processSingleStepTemplate
       tags:
       - Template
       parameters:
-      - description: Tenant identifier
+      - description: Tenant the template is created in; scopes all reads and writes.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
@@ -164,13 +454,371 @@ paths:
         required: true
       responses:
         '200':
-          description: Template processed successfully
+          description: The created template's ID, resolved column mappings, final status, and artifact object paths.
           content:
             application/json:
+              examples:
+                templateApproved:
+                  value:
+                    fields:
+                    - name: First Name
+                      mappedKey: firstName
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    - name: NPI
+                      mappedKey: npi
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                      validationRegex: ^\d{10}$
+                    status: success
+                    templateId: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+                    templateUrl: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+                    schemaUrl: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
               schema:
                 $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
         '400':
-          description: Invalid input or request
+          description: The file is not a `.csv`, a mapping row is missing its mapped attribute, or the requested `GROUP` type is not enabled for the tenant. The `errors` list carries the cause; correct the file or request and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `CREATE_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a GCS or data-layer outage). Safe to retry once the underlying issue clears; a retry creates a new template record.
+      security:
+      - jwt: []
+  /templates/{id}:
+    put:
+      summary: Submit confirmed column mappings for a pending template
+      description: 'Records the consumer-confirmed column-to-field mappings for an `in-progress` template by creating a column record for every entry in `fields`. This is step 2 of the legacy three-step upload flow: it must follow `POST /templates` and precede `PUT /templates/{id}/approve`.
+
+
+        **When to use:** Call this after reviewing the suggestions returned by `POST /templates` and constructing the final mapping payload. Do not use it on templates created via the single-step or scratch flows - those are already approved; use `PATCH /templates/{id}/single-step` or `PATCH /templates/{id}/scratch` to change them.
+
+
+        **How:** Supply `{id}` and the required `tenant-id` header. The body''s `fields` must map every header column of the template''s stored `template.csv` (unmapped columns cause a 400; columns to ignore must be sent with the `[skipped]` sentinel as `mappedKey`), and each non-skipped entry''s `mappedKey` must be a known system field unless `mappedEntity` is provided. `jobType` selects the system-field catalog used for validation, so it must match the template''s own type; `GROUP` requires the tenant''s `supportGroupRosters` configuration.
+
+
+        **Returns:** An echo of the confirmed `fields` in a `TemplateUpdateRequest`-shaped object whose `jobType` is always `null` - this is the endpoint''s actual, intentional response shape. Side effect: one roster-template-column record is created per entry; repeat calls append further column records rather than replacing earlier ones, so this endpoint should be called once per template.'
+      operationId: updateTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Server-generated ID of the template to confirm mappings for, as returned by `POST /templates`.
+        example: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant that owns the template; scopes all reads and writes.
+        example: tenant_001
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: The confirmed column mappings. `fields` must cover every column of the stored `template.csv`; `jobType` must match the template's roster type.
+        content:
+          application/json:
+            examples:
+              confirmMappings:
+                value:
+                  jobType: PRACTITIONER
+                  fields:
+                  - name: First Name
+                    mappedKey: firstName
+                    isRequired: true
+                  - name: Internal Notes
+                    mappedKey: '[skipped]'
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: The confirmed column mappings, echoed back. `jobType` is always `null` on the response.
+          content:
+            application/json:
+              examples:
+                mappingsRecorded:
+                  value:
+                    fields:
+                    - name: First Name
+                      mappedKey: firstName
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    - name: Internal Notes
+                      mappedKey: '[skipped]'
+                      isRequired: false
+                      isStaticField: false
+                      isSingleSelect: false
+              schema:
+                $ref: '#/components/schemas/TemplateUpdateRequest'
+        '400':
+          description: A column of the stored `template.csv` is missing from `fields`, a `mappedKey` is not a known system field, or the requested `GROUP` type is not enabled for the tenant. Each entry in `errors` names the offending column in `title` and the cause in `reason`; fix the payload and retry.
+          content:
+            application/json:
+              examples:
+                unmappedColumn:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: Last Name is not mapped in the payload
+                      title: Last Name
+                      detail: Last Name is not mapped in the payload
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `UPDATE_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a GCS or data-layer outage). Retrying after a partial failure may duplicate column records; verify with `GET /templates/{id}/columns` before retrying.
+      security:
+      - jwt: []
+    get:
+      summary: Retrieve full details for a single template
+      description: 'Returns the complete record for the template identified by `{id}` within the requesting tenant.
+
+
+        **When to use:** Call this after creating a template (via either upload flow) to check its status, retrieve download URLs for its artifacts, or inspect its metadata. To browse or filter all templates use `GET /templates`; for the ordered column definitions of a scratch-built template use `GET /templates/{id}/columns`.
+
+
+        **How:** Supply `{id}` (the template ID returned by the create endpoints) and the required `tenant-id` header.
+
+
+        **Returns:** The template record whose `data` object carries the template''s name, description, status (`in-progress`, `success`, or `failure`), type, and the GCS object paths of its artifacts. For each artifact that exists in GCS, a V4-signed download URL valid for 7 days is generated at request time (never stored) and injected into `data`: `templateUrl` (template CSV), `mappingsUrl` (column-mappings CSV), and `schemaUrl` (generated validation schema). Read-only; no state is changed.'
+      operationId: getTemplateById
+      tags:
+      - Template
+      parameters:
+      - description: Server-generated ID of the template to fetch, as returned by the create endpoints.
+        example: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant that owns the template; scopes the lookup.
+        example: tenant_001
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The template record, with request-time signed download URLs injected into `data` for every artifact that exists in GCS.
+          content:
+            application/json:
+              examples:
+                templateDetails:
+                  value:
+                    id: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+                    tenantId: tenant_001
+                    createdAt: '2026-06-12T09:31:44.000Z'
+                    createdBy: auth0|64f1c2d3e4b5a6
+                    updatedAt: '2026-06-12T09:35:02.000Z'
+                    updatedBy: auth0|64f1c2d3e4b5a6
+                    data:
+                      templateName: Q3 Practitioner Roster
+                      description: Practitioner roster for Q3 delegated group onboarding
+                      status: success
+                      type: PRACTITIONER
+                      template: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+                      schema: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+                      templateUrl: https://storage.googleapis.com/certifyos-roster/roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Expires=604800
+                      mappingsUrl: https://storage.googleapis.com/certifyos-roster/roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/mappings.csv?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Expires=604800
+                      schemaUrl: https://storage.googleapis.com/certifyos-roster/roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Expires=604800
+              schema:
+                $ref: '#/components/schemas/RosterTemplateResponseSchema'
+        '404':
+          description: No template with the given `{id}` exists for the tenant. Verify the ID against `GET /templates`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `READ_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a GCS or data-layer outage). Safe to retry; the operation is read-only.
+      security:
+      - jwt: []
+    delete:
+      summary: Permanently delete a template record
+      description: 'Deletes the template identified by `{id}` and all of its column-mapping records from the data layer. This is a hard delete and cannot be undone.
+
+
+        **When to use:** Call this to retire a template that is no longer needed. Ensure no roster uploads still reference the template before deleting.
+
+
+        **How:** Supply `{id}` and the required `tenant-id` header. The template''s existence is verified first; an unknown ID returns 404 without deleting anything.
+
+
+        **Returns:** `204 No Content` on success; the response has no body. Only the data-layer records are removed - the template''s GCS artifacts (`template.csv`, `mappings.csv`, `schema.json`) are left in place and remain reachable through any still-valid signed URLs until those expire. The operation is not idempotent: repeating it returns 404.'
+      operationId: deleteTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Server-generated ID of the template to delete, as returned by the create endpoints.
+        example: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant that owns the template; scopes the lookup and delete.
+        example: tenant_001
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '204':
+          description: The template and its column records were deleted. No response body.
+        '404':
+          description: No template with the given `{id}` exists for the tenant - either it was never created or it was already deleted. The body carries a single `error` message field. Verify the ID against `GET /templates`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `DELETE_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a data-layer outage). Verify whether the delete took effect with `GET /templates/{id}` before retrying.
+      security:
+      - jwt: []
+  /templates/{id}/approve:
+    put:
+      summary: Finalize a template by generating its validation schema
+      description: 'Completes the legacy three-step template flow: generates the JSON validation schema from the submitted field mappings (honoring the tenant-specific schema, when one is configured), uploads it to GCS as `schema.json`, and moves the template record to status `success` with its `template`/`schema` object paths recorded.
+
+
+        **When to use:** Call this as step 3 of the legacy flow, after `PUT /templates/{id}` has confirmed the column mappings. Templates created via `POST /templates/single-step` or the scratch builder are already approved and must not go through this endpoint.
+
+
+        **How:** Supply `{id}` and the required `tenant-id` header. The body is required and is not merely re-validated: the submitted `fields` are the direct input to schema generation, so send the same mappings confirmed in step 2. The same validation rules as `PUT /templates/{id}` apply - every stored CSV column must be mapped and every non-skipped `mappedKey` must be a known system field (400 otherwise), and a `GROUP` `jobType` requires the tenant''s `supportGroupRosters` configuration.
+
+
+        **Returns:** An `ApproveTemplateResponse` with the `fields` the schema was generated from and the final `status`: `success` on completion, or `failure` when schema generation or upload failed with an I/O error - in that case the template record is left unchanged (it remains `in-progress`) and the call can be retried.'
+      operationId: approveTemplate
+      tags:
+      - Template
+      parameters:
+      - description: Server-generated ID of the template to approve, as returned by `POST /templates`.
+        example: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant that owns the template; scopes all reads and writes.
+        example: tenant_001
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: The confirmed column mappings the schema is generated from - resend the payload confirmed via `PUT /templates/{id}`.
+        content:
+          application/json:
+            examples:
+              approveWithMappings:
+                value:
+                  jobType: PRACTITIONER
+                  fields:
+                  - name: First Name
+                    mappedKey: firstName
+                    isRequired: true
+            schema:
+              $ref: '#/components/schemas/TemplateUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: The mappings the schema was generated from and the final approval status. Note that `failure` is reported with HTTP 200 - check the body's `status`, not just the status code.
+          content:
+            application/json:
+              examples:
+                approved:
+                  summary: Schema generated; template is ready for roster uploads
+                  value:
+                    fields:
+                    - name: First Name
+                      mappedKey: firstName
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    status: success
+                schemaGenerationFailed:
+                  summary: I/O failure during schema generation - template unchanged, retry the call
+                  value:
+                    fields:
+                    - name: First Name
+                      mappedKey: firstName
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    status: failure
+              schema:
+                $ref: '#/components/schemas/ApproveTemplateResponse'
+        '400':
+          description: A column of the stored `template.csv` is missing from `fields`, a `mappedKey` is not a known system field, or the requested `GROUP` type is not enabled for the tenant. Each entry in `errors` names the offending column in `title` and the cause in `reason`; fix the payload and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '401':
+          description: Authentication required - supply a valid bearer token.
+        '403':
+          description: The authenticated user lacks the `UPDATE_TEMPLATE` permission.
+        '500':
+          description: Unexpected server-side failure (for example a data-layer outage). Safe to retry once the underlying issue clears.
+      security:
+      - jwt: []
+  /templates/{id}/columns:
+    get:
+      summary: Get the ordered column list for a scratch-built template
+      description: Returns the ordered column definitions for a template built via the column builder (CP-31959), so the builder can pre-populate when editing. Each column includes its `notes` when it has one (CP-40246).
+      operationId: getScratchTemplateColumns
+      tags:
+      - Template
+      parameters:
+      - description: Template ID to fetch columns for
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Columns retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Field'
+        '404':
+          description: Template (or its mappings) not found
           content:
             application/json:
               schema:
@@ -183,11 +831,61 @@ paths:
           description: Internal server error
       security:
       - jwt: []
-  /templates/{id}:
-    put:
-      summary: Update an existing template
-      description: Update the template details by template ID
-      operationId: updateTemplate
+  /templates/{id}/notes:
+    patch:
+      summary: Save one template column's note
+      description: 'Saves the free-text note of one column of a roster template (CP-40246) without changing anything else: only the `Notes` column of the template''s mappings CSV is rewritten, so the template''s schema, column records and status stay as they are.
+
+
+        **When to use:** the column builder calls this when a note editor closes on an already saved template. Notes of new templates, and every other change, are saved with `POST /templates/scratch` / `PATCH /templates/{id}/scratch`, which also accept `notes` per column.
+
+
+        **Returns:** 204 when saved. 404 when the template or the column does not exist. 409 when the note cannot be saved on its own (the feature is switched off, or the template predates the column builder); save it with `PATCH /templates/{id}/scratch` instead.'
+      operationId: updateTemplateColumnNote
+      tags:
+      - Template
+      parameters:
+      - description: Template ID
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant identifier
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        description: The column's saved name and its note (blank clears it).
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateColumnNoteRequest'
+        required: true
+      responses:
+        '204':
+          description: Note saved
+        '400':
+          description: Missing column name
+        '404':
+          description: Template or column not found
+        '409':
+          description: The note cannot be saved on its own; save it with the template's update instead
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
+  /templates/{id}/scratch:
+    patch:
+      summary: Update a roster template built from scratch
+      description: 'Updates a scratch-built roster template (CP-31959) from a revised list of column definitions. Rewrites the template/mappings CSVs, replaces the column records, and regenerates the schema. Each column''s `notes` is written as sent: absent or blank clears it (CP-40246).'
+      operationId: updateTemplateFromScratch
       tags:
       - Template
       parameters:
@@ -207,7 +905,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TemplateUpdateRequest'
+              $ref: '#/components/schemas/ScratchTemplateRequest'
         required: true
       responses:
         '200':
@@ -215,132 +913,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TemplateUpdateRequest'
+                $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
         '400':
-          description: Invalid template update details
+          description: Invalid request (missing type, no columns, duplicate names, unmapped/unknown attributes)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
-        '500':
-          description: Internal server error
-      security:
-      - jwt: []
-    get:
-      summary: Get template by ID
-      description: Fetch template details by template ID
-      operationId: getTemplateById
-      tags:
-      - Template
-      parameters:
-      - description: Template ID to fetch
-        required: true
-        name: id
-        in: path
-        schema:
-          type: string
-      - description: Tenant identifier
-        required: true
-        name: tenant-id
-        in: header
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Template retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RosterTemplateResponse'
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
         '404':
           description: Template not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal server error
-      security:
-      - jwt: []
-    delete:
-      summary: Delete a template
-      description: Deletes a template by template ID
-      operationId: deleteTemplate
-      tags:
-      - Template
-      parameters:
-      - description: Template ID to delete
-        required: true
-        name: id
-        in: path
-        schema:
-          type: string
-      - description: Tenant identifier
-        required: true
-        name: tenant-id
-        in: header
-        schema:
-          type: string
-      responses:
-        '204':
-          description: Template deleted successfully
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
-        '404':
-          description: Template not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal server error
-      security:
-      - jwt: []
-  /templates/{id}/approve:
-    put:
-      summary: Approve a template
-      description: Approve the template specified by ID
-      operationId: approveTemplate
-      tags:
-      - Template
-      parameters:
-      - description: Template ID to approve
-        required: true
-        name: id
-        in: path
-        schema:
-          type: string
-      - description: Tenant identifier
-        required: true
-        name: tenant-id
-        in: header
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TemplateUpdateRequest'
-        required: true
-      responses:
-        '200':
-          description: Template approved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApproveTemplateResponse'
-        '400':
-          description: Invalid approval request
           content:
             application/json:
               schema:
@@ -355,19 +936,30 @@ paths:
       - jwt: []
   /templates/{id}/single-step:
     patch:
-      summary: Partially update an existing template
-      description: Partially updates an existing template. Only provided fields (name, description, type, file) will be updated. If file is provided, CSV validation and schema generation will be performed.
+      summary: Partially update a template, re-approving on file replacement
+      description: 'Updates one or more attributes (`name`, `description`, `type`, `file`) of an existing template. At least one must be provided; supplying none causes a 400.
+
+
+        **When to use:** Use this to rename a template, change its description or type, or replace its mappings CSV without going through the full create flow. For confirming column mappings in the legacy two-step flow use `PUT /templates/{id}` instead.
+
+
+        **How:** Send a `multipart/form-data` request with the required `tenant-id` header, `{id}` identifying an existing template for the tenant (404 otherwise), and any subset of the updatable fields. If `file` is supplied it must have a `.csv` extension and every mapping row must carry a mapped attribute (400 otherwise). A `type` of `GROUP` requires the tenant''s `supportGroupRosters` configuration.
+
+
+        **Returns:** A `SingleStepTemplateFlowResponse`, with side effects depending on the branch taken. *With `file`:* the template''s existing column records are deleted, new `template.csv`/`mappings.csv` objects are uploaded to GCS, new column records are created, `schema.json` is regenerated, and the resulting status (`success`, or `failure` if schema generation failed) is persisted and returned with the refreshed `fields`. *Without `file`:* only the metadata changes; the stored columns, artifacts, and status are preserved, and the response echoes the existing `fields` and status with the stored artifact object paths.'
       operationId: updateSingleStepTemplate
       tags:
       - Template
       parameters:
-      - description: Template ID to update
+      - description: Server-generated ID of the template to update, as returned by the create endpoints.
+        example: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant identifier
+      - description: Tenant that owns the template; scopes all reads and writes. Blank values are rejected with a 400.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
@@ -391,29 +983,202 @@ paths:
         required: true
       responses:
         '200':
-          description: Template updated successfully
+          description: The updated template's resolved column mappings, status, and artifact object paths.
           content:
             application/json:
+              examples:
+                fileReplaced:
+                  summary: A new mappings CSV was uploaded and the template re-approved
+                  value:
+                    fields:
+                    - name: First Name
+                      mappedKey: firstName
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    status: success
+                    templateId: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+                    templateUrl: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+                    schemaUrl: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+                metadataOnly:
+                  summary: Only name/description changed - columns, artifacts, and status preserved
+                  value:
+                    fields:
+                    - name: First Name
+                      mappedKey: firstName
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    status: success
+                    templateId: 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+                    templateUrl: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+                    schemaUrl: roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
               schema:
                 $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
         '400':
-          description: Invalid input or request (missing tenant-id, invalid file type, validation errors)
+          description: No updatable field was provided, the `tenant-id` header is blank, the file is not a `.csv`, a mapping row is missing its mapped attribute, or the requested `GROUP` type is not enabled for the tenant. Correct the request and retry.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
         '401':
-          description: Unauthorized - Authentication required
+          description: Authentication required - supply a valid bearer token.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: The authenticated user lacks the `UPDATE_TEMPLATE` permission.
         '404':
-          description: Template not found
+          description: No template with the given `{id}` exists for the tenant. Verify the ID against `GET /templates`.
         '500':
-          description: Internal server error
+          description: Unexpected server-side failure (for example a GCS or data-layer outage). Safe to retry once the underlying issue clears.
       security:
       - jwt: []
 components:
   schemas:
+    TemplateCreatorResponse:
+      type: object
+      description: A distinct egress-template creator
+      properties:
+        id:
+          type: string
+          description: Raw createdBy user ID (the value to filter the list endpoint by)
+        name:
+          type: string
+          description: Resolved display name, or null when unresolved
+        email:
+          type: string
+          description: Resolved email, or null when unresolved
+    RosterTemplateResponseSchema:
+      type: object
+      description: A roster template record.
+      properties:
+        id:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated unique identifier of the template.
+        tenantId:
+          type: string
+          examples:
+          - tenant_001
+          description: Tenant that owns the template.
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp at which the template record was created.
+        createdBy:
+          type: string
+          examples:
+          - auth0|64f1c2d3e4b5a6
+          description: ID of the user who created the template.
+        createdByName:
+          type:
+          - string
+          - 'null'
+          examples:
+          - Jordan Reyes
+          description: Display name of the creator, resolved from `createdBy` in one batch lookup per page (CP-39764). `null` when the lookup timed out or the user could not be resolved; clients then fall back to `createdByEmail`, then `createdBy`.
+        createdByEmail:
+          type:
+          - string
+          - 'null'
+          examples:
+          - jordan.reyes@example.com
+          description: Email of the creator, resolved alongside `createdByName`. `null` when it could not be resolved.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp of the most recent update to the template record.
+        updatedBy:
+          type: string
+          examples:
+          - auth0|64f1c2d3e4b5a6
+          description: ID of the user who last updated the template.
+        data:
+          type: object
+          description: 'Template payload. Persisted keys: `templateName`, `description`, `status` (`in-progress` while awaiting mapping confirmation/approval, `success` once approved, `failure` when a re-approval''s schema generation failed), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP`), plus - once approved - `template` and `schema` (GCS object paths of the template CSV and generated JSON schema). Responses additionally inject short-lived signed download URLs generated at request time and never stored: `mappingsUrl` on both list and detail reads, and `templateUrl`/`schemaUrl` on the detail read when the underlying objects exist. Signed URLs are V4-signed and valid for 7 days.'
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
+      - GROUP
+    RequiredFieldPolicyResponse:
+      type: object
+      properties:
+        mandatoryKeys:
+          type: array
+          items:
+            type: string
+        oneOfGroups:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        coRequisiteGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoRequisiteFieldGroup'
+    TemplateData:
+      type: object
+      description: Suggestion payload for a newly created two-step template.
+      properties:
+        id:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated ID of the template record just created. Use it in the follow-up `PUT /templates/{id}` and `PUT /templates/{id}/approve` calls.
+        name:
+          type: string
+          examples:
+          - Q3 Practitioner Roster
+          description: Display name the template was created with.
+        entities:
+          type: array
+          items:
+            type: string
+          description: Entity-group hints for the template-builder UI, ordered for display. Group-roster templates expose Group-related entities only.
+        allFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: The full catalog of mappable Certify system fields for the template's roster type, so the consumer can offer alternatives beyond the auto-suggested matches.
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSuggestion'
+          description: Per-column mapping suggestions for the uploaded file, one entry per CSV header.
+    ScratchTemplateRequest:
+      type: object
+      properties:
+        templateName:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/RosterJobType'
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    PagedTemplateResponse:
+      type: object
+      description: A single page of roster templates.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterTemplateResponseSchema'
+          description: Template records on this page, each with a request-time `mappingsUrl` signed download URL injected into its `data` object.
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: 'Always `null` on this endpoint: the navigation links produced by the data layer point at the internal DAL host, so they are stripped before the response is returned. Page through results with the `page` and `size` query parameters instead.'
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 12
+          description: Total number of templates matching the filters, across all pages.
     ErrorObject1:
       type: object
       properties:
@@ -426,175 +1191,13 @@ components:
           format: int32
         title:
           type: string
-    TemplateUploadResponse:
-      type: object
-      properties:
-        status:
+        workflowId:
           type: string
-        data:
-          $ref: '#/components/schemas/TemplateData'
-    PagedResponse1:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        links:
-          $ref: '#/components/schemas/PageLinks'
-        totalCount:
+        section:
+          type: string
+        opIndex:
           type: integer
-          format: int64
-    SingleStepTemplateFlowResponse:
-      type: object
-      properties:
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        status:
-          type: string
-        templateId:
-          type: string
-        templateUrl:
-          type: string
-        schemaUrl:
-          type: string
-    RosterJobType:
-      type: string
-      enum:
-      - PRACTITIONER
-      - FACILITY
-    Field:
-      type: object
-      properties:
-        name:
-          type: string
-        mappedKey:
-          type: string
-        mappedEntity:
-          type: string
-        entityGroup:
-          type: string
-        isRequired:
-          type: boolean
-        isStaticField:
-          type: boolean
-        isSingleSelect:
-          type: boolean
-        validationRegex:
-          type: string
-        description:
-          type: string
-        enum:
-          type: array
-          items:
-            type: string
-        singleSelect:
-          type: boolean
-    TemplateData:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        entities:
-          type: array
-          items:
-            type: string
-        allFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldSuggestion'
-    RosterTemplateResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-    ApproveTemplateResponse:
-      type: object
-      properties:
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        status:
-          type: string
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+          format: int32
     ApiError1:
       type: object
       properties:
@@ -602,7 +1205,48 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ErrorObject1'
-    PageLinks:
+    SingleStepTemplateFlowResponse:
+      type: object
+      description: 'Result of a single-step template create or update: the resolved column mappings, final status, and the GCS object paths of the template artifacts.'
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: The template's resolved column mappings. After a file upload these are the mappings extracted from the uploaded mappings CSV; after a metadata-only update they are the template's existing stored columns.
+        status:
+          type: string
+          examples:
+          - success
+          description: Final template status. `success` when the validation schema was generated and the template is ready for roster uploads; `failure` when schema generation failed with an I/O error. Metadata-only updates preserve and return the template's existing status.
+        templateId:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated ID of the created or updated template.
+        templateUrl:
+          type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+          description: GCS object path (not a signed URL) of the stored template CSV. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `templateUrl` in the record's `data`.
+        schemaUrl:
+          type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+          description: GCS object path (not a signed URL) of the generated JSON validation schema. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `schemaUrl` in the record's `data`.
+    TemplateCreatorsResponse:
+      type: object
+      description: Distinct egress-template creators, with a truncation signal for the bounded scan
+      properties:
+        creators:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateCreatorResponse'
+          description: Distinct creators, in first-seen order
+        truncated:
+          type: boolean
+          description: True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned.
+    PageLinks1:
       type: object
       properties:
         self:
@@ -611,27 +1255,215 @@ components:
           type: string
         prev:
           type: string
-    FieldSuggestion:
+    CoRequisiteFieldGroup:
       type: object
       properties:
-        name:
-          type: string
-        suggestedMatches:
+        triggerKeys:
           type: array
           items:
-            $ref: '#/components/schemas/Field'
-    TemplateUpdateRequest:
+            type: string
+        requiredKeys:
+          type: array
+          items:
+            type: string
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    ApproveTemplateResponse:
       type: object
+      description: 'Outcome of a template approval: the mappings the validation schema was generated from and the resulting status.'
       properties:
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
         fields:
           type: array
           items:
             $ref: '#/components/schemas/Field'
-    Date:
-      type: string
-      format: date
+          description: The column mappings the schema generation ran against - an echo of the request body's `fields`.
+        status:
+          type: string
+          examples:
+          - success
+          description: '`success` when the JSON schema was generated, uploaded to GCS, and the template record moved to `success`; `failure` when schema generation or upload failed with an I/O error, in which case the template record is left unchanged (it remains `in-progress`) and the call can be retried.'
+    TemplateUploadResponse:
+      type: object
+      description: 'Result of step 1 of the two-step template flow: the new template plus auto-suggested column mappings for review.'
+      properties:
+        status:
+          type: string
+          examples:
+          - in-progress
+          description: Processing status of the new template. Always `in-progress` at this point in the flow; it becomes `success` only after `PUT /templates/{id}/approve` completes.
+        data:
+          $ref: '#/components/schemas/TemplateData'
+          type: object
+          description: The new template's ID and the field-mapping suggestions to review before confirming mappings via `PUT /templates/{id}`.
+    TemplateColumnNoteRequest:
+      type: object
+      required:
+      - name
+      description: One template column's note, saved without changing anything else in the template.
+      properties:
+        name:
+          type: string
+          examples:
+          - NPI
+          pattern: \S
+          description: Saved name of the template column (its File Column Header), matched trimmed and case-insensitively.
+        notes:
+          type:
+          - string
+          - 'null'
+          examples:
+          - Strip leading zeros before mapping
+          description: The note. Blank or absent clears it. No length limit.
+    SuggestColumnMappingsRequest:
+      type: object
+      properties:
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        columnNames:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+        sampleValues:
+          type: array
+          maxItems: 500
+          items:
+            type: array
+            items:
+              type: string
+    Field:
+      type: object
+      description: One roster column and the Certify system field it maps to.
+      properties:
+        name:
+          type: string
+          examples:
+          - First Name
+          description: CSV column header this mapping applies to, exactly as it appears in the roster file.
+        mappedKey:
+          type: string
+          examples:
+          - firstName
+          description: 'Key of the Certify system field this column maps to, from the field catalog returned by `GET /templates/fields`. The sentinel `[skipped]` marks a column the user explicitly chose not to map: skipped columns persist in the template/mappings CSVs but are excluded from the generated validation schema.'
+        mappedEntity:
+          type: string
+          examples:
+          - practitioner
+          description: Entity that owns the mapped attribute (for example `practitioner` or `location`). When set, `mappedKey` is accepted as-is instead of being validated against the system-field catalog.
+        entityGroup:
+          type: string
+          examples:
+          - license
+          description: Group label linking columns that belong to the same repeating entity instance (a multiple-value group), so related columns are ingested together.
+        isRequired:
+          type: boolean
+          description: Whether every roster row must supply a value for this column; drives the `required` constraint in the generated validation schema.
+        isStaticField:
+          type: boolean
+          description: 'Catalog metadata: whether the mapped system field is a static (fixed-value) field rather than one populated from roster data.'
+        isSingleSelect:
+          type: boolean
+          description: 'Catalog metadata: whether the mapped system field accepts a single value from a fixed option list.'
+        validationRegex:
+          type: string
+          examples:
+          - ^\d{10}$
+          description: Regular expression applied to this column's values during roster validation. Rows whose values do not match are rejected.
+        description:
+          type: string
+          description: Human-readable description of the mapped system field, from the field catalog.
+        hasPattern:
+          type: boolean
+          description: 'Catalog metadata (CP-40222): true when the system field schema validates values with a regular expression. The expression itself is deliberately NOT exposed here — the mapping UI shows the plain-language `message.pattern` text instead, and `validationRegex` stays reserved for user-defined per-column rules so a catalog entry posted back as a mapping cannot tighten the generated schema.'
+        format:
+          type:
+          - string
+          - 'null'
+          examples:
+          - date
+          description: JSON Schema `format` of the system field (`date`, `email`, `uri`, ...) when it has one. Catalog metadata for the mapping UI (CP-40222); the accepted formats are described in `message.format`.
+        message:
+          type:
+          - object
+          - 'null'
+          examples:
+          - pattern: Must be exactly 10 digits
+          additionalProperties:
+            type: string
+          description: Plain-language validation texts from the system field schema, keyed by the rule they describe (`pattern`, `format`, `enum`, `type`, `minLength`, `maxLength`). The mapping UI shows these instead of raw regexes (CP-40222). Absent when the schema defines none.
+        conditionallyRequired:
+          type:
+          - object
+          - 'null'
+          examples:
+          - condition: tenantFacilityUniquenessMode
+            value: EXTERNAL_ID
+            message: Facility External ID is required when ...
+          additionalProperties: {}
+          description: 'When present, the field is required only under a tenant condition: `condition` names the tenant setting, `value` the value that triggers the requirement and `message` the explanation shown to users (CP-40222).'
+        minLength:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Minimum accepted length of the value, when the schema bounds it.
+        maxLength:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Maximum accepted length of the value, when the schema bounds it.
+        enum:
+          type: array
+          items:
+            type: string
+          description: Allowed values for enum-type system fields; roster values outside this list fail validation. Absent for free-form fields.
+        separator:
+          type: string
+          examples:
+          - ;
+          description: Literal separator character used to split a single cell value into multiple tokens for multi-value attributes. Blank or absent defaults to a comma at schema-generation time.
+        notes:
+          type:
+          - string
+          - 'null'
+          examples:
+          - Strip leading zeros before mapping
+          description: Free-text note on this template column, such as a pre-processing instruction. Stored per template in the `Notes` column of the template's mappings CSV; not used by validation or ingestion. Blank or absent means no note.
+        singleSelect:
+          type: boolean
+        skipped:
+          type: boolean
+    TemplateUpdateRequest:
+      type: object
+      description: Confirmed column-to-field mappings for a template. Used as the request body of `PUT /templates/{id}` and `PUT /templates/{id}/approve`; `PUT /templates/{id}` also echoes this shape back as its response.
+      properties:
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+          type: string
+          description: Roster type of the template (`PRACTITIONER`, `FACILITY`, or `GROUP`). Selects the system-field catalog the mappings are validated against, so it must match the template's own type. `GROUP` requires the tenant's `supportGroupRosters` configuration to be enabled. On the `PUT /templates/{id}` response this is always `null`.
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: Column mappings to record. Must contain one entry for every header column of the template's stored `template.csv` (unmapped columns cause a 400); columns to ignore must be sent with the `[skipped]` sentinel as `mappedKey`. Each non-skipped entry's `mappedKey` must be a known system field unless `mappedEntity` is provided.
+    FieldSuggestion:
+      type: object
+      description: Ranked system-field mapping suggestions for one CSV column.
+      properties:
+        name:
+          type: string
+          examples:
+          - First Name
+          description: CSV column header the suggestions apply to, exactly as it appears in the uploaded file.
+        suggestedMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: Candidate system-field mappings for this column, best match first. A column with a previously confirmed mapping in the tenant's column-mapping cache returns that single high-confidence match; otherwise candidates come from fuzzy-matching the header against the system-field catalog. Empty when nothing scored above the match threshold.
   securitySchemes:
     jwt:
       type: http

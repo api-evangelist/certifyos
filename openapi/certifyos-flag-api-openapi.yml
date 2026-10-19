@@ -20,16 +20,104 @@ tags:
 - name: Flag
   description: APIs for managing flag entities
 paths:
+  /flags:
+    get:
+      summary: Get all flags (All Sections tab)
+      description: Returns a paginated, tenant-scoped list of flags across all record types. Equivalent to the All Sections tab on the flags landing page. Common columns only — no metaData block. Client (non-certifyos.com) users are restricted to Open flags by default.
+      operationId: getAllFlags
+      tags:
+      - Flag
+      parameters:
+      - description: 'Cursor: end at this flag id (backward pagination)'
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: 'Filter criteria as a URL-encoded JSON object — `{"<key>": {"<operator>": <value>}}`. Keys are ANDed. Each value is an operator object forwarded to the DAL unchanged (e.g. `{"eq":"open"}`, `{"in":["open","seen"]}`, `{"gte":"2026-01-01","lte":"2026-12-31"}`). Recognised keys, translated server-side to their DAL field: `exclusionType`, `flagType`, `metaData.actionType`, `metaData.aggregateCoverageAmount`, `metaData.compactType`, `metaData.databankSubjectId`, `metaData.effectiveStatus`, `metaData.enrollmentStatus.status`, `metaData.enumerationType`, `metaData.expiration`, `metaData.expirationDate`, `metaData.expiryDate`, `metaData.firstName`, `metaData.flaggedDate`, `metaData.homeLicenseLinkSource`, `metaData.homeLicenseNumber`, `metaData.homeLicenseState`, `metaData.homeLicenseType`, `metaData.homeState`, `metaData.lastActionDate`, `metaData.lastName`, `metaData.licenseNumber`, `metaData.licenseSource`, `metaData.licenseStatus`, `metaData.licenseType`, `metaData.middleName`, `metaData.moc`, `metaData.npi`, `metaData.npiStatus`, `metaData.number`, `metaData.occuranceCoverageAmount`, `metaData.parsedData.exclusionType`, `metaData.parsedData.sanctionEndDate`, `metaData.policyNumber`, `metaData.processDate`, `metaData.reportDate`, `metaData.reportType`, `metaData.sanctionStartDate`, `metaData.sanctionType`, `metaData.source`, `metaData.sourceUpdateDate`, `metaData.speciality`, `metaData.state`, `metaData.status`, `metaData.typeOfAction`, `nppesFirst`, `nppesLast`, `nppesMiddle`, `nppesNpi`, `nppesNpiStatus`, `recordType`, `sanctionEndDate`, `sanctionType`, `status`. `daysUntilExpiration` is synthetic: supply numeric day offsets via `gte`/`gt`/`lte`/`lt`/`eq` and the server translates them into an absolute `data.metaData.expiration` date range. Any other key is forwarded verbatim, so already-qualified `data.` / `data.metaData.` DAL fields work too. `tenantId` is dropped — the tenant-id header wins. Server-forced clauses always override a colliding key: tenant isolation, the recordType/sanctionType locks, the client-user default of `status = open`, and — for callers lacking the needs-verification permission — the needsVerification status and internal-only flagType exclusions. A value that is not a JSON object, or that fails to parse, is ignored and the server defaults apply.'
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: 'Sort specification as a URL-encoded JSON object — `{"orderBy": "<field>", "orderByDirection": "asc"|"desc"}`. Accepted `orderBy` aliases: `actionState`, `actionType`, `board`, `cmsEffectiveDate`, `cmsPreclusionReason`, `createdAt`, `credentialingStatus`, `dataSection`, `dataSource`, `daysUntilExpiration`, `effectiveDate`, `enumerationType`, `exclusionType`, `expiration`, `expirationDate`, `firstName`, `flagMdSanctionType`, `flagRecordType`, `flagStatus`, `flagType`, `flaggedDate`, `lastActionDate`, `lastName`, `licenseNumber`, `licenseSource`, `licenseState`, `licenseStatus`, `licenseType`, `middleName`, `mooEndDate`, `npi`, `npiStatus`, `nppesEnumerationType`, `nppesFirst`, `nppesLast`, `nppesMiddle`, `nppesNpi`, `nppesNpiStatus`, `oigExclusionDate`, `oigExclusionType`, `practitioner`, `recordType`, `reportDate`, `samExclusionDate`, `samExclusionType`, `samTerminationDate`, `sanctionEndDate`, `sanctionStartDate`, `sanctionType`, `sourceFlaggedOn`, `sourceUpdateDate`, `stateMedicaidEffectiveDate`, `stateMedicaidEndDate`, `stateMedicaidSanctionType`, `status`, `updatedAt`, `updatedOn`. DAL field names are accepted directly as well: `createdAt`, `credentialingStatus`, `data.metaData.actionType`, `data.metaData.enumerationType`, `data.metaData.expiration`, `data.metaData.firstName`, `data.metaData.flaggedDate`, `data.metaData.lastActionDate`, `data.metaData.lastName`, `data.metaData.licenseNumber`, `data.metaData.licenseSource`, `data.metaData.licenseStatus`, `data.metaData.licenseType`, `data.metaData.middleName`, `data.metaData.npi`, `data.metaData.npiStatus`, `data.metaData.parsedData.exclusionType`, `data.metaData.parsedData.sanctionEndDate`, `data.metaData.reportDate`, `data.metaData.sanctionStartDate`, `data.metaData.sanctionType`, `data.metaData.source`, `data.metaData.sourceUpdateDate`, `data.metaData.state`, `data.metaData.typeOfAction`, `data.recordType`, `data.status`, `dataSource`, `flagTypeId`, `practitionerFirstName`, `practitionerLastName`, `practitionerNpi`, `updatedAt`, as is a `metaData.<field>` shorthand for any allowlisted `data.metaData.<field>`. `orderByDirection` defaults to `desc` when omitted or blank. An unknown or unresolvable `orderBy` is not an error: the tab default sort below is applied instead. Default when `order` is omitted: `{"orderBy":"createdAt","orderByDirection":"desc"}`.'
+        name: order
+        in: query
+        schema:
+          type: string
+      - description: 0-based page number
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: 'Record types to include (repeatable or comma-separated), matched with IN. Accepted values: state-licenses, dea-data, cds-data, board-certifications, malpractice-insurances, npdb-data, licensure-actions, sanctions, nppes, compact-license. When ''sanctions'' is included, sanctionType is required.'
+        name: recordType
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - description: Sanctions sub-tabs (repeatable or comma-separated), matched with IN (OFAC|MOO|STATE_SANCTIONS|OIG|CLIENT_PRECLUSIONS|SAM); required when recordType includes 'sanctions', otherwise ignored
+        name: sanctionType
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - description: Page size. One of 10, 25, 50, 100; defaults to 10. Any other value is rejected with 400 INVALID_PAGE_SIZE.
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '10'
+          enum:
+          - 10
+          - 25
+          - 50
+          - 100
+      - description: 'Cursor: start after this flag id (forward pagination)'
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFlagsResponse'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized — authentication required
+        '403':
+          description: Forbidden — missing required permission
+        '500':
+          description: Internal server error
+      security:
+      - jwt: []
   /flags/update-status-bulk/{status}:
     put:
-      summary: Bulk Update Flag Status
-      description: Updates the status of multiple flags to the specified value in a single operation. Each flag is evaluated independently against the per-transition permission and the state machine; flags that fail (closed, illegal transition, missing permission) are reported in the failed list rather than aborting the batch.
+      summary: Transition multiple flags to a new status in one call
+      description: 'Transitions a list of flags to the given target status in a single request, evaluating each flag independently against its own current status and the caller''s permissions. Use this instead of calling PUT /flags/{id}/update-status/{status} once per flag; per-flag failures do not abort the batch. Two selection modes are supported: the default "ids" mode, where the JSON body or multipart form supplies flagIds directly, plus optional comment and/or files applied to every successfully transitioned flag; and a JSON-only "filter" mode (set type to "filter"), where filter selects all matching flags server-side and expectedCount is the client''s snapshot count used to detect drift — the request is rejected with 409 if the live count no longer matches. Filter-based selection can be disabled by configuration, in which case it returns 503. The status path parameter accepts the same canonical wire values and aliases as PUT /flags/{id}/update-status/{status} (case-insensitive). The caller must hold at least one of the listed per-transition permissions to pass the outer authorization gate; each flag is then re-checked individually against the specific transition it requires. Always returns HTTP 200, even when every flag in the batch fails — inspect the response body''s successful/failed arrays and successCount/failureCount for the actual outcome. An empty or omitted flagIds list returns 200 with totalCount, successCount, and failureCount all zero.'
       operationId: bulkUpdateFlagStatus
       tags:
       - Flag
       parameters:
-      - description: The status to set for all flags (e.g., 'Closed', 'Open', 'seen')
-        example: Closed
+      - description: The target status for all flags in the batch. Accepts the same canonical wire values and aliases as PUT /flags/{id}/update-status/{status} (case-insensitive).
+        example: closed
         required: true
         name: status
         in: path
@@ -59,30 +147,300 @@ paths:
                     type: string
                     format: binary
           application/json:
+            examples:
+              byIds:
+                value:
+                  flagIds:
+                  - flag-101
+                  - flag-102
+                  - flag-103
             schema:
               $ref: '#/components/schemas/BulkFlagStatusUpdateRequest'
         required: true
       responses:
         '200':
-          description: Bulk flag status update completed
+          description: Bulk update completed. successful/failed are arrays of {flagId, flagResponse} or {flagId, errorMessage, errorCode} respectively — errorCode is the stringified HTTP status code for that flag's failure (e.g. "409"). Each flagResponse omits the internal `tenantProviderId` and `hash` columns. totalCount, successCount, and failureCount summarize the batch.
           content:
             application/json:
+              examples:
+                partialFailure:
+                  value:
+                    successful:
+                    - flagId: flag-101
+                      flagResponse:
+                        id: flag-101
+                        tenantId: tenant-001
+                        flagTypeId: state-licenses
+                        data: {}
+                        createdAt: '2026-06-01'
+                        createdBy: user-123
+                        updatedAt: '2026-08-01'
+                        updatedBy: user-456
+                    failed:
+                    - flagId: flag-102
+                      errorMessage: 'Transition not allowed: closed -> closed'
+                      errorCode: '409'
+                    totalCount: 2
+                    successCount: 1
+                    failureCount: 1
               schema:
                 $ref: '#/components/schemas/BulkFlagStatusUpdateResponse'
         '400':
-          description: Bad request - Invalid request parameters or missing required headers
+          description: Bad Request - the status path parameter does not match any known status or alias, the tenant-id header is missing, or (filter mode) filter or expectedCount was omitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
-          description: Authentication required - Valid authentication token is missing or invalid
+          description: Unauthorized - authentication is required; the JWT is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: Forbidden - Caller lacks any of the per-transition permissions required to use this endpoint
+          description: Forbidden - the caller lacks any of the per-transition permissions required to use this endpoint at all (individual flags a caller can't transition are instead reported in the failed array with errorCode 403)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: 'Conflict - filter mode only: the expectedCount submitted by the client no longer matches the live count of flags matching filter; retry with currentCount from the response body as the new expectedCount'
+          content:
+            application/json:
+              examples:
+                countDrift:
+                  value:
+                    expectedCount: 42
+                    currentCount: 47
+              schema:
+                $ref: '#/components/schemas/BulkSelectionCountMismatchResponse'
+        '503':
+          description: 'Service Unavailable - filter mode only: filter-based Select All is currently disabled by configuration; fall back to submitting explicit flagIds'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: Internal server error - an unexpected error occurred while processing the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /flags/{id}/add-state-to-credential:
+    post:
+      summary: Add a New License Found flag's state(s) to the practitioner's states to…
+      description: 'For a new_credential_found flag on state-licenses, DEA or CDS: appends the flag''s single state (always taken from the flag''s metaData.state; the request''s states must be absent/empty) to statesToCredential. For a compact-license flag (no single state; coverage is metaData.coveredStates, a list): the request''s states is required, and must be a non-empty subset of the flag''s own coveredStates — a state already on the practitioner is accepted and treated as a no-op, so a retry after a partial success is never rejected — every requested state is added. Either way, states are written to statesToCredential on the practitioner''s tenant record (or roster record when only that one carries the list), the flag is marked seen with the note (for an outreachInProgress flag the status is left and the note is recorded on its history), then the state(s) are added to the active monitoring workflow and its flags are recalculated, which closes the flag. Allowed on open, needsVerification, sentToCommittee and outreachInProgress flags. For state-licenses/DEA/CDS, a seen flag answers 409 unless the state is already present, in which case the call only finishes the workflow update (a retry after PARTIAL_SUCCESS) and the note is not recorded. For compact-license, a seen flag never 409s: the flag stays seen and is not re-moved, but any requested state not yet added is still written and the workflow updated — a reviewer can come back and add previously-unselected covered states while the flag is seen. A closed flag always answers 409. Returns 200 with a per-step outcome even when a follow-up step failed: status is FAILED when the practitioner record was not updated, PARTIAL_SUCCESS when it was but the flag or workflow step failed, SUCCESS otherwise. Safe to retry while the flag is not closed: a state already present is not written again and a seen flag is not moved again. Permission checks run before any write. Callers without the needs-verification permission get 404 for needsVerification and internal-only flags, as on GET /flags/{id}/details. Gated by flags.add-state-to-credential.enabled (default true); returns 404 while disabled.'
+      operationId: addStateToCredential
+      tags:
+      - Flag
+      parameters:
+      - description: ID of the new_credential_found flag
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddStateToCredentialRequest'
+        required: true
+      responses:
+        '200':
+          description: Per-step outcome; inspect status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddStateToCredentialResponse'
+        '400':
+          description: Bad Request - the note is missing, blank or longer than 2000 characters, the flag is not a new_credential_found flag, it carries no state (or, for compact-license, no covered states), states was supplied for a non-compact flag, states is missing/empty for a compact-license flag, or a requested state is not in the compact flag's coveredStates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - authentication is required; the JWT is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden - the caller lacks UPDATE_PRACTITIONER, the permission to move this flag to seen from its current status (to close it, for an outreachInProgress flag), or (for a needsVerification flag) the needs-verification permission. Nothing is written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not Found - no such flag for this tenant, the flag is hidden from the caller (needsVerification or internal-only without the needs-verification permission), or the endpoint is disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Conflict - the flag is closed; it is a state-licenses/DEA/CDS flag that is seen and the state is not already present (compact-license flags never 409 while seen); its status is unreadable; or its practitioner could not be resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /flags/{id}/details:
+    get:
+      summary: Get full flag details with history
+      description: Returns the full flag object plus its audit history trail (newest first), keyed by flag id. Includes the resolved certifyPractitionerId and history attachment metadata (no signed URLs). The payload carries both updatedAt (raw flags.updated_at — the change-detection signal for pollers) and updatedOn (the display value preferring metaData.sourceUpdateDate). Note comment-only history rows may not bump updatedAt, so clients should also diff the history array; status changes such as closures do bump it. Requires MONITORING_WORKFLOW_READ. npdb-data flags also carry an npdbPdf block; its signed URL is issued only to callers holding MONITORING_WORKFLOW_NPDB_PDF_READ, otherwise the block's status is PERMISSION_REQUIRED with no URL.
+      operationId: getFlagDetails
+      tags:
+      - Flag
+      parameters:
+      - description: ID of the flag to fetch
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The full flag detail payload with history trail
+          content:
+            application/json:
+              examples:
+                flagDetails:
+                  value:
+                    id: flag-9f3a1c
+                    recordType: state-licenses
+                    flagType: expired
+                    status: closed
+                    flaggedDate: '2026-06-15'
+                    updatedOn: '2026-06-28T04:12:00Z'
+                    updatedAt: '2026-07-01T18:22:00Z'
+                    dataSource: certify-scraper
+                    certifyPractitionerId: cp_123456
+                    createdAt: '2026-01-15T10:00:00Z'
+                    markedSeenAt: '2026-02-01T00:00:00Z'
+                    markedSeenBy: Jane Doe
+                    history:
+                    - id: hist-2
+                      status: closed
+                      description: Resolved after outreach
+                      createdAt: '2026-07-01T18:22:00Z'
+                      createdBy: Jane Doe
+                      attachments:
+                      - id: att-1
+                        fileName: license.pdf
+                        createdAt: '2026-07-01T18:22:00Z'
+                        createdBy: user-123
+              schema:
+                $ref: '#/components/schemas/GetFlagDetailsResponse'
+        '401':
+          description: Unauthorized — authentication is required; the JWT is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Forbidden — the caller lacks the MONITORING_WORKFLOW_READ permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not Found — no flag exists with the given id for the requesting tenant, or the endpoint is disabled by configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error — an unexpected error occurred while processing the request, including when the upstream DAL flagFindById returns no history enrichment (enrichment disabled or degraded) or a truncated history trail (the flag has more rows than the DAL's inline history limit)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: Bad Gateway — the upstream data service returned an error; the body is a sanitized generic message, never the upstream error payload
+          content:
+            application/json: {}
+      security:
+      - jwt: []
+  /flags/{id}/npdb-pdf/regenerate:
+    post:
+      summary: Request regeneration of a flag's NPDB PDF
+      description: 'Enqueues a regeneration of the NPDB PDF backing the given npdb-data flag and returns 202 once the task is accepted. Intended as the recovery action for a terminally FAILED render (the drawer''s Regenerate button); the render worker is the arbiter of the outcome — a READY or freshly in-flight document makes the task a no-op, so the call is safe to repeat. The client mints one idempotency key per logical request and reuses it on retries: the key correlates retries in server logs, and duplicate submissions are absorbed by the render worker''s claim table — a retry can at most re-render the same digest-identical content, never a different document. The regenerated document becomes visible through the flag details response''s npdbPdf block, which reports GENERATING while the render is in flight.'
+      operationId: regenerateNpdbPdf
+      tags:
+      - Flag
+      parameters:
+      - description: ID of the flag whose NPDB PDF to regenerate
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegenerateNpdbPdfRequest'
+        required: true
+      responses:
+        '202':
+          description: Accepted — the regeneration task is enqueued
+        '400':
+          description: Bad Request - the idempotency key is missing, blank, or longer than 128 characters, or the flag is not an npdb-data flag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - authentication is required; the JWT is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Not Found - no such flag for this tenant (or the document service is not enabled for this tenant)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: 'Conflict - the flag is not regenerable: it carries no stamped NPDB digest or its origin monitoring workflow is missing identity'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service Unavailable - the regeneration task could not be enqueued; retry with the SAME idempotency key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
   /flags/{id}/update-status/{status}:
     put:
-      summary: Update Flag Status
-      description: Updates a flag's status to the specified value (e.g., 'Closed', 'Open', 'seen', etc.). Optionally accepts a comment and file attachments. The caller must hold the per-transition permission for the specific source/target pair (see FlagStatusTransitionRules); closed flags cannot be transitioned.
+      summary: Transition a single flag to a new status
+      description: 'Transitions the specified flag to the given target status. Use this endpoint to move one flag through its lifecycle (e.g. acknowledging it, starting outreach, closing it); to move multiple flags in one call, use `PUT /flags/update-status-bulk/{status}` instead. The caller must hold the per-transition permission for the specific source-to-target status pair (see the flag status-transition rules); closed flags are terminal and cannot be transitioned further. The `status` path parameter accepts any of the canonical wire values (`open`, `seen`, `outreachInProgress`, `sentToCommittee`, `closed`, `needsVerification`) or the aliases `markAsSeen`/`mark_as_seen`, `needs_verification`, `outreach_in_progress`, and `sent_to_committee` — matching is case-insensitive, so any casing of any of these values is accepted. The request body is optional: supply a free-text `comment` and/or one or more `files` to attach context to the transition, or omit the body entirely. Returns the full updated flag record on success. A FlagHistory record is always created, and if files were supplied they are stored to GCS and linked as FlagHistoryAttachment records — both are best-effort and do not fail the call if they error. Not idempotent: since no status has a transition to itself, repeating the same call a second time (the flag now already at the target status) returns 409.'
       operationId: updateFlagStatus
       tags:
       - Flag
@@ -93,8 +451,8 @@ paths:
         in: path
         schema:
           type: string
-      - description: The status to set for the flag (e.g., 'Closed', 'Open', 'seen')
-        example: Closed
+      - description: The target status. Accepts the canonical wire values (open, seen, outreachInProgress, sentToCommittee, closed, needsVerification) or the aliases markAsSeen, mark_as_seen, needs_verification, outreach_in_progress, sent_to_committee. Matching is case-insensitive.
+        example: closed
         required: true
         name: status
         in: path
@@ -107,7 +465,6 @@ paths:
         schema:
           type: string
       requestBody:
-        required: false
         content:
           multipart/form-data:
             schema:
@@ -120,37 +477,650 @@ paths:
                   items:
                     type: string
                     format: binary
+        required: false
       responses:
         '200':
-          description: Flag status updated successfully
+          description: The updated flag record, reflecting the new status. The internal `tenantProviderId` and `hash` columns are omitted. When the target status is `seen`, `markedSeenAt`/`markedSeenBy` are populated from the transition's FlagHistory record (null if its best-effort creation failed); everything else in the referenced schema is returned verbatim.
           content:
             application/json:
+              examples:
+                updatedFlag:
+                  value:
+                    id: flag-9f3a1c
+                    tenantId: tenant-001
+                    flagTypeId: state-licenses
+                    data: {}
+                    createdAt: '2026-06-01'
+                    createdBy: user-123
+                    updatedAt: '2026-08-01'
+                    updatedBy: user-456
               schema:
                 $ref: '#/components/schemas/FlagResponse'
         '400':
-          description: Bad request - Invalid request parameters or missing required headers
+          description: Bad Request - the status path parameter does not match any known status or alias, or the tenant-id header is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
-          description: Authentication required - Valid authentication token is missing or invalid
+          description: Unauthorized - authentication is required; the JWT is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: Forbidden - Caller lacks the per-transition permission for this status change
+          description: Forbidden - the caller lacks the permission required for this specific source-to-target transition; this is distinct from the flag being unreachable from its current status, which returns 409
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
-          description: Flag not found - The specified flag ID does not exist
+          description: Not Found - no flag exists with the given id for the requesting tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '409':
-          description: Conflict - Transition not allowed (e.g. closed flag, or target unreachable from current status)
+          description: 'Conflict - the transition is not allowed: either the flag is already closed (a terminal state with no outgoing transitions), or there is no defined path from the flag''s current status to the requested target status. This includes supplying the flag''s current status as the target, since no status has a transition to itself.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: Internal server error - an unexpected error occurred while processing the request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /flags/{recordType}:
+    get:
+      summary: Get flags by record type (per-tab)
+      description: 'Returns a paginated, tenant-scoped list of flags for a single record type. Accepted record types: state-licenses, dea-data, cds-data, board-certifications, malpractice-insurances, npdb-data, licensure-actions, sanctions, nppes, compact-license. Each row includes a metaData block with tab-specific columns. For sanctions, supply sanctionType to restrict to one sub-tab.'
+      operationId: getFlagsByRecordType
+      tags:
+      - Flag
+      parameters:
+      - description: Tab slug, e.g. state-licenses
+        required: true
+        name: recordType
+        in: path
+        schema:
+          type: string
+      - description: 'Cursor: end at this flag id (backward pagination)'
+        name: endAtId
+        in: query
+        schema:
+          type: string
+      - description: 'Filter criteria as a URL-encoded JSON object — `{"<key>": {"<operator>": <value>}}`. Keys are ANDed. Each value is an operator object forwarded to the DAL unchanged (e.g. `{"eq":"open"}`, `{"in":["open","seen"]}`, `{"gte":"2026-01-01","lte":"2026-12-31"}`). Recognised keys, translated server-side to their DAL field: `exclusionType`, `flagType`, `metaData.actionType`, `metaData.aggregateCoverageAmount`, `metaData.compactType`, `metaData.databankSubjectId`, `metaData.effectiveStatus`, `metaData.enrollmentStatus.status`, `metaData.enumerationType`, `metaData.expiration`, `metaData.expirationDate`, `metaData.expiryDate`, `metaData.firstName`, `metaData.flaggedDate`, `metaData.homeLicenseLinkSource`, `metaData.homeLicenseNumber`, `metaData.homeLicenseState`, `metaData.homeLicenseType`, `metaData.homeState`, `metaData.lastActionDate`, `metaData.lastName`, `metaData.licenseNumber`, `metaData.licenseSource`, `metaData.licenseStatus`, `metaData.licenseType`, `metaData.middleName`, `metaData.moc`, `metaData.npi`, `metaData.npiStatus`, `metaData.number`, `metaData.occuranceCoverageAmount`, `metaData.parsedData.exclusionType`, `metaData.parsedData.sanctionEndDate`, `metaData.policyNumber`, `metaData.processDate`, `metaData.reportDate`, `metaData.reportType`, `metaData.sanctionStartDate`, `metaData.sanctionType`, `metaData.source`, `metaData.sourceUpdateDate`, `metaData.speciality`, `metaData.state`, `metaData.status`, `metaData.typeOfAction`, `nppesFirst`, `nppesLast`, `nppesMiddle`, `nppesNpi`, `nppesNpiStatus`, `recordType`, `sanctionEndDate`, `sanctionType`, `status`. `daysUntilExpiration` is synthetic: supply numeric day offsets via `gte`/`gt`/`lte`/`lt`/`eq` and the server translates them into an absolute `data.metaData.expiration` date range. Any other key is forwarded verbatim, so already-qualified `data.` / `data.metaData.` DAL fields work too. `tenantId` is dropped — the tenant-id header wins. Server-forced clauses always override a colliding key: tenant isolation, the recordType/sanctionType locks, the client-user default of `status = open`, and — for callers lacking the needs-verification permission — the needsVerification status and internal-only flagType exclusions. A value that is not a JSON object, or that fails to parse, is ignored and the server defaults apply.'
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: 'Sort specification as a URL-encoded JSON object — `{"orderBy": "<field>", "orderByDirection": "asc"|"desc"}`. Accepted `orderBy` aliases: `actionState`, `actionType`, `board`, `cmsEffectiveDate`, `cmsPreclusionReason`, `createdAt`, `credentialingStatus`, `dataSection`, `dataSource`, `daysUntilExpiration`, `effectiveDate`, `enumerationType`, `exclusionType`, `expiration`, `expirationDate`, `firstName`, `flagMdSanctionType`, `flagRecordType`, `flagStatus`, `flagType`, `flaggedDate`, `lastActionDate`, `lastName`, `licenseNumber`, `licenseSource`, `licenseState`, `licenseStatus`, `licenseType`, `middleName`, `mooEndDate`, `npi`, `npiStatus`, `nppesEnumerationType`, `nppesFirst`, `nppesLast`, `nppesMiddle`, `nppesNpi`, `nppesNpiStatus`, `oigExclusionDate`, `oigExclusionType`, `practitioner`, `recordType`, `reportDate`, `samExclusionDate`, `samExclusionType`, `samTerminationDate`, `sanctionEndDate`, `sanctionStartDate`, `sanctionType`, `sourceFlaggedOn`, `sourceUpdateDate`, `stateMedicaidEffectiveDate`, `stateMedicaidEndDate`, `stateMedicaidSanctionType`, `status`, `updatedAt`, `updatedOn`. DAL field names are accepted directly as well: `createdAt`, `credentialingStatus`, `data.metaData.actionType`, `data.metaData.enumerationType`, `data.metaData.expiration`, `data.metaData.firstName`, `data.metaData.flaggedDate`, `data.metaData.lastActionDate`, `data.metaData.lastName`, `data.metaData.licenseNumber`, `data.metaData.licenseSource`, `data.metaData.licenseStatus`, `data.metaData.licenseType`, `data.metaData.middleName`, `data.metaData.npi`, `data.metaData.npiStatus`, `data.metaData.parsedData.exclusionType`, `data.metaData.parsedData.sanctionEndDate`, `data.metaData.reportDate`, `data.metaData.sanctionStartDate`, `data.metaData.sanctionType`, `data.metaData.source`, `data.metaData.sourceUpdateDate`, `data.metaData.state`, `data.metaData.typeOfAction`, `data.recordType`, `data.status`, `dataSource`, `flagTypeId`, `practitionerFirstName`, `practitionerLastName`, `practitionerNpi`, `updatedAt`, as is a `metaData.<field>` shorthand for any allowlisted `data.metaData.<field>`. `orderByDirection` defaults to `desc` when omitted or blank. An unknown or unresolvable `orderBy` is not an error: the tab default sort below is applied instead. Default when `order` is omitted, by recordType: `state-licenses` → `{"orderBy":"data.metaData.expiration","orderByDirection":"asc"}`, `dea-data` → `{"orderBy":"data.metaData.expiration","orderByDirection":"asc"}`, `cds-data` → `{"orderBy":"data.metaData.expiration","orderByDirection":"asc"}`, `board-certifications` → `{"orderBy":"data.metaData.expiration","orderByDirection":"asc"}`, `malpractice-insurances` → `{"orderBy":"data.metaData.expiration","orderByDirection":"asc"}`, `npdb-data` → `{"orderBy":"data.metaData.reportDate","orderByDirection":"desc"}`, `licensure-actions` → `{"orderBy":"data.metaData.lastActionDate","orderByDirection":"desc"}`, `sanctions` → `{"orderBy":"data.metaData.sanctionStartDate","orderByDirection":"desc"}`, `nppes` → `{"orderBy":"updatedAt","orderByDirection":"desc"}`, `compact-license` → `{"orderBy":"data.metaData.expiration","orderByDirection":"asc"}`, `death-master-matches` → `{"orderBy":"createdAt","orderByDirection":"desc"}`.'
+        name: order
+        in: query
+        schema:
+          type: string
+      - description: 0-based page number
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Sanctions sub-tab (OFAC|MOO|STATE_SANCTIONS|OIG|CLIENT_PRECLUSIONS|SAM); only meaningful for recordType=sanctions
+        name: sanctionType
+        in: query
+        schema:
+          type: string
+      - description: Page size. One of 10, 25, 50, 100; defaults to 10. Any other value is rejected with 400 INVALID_PAGE_SIZE.
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '10'
+          enum:
+          - 10
+          - 25
+          - 50
+          - 100
+      - description: 'Cursor: start after this flag id (forward pagination)'
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully retrieved flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFlagsResponse'
+        '400':
+          description: Invalid or unknown recordType, or invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized — authentication required
+        '403':
+          description: Forbidden — missing required permission
+        '500':
+          description: Internal server error
       security:
       - jwt: []
 components:
   schemas:
-    FlagResponse:
+    GetFlagDetailsResponse:
+      type: object
+      description: Full flag object plus its audit history trail
+      properties:
+        id:
+          type: string
+          description: Flag identifier
+        recordType:
+          type: string
+          examples:
+          - state-licenses
+          description: Flag record type (tab discriminator)
+        flagType:
+          type: string
+          examples:
+          - expired
+          description: Flag type identifier (flag_type_id slug)
+        status:
+          type: string
+          examples:
+          - open
+          description: Flag lifecycle status
+        flaggedDate:
+          type: string
+          examples:
+          - '2026-06-15'
+          description: Date the source entity was flagged (ISO-8601)
+        updatedOn:
+          type: string
+          examples:
+          - '2026-06-28T04:12:00Z'
+          description: Display timestamp of the most recent monitoring source refresh (metaData.sourceUpdateDate, falling back to flags.updated_at)
+        updatedAt:
+          type: string
+          examples:
+          - '2026-06-28T04:12:00Z'
+          description: Raw flags.updated_at column — the change-detection signal for pollers; distinct from the display-oriented updatedOn
+        dataSource:
+          type: string
+          examples:
+          - certify-scraper
+          description: Data source identifier
+        practitioner:
+          $ref: '#/components/schemas/PractitionerInfo'
+          type: object
+          description: Denormalized practitioner identity fields
+        certifyPractitionerId:
+          type: string
+          examples:
+          - cp_123456
+          description: Certify practitioner id resolved from the flag's tenant practitioner; null when it cannot be resolved
+        createdAt:
+          type: string
+          examples:
+          - '2026-01-15T10:00:00Z'
+          description: Flag creation timestamp (ISO-8601)
+        markedSeenAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: When the flag was last marked seen (ISO-8601), derived from history; null when never seen
+        markedSeenBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who last marked the flag seen (display name; raw id when unresolvable); null when never seen
+        originMonitoringWorkflowId:
+          type: string
+          examples:
+          - wf-123
+          description: Origin monitoring workflow id
+        metaData:
+          type: object
+          description: Tab-specific metadata fields (allowlist-filtered)
+          anyOf:
+          - $ref: '#/components/schemas/StateLicensesFlagMetaData'
+          - $ref: '#/components/schemas/DeaDataFlagMetaData'
+          - $ref: '#/components/schemas/CdsDataFlagMetaData'
+          - $ref: '#/components/schemas/BoardCertificationsFlagMetaData'
+          - $ref: '#/components/schemas/MalpracticeInsurancesFlagMetaData'
+          - $ref: '#/components/schemas/NpdbDataFlagMetaData'
+          - $ref: '#/components/schemas/LicensureActionsFlagMetaData'
+          - $ref: '#/components/schemas/SanctionsFlagMetaData'
+          - $ref: '#/components/schemas/NppesFlagMetaData'
+          - $ref: '#/components/schemas/CompactLicenseFlagMetaData'
+          - $ref: '#/components/schemas/DeathMasterMatchesFlagMetaData'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+          description: Audit history trail, newest first
+        npdbPdf:
+          $ref: '#/components/schemas/NpdbPdfBlock'
+          type: object
+          description: Rendered NPDB report PDF for this flag's stamped data (CP-36183); present only on npdb-data flags
+    DeathMasterMatchesFlagMetaData:
+      title: DeathMasterMatchesFlagMetaData
+      description: 'metaData returned on death-master-matches flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        confidence: {}
+        dateOfBirth: {}
+        dateOfDeath: {}
+        flaggedDate: {}
+        isDeceased: {}
+        matchedAt: {}
+        matchedOn: {}
+        message: {}
+        name: {}
+        reason: {}
+        source: {}
+        sourceUpdateDate: {}
+      additionalProperties: false
+    NpdbDataFlagMetaData:
+      title: NpdbDataFlagMetaData
+      description: 'metaData returned on npdb-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        certification: {}
+        data: {}
+        databankSubjectId: {}
+        dcn: {}
+        deceased: {}
+        enrollmentStatus: {}
+        firstName: {}
+        flaggedDate: {}
+        gender: {}
+        homeAddress: {}
+        homeCity: {}
+        homeState: {}
+        homeZip: {}
+        lastName: {}
+        licensureField: {}
+        maintainedUnder: {}
+        message: {}
+        notes: {}
+        npi: {}
+        otherName: {}
+        previousDCN: {}
+        previousTransaction: {}
+        processDate: {}
+        recentChangeDate: {}
+        reportDCN: {}
+        reportDate: {}
+        reportType: {}
+        source: {}
+        sourceUpdateDate: {}
+        submitter: {}
+        transactionType: {}
+        transactionTypeCode: {}
+        typeOfAction: {}
+      additionalProperties: false
+    FlagResult:
+      type: object
+      description: Flag move-to-seen outcome
+      properties:
+        attempted:
+          type: boolean
+          description: Whether the move was attempted
+        ok:
+          type: boolean
+          description: Whether the flag was moved
+        flagId:
+          type: string
+          description: The flag id
+        status:
+          type: string
+          description: The resulting status, when moved
+        noteRecorded:
+          type:
+          - boolean
+          - 'null'
+          description: 'Only when the status is not moved and a note was due (outreachInProgress; a Seen compact flag that added states): whether the note was stored on the flag history; null otherwise'
+    BoardCertificationsFlagMetaData:
+      title: BoardCertificationsFlagMetaData
+      description: 'metaData returned on board-certifications flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        abmsId: {}
+        certificateId: {}
+        certificateType: {}
+        city: {}
+        country: {}
+        durationType: {}
+        expirationDate: {}
+        flaggedDate: {}
+        issueDate: {}
+        message: {}
+        moc: {}
+        source: {}
+        sourceUpdateDate: {}
+        speciality: {}
+        state: {}
+        status: {}
+        subspeciality: {}
+        zipCode: {}
+      additionalProperties: false
+    DeaDataFlagMetaData:
+      title: DeaDataFlagMetaData
+      description: 'metaData returned on dea-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        expirationDate: {}
+        flaggedDate: {}
+        message: {}
+        number: {}
+        schedules: {}
+        source: {}
+        sourceUpdateDate: {}
+        state: {}
+        status: {}
+      additionalProperties: false
+    StatusUpdateResult:
+      type: object
+      description: Result of a single flag status update
+      properties:
+        flagId:
+          type: string
+          examples:
+          - flag-123
+          description: Flag ID that was processed
+        flagResponse:
+          type: object
+          description: The updated flag record; present only when this flag's transition succeeded, null when it failed. The internal tenantProviderId and hash columns are omitted.
+          properties:
+            id:
+              type: string
+            tenantProviderId:
+              type: string
+            flagTypeId:
+              type: string
+            data:
+              $ref: '#/components/schemas/JsonNode'
+            createdAt:
+              $ref: '#/components/schemas/Date'
+            createdBy:
+              type: string
+            updatedAt:
+              $ref: '#/components/schemas/Date'
+            updatedBy:
+              type: string
+            originMonitoringWorkflowId:
+              type: string
+            hash:
+              type: string
+            tenantId:
+              type: string
+            practitionerPrefix:
+              type: string
+            practitionerFirstName:
+              type: string
+            practitionerMiddleName:
+              type: string
+            practitionerLastName:
+              type: string
+            practitionerNpi:
+              type: string
+            statesToCredential:
+              type: array
+              items:
+                type: string
+            practitionerType:
+              type: array
+              items:
+                type: string
+            credentialingStatus:
+              type: string
+            dataSource:
+              type: string
+            practitionerDateOfBirth:
+              type: string
+            practitionerEmail:
+              type: string
+            lastCredentialedDate:
+              type: string
+            markedSeenAt:
+              $ref: '#/components/schemas/Date'
+            markedSeenBy:
+              type: string
+            certifyPractitionerId:
+              type: string
+            tenantPractitionerTenantId:
+              type: string
+            histories:
+              type: array
+              items:
+                $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
+            historiesTruncated:
+              type: boolean
+            npdbDocument:
+              $ref: '#/components/schemas/DocumentResponse'
+        errorMessage:
+          type: string
+          examples:
+          - 'Transition not allowed: closed -> closed'
+          description: Human-readable reason this flag's transition failed; null when it succeeded
+        errorCode:
+          type: string
+          examples:
+          - '409'
+          description: The stringified HTTP status code corresponding to why this flag's transition failed (e.g. "400", "403", "404", "409", "500"); null when it succeeded
+    GetFlagResponse:
+      type: object
+      description: A single flag row on the flags landing page
+      properties:
+        id:
+          type: string
+          description: Flag identifier
+        recordType:
+          type: string
+          examples:
+          - state-licenses
+          description: Flag record type (tab discriminator)
+        flagType:
+          type: string
+          examples:
+          - expired
+          description: Flag type identifier (flag_type_id slug)
+        status:
+          type: string
+          examples:
+          - open
+          description: Flag lifecycle status
+        flaggedDate:
+          type: string
+          examples:
+          - '2026-06-15'
+          description: Date the source entity was flagged (ISO-8601)
+        updatedOn:
+          type: string
+          examples:
+          - '2026-06-28T04:12:00Z'
+          description: Timestamp of the most recent monitoring source refresh
+        dataSource:
+          type: string
+          examples:
+          - certify-scraper
+          description: Data source identifier
+        practitioner:
+          $ref: '#/components/schemas/PractitionerInfo'
+          type: object
+          description: Denormalized practitioner identity fields
+        createdAt:
+          type: string
+          examples:
+          - '2026-01-15T10:00:00Z'
+          description: Flag creation timestamp (ISO-8601)
+        markedSeenAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: When the flag was last marked seen (ISO-8601); null when never seen
+        markedSeenBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who last marked the flag seen (display name; raw id when unresolvable)
+        originMonitoringWorkflowId:
+          type: string
+          examples:
+          - wf-123
+          description: Origin monitoring workflow id (drawer View All Flags link)
+        metaData:
+          type: object
+          description: Record-type-specific metadata fields, keyed by the row's recordType
+          anyOf:
+          - $ref: '#/components/schemas/StateLicensesFlagMetaData'
+          - $ref: '#/components/schemas/DeaDataFlagMetaData'
+          - $ref: '#/components/schemas/CdsDataFlagMetaData'
+          - $ref: '#/components/schemas/BoardCertificationsFlagMetaData'
+          - $ref: '#/components/schemas/MalpracticeInsurancesFlagMetaData'
+          - $ref: '#/components/schemas/NpdbDataFlagMetaData'
+          - $ref: '#/components/schemas/LicensureActionsFlagMetaData'
+          - $ref: '#/components/schemas/SanctionsFlagMetaData'
+          - $ref: '#/components/schemas/NppesFlagMetaData'
+          - $ref: '#/components/schemas/CompactLicenseFlagMetaData'
+          - $ref: '#/components/schemas/DeathMasterMatchesFlagMetaData'
+    AttachmentInfo:
+      type: object
+      description: Metadata for a flag history attachment (no signed URL, no storage path)
+      properties:
+        id:
+          type: string
+          description: Attachment identifier
+        fileName:
+          type: string
+          examples:
+          - license.pdf
+          description: Original uploaded file name
+        createdAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: Attachment creation timestamp (ISO-8601)
+        createdBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who uploaded the attachment (display name; raw id when unresolvable)
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    LicensureActionsFlagMetaData:
+      title: LicensureActionsFlagMetaData
+      description: 'metaData returned on licensure-actions flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        actionType: {}
+        createdAt: {}
+        createdBy: {}
+        credWorkflowRecordOrigin: {}
+        details: {}
+        flaggedDate: {}
+        lastActionDate: {}
+        licenseNumber: {}
+        message: {}
+        reportDate: {}
+        source: {}
+        sourceUpdateDate: {}
+        state: {}
+        updatedAt: {}
+        updatedBy: {}
+        verifiedBy: {}
+        verifiedDate: {}
+      additionalProperties: false
+    StatesResult:
+      type: object
+      description: Practitioner states-to-credential write outcome
+      properties:
+        attempted:
+          type: boolean
+          description: Whether the write was attempted
+        ok:
+          type: boolean
+          description: Whether the state is now on the practitioner
+        added:
+          type: array
+          items:
+            type: string
+          description: States actually appended
+        resulting:
+          type: array
+          items:
+            type: string
+          description: States to credential afterwards; empty, never null
+        slicesUpdated:
+          type: integer
+          format: int32
+          description: Contributing slices written (0 or 1)
+        alreadyPresent:
+          type: boolean
+          description: The state was already present; nothing written
+        detail:
+          type: string
+          description: Failure detail when ok is false
+    RegenerateNpdbPdfRequest:
+      type: object
+      required:
+      - idempotencyKey
+      description: Request to regenerate a flag's NPDB PDF
+      properties:
+        idempotencyKey:
+          type: string
+          examples:
+          - 9b2f6e0a-6f0f-4c33-9a51-7f0f2f4c9d1e
+          description: Client-minted idempotency key for this regenerate request; a retry of the same logical request must reuse the same key. At most 128 characters.
+    Date:
+      type: string
+      format: date
+    FlagHistoryWithAttachmentsResponse:
       type: object
       properties:
         id:
           type: string
-        tenantProviderId:
-          type: string
-        flagTypeId:
+        flagId:
           type: string
         data:
           $ref: '#/components/schemas/JsonNode'
@@ -158,71 +1128,10 @@ components:
           $ref: '#/components/schemas/Date'
         createdBy:
           type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        originMonitoringWorkflowId:
-          type: string
-        hash:
-          type: string
-    StatusUpdateResult:
-      type: object
-      description: Result of a single flag status update
-      properties:
-        flagId:
-          type: string
-          description: Flag ID that was processed
-          examples:
-          - flag-123
-        flagResponse:
-          description: Flag response if successful
-          type: object
-          $ref: '#/components/schemas/FlagResponse'
-        errorMessage:
-          type: string
-          description: Error message if the operation failed
-        errorCode:
-          type: string
-          description: Error code if the operation failed
-    BulkFlagStatusUpdateResponse:
-      description: Response containing results of bulk flag status update operation
-      type: object
-      required:
-      - successful
-      - failed
-      - totalCount
-      - successCount
-      - failureCount
-      properties:
-        successful:
+        attachments:
           type: array
           items:
-            $ref: '#/components/schemas/StatusUpdateResult'
-          description: List of successful status updates
-        failed:
-          type: array
-          items:
-            $ref: '#/components/schemas/StatusUpdateResult'
-          description: List of failed status updates
-        totalCount:
-          type: integer
-          format: int32
-          description: Total number of flags processed
-          examples:
-          - 5
-        successCount:
-          type: integer
-          format: int32
-          description: Number of successful updates
-          examples:
-          - 4
-        failureCount:
-          type: integer
-          format: int32
-          description: Number of failed updates
-          examples:
-          - 1
+            $ref: '#/components/schemas/FlagHistoryAttachmentResponse'
     JsonNode:
       type: object
       properties:
@@ -270,23 +1179,231 @@ components:
           type: boolean
         binary:
           type: boolean
-    BulkFlagStatusUpdateRequest:
-      description: Request to update status of multiple flags
+    NpdbPdfBlock:
+      type: object
+      description: Rendered NPDB report PDF for the flag's stamped data (no storage path)
+      properties:
+        status:
+          type: string
+          examples:
+          - READY
+          description: 'PDF availability: READY (url present), GENERATING (render in flight), FAILED (last render failed; errorMessage present), NOT_AVAILABLE (nothing rendered for the flag''s current data), PERMISSION_REQUIRED (caller lacks MONITORING_WORKFLOW_NPDB_PDF_READ; no url, whatever the PDF''s state)'
+        url:
+          type: string
+          description: Short-lived signed URL opening the PDF inline; READY only
+        expiresAt:
+          type: string
+          examples:
+          - '2026-08-19T11:00:00Z'
+          description: Signed URL expiry (ISO-8601); READY only
+        generatedAt:
+          type: string
+          examples:
+          - '2026-08-19T10:00:00Z'
+          description: When the PDF was produced (ISO-8601); READY only
+        errorMessage:
+          type: string
+          description: Sanitised failure reason; FAILED only
+    NppesFlagMetaData:
+      title: NppesFlagMetaData
+      description: 'metaData returned on nppes flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        active: {}
+        enumerationType: {}
+        firstName: {}
+        flaggedDate: {}
+        lastName: {}
+        message: {}
+        middleName: {}
+        npi: {}
+        organizationId: {}
+        sourceUpdateDate: {}
+        status: {}
+      additionalProperties: false
+    CdsDataFlagMetaData:
+      title: CdsDataFlagMetaData
+      description: 'metaData returned on cds-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        expirationDate: {}
+        flaggedDate: {}
+        message: {}
+        number: {}
+        source: {}
+        sourceUpdateDate: {}
+        state: {}
+        status: {}
+      additionalProperties: false
+    BulkFlagStatusUpdateResponse:
       type: object
       required:
-      - flagIds
+      - successful
+      - failed
+      - totalCount
+      - successCount
+      - failureCount
+      description: Response containing results of bulk flag status update operation
       properties:
-        flagIds:
+        successful:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of successful status updates
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of failed status updates
+        totalCount:
+          type: integer
+          format: int32
+          examples:
+          - 5
+          description: Total number of flags processed
+        successCount:
+          type: integer
+          format: int32
+          examples:
+          - 4
+          description: Number of successful updates
+        failureCount:
+          type: integer
+          format: int32
+          examples:
+          - 1
+          description: Number of failed updates
+    MalpracticeInsurancesFlagMetaData:
+      title: MalpracticeInsurancesFlagMetaData
+      description: 'metaData returned on malpractice-insurances flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        aggregateCoverageAmount: {}
+        carrierName: {}
+        effectiveDate: {}
+        expiryDate: {}
+        flaggedDate: {}
+        message: {}
+        occuranceCoverageAmount: {}
+        policyNumber: {}
+        source: {}
+        sourceUpdateDate: {}
+        status: {}
+        unlimitedCoverage: {}
+      additionalProperties: false
+    FlagResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantProviderId:
+          type: string
+        flagTypeId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        originMonitoringWorkflowId:
+          type: string
+        hash:
+          type: string
+        tenantId:
+          type: string
+        practitionerPrefix:
+          type: string
+        practitionerFirstName:
+          type: string
+        practitionerMiddleName:
+          type: string
+        practitionerLastName:
+          type: string
+        practitionerNpi:
+          type: string
+        statesToCredential:
           type: array
           items:
             type: string
-            pattern: \S
-          description: List of flag IDs to update
+        practitionerType:
+          type: array
+          items:
+            type: string
+        credentialingStatus:
+          type: string
+        dataSource:
+          type: string
+        practitionerDateOfBirth:
+          type: string
+        practitionerEmail:
+          type: string
+        lastCredentialedDate:
+          type: string
+        markedSeenAt:
+          $ref: '#/components/schemas/Date'
+        markedSeenBy:
+          type: string
+        certifyPractitionerId:
+          type: string
+        tenantPractitionerTenantId:
+          type: string
+        histories:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
+        historiesTruncated:
+          type: boolean
+        npdbDocument:
+          $ref: '#/components/schemas/DocumentResponse'
+    AddStateToCredentialRequest:
+      type: object
+      required:
+      - note
+      description: Request to add the flag's state(s) to the practitioner's states to credential
+      properties:
+        note:
+          type: string
           examples:
-          - - flag-123
-            - flag-456
-            - flag-789
-          minItems: 1
+          - Confirmed with the provider; they now practise in TX.
+          description: Reviewer note recorded on the flag's Seen history entry. Required, non-blank, at most 2000 characters.
+        states:
+          type: array
+          examples:
+          - - NY
+            - NJ
+          items:
+            type: string
+          description: 'Compact-license flags only: the reviewer''s selection from the delta between the flag''s coveredStates and the practitioner''s current states to credential. Must be absent/empty for state-licenses, DEA and CDS flags, which derive their single state from the flag itself.'
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    BulkSelectionCountMismatchResponse:
+      type: object
+      description: Returned (409) when a filter selection's expected count no longer matches the live count.
+      properties:
+        expectedCount:
+          type: integer
+          format: int32
+          examples:
+          - 42
+          description: The count of matching flags the client had cached when it submitted the filter selection (its stale snapshot)
+        currentCount:
+          type: integer
+          format: int64
+          examples:
+          - 47
+          description: The live count of flags currently matching the filter, re-evaluated by the server at request time. Retry the bulk request with this value as the new expectedCount.
     JsonNodeType:
       type: string
       enum:
@@ -299,9 +1416,406 @@ components:
       - OBJECT
       - POJO
       - STRING
-    Date:
-      type: string
-      format: date
+    StateLicensesFlagMetaData:
+      title: StateLicensesFlagMetaData
+      description: 'metaData returned on state-licenses flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        expiration: {}
+        flaggedDate: {}
+        issueDate: {}
+        licenseNumber: {}
+        licenseSource: {}
+        licenseStatus: {}
+        licenseType: {}
+        message: {}
+        practitionerType: {}
+        sourceUpdateDate: {}
+        state: {}
+        url: {}
+      additionalProperties: false
+    SanctionsFlagMetaData:
+      title: SanctionsFlagMetaData
+      description: 'metaData returned on sanctions flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              createdAt: {}
+              createdBy: {}
+              expirationDate: {}
+              fileType: {}
+              fileUrl: {}
+              originalFileName: {}
+            additionalProperties: false
+        createdAt: {}
+        createdBy: {}
+        credWorkflowRecordOrigin: {}
+        data: {}
+        dateOfReport: {}
+        flaggedDate: {}
+        message: {}
+        parsedData:
+          type: object
+          properties:
+            OfacType: {}
+            actionOrReason: {}
+            activeDate: {}
+            additionalComments: {}
+            address1: {}
+            address2: {}
+            address3: {}
+            address4: {}
+            addresses: {}
+            alternateDob: {}
+            alternateName: {}
+            alternateNumber: {}
+            alternateRemarks: {}
+            alternateType: {}
+            blankDeprecated: {}
+            businessName: {}
+            cage: {}
+            callSign: {}
+            city: {}
+            classification: {}
+            clmRejectDate: {}
+            comments: {}
+            country: {}
+            creationDate: {}
+            crossReference: {}
+            crosswalk_id: {}
+            ctCode: {}
+            dataAcquireDate: {}
+            dataIssuingSource: {}
+            dataSourceUrl: {}
+            dob: {}
+            effectiveDate: {}
+            ein: {}
+            eligibleToOrderAndRefer: {}
+            entNumber: {}
+            exclDate: {}
+            excludingAgency: {}
+            exclusionDate: {}
+            exclusionInitiatedBy: {}
+            exclusionProgram: {}
+            exclusionType: {}
+            firstName: {}
+            fullName: {}
+            general: {}
+            grt: {}
+            lastName: {}
+            lastUpdated: {}
+            licenseNumber: {}
+            licenseType: {}
+            middleName: {}
+            npi: {}
+            npi_attribution_source: {}
+            openDataFlag: {}
+            optoutEffectiveDate: {}
+            optoutEndDate: {}
+            orgId: {}
+            orgName: {}
+            preclusions_data: {}
+            prefix: {}
+            program: {}
+            recordStatus: {}
+            reinDate: {}
+            reincarnationDate: {}
+            remarks: {}
+            samNumber: {}
+            sanctionEndDate: {}
+            sanctionType: {}
+            sdnName: {}
+            sdnType: {}
+            sourceUpdateDate: {}
+            specialty: {}
+            state: {}
+            suffix: {}
+            terminationDate: {}
+            title: {}
+            tonnage: {}
+            uniqueEntityId: {}
+            upin: {}
+            vesselFlag: {}
+            vesselOwner: {}
+            vesselType: {}
+            waiverDate: {}
+            waiverState: {}
+            zipCode: {}
+          additionalProperties: false
+        sanctionStartDate: {}
+        sanctionType: {}
+        source: {}
+        sourceUpdateDate: {}
+        typeOfAction: {}
+        updatedAt: {}
+        updatedBy: {}
+        verifiedBy: {}
+        verifiedByName: {}
+        verifiedDate: {}
+      additionalProperties: false
+    HistoryEntry:
+      type: object
+      description: A single flag history record
+      properties:
+        id:
+          type: string
+          description: History record identifier
+        status:
+          type: string
+          examples:
+          - closed
+          description: Status set by this transition
+        description:
+          type: string
+          description: Free-text comment attached to the transition
+        createdAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: History record creation timestamp (ISO-8601)
+        createdBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who created the record (display name; raw id when unresolvable)
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentInfo'
+          description: Attachments linked to this history record
+    DocumentResponse:
+      type: object
+      properties:
+        documentId:
+          type: string
+        entityId:
+          type: string
+        docType:
+          type: string
+        scopeKey:
+          type: string
+        sourceDigest:
+          type: string
+        recipeVersion:
+          type: string
+        status:
+          type: string
+        supersededBy:
+          type: string
+        errorMessage:
+          type: string
+        filePath:
+          type: string
+        tenantPractitionerId:
+          type: string
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        updatedAt:
+          type: string
+        updatedBy:
+          type: string
+    CompactLicenseFlagMetaData:
+      title: CompactLicenseFlagMetaData
+      description: 'metaData returned on compact-license flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        compactType: {}
+        coveredStates: {}
+        createdAt: {}
+        createdBy: {}
+        dataSource: {}
+        effectiveStatus: {}
+        expirationDate: {}
+        flaggedDate: {}
+        homeLicenseLinkSource: {}
+        homeLicenseNumber: {}
+        homeLicenseState: {}
+        homeLicenseType: {}
+        issueDate: {}
+        licenseNumber: {}
+        message: {}
+        sourceUpdateDate: {}
+        status: {}
+        updatedAt: {}
+        updatedBy: {}
+        verifiedBy: {}
+        verifiedByName: {}
+        verifiedDate: {}
+      additionalProperties: false
+    PractitionerInfo:
+      type: object
+      description: Practitioner identity fields denormalized onto the flag row
+      properties:
+        prefix:
+          type: string
+          examples:
+          - Dr.
+          description: Name prefix, e.g. Dr.
+        firstName:
+          type: string
+          examples:
+          - Jane
+          description: First name
+        middleName:
+          type: string
+          examples:
+          - A
+          description: Middle name
+        lastName:
+          type: string
+          examples:
+          - Doe
+          description: Last name
+        npi:
+          type: string
+          examples:
+          - '1234567890'
+          description: NPI (top-level practitioner NPI, not metaData)
+        providerType:
+          type: array
+          examples:
+          - - MD
+          items:
+            type: string
+          description: Provider/practitioner types (multi-value)
+        statesToCredential:
+          type: array
+          examples:
+          - - CA
+            - NY
+          items:
+            type: string
+          description: States the practitioner is credentialed in
+        credentialingStatus:
+          type: string
+          examples:
+          - CRED_APPROVED
+          description: Credentialing status
+        dateOfBirth:
+          type: string
+          examples:
+          - '1980-05-04'
+          description: Date of birth (ISO date)
+        email:
+          type: string
+          examples:
+          - jane.doe@example.com
+          description: Primary email
+        lastCredentialedDate:
+          type: string
+          examples:
+          - '2024-11-02'
+          description: Last credentialed date (ISO date)
+    FlagHistoryAttachmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        flagHistoryId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+    AddStateToCredentialResponse:
+      type: object
+      description: Outcome of adding a flag's state to the practitioner's states to credential
+      properties:
+        status:
+          type: string
+          examples:
+          - SUCCESS
+          description: SUCCESS | PARTIAL_SUCCESS | FAILED
+        states:
+          type: array
+          examples:
+          - - TX
+          items:
+            type: string
+          description: State(s) actioned — the flag's single metaData.state, or for a compact-license flag, the reviewer's validated selection
+        statesResult:
+          $ref: '#/components/schemas/StatesResult'
+          type: object
+          description: Practitioner states-to-credential write outcome
+        flagResult:
+          $ref: '#/components/schemas/FlagResult'
+          type: object
+          description: Flag move-to-seen outcome; attempted=false when skipped
+        monitoringWorkflowResult:
+          $ref: '#/components/schemas/WorkflowResult'
+          type: object
+          description: Monitoring workflow update outcome; attempted=false when skipped
+    GetFlagsResponse:
+      type: object
+      description: Paginated list of flag rows for the flags landing page
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 137
+          description: Total number of flags matching the query
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetFlagResponse'
+          description: Flag rows for the current page
+    WorkflowResult:
+      type: object
+      description: Monitoring workflow update outcome
+      properties:
+        attempted:
+          type: boolean
+          description: Whether the update was attempted
+        ok:
+          type: boolean
+          description: Whether the write and recalculation both succeeded
+        workflowId:
+          type: string
+          description: The workflow updated, or null when none is active
+        sectionsReevaluated:
+          type: array
+          items:
+            type: string
+          description: Flag sections recalculated
+    BulkFlagStatusUpdateRequest:
+      type: object
+      description: Request to update status of multiple flags
+      properties:
+        type:
+          type: string
+          examples:
+          - ids
+          description: 'Selection type: "ids" (default) or "filter".'
+        flagIds:
+          type: array
+          examples:
+          - - flag-123
+            - flag-456
+            - flag-789
+          items:
+            type: string
+            pattern: \S
+          description: Flag IDs to update (used when type is "ids").
+        filter:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: Filter selecting all matching flags (required when type is "filter").
+        expectedCount:
+          type: integer
+          format: int32
+          description: Expected number of matching flags for the filter (required when type is "filter").
+        comment:
+          type: string
+          description: Optional comment for the status change; stored on each flag's history record.
   securitySchemes:
     jwt:
       type: http

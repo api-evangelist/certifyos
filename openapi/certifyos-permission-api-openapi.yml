@@ -22,55 +22,74 @@ tags:
 paths:
   /permissions:
     get:
-      summary: Get All Permissions
-      description: Returns all permissions from the database
+      summary: List all permissions for a tenant
+      description: 'Returns a paginated list of all permission records scoped to the tenant identified by the tenant-id header. Use this endpoint to inspect the full permission catalog before assigning permissions to roles; for a single known permission, use GET /permissions/{id} instead.
+
+
+        Preconditions: the caller must be authenticated and hold the READ_PERMISSION permission for the tenant.
+
+
+        Pagination is offset-based: supply page (0-based, defaults to 0) and size (defaults to 100). The response contains data (the permission objects for this page), totalCount, hasNext, and hasPrevious. Note: the createdAt and updatedAt fields on each permission are always null in the current implementation, and the envelope''s page/size fields are not populated by this endpoint.'
       operationId: getAllPermissions
       tags:
       - Permission
       parameters:
-      - description: Page number for offset based pagination (0-based index). Defaults to 0 if not specified.
+      - description: Zero-based page number for offset pagination. Defaults to 0 when omitted. Maximum value is not documented.
         name: page
         in: query
         schema:
           type: integer
           format: int32
           default: '0'
-      - description: Number of items per page. Defaults to 100 if not specified.
+      - description: Number of permission records to return per page. Defaults to 100 when omitted. Maximum value is not documented.
         name: size
         in: query
         schema:
           type: integer
           format: int32
           default: '100'
-      - name: tenant-id
+      - description: Tenant identifier that scopes the request to a specific tenant's permission catalog.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
       responses:
         '200':
-          description: Permissions retrieved successfully
+          description: The requested page of permission records for this tenant, wrapped in a pagination envelope (data, totalCount, hasNext, hasPrevious). The createdAt and updatedAt fields on each permission are always null in the current implementation.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PermissionListResponseDto'
         '401':
-          description: Authentication required
+          description: The request lacks a valid, non-expired JSON Web Token. Obtain a new token via the authentication endpoint and retry with it in the Authorization header.
           content:
             application/json: {}
         '500':
-          description: Internal server error
+          description: An unexpected error occurred while retrieving permissions, typically a downstream data-service failure. The response body is empty; retry the request or contact support if the error persists.
           content:
             application/json: {}
       security:
       - jwt: []
     post:
-      summary: Create Permission
-      description: Creates a new permission
+      summary: Create a new permission definition
+      description: 'Creates a new permission entry in the tenant''s permission catalog. Use this during initial RBAC setup or when introducing a new resource/action pair that roles can then be granted; it is typically called by administrators configuring access control, not by end-user workflows.
+
+
+        Preconditions: the caller must be authenticated and hold the CREATE_PERMISSION permission for the tenant.
+
+
+        Supply a request body with resource, action, and optionally description.
+
+
+        On success, returns the created permission including its server-assigned id. Note: createdAt and updatedAt are always null in the current implementation.'
       operationId: createPermission
       tags:
       - Permission
       parameters:
-      - name: tenant-id
+      - description: Tenant identifier that scopes the created permission to a specific tenant's permission catalog.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
@@ -82,35 +101,44 @@ paths:
         required: true
       responses:
         '201':
-          description: Permission created successfully
+          description: 'The newly created permission, including its server-assigned id. Note: createdAt and updatedAt are always null in the current implementation.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PermissionResponseDto'
         '400':
-          description: Bad Request
+          description: Returned when the downstream data service rejects the request body as invalid (for example, a missing resource or action). This endpoint performs no local bean-validation, so the exact trigger is determined by the permissions data service.
           content:
             application/json: {}
         '500':
-          description: Internal Server Error
+          description: An unexpected error occurred while creating the permission, typically a downstream data-service failure. Retry the request or contact support if the error persists.
           content:
             application/json: {}
       security:
       - jwt: []
   /permissions/{id}:
     put:
-      summary: Update Permission
-      description: Updates an existing permission
+      summary: Fully replace a permission's fields
+      description: 'Performs a full replacement of the permission identified by {id}. Resource and action are required on every call, and description is fully replaced by the value supplied in the request body -- omitting description clears it. This is a full-replace operation, not a partial patch; use it only when you intend to set every field explicitly, since there is no separate partial-update endpoint for permissions.
+
+
+        Preconditions: the caller must be authenticated and hold the UPDATE_PERMISSION permission for the tenant, and the permission identified by {id} must already exist (create it first with POST /permissions).
+
+
+        On success, returns the updated permission; createdAt and updatedAt are always null in the current implementation. Returns 404 when {id} does not exist.'
       operationId: updatePermission
       tags:
       - Permission
       parameters:
-      - name: id
+      - description: Server-assigned identifier of the permission to replace. Treat as an opaque string; pass back exactly the id value returned by GET /permissions or POST /permissions.
+        name: id
         in: path
         required: true
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the operation to a specific tenant's permission catalog.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
@@ -122,204 +150,228 @@ paths:
         required: true
       responses:
         '200':
-          description: Permission updated successfully
+          description: 'The permission after the full replacement, reflecting the resource, action, and description values supplied in the request body. Note: createdAt and updatedAt are always null in the current implementation.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PermissionResponseDto'
         '400':
-          description: Bad Request
+          description: Returned when the downstream data service rejects the request body as invalid (for example, a missing resource or action). This endpoint performs no local bean-validation, so the exact trigger is determined by the permissions data service.
           content:
             application/json: {}
         '404':
-          description: Permission not found
+          description: No permission with the given id exists in this tenant's catalog. Create it first with POST /permissions, or verify the id and tenant-id header.
           content:
             application/json: {}
         '500':
-          description: Internal Server Error
+          description: An unexpected error occurred while replacing the permission, typically a downstream data-service failure. Retry the request or contact support if the error persists.
           content:
             application/json: {}
       security:
       - jwt: []
     get:
-      summary: Get Permission by ID
-      description: Retrieves a specific permission by its ID
+      summary: Retrieve a single permission by its ID
+      description: 'Returns the permission record identified by {id}. Use this when you already have a specific permission id (obtained from POST /permissions or GET /permissions) and need its full details; for browsing the full catalog, use GET /permissions instead.
+
+
+        Preconditions: the caller must be authenticated and hold the READ_PERMISSION permission for the tenant.
+
+
+        On success, returns the matching permission (id, resource, action, description); createdAt and updatedAt are always null in the current implementation. Returns 404 when no permission with that id exists for the tenant.'
       operationId: getPermissionById
       tags:
       - Permission
       parameters:
-      - name: id
+      - description: Server-assigned identifier of the permission to retrieve. Treat as an opaque string; pass back exactly the id value returned by GET /permissions or POST /permissions.
+        name: id
         in: path
         required: true
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the lookup to a specific tenant's permission catalog.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
       responses:
         '200':
-          description: Permission retrieved successfully
+          description: 'The permission matching the given id, including its resource, action, and description. Note: createdAt and updatedAt are always null in the current implementation.'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PermissionResponseDto'
         '400':
-          description: Bad Request
+          description: Returned when the request is malformed, such as an invalid id format.
           content:
             application/json: {}
         '404':
-          description: Permission not found
+          description: No permission with the given id exists in this tenant's catalog. Verify the id value and tenant-id header, or use GET /permissions to look up a valid id.
           content:
             application/json: {}
         '500':
-          description: Internal Server Error
+          description: An unexpected error occurred while retrieving the permission, typically a downstream data-service failure. Retry the request or contact support if the error persists.
           content:
             application/json: {}
       security:
       - jwt: []
     delete:
-      summary: Delete Permission
-      description: Deletes a permission by its ID
+      summary: Delete a permission definition by ID
+      description: 'Permanently removes the permission record identified by {id} from the tenant''s permission catalog. Use this to retire a resource/action pair that is no longer needed.
+
+
+        Preconditions: the caller must be authenticated and hold the DELETE_PERMISSION permission for the tenant.
+
+
+        On success, returns an empty response body. Returns 404 when no permission with that id exists for the tenant.'
       operationId: deletePermission
       tags:
       - Permission
       parameters:
-      - name: id
+      - description: Server-assigned identifier of the permission to delete. Treat as an opaque string; pass back exactly the id value returned by GET /permissions or POST /permissions.
+        name: id
         in: path
         required: true
         schema:
           type: string
-      - name: tenant-id
+      - description: Tenant identifier that scopes the deletion to a specific tenant's permission catalog.
+        required: true
+        name: tenant-id
         in: header
         schema:
           type: string
       responses:
         '204':
-          description: Permission deleted successfully
+          description: The permission was deleted; the response body is empty.
         '400':
-          description: Bad Request
+          description: Returned when the request is malformed, such as an invalid id format.
           content: {}
         '404':
-          description: Permission not found
+          description: No permission with the given id exists in this tenant's catalog. Verify the id and tenant-id header before retrying.
           content: {}
         '500':
-          description: Internal Server Error
+          description: An unexpected error occurred while deleting the permission, typically a downstream data-service failure. Retry the request or contact support if the error persists.
           content: {}
       security:
       - jwt: []
 components:
   schemas:
-    PermissionListResponseDto:
-      description: Paginated list of permissions
+    PermissionUpdateRequest:
       type: object
+      required:
+      - resource
+      - action
+      description: Request body for updating a permission
+      properties:
+        resource:
+          type: string
+          examples:
+          - user
+          maxLength: 100
+          description: 'Name of the resource this permission will govern (e.g., ''user'', ''roster''). At most 100 characters. Required on every call: PUT /permissions/{id} is a full replace, so this value must always be supplied.'
+        action:
+          type: string
+          examples:
+          - read
+          maxLength: 100
+          description: 'Name of the action this permission will grant on the resource (e.g., ''read'', ''create''). At most 100 characters. Required on every call: PUT /permissions/{id} is a full replace, so this value must always be supplied.'
+        description:
+          type: string
+          examples:
+          - Allows reading user profiles
+          maxLength: 500
+          description: 'Human-readable explanation of what the permission allows. At most 500 characters. Optional: since PUT /permissions/{id} is a full replace, omitting this value clears any existing description.'
+    PermissionCreateRequest:
+      type: object
+      required:
+      - resource
+      - action
+      description: Request body for creating a new permission
+      properties:
+        resource:
+          type: string
+          examples:
+          - user
+          maxLength: 100
+          pattern: \S
+          description: Name of the resource this permission will govern (e.g., 'user', 'roster').
+        action:
+          type: string
+          examples:
+          - read
+          maxLength: 100
+          pattern: \S
+          description: Name of the action this permission will grant on the resource (e.g., 'read', 'create').
+        description:
+          type: string
+          examples:
+          - Allows reading user profiles
+          maxLength: 500
+          description: Optional human-readable explanation of what the permission allows.
+    PermissionListResponseDto:
+      type: object
+      description: Paginated list of permissions
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/PermissionResponseDto'
-          description: List of permissions
+          description: Permission records included on this page. May be null (rather than an empty array) when the underlying data service returns no records — e.g. a page beyond the last available record — so consumers should treat null and [] equivalently.
         totalCount:
           type: integer
           format: int64
-          description: Total number of permissions
+          description: Total number of permission records across all pages for this tenant, not just the current page.
         page:
           type: integer
           format: int32
-          description: Current page number
+          description: Currently always null — this endpoint does not populate a page number in the envelope.
         size:
           type: integer
           format: int32
-          description: Number of items per page
+          description: Currently always null — this endpoint does not populate a page size in the envelope.
         hasNext:
           type: boolean
-          description: Whether there is a next page
+          description: Whether a subsequent page of results is available, based on the presence of a next-page link from the underlying data service.
         hasPrevious:
           type: boolean
-          description: Whether there is a previous page
-    PermissionUpdateRequest:
-      description: Request body for updating a permission
-      type: object
-      properties:
-        resource:
-          type: string
-          maxLength: 100
-          description: Resource name
-          examples:
-          - user
-        action:
-          type: string
-          maxLength: 100
-          description: Action name
-          examples:
-          - read
-        description:
-          type: string
-          maxLength: 500
-          description: Permission description
-          examples:
-          - Allows reading user profiles
+          description: Whether a preceding page of results is available, based on the presence of a previous-page link from the underlying data service.
     OffsetDateTime:
       type: string
       format: date-time
       examples:
       - '2022-03-10T12:15:50-04:00'
-    PermissionCreateRequest:
-      description: Request body for creating a new permission
-      type: object
-      properties:
-        resource:
-          type: string
-          maxLength: 100
-          pattern: \S
-          description: The resource name (e.g., 'user', 'roster')
-          examples:
-          - user
-        action:
-          type: string
-          maxLength: 100
-          pattern: \S
-          description: The action name (e.g., 'read', 'create')
-          examples:
-          - read
-        description:
-          type: string
-          maxLength: 500
-          description: A brief description of the permission
-          examples:
-          - Allows reading user profiles
     PermissionResponseDto:
       type: object
       description: Permission information response
       properties:
         id:
           type: string
-          description: Permission ID
           examples:
           - perm-123-456-789
+          description: Server-assigned unique identifier for the permission.
         resource:
           type: string
-          description: Resource name
           examples:
           - user
+          description: Name of the resource this permission governs (e.g. 'user', 'roster'). Mirrors the resource value supplied when the permission was created or last replaced.
         action:
           type: string
-          description: Action name
           examples:
           - read
+          description: Name of the action this permission grants on the resource (e.g. 'read', 'create'). Mirrors the action value supplied when the permission was created or last replaced.
         description:
           type: string
-          description: Permission description
           examples:
           - Allows reading user profiles
+          description: Human-readable explanation of what the permission allows. Optional; may be null if it was not supplied at creation.
         createdAt:
-          description: Creation timestamp
-          type: string
           $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          description: Timestamp the permission was created, in ISO-8601 format.
         updatedAt:
-          description: Last update timestamp
-          type: string
           $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          description: Timestamp the permission was last updated, in ISO-8601 format.
   securitySchemes:
     jwt:
       type: http

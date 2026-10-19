@@ -22,13 +22,19 @@ tags:
 paths:
   /roster:
     get:
-      summary: Get all roster jobs
-      description: Returns a list of all roster jobs for the tenant
+      summary: List roster jobs for the tenant
+      description: 'Returns a page of roster import jobs belonging to the tenant named in the `tenant-id` header. **When to use:** call this to browse or monitor roster jobs; for a single job, use `GET /roster/{id}`, which additionally returns a download link for the uploaded file. **Pagination:** three schemes are available and exactly one should be used per request - offset paging with `page` and `size`, forward cursor paging with `startAfterId`, or backward cursor paging with `endAtId`. Combining them in a single request produces undefined results. **Sorting and filtering:** `sortBy` chooses the field to order by and defaults to `createdAt`, while `sortDirection` accepts `ASC` or `DESC` and defaults to `DESC`. The optional `filter` parameter takes a URL-encoded JSON object supporting `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`, and `contains`; `tenantId` is applied automatically from the header and must not be included. **What you get back:** an envelope carrying the roster jobs in `data`, along with pagination links and a total count where the underlying store reports one. Read-only; no state is mutated. Note: when the upstream data layer fails (including an unparseable `filter`), this endpoint currently returns 200 with an empty body rather than an error status - treat an empty (non-envelope) body as a retryable failure, not as an empty result set. **Fields carried in `data`.** A roster job''s payload is a free-form object, so its keys are documented here rather than as schema properties. Not every key is present at every stage - counters and result keys appear as processing progresses. *Status and type*
+
+        - `status`: current stage of the job. Each value means:
+
+        - `PENDING`: accepted and queued; validation has not started. - `PRE_PROCESSING`: held for review before validation, for uploads that require it. - `VALIDATION_IN_PROGRESS`: rows are being checked against the roster''s schema. - `VALIDATION_FAILED`: validation finished and at least one row failed; the job waits for corrections. - `VALIDATED`: every row passed validation; the job is waiting for an approve or reject decision. - `REVALIDATE`: corrected rows have been resubmitted and validation is running again. - `APPROVED`: the import was approved and ingestion has been queued. - `IN_PROGRESS`: rows are being written into the platform. - `COMPLETED`: ingestion finished; `completedRecords` and `failedRecords` report the outcome. - `FAILED`: the job stopped on an error and did not finish. - `CANCELLED`: the import was rejected, or the job was cancelled before ingestion. - `jobType`: kind of entity the file contains - PRACTITIONER, FACILITY, or GROUP (GROUP uploads require the tenant''s supportGroupRosters configuration). - `templateId`: identifier of the roster template describing the file''s column layout. - `description`: free-text note supplied when the roster was uploaded. *File*
+
+        - `filename`: name of the file currently attached to the job. - `filePath`: storage path of that file, relative to the bucket. - `bucketName`: storage bucket holding the file. - `sheetName`: worksheet read from the file, for .xlsx uploads only. - `initialFilename`, `initialFilePath`: the file first uploaded, retained after a reupload replaces it. - `uploadCount`: how many times a file has been uploaded to this job; 1 until the first reupload. - `attemptNumber`: which upload attempt the job is on. Unlike `uploadCount` this increments on every reupload, including an internal admin''s. Absent on jobs that predate attempt tracking. - `attempts`: summaries of finished upload attempts, oldest first. Bounded, not complete: the job record keeps only the more recent attempts so it stays small - how many is configurable, and a size guard on the stored array can leave fewer - so read `attemptsTruncated` for how many summaries were dropped. Returned on single-job reads and on list responses. `GET /roster/{id}/attempts` serves this same bounded set; it does not return the dropped summaries.'
       operationId: getAllRosters
       tags:
       - Roster
       parameters:
-      - description: End at document ID, for backward cursor-based pagination
+      - description: 'Upper-bound cursor: stop at the roster job with this identifier. Use an id from a previous response. Do not combine with `page`/`size` or `startAfterId`.'
         name: endAtId
         in: query
         schema:
@@ -79,13 +85,15 @@ paths:
         in: query
         schema:
           type: string
-      - description: Page number (0-based), for offset-based pagination
+      - description: Zero-based page number for offset pagination. Do not combine with the cursor parameters.
+        example: 0
         name: page
         in: query
         schema:
           type: integer
           format: int32
-      - description: Page size
+      - description: Number of roster jobs per page. Defaults to 50.
+        example: 50
         name: size
         in: query
         schema:
@@ -106,12 +114,12 @@ paths:
         schema:
           type: string
           default: DESC
-      - description: Start after document ID, for forward cursor-based pagination
+      - description: 'Forward cursor: return jobs positioned after this identifier. Use the last id from the previous page to continue iterating. Do not combine with `page`/`size` or `endAtId`.'
         name: startAfterId
         in: query
         schema:
           type: string
-      - description: Tenant ID for source type generation
+      - description: Unique identifier of the tenant that owns the roster jobs. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
@@ -119,33 +127,56 @@ paths:
           type: string
       responses:
         '200':
-          description: List of roster jobs
+          description: A page of roster jobs for the tenant, ordered by the requested sort field.
           content:
             application/json:
+              examples:
+                rosterJobsPage:
+                  value:
+                    totalCount: 2
+                    data:
+                    - id: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
+                      data:
+                        status: VALIDATION_FAILED
+                        jobType: PRACTITIONER
+                        filename: practitioners-2026-07.csv
+                    links:
+                      self: /roster?page=0&size=50
               schema:
-                $ref: '#/components/schemas/PagedResponse1'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/RosterJobsPage'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
       security:
       - jwt: []
     post:
-      summary: Create a roster
-      description: Creates a roster with the provided payload.
+      summary: Submit a roster file for import
+      description: 'Uploads a roster file and opens a new import job for it.
+
+
+        **When to use:** call this to start a fresh import cycle; to replace the file on a job that already exists, use `PUT /roster/{rosterId}/reupload` instead.
+
+
+        **Preconditions:** send a multipart request carrying the `file` part and the `tenant-id` header. `jobType` must be one of `PRACTITIONER`, `FACILITY`, or `GROUP` (`GROUP` additionally requires the tenant''s `supportGroupRosters` configuration), and a roster template matching that job type must already exist for the tenant - if it does not, the request fails with 404. Accepted file formats are CSV, XLSX, TSV, JSON, and TXT; when the file is an `.xlsx`, `sheetName` names the worksheet to read. `templateId` is always required and references the saved column layout; `mappings` may additionally supply column mappings inline as a JSON string.
+
+
+        **What you get back:** 201 with the newly created roster job at its starting status. Take the job''s id from the response and poll `GET /roster/{id}` to follow progress.
+
+
+        **Side effects:** the uploaded file is stored and a validation run is queued - except for `.txt` uploads, which are held at `PRE_PROCESSING` for pre-processing first, so read the returned status rather than assuming validation has begun. A notification email is sent for interactively uploaded rosters (automated feeds notify through their own configured recipients, and tenants may be excluded from these emails by configuration). Not idempotent - every call creates another roster job, so re-submitting the same file produces a duplicate import. The job''s `data` object carries its status, file details, and record counters; see `GET /roster/{id}` for the full list of keys it can hold.'
       operationId: createRoster
       tags:
       - Roster
       parameters:
-      - description: Tenant ID for source type generation
+      - description: Unique identifier of the tenant that owns the roster job. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Multipart form carrying the roster file and its import settings. `file`, `jobType`, and `templateId` are required; `description`, `sheetName`, and `mappings` are optional.
         content:
           multipart/form-data:
             schema:
@@ -164,80 +195,183 @@ paths:
                   type: string
                 mappings:
                   type: string
+            examples:
+              practitionerUpload:
+                summary: CSV practitioner roster submitted against a saved template
+                value: 'file: practitioners-2026-07.csv
+
+                  jobType: PRACTITIONER
+
+                  templateId: 7f3c1d9e-2b84-4a17-9c55-0e6d8f4b21aa
+
+                  description: July practitioner refresh'
         required: true
       responses:
-        '200':
-          description: Roster created successfully
+        '201':
+          description: The roster job that was created, at its initial status. Poll it by id to follow validation progress.
           content:
             application/json:
+              examples:
+                createdRoster:
+                  value:
+                    id: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
+                    tenantId: 0e58d0b2-fb06-44c7-b89b-0bea8e71e227
+                    createdBy: b74c2a90-1f8d-4e62-9a03-5c7e1d84f2b6
+                    data:
+                      status: PENDING
+                      jobType: PRACTITIONER
+                      filename: practitioners-2026-07.csv
+                      templateId: 7f3c1d9e-2b84-4a17-9c55-0e6d8f4b21aa
               schema:
                 $ref: '#/components/schemas/RosterResponse'
         '400':
-          description: Invalid input
+          description: Returned when the submitted file or metadata is rejected - an unsupported file format, an `.xlsx` without a readable `sheetName`, a missing `templateId`, an invalid `jobType`, or malformed `mappings` JSON. Correct the submission and retry.
+          content:
+            application/json:
+              examples:
+                invalidUpload:
+                  value:
+                    error: 'Unsupported file format: .pdf'
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the CREATE_ROSTER permission for this tenant.
         '404':
-          description: Template not found or not configured for tenant
+          description: Returned when no roster template matching the supplied `templateId` and `jobType` exists for the tenant. Create or configure the template first.
+          content:
+            application/json:
+              examples:
+                templateNotFound:
+                  value:
+                    error: Template not found or not configured for tenant
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '500':
-          description: Internal server error
+          description: Returned when the roster job could not be created. No job is left behind; retry the upload, and contact support if the failure persists.
+          content:
+            application/json:
+              examples:
+                creationFailed:
+                  value:
+                    error: Roster creation failed
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster/republish-event/{eventType}:
     put:
-      summary: Republish roster event for validation or ingestion
-      description: Triggers either validation or ingestion request based on the event type
+      summary: Re-trigger validation or ingestion for a roster job
+      description: 'Queues the validation or ingestion stage again for a roster job that already exists.
+
+
+        **When to use:** call this as a recovery step when a roster has stalled because its processing event was lost, and you need to nudge the pipeline without creating a new job. To submit a corrected file instead, use `PUT /roster/{rosterId}/reupload`.
+
+
+        **Preconditions:** supply the `tenant-id` header and set `eventType` in the path to either `validation` or `ingestion`; the value is matched case-insensitively and anything else is rejected with 400. The request body must carry `rosterId`, identifying an existing roster job. Only `rosterId` is read from the body - the tenant is taken from the header, and the acting user from the roster''s own record, so any `tenantId` or `userId` sent in the body is ignored.
+
+
+        **State guard:** the stage must still be meaningful for the job. Re-queuing `validation` on a roster that is already `VALIDATED`, or `ingestion` on one that is already `COMPLETED`, is rejected with 400 naming the current status rather than silently doing nothing.
+
+
+        **What you get back:** a short confirmation object echoing the event type that was queued. The work itself runs in the background, so poll the roster job to observe progress.
+
+
+        **Side effects:** a processing event is queued. Not idempotent while the roster remains in a re-processable state - repeated calls queue repeated runs.'
       operationId: republishRosterEvent
       tags:
       - Roster
       parameters:
-      - description: 'Event type: validation or ingestion'
+      - description: Processing stage to queue again. One of `validation` or `ingestion`, matched case-insensitively.
+        example: validation
         required: true
         name: eventType
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant that owns the roster job. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
-        description: Payload containing rosterId, tenantId, and userId
-        required: true
+        description: Object identifying the roster job to re-queue. Only `rosterId` is read; the tenant comes from the header and the acting user from the roster record, so any other fields sent here are ignored.
         content:
           application/json:
+            examples:
+              republishRequest:
+                value:
+                  rosterId: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
             schema:
               type: object
               additionalProperties: {}
+        required: true
       responses:
         '200':
-          description: Event republished successfully
+          description: Confirmation that the requested stage was queued for the roster job.
           content:
-            application/json: {}
+            application/json:
+              examples:
+                republished:
+                  value:
+                    message: Roster event republished successfully
+                    eventType: validation
+              schema:
+                $ref: '#/components/schemas/RepublishRosterEventResponse'
         '400':
-          description: Invalid request payload or event type
+          description: Returned when `eventType` is neither `validation` nor `ingestion`, when `rosterId` is missing from the body, when no roster with that id exists, or when the roster has already passed the stage being re-queued.
+          content:
+            application/json:
+              examples:
+                alreadyPastStage:
+                  summary: The roster has already completed this stage
+                  value:
+                    error: 'Roster already in status: VALIDATED for rosterId: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634 and eventType: validation'
+                invalidEventType:
+                  summary: Unsupported event type
+                  value:
+                    error: 'Invalid event type: reprocess. Must be ''validation'' or ''ingestion'''
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
+        '500':
+          description: Returned when the event could not be queued. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                republishFailed:
+                  value:
+                    error: Failed to republish roster event
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster/{id}:
     get:
-      summary: Get roster job by ID
-      description: Returns a roster job for the given ID
+      summary: Retrieve a roster job with a file download link
+      description: 'Returns a single roster import job, including a time-limited link to the file that was uploaded for it. **When to use:** call this to inspect the current status and metadata of one job, or to poll it after creating or reuploading a roster; to list every job for the tenant, use `GET /roster`. **Preconditions:** supply the `tenant-id` header and the roster job''s `id`. **What you get back:** the roster job, carrying three pre-signed download links in its `data` object - `rosterFileUrl` for the uploaded file, `templateUrl` for the template it was mapped with, and `mappingsFileUrl` for the resolved column mappings. All three are generated per request and expire after seven days, so treat them as short-lived: follow them promptly rather than storing them. Read-only; no state is mutated. **Fields carried in `data`.** A roster job''s payload is a free-form object, so its keys are documented here rather than as schema properties. Not every key is present at every stage - counters and result keys appear as processing progresses. *Status and type*
+
+        - `status`: current stage of the job. Each value means:
+
+        - `PENDING`: accepted and queued; validation has not started. - `PRE_PROCESSING`: held for review before validation, for uploads that require it. - `VALIDATION_IN_PROGRESS`: rows are being checked against the roster''s schema. - `VALIDATION_FAILED`: validation finished and at least one row failed; the job waits for corrections. - `VALIDATED`: every row passed validation; the job is waiting for an approve or reject decision. - `REVALIDATE`: corrected rows have been resubmitted and validation is running again. - `APPROVED`: the import was approved and ingestion has been queued. - `IN_PROGRESS`: rows are being written into the platform. - `COMPLETED`: ingestion finished; `completedRecords` and `failedRecords` report the outcome. - `FAILED`: the job stopped on an error and did not finish. - `CANCELLED`: the import was rejected, or the job was cancelled before ingestion. - `jobType`: kind of entity the file contains - PRACTITIONER, FACILITY, or GROUP (GROUP uploads require the tenant''s supportGroupRosters configuration). - `templateId`: identifier of the roster template describing the file''s column layout. - `description`: free-text note supplied when the roster was uploaded. *File*
+
+        - `filename`: name of the file currently attached to the job. - `filePath`: storage path of that file, relative to the bucket. - `bucketName`: storage bucket holding the file. - `sheetName`: worksheet read from the file, for .xlsx uploads only. - `initialFilename`, `initialFilePath`: the file first uploaded, retained after a reupload replaces it. - `uploadCount`: how many times a file has been uploaded to this job; 1 until the first reupload. - `attemptNumber`: which upload attempt the job is on. Unlike `uploadCount` this increments on every reupload, including an internal admin''s. Absent on jobs that predate attempt tracking. - `attempts`: summaries of finished upload attempts, oldest first. Bounded, not complete: the job record keeps only the more recent attempts so it stays small - how many is configurable, and a size guard on the stored array can leave fewer - so read `attemptsTruncated` for how many summaries were dropped. Returned on single-job reads and on list responses. `GET /roster/{id}/attempts` serves this same bounded set; it does not return the dropped summaries. - `attemptsTruncated`: how many attempt summaries were dropped from `attempts` to keep the job record small; greater than zero means `attempts` is not the full history. The dropped summaries are not served by `GET /roster/{id}/attempts` either - their row-level data is retained in the row history store for attempts that were captured, and is not reachable through this API. - `orderedFileColumns`: the file''s column headers, in the order they appear in the header row. *Counters* (populated as validation and ingestion progress)
+
+        - `totalRecords`: rows found in the file.'
       operationId: getRosterById
       tags:
       - Roster
       parameters:
-      - description: Roster job ID
+      - description: Identifier of the roster job, as returned by the roster listing endpoints.
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant that owns the roster job. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
@@ -245,36 +379,139 @@ paths:
           type: string
       responses:
         '200':
-          description: Roster job found
+          description: The roster job, including a time-limited download link for the uploaded file.
           content:
-            application/json: {}
+            application/json:
+              examples:
+                rosterJob:
+                  value:
+                    id: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
+                    tenantId: 0e58d0b2-fb06-44c7-b89b-0bea8e71e227
+                    data:
+                      status: VALIDATION_FAILED
+                      jobType: PRACTITIONER
+                      filename: practitioners-2026-07.csv
+                      rosterFileUrl: https://storage.googleapis.com/certifyos-rosters/9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634.csv?X-Goog-Expires=604800
+              schema:
+                $ref: '#/components/schemas/RosterResponse'
+        '400':
+          description: Returned when the roster job cannot be read because the request is malformed or the download link could not be generated.
+          content:
+            application/json:
+              examples:
+                badRequest:
+                  value:
+                    error: Unable to resolve roster file
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
         '404':
-          description: Roster job not found
+          description: Returned when no roster job with the supplied `id` exists for the tenant.
+          content:
+            application/json:
+              examples:
+                rosterNotFound:
+                  value:
+                    error: Roster job not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+      security:
+      - jwt: []
+  /roster/{id}/attempts:
+    get:
+      summary: List a roster job's upload attempts
+      description: 'Returns one summary per finished upload attempt of a roster job, oldest first, so you can see how a file changed across corrections - how many rows failed on the first attempt versus the last, and which attempt finally imported.
+
+
+        **When to use:** call this when a job has been reuploaded and you need the history rather than just its current state, for example to answer what a client submitted on an earlier attempt.
+
+
+        **Preconditions:** supply the `tenant-id` header and the job''s `id`. The job must belong to that tenant.
+
+
+        **What you get back:** the job''s current attempt number and a list of attempt summaries. A job that predates attempt tracking returns an empty list and no attempt number - that means no history was recorded for it, not that it had zero attempts.
+
+
+        **The list is bounded, not complete.** The summaries come from the ledger held on the job record, which retains only the more recent attempts: how many is configurable, and a size guard can leave fewer still. When summaries have been dropped, `olderAttemptsAvailable` is true and `attemptsTruncated` counts them. This endpoint serves that same bounded ledger today - it does not yet return the dropped summaries. Their row-level data survives in the row history store for every attempt whose `captured` flag is true, and is not reachable through this API. Read-only; no state is mutated.'
+      operationId: getRosterAttempts
+      tags:
+      - Roster
+      parameters:
+      - description: Identifier of the roster job, as returned by the roster listing endpoints.
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - description: Unique identifier of the tenant that owns the roster job. It scopes every roster this request can reach.
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The job's attempt history.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/RosterAttemptsResponse'
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '403':
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
+        '404':
+          description: Returned when no roster job with the supplied `id` exists for the tenant.
+          content:
+            application/json:
+              examples:
+                rosterNotFound:
+                  value:
+                    error: Roster job not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Returned when the attempt history could not be read because of a server-side failure, for example the roster store being unavailable. The request itself was well formed; retrying is reasonable.
+          content:
+            application/json:
+              examples:
+                attemptsUnavailable:
+                  value:
+                    error: Failed to fetch roster attempts
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster/{id}/schema:
     get:
-      summary: Get effective JSON Schema for a roster job
-      description: 'Returns the same resolved schema used for validation: roster-specific schema when present, otherwise the template schema. Matches RosterSchemaService.getRosterSchema(rosterId, templateId).'
+      summary: Retrieve the validation schema for a roster job
+      description: 'Returns the JSON Schema document that governs validation of the rows in one roster job.
+
+
+        **When to use:** call this before preparing or correcting a roster file, to see exactly which fields, types, and constraints will be enforced; it is also the quickest way to understand why particular rows failed validation.
+
+
+        **How the schema is resolved:** a schema attached to this specific roster job takes precedence; when the job has none, the schema belonging to its template is returned instead.
+
+
+        **Preconditions:** supply the `tenant-id` header and the roster job''s `id`. The job must have a template associated with it - a roster without one returns 400, which is resolved by assigning a valid template to the roster and calling again.
+
+
+        **What you get back:** a JSON Schema document conforming to draft 2019-09, describing the expected shape of a single roster row. Read-only; no state is mutated.'
       operationId: getRosterEffectiveSchema
       tags:
       - Roster
       parameters:
-      - description: Roster job ID
+      - description: Identifier of the roster job, as returned by the roster listing endpoints.
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant that owns the roster job. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
@@ -282,38 +519,80 @@ paths:
           type: string
       responses:
         '200':
-          description: JSON Schema document used for row validation
-          content:
-            application/json: {}
-        '400':
-          description: Roster has no template ID
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
-        '404':
-          description: Roster job not found
+          description: The JSON Schema document that roster rows are validated against.
           content:
             application/json:
+              examples:
+                effectiveSchema:
+                  value:
+                    $schema: https://json-schema.org/draft/2019-09/schema
+                    type: object
+                    properties:
+                      npi:
+                        type:
+                        - string
+                        - 'null'
+                        title: NPI
+                      dateOfBirth:
+                        type:
+                        - string
+                        - 'null'
+                        format: date
+                    required:
+                    - npi
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                description: A JSON Schema document (draft 2019-09). Free-form here because its properties mirror the roster's template, so the keys vary per roster.
+        '400':
+          description: Returned when the roster job has no template associated with it, so no schema can be resolved. Assign a valid template to the roster and retry.
+          content:
+            application/json:
+              examples:
+                noTemplate:
+                  value:
+                    error: Roster has no template ID
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '403':
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
+        '404':
+          description: Returned when no roster job with the supplied `id` exists for the tenant.
+          content:
+            application/json:
+              examples:
+                rosterNotFound:
+                  value:
+                    error: Roster job not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster/{rosterId}/download-records:
     get:
-      summary: Download failed roster records as CSV
-      description: Downloads all failed roster records for the given roster job as a CSV file
+      summary: Retrieve a download link for failed roster records
+      description: 'Returns a time-limited link to a CSV export of the records that failed for one roster job. **This endpoint does not stream a CSV.** It responds with a small JSON object carrying a `fileUrl`; the caller must follow that link to retrieve the file itself.
+
+
+        **When to use:** call this after a roster has finished processing, to hand a reviewer the list of records that could not be validated or ingested so they can be corrected offline.
+
+
+        **Preconditions:** supply the roster job''s `rosterId`. The `tenant-id` header is optional here and falls back to a default identity when omitted, unlike the other roster endpoints, which require it.
+
+
+        **What you get back:** an object of the form `{"fileUrl": "..."}`. The link expires after seven days, so follow it promptly rather than storing it. When an export has already been generated for the roster its existing link is returned as-is; otherwise the export is generated on demand, which makes the first call for a large roster noticeably slower than later ones.'
       operationId: downloadRosterRecordsCsv
       tags:
       - Roster
       parameters:
-      - description: Roster job ID to download records for
+      - description: Identifier of the roster job whose failed records should be exported, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant that owns the roster job. Optional on this endpoint - a default identity is used when the header is omitted.
         required: false
         name: tenant-id
         in: header
@@ -322,47 +601,76 @@ paths:
           default: public-user
       responses:
         '200':
-          description: CSV file containing failed roster records
+          description: An object carrying a time-limited link to the failed-records CSV export. Follow the link to download the file.
           content:
             application/json:
+              examples:
+                downloadLink:
+                  value:
+                    fileUrl: https://storage.googleapis.com/certifyos-rosters/exports/9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634-failed.csv?X-Goog-Expires=604800
               schema:
-                type: string
-                description: Signed URL for downloading the CSV file from GCS
-                examples:
-                - https://storage.googleapis.com/bucket/roster-exports/123/123-rosterFileFAILED.csv
+                $ref: '#/components/schemas/FileDownloadLink'
+        '400':
+          description: Returned when the export could not be produced for the roster. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                exportFailed:
+                  value:
+                    error: Failed to generate records CSV
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the request carries no valid authentication.
         '404':
-          description: Roster job or failed records not found
+          description: Returned when no roster job with the supplied `rosterId` exists, or it has no failed records to export.
           content:
             application/json:
+              examples:
+                noFailedRecords:
+                  value:
+                    error: No failed roster records found for the given roster job
               schema:
-                $ref: '#/components/schemas/ApiError'
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster/{rosterId}/import:
     get:
       summary: Approve or reject a roster import
-      description: Approves or rejects a roster import based on the action parameter
+      description: 'Records a decision on a roster job that has finished validation and, when approved, starts ingesting its rows.
+
+
+        **When to use:** call this once a roster has been reviewed and someone has decided whether its data should be written into the platform.
+
+
+        **Preconditions:** supply the `tenant-id` header, the job''s `rosterId`, and the `action` query parameter, which is matched case-insensitively. The roster must be in `VALIDATED`, `IN_PROGRESS`, or `VALIDATION_FAILED` state; a job in any other state is rejected with 400. A roster still in `PRE_PROCESSING` is a special case - it can only be rejected, never approved, and only by a provider data administrator who does not also hold the roster analyst role.
+
+
+        **Outcomes:** `approved` moves the roster to `APPROVED` and queues ingestion, so its rows begin flowing into the platform; `rejected` moves it to `CANCELLED` and no further processing takes place.
+
+
+        **Note on the HTTP method:** this endpoint is exposed as a GET but changes state and triggers ingestion. Treat it as a write - never issue it speculatively, prefetch it, or allow it to be cached or retried automatically.
+
+
+        **What you get back:** the roster job reflecting the decision. Not idempotent - approving a roster twice can queue ingestion twice. The job''s `data` object carries its status, file details, and record counters; see `GET /roster/{id}` for the full list of keys it can hold.'
       operationId: approveRejectRosterImport
       tags:
       - Roster
       parameters:
-      - description: Roster job ID
+      - description: Identifier of the roster job being decided on, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: 'Action to perform: ''approved'' or ''rejected'''
+      - description: Decision to record. `approved` moves the roster to APPROVED and queues ingestion; `rejected` moves it to CANCELLED and stops processing. Matched case-insensitively.
+        example: approved
         required: true
         name: action
         in: query
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant that owns the roster job. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
@@ -370,48 +678,82 @@ paths:
           type: string
       responses:
         '200':
-          description: Roster import action completed successfully
-          content:
-            application/json: {}
-        '400':
-          description: Invalid action parameter
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
-        '404':
-          description: Roster job not found
+          description: The roster job after the decision was applied, at its new status.
           content:
             application/json:
+              examples:
+                approved:
+                  summary: Import approved; ingestion queued
+                  value:
+                    id: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
+                    data:
+                      status: APPROVED
+                      jobType: PRACTITIONER
+                rejected:
+                  summary: Import rejected; no further processing
+                  value:
+                    id: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
+                    data:
+                      status: CANCELLED
+                      jobType: PRACTITIONER
               schema:
-                $ref: '#/components/schemas/ApiError'
-        '409':
-          description: Invalid roster status for approval/rejection
+                $ref: '#/components/schemas/RosterResponse'
+        '400':
+          description: 'Returned for every decision that cannot be applied: `action` is not `approved` or `rejected`, the roster is in a state that does not accept a decision (including an attempt to approve a roster still in `PRE_PROCESSING`), no roster job with the supplied `rosterId` exists, or a `PRE_PROCESSING` rejection was attempted by a caller whose role does not allow it. All of these currently surface as 400 - not 404 or 403 - so read the error message to distinguish the cause.'
           content:
-            application/json: {}
+            application/json:
+              examples:
+                wrongStatus:
+                  value:
+                    error: 'Failed to approve/reject: Roster must be in VALIDATED status for approval/rejection'
+                rosterNotFound:
+                  value:
+                    error: 'Failed to approve/reject: Roster job not found'
+                roleNotAllowed:
+                  value:
+                    error: 'Failed to approve/reject: Only Provider Data Admins without Roster Analyst role can reject rosters in PRE_PROCESSING status'
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '403':
+          description: Returned when the caller lacks the UPDATE_ROSTER permission for this tenant.
       security:
       - jwt: []
   /roster/{rosterId}/reupload:
     put:
-      summary: Reupload a corrected CSV file for an existing roster
-      description: Reuploads a corrected CSV file for an existing roster ID. This replaces the file and restart processing for that roster.
+      summary: Replace the file on an existing roster job
+      description: 'Swaps in a corrected file for a roster job that already exists and starts its processing over.
+
+
+        **When to use:** call this when the original upload contained errors and you have a fixed version of the whole file; to correct individual rows instead, use the roster row draft endpoints, and to begin an unrelated import, use `POST /roster`.
+
+
+        **Preconditions:** send a multipart request carrying the `file` part, the `tenant-id` header, and the `rosterId` of the job to replace. Accepted formats are CSV, XLSX, TSV, and JSON; when the file is an `.xlsx`, `sheetName` names the worksheet to read. Text (`.txt`) files are accepted on first upload but cannot be used for a reupload. The roster must not be mid-flight: a job in `VALIDATION_IN_PROGRESS`, `IN_PROGRESS`, or `VALIDATED` state is rejected with 409. Beyond that, what is allowed depends on the caller - internal provider data administrators may reupload any job that is not mid-flight, while other callers may only reupload jobs in `VALIDATION_FAILED`, `FAILED`, `COMPLETED`, or `CANCELLED` state.
+
+
+        **What you get back:** the updated roster job. Its status restarts the pipeline - `PENDING` when validation is dispatched immediately, or `PRE_PROCESSING` when the upload is routed for review first - so read the returned status rather than assuming validation has begun.
+
+
+        **Side effects:** the stored file is replaced, the previous export link is discarded, the upload counter is incremented, and validation is re-run from the beginning. Not idempotent - each call replaces the file and restarts processing.'
       operationId: reuploadCsvFile
       tags:
       - Roster
       parameters:
-      - description: Existing roster ID to reupload against
+      - description: Identifier of the existing roster job whose file is being replaced, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: Tenant ID for source type generation
+      - description: Unique identifier of the tenant that owns the roster job. Obtained from your account configuration; it scopes every roster this request can reach.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Multipart form carrying the replacement file. `file` is required; `sheetName` is required only when the file is an .xlsx workbook.
         content:
           multipart/form-data:
             schema:
@@ -422,24 +764,217 @@ paths:
                   format: binary
                 sheetName:
                   type: string
+            examples:
+              correctedWorkbook:
+                summary: Corrected .xlsx reuploaded against an existing job
+                value: 'file: practitioners-2026-07-corrected.xlsx
+
+                  sheetName: Providers'
         required: true
       responses:
         '200':
-          description: File reuploaded successfully
+          description: The updated roster job, carrying the replacement file details and the status its processing restarted at.
           content:
             application/json:
+              examples:
+                reuploadedRoster:
+                  value:
+                    id: 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634
+                    tenantId: 0e58d0b2-fb06-44c7-b89b-0bea8e71e227
+                    data:
+                      status: PENDING
+                      jobType: PRACTITIONER
+                      filename: practitioners-2026-07-corrected.csv
+                      uploadCount: 2
               schema:
-                $ref: '#/components/schemas/RosterReuploadResponse'
+                $ref: '#/components/schemas/RosterResponse'
         '400':
-          description: Invalid input (missing file)
-        '404':
-          description: Roster not found
+          description: Returned when the replacement file is rejected. A `.txt` file is rejected with the standard error envelope shown below; a missing `file` part or an `.xlsx` without a `sheetName` is rejected with a plain-text message (`No file uploaded`, `Sheet name is required for excel file`). Correct the file and retry.
+          content:
+            application/json:
+              examples:
+                textFileRejected:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Invalid request data
+                      detail: Text (.txt) files are not supported for roster reupload
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '403':
+          description: Returned when the caller lacks the UPDATE_ROSTER permission for this tenant.
         '409':
-          description: Cannot reupload to completed roster
+          description: Returned when the roster cannot accept this reupload - it is mid-flight, the caller's role does not permit reuploading a job in its current state, or no roster job with the supplied `rosterId` exists for the tenant (a missing roster is currently reported as 409, not 404). Read the error message to distinguish; wait and retry only when the job is mid-flight.
+          content:
+            application/json:
+              examples:
+                notReuploadable:
+                  value:
+                    error: Roster in status VALIDATION_IN_PROGRESS cannot be reuploaded
+                rosterNotFound:
+                  value:
+                    error: Roster with ID 9b2e4f18-6c07-4d3a-8e51-2af0c9d7b634 not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Returned when the reupload could not be completed. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                reuploadFailed:
+                  value:
+                    error: Roster reupload failed
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
 components:
   schemas:
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    RosterJobData:
+      title: RosterJobData
+      type: object
+      description: Payload of a roster import job. Keys appear as processing progresses - none is guaranteed present at every stage, and new keys may be introduced by newer features, so treat unknown keys as valid. Key names mirror RosterDataRecord.
+      properties:
+        status:
+          type: string
+          description: Current stage of the job. See the roster read operations' descriptions for the meaning of each value.
+          enum:
+          - PENDING
+          - IN_PROGRESS
+          - VALIDATION_IN_PROGRESS
+          - VALIDATION_FAILED
+          - PRE_PROCESSING
+          - VALIDATED
+          - COMPLETED
+          - APPROVED
+          - PARTIAL_IMPORTED
+          - REVALIDATE
+          - FAILED
+          - CANCELLED
+        jobType:
+          type: string
+          description: Kind of entity the file contains. GROUP uploads require the tenant's supportGroupRosters configuration.
+          enum:
+          - PRACTITIONER
+          - FACILITY
+          - GROUP
+        templateId:
+          type: string
+          description: Identifier of the roster template describing the file's column layout.
+        description:
+          type: string
+          description: Free-text note supplied when the roster was uploaded.
+        filename:
+          type: string
+          description: Name of the file currently attached to the job.
+        filePath:
+          type: string
+          description: Storage path of that file, relative to the bucket.
+        bucketName:
+          type: string
+          description: Storage bucket holding the file.
+        sheetName:
+          type: string
+          description: Worksheet read from the file, for .xlsx uploads only.
+        initialFilename:
+          type: string
+          description: The file first uploaded, retained after a reupload replaces it.
+        initialFilePath:
+          type: string
+          description: Storage path of the first uploaded file, retained after a reupload.
+        uploadCount:
+          type: integer
+          description: How many times a file has been uploaded to this job; 1 until the first reupload.
+        attemptNumber:
+          type: integer
+          description: Which upload attempt the job is currently on. Increments on every reupload, including an internal admin's - unlike uploadCount, which does not. Absent on jobs that predate attempt tracking, which means no history was recorded for them rather than that they had zero attempts.
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterAttemptSummary'
+          description: 'Summaries of this job''s finished upload attempts, oldest first. Bounded, not complete: the job record keeps only the more recent attempts so it stays small - how many is configurable, and a size guard on the stored array can leave fewer - so treat the array as a window on the history rather than all of it, and read attemptsTruncated for how many summaries were dropped. Returned on single-job reads and on list responses. GET /roster/{id}/attempts serves this same bounded set; it does not return the dropped summaries.'
+        attemptsTruncated:
+          type: integer
+          description: How many attempt summaries have been dropped from the inline cache to keep the job record small. Greater than zero means attempts is not the full history. The dropped summaries are not served by GET /roster/{id}/attempts either - that endpoint returns this same bounded array - so this count, and not a second request, is what tells you history is missing.
+        orderedFileColumns:
+          type: string
+          description: The file's column headers in the order they appear in the header row, joined by the ",/" separator.
+        totalRecords:
+          type: integer
+          description: Rows found in the file.
+        validRecords:
+          type: integer
+          description: Rows that passed validation.
+        invalidRecords:
+          type: integer
+          description: Rows that failed validation.
+        softErrorRecords:
+          type: integer
+          description: Rows whose only validation issues are soft warnings; still imported on approval. Disjoint from validRecords and invalidRecords; absent on rosters validated before CP-37160, where it reads as 0.
+        completedRecords:
+          type: integer
+          description: Rows that were ingested successfully.
+        failedRecords:
+          type: integer
+          description: Rows that could not be ingested.
+        rosterFileUrl:
+          type: string
+          description: Time-limited link to the uploaded roster file. Present on the single-job read only.
+        templateUrl:
+          type: string
+          description: Time-limited link to the template the roster was mapped with. Present on the single-job read only.
+        mappingsFileUrl:
+          type: string
+          description: Time-limited link to the resolved column mappings. Present on the single-job read only.
+        failureReasons:
+          type: string
+          description: Validation or ingestion errors explaining why rows did not succeed.
+        importedAt:
+          type: string
+          description: When ingestion finished, as an ISO-8601 timestamp in UTC.
+        roster-export-path:
+          type: string
+          description: Storage path of the failed-records export, present once one has been generated.
+        roster-export-url:
+          type: string
+          description: Time-limited link to the failed-records export, present once one has been generated.
+    RosterJobsPage:
+      type: object
+      description: One page of roster import jobs.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterResponse'
+          description: The roster jobs in this page.
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: HATEOAS-style navigation links (self, next, prev).
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roster jobs matching the request, when the underlying store reports one.
+    RepublishRosterEventResponse:
+      type: object
+      description: Confirmation that a validation or ingestion event was queued again for the roster job.
+      properties:
+        message:
+          type: string
+          description: Human-readable confirmation that the event was queued.
+        eventType:
+          type: string
+          description: The processing stage that was queued, echoing the request path value.
     RosterResponse:
       type: object
       properties:
@@ -458,7 +993,7 @@ components:
         updatedBy:
           type: string
         data:
-          $ref: '#/components/schemas/JsonNode'
+          $ref: '#/components/schemas/RosterJobData'
         invalidCount:
           type: integer
           format: int64
@@ -471,135 +1006,128 @@ components:
         failedCount:
           type: integer
           format: int64
-    RosterReuploadResponse:
+    RosterAttemptEntry:
       type: object
+      description: One finished attempt of a roster job.
+      properties:
+        attemptNumber:
+          type: integer
+          format: int32
+          description: 1-based ordinal of the attempt.
+        filename:
+          type:
+          - string
+          - 'null'
+          description: Name of the file uploaded for the attempt.
+        status:
+          type:
+          - string
+          - 'null'
+          description: Roster status the attempt finished in.
+        totalRecords:
+          type: integer
+          format: int32
+          description: Rows the attempt contained.
+        validRecords:
+          type: integer
+          format: int32
+          description: Rows that validated cleanly.
+        invalidRecords:
+          type: integer
+          format: int32
+          description: Rows that failed validation.
+        attemptEndedAt:
+          type:
+          - string
+          - 'null'
+          description: ISO-8601 instant the attempt finished at.
+        captured:
+          type: boolean
+          description: Whether the attempt's rows were captured to long-term history.
+    RosterAttemptsResponse:
+      type: object
+      description: Attempt history of a roster job, oldest attempt first.
       properties:
         rosterId:
           type: string
-        path:
-          type: string
-        filename:
-          type: string
-        bucketName:
-          type: string
-        message:
-          type: string
-    PagedResponse1:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        links:
-          $ref: '#/components/schemas/PageLinks'
-        totalCount:
-          type: integer
-          format: int64
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
+          description: Identifier of the roster job the history belongs to.
+        currentAttemptNumber:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Attempt the job is currently on. Null when the job predates the attempt ledger, meaning no history was recorded for it.
+        attempts:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
+            $ref: '#/components/schemas/RosterAttemptEntry'
+          description: Finished attempts held in the ledger, oldest first.
+        olderAttemptsAvailable:
+          type: boolean
+          description: True when attempts exist beyond the ones listed here, because the ledger evicted them.
+        attemptsTruncated:
           type: integer
           format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
-    JsonNode:
+          description: Number of attempts evicted from the ledger. Zero when none were.
+    ErrorMessage:
       type: object
+      description: Single-message error body returned by the roster endpoints' error paths.
       properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    PageLinks:
+        error:
+          type: string
+          description: Human-readable message describing why the request failed.
+    FileDownloadLink:
       type: object
+      description: Wrapper carrying a time-limited signed download link. Follow `fileUrl` promptly to retrieve the file; the link expires.
       properties:
-        self:
+        fileUrl:
           type: string
-        next:
-          type: string
-        prev:
-          type: string
+          description: Time-limited signed URL to download the file from.
     Date:
       type: string
       format: date
+    RosterAttemptSummary:
+      title: RosterAttemptSummary
+      type: object
+      description: One finished upload attempt of a roster job, as retained in the job's attempts ledger. Keys are abbreviated because the ledger is stored inline on the job record; the full row-level history for an attempt lives in the history store, not here.
+      properties:
+        n:
+          type: integer
+          description: Attempt number this entry describes; 1 is the first upload.
+        f:
+          type: string
+          description: Name of the file uploaded for this attempt.
+        s:
+          type: string
+          description: The status this attempt finished in, before the next upload superseded it.
+          enum:
+          - PENDING
+          - IN_PROGRESS
+          - VALIDATION_IN_PROGRESS
+          - VALIDATION_FAILED
+          - PRE_PROCESSING
+          - VALIDATED
+          - COMPLETED
+          - APPROVED
+          - PARTIAL_IMPORTED
+          - REVALIDATE
+          - FAILED
+          - CANCELLED
+        t:
+          type: integer
+          description: Rows found in that attempt's file.
+        v:
+          type: integer
+          description: Rows that passed validation on that attempt.
+        i:
+          type: integer
+          description: Rows that failed validation on that attempt.
+        at:
+          type: string
+          description: When the attempt finished, as an ISO-8601 instant.
+        c:
+          type: boolean
+          description: Whether that attempt's rows reached long-term history. False means the capture did not complete, so this summary is the only surviving record of the attempt.
   securitySchemes:
     jwt:
       type: http

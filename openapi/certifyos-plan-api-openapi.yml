@@ -22,13 +22,13 @@ tags:
 paths:
   /plans:
     get:
-      summary: Get all plans
-      description: Returns a list of plans for the provided tenant. The plans are returned sorted by creation date, with the most recent plans appearing first.
+      summary: List tenant plans sorted by creation date
+      description: Returns the first page of plans belonging to the specified tenant, sorted by creation date descending (most recent first). Call this to retrieve the current plan catalogue for a tenant. The caller must hold the READ_PLAN permission. **Note:** the current implementation always queries page 0 with a fixed page size of 10; pagination parameters are not exposed on this endpoint, so if the tenant has more than 10 plans, only the 10 most recent are returned. If the tenant has no plans, `data` is empty and `totalCount` is 0 (a downstream 404 is silently mapped to an empty result).
       operationId: getPlans
       tags:
       - Plan
       parameters:
-      - description: The tenant identifier.
+      - description: The tenant identifier. Scopes the returned plans to this tenant; no default — the request fails with 400 if omitted.
         in: header
         name: tenant-id
         required: true
@@ -36,33 +36,74 @@ paths:
           type: string
       responses:
         '200':
-          description: Returned if the request is successful.
+          description: Envelope containing the tenant's plans for the current (fixed) page.
           content:
             application/json:
+              examples:
+                plans:
+                  value:
+                    totalCount: 1
+                    data:
+                    - id: plan_5f3e8a1b2c9d
+                      tenantId: tenant_001
+                      payerId: payer_4b6a9c2d
+                      data:
+                        name: Bronze PPO 2026
+                        payer: payer_4b6a9c2d
               schema:
                 $ref: '#/components/schemas/GetAllPlansResponse'
         '400':
-          description: Returned if the request is invalid. `tenant-id` and `user-id` headers are required.
+          description: Returned when the required `tenant-id` header is missing.
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: getPlans.tenantId'
+                      detail: must not be null
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Returned if the request is unauthorized. Authentication required.
         '403':
-          description: Returned if the request is forbidden. Insufficient permissions.
-        '500':
-          description: Returned if the request is an internal server error.
+          description: Returned if the caller lacks the READ_PLAN permission.
         '502':
-          description: Returned if the request is a bad gateway. Downstream service error.
+          description: Returned when the downstream data service (DAL) responds with an error status.
+          content:
+            application/json:
+              examples:
+                downstreamError:
+                  value:
+                    error: Downstream service error
         '503':
-          description: Returned if the request is a service unavailable. Network connectivity issues.
+          description: Returned when the downstream data service (DAL) cannot be reached.
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    error: Service temporarily unavailable
+        '500':
+          description: Returned for an unexpected internal error.
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: An unexpected error occurred
       security:
       - jwt: []
     post:
-      summary: Create a new plan
-      description: Creates a new plan with the provided details
+      summary: Create a new plan for a tenant
+      description: Creates a new plan and associates it with the specified tenant. This operation is **not idempotent** — submitting the same payload twice creates two separate plan records. The caller must hold the CREATE_PLAN permission. The request body's `data.payer` field is extracted and stored as the plan's `payerId`; the referenced payer is not validated for existence before the plan is created. `data`'s full shape is defined by the external Plan JSON schema and may include required fields beyond `payer`.
       operationId: createPlan
       tags:
       - Plan
       parameters:
-      - description: Tenant ID
+      - description: The tenant identifier to associate the new plan with.
         required: true
         name: tenant-id
         in: header
@@ -71,45 +112,85 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              createPlan:
+                value:
+                  data:
+                    payer: payer_4b6a9c2d
             schema:
               $ref: '#/components/schemas/CreatePlanRequest'
         required: true
       responses:
         '201':
-          description: Plan created successfully
+          description: The created plan, including the server-assigned `id`. Store this `id` to reference the plan in subsequent calls (e.g. PUT /plans/{id}).
           content:
             application/json:
+              examples:
+                createdPlan:
+                  value:
+                    id: plan_5f3e8a1b2c9d
+                    tenantId: tenant_001
+                    payerId: payer_4b6a9c2d
+                    data:
+                      payer: payer_4b6a9c2d
               schema:
-                $ref: '#/components/schemas/PlanResponse'
+                $ref: '#/components/schemas/GetPlanResponse'
         '400':
-          description: Bad Request
+          description: Returned when `tenant-id` is missing or `data` fails validation against the Plan JSON schema. DAL-side validation errors are passed through with their original body.
           content:
             application/json:
+              examples:
+                schemaValidationFailed:
+                  value:
+                    errors:
+                    - '$.data.payer: is missing but it is required'
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Forbidden - Caller lacks the CREATE_PLAN permission
+        '502':
+          description: Returned when the downstream data service (DAL) responds with a server error.
+          content:
+            application/json:
+              examples:
+                downstreamUnavailable:
+                  value:
+                    error: Downstream service unavailable
+        '503':
+          description: Returned when the downstream data service (DAL) cannot be reached.
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    error: Service temporarily unavailable
         '500':
-          description: Internal server error
+          description: Returned for an unexpected internal error.
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: An unexpected error occurred
       security:
       - jwt: []
   /plans/{id}:
     put:
-      summary: Update an existing plan
-      description: Updates a plan identified by ID with the provided details
+      summary: Fully replace an existing plan by ID
+      description: Replaces the entire plan record identified by `{id}` with the supplied payload. This is a **full replacement** — fields omitted from `data` are not preserved from the prior version, so submit the complete desired plan `data` on every call, not a partial diff. Submitting the same payload twice for the same `{id}` is idempotent. The caller must hold the UPDATE_PLAN permission. As with plan creation, `data.payer` is extracted and stored as `payerId`, and the referenced payer is not validated for existence. `data`'s full shape is defined by the external Plan JSON schema and may include required fields beyond `payer`.
       operationId: updatePlan
       tags:
       - Plan
       parameters:
-      - description: Plan ID
+      - description: The plan's server-assigned identifier, as returned by POST /plans.
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: The tenant identifier that must own the plan being replaced.
         required: true
         name: tenant-id
         in: header
@@ -118,28 +199,82 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              updatePlan:
+                value:
+                  data:
+                    payer: payer_4b6a9c2d
             schema:
               $ref: '#/components/schemas/CreatePlanRequest'
         required: true
       responses:
         '200':
-          description: Plan updated successfully
+          description: The plan as it exists after the replacement.
           content:
             application/json:
+              examples:
+                updatedPlan:
+                  value:
+                    id: plan_5f3e8a1b2c9d
+                    tenantId: tenant_001
+                    payerId: payer_4b6a9c2d
+                    data:
+                      payer: payer_4b6a9c2d
               schema:
-                $ref: '#/components/schemas/PlanResponse'
+                $ref: '#/components/schemas/GetPlanResponse'
         '400':
-          description: Bad Request
+          description: Returned when `tenant-id` is missing or `data` fails validation against the Plan JSON schema. DAL-side validation errors are passed through with their original body.
           content:
             application/json:
+              examples:
+                schemaValidationFailed:
+                  value:
+                    errors:
+                    - '$.data.payer: is missing but it is required'
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Forbidden - Caller lacks the UPDATE_PLAN permission
+        '404':
+          description: Returned when no plan exists with the given `{id}` for the tenant. Passed through unchanged from the downstream data service (DAL).
+          content:
+            application/json:
+              examples:
+                planNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: Not Found
+                      title: Entity Not Found
+                      detail: 'Plan not found with ID: plan_5f3e8a1b2c9d'
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: Returned when the downstream data service (DAL) responds with a server error.
+          content:
+            application/json:
+              examples:
+                downstreamUnavailable:
+                  value:
+                    error: Downstream service unavailable
+        '503':
+          description: Returned when the downstream data service (DAL) cannot be reached.
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    error: Service temporarily unavailable
         '500':
-          description: Internal server error
+          description: Returned for an unexpected internal error.
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: An unexpected error occurred
       security:
       - jwt: []
 components:
@@ -148,174 +283,103 @@ components:
       type: object
       properties:
         data:
-          $ref: '#/components/schemas/Plan.schema'
+          $ref: https://schemas.certifyos.com/entities/Plan.schema.json
           type: object
-    NetworkType.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business and network type combination for a healthcare plan.
-      type: string
-      enum:
-      - Commercial - HMO
-      - Commercial - PPO
-      - Medicare - HMO
-      - Medicaid - HMO
-    PlanResponse:
+          description: The plan's domain data. Must satisfy the Plan JSON schema; `payer` is required and is extracted server-side to populate the stored `payerId`.
+    GetPlanResponse:
       type: object
+      description: A single plan record as it appears in a paginated plans listing.
       properties:
         id:
           type: string
+          description: Server-assigned unique identifier for the plan.
         tenantId:
           type: string
+          description: Identifier of the tenant that owns this plan.
         payerId:
           type: string
+          description: Identifier of the payer this plan is associated with. Extracted server-side from `data.payer` at creation time.
         data:
-          $ref: '#/components/schemas/JsonNode'
-    Plan.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Plan.schema.json
-      title: Plan
-      description: Represents a healthcare plan with business line, network type, and benefits information.
+          type: object
+          description: The plan's domain data, validated against the Plan JSON schema at creation/update time.
+    ErrorObject:
       type: object
+      description: Individual error object containing details about a specific validation or processing error
       properties:
-        lineOfBusiness:
-          description: The line of business under which the plan operates (e.g., Commercial, Medicare, Medicaid).
-          $ref: '#/components/schemas/LineOfBusiness.schema'
-        networkType:
-          description: The type of network associated with the plan (e.g., HMO, PPO).
-          $ref: '#/components/schemas/NetworkType.schema'
-        benefits:
-          description: The benefits offered under the plan.
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
           type: string
-        name:
-          description: The name of the plan.
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
           type: string
-    JsonNode:
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    ApiError:
       type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
+      description: Standard API error response containing a list of error objects
       properties:
         errors:
           type: array
           items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
-    LineOfBusiness.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/LineOfBusiness.schema.json
-      title: Line of Business Enum
-      description: Specifies the line of business associated with a healthcare plan.
-      type: string
-      enum:
-      - Medicare
-      - Medicaid
-      - Commercial
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     GetAllPlansResponse:
       type: object
       properties:
         totalCount:
           type: integer
           format: int64
+          description: Total number of plans matching the request, across all pages.
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Payer.schema'
-    Payer.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Payer.schema.json
-      title: Payer
-      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
+            type: object
+            description: A single plan record as it appears in a paginated plans listing.
+            properties:
+              id:
+                type: string
+                description: Server-assigned unique identifier for the plan.
+              tenantId:
+                type: string
+                description: Identifier of the tenant that owns this plan.
+              payerId:
+                type: string
+                description: Identifier of the payer this plan is associated with. Extracted server-side from `data.payer` at creation time.
+              data:
+                type: object
+                description: The plan's domain data, validated against the Plan JSON schema at creation/update time.
+          description: The current page of plan records (at most 10).
+    BadRequestErrorResponse:
       type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
       properties:
-        name:
-          description: Name of the payer
-          type: string
-        category:
-          description: Type of payer
-          type: string
-        sourceSystem:
-          description: Origin of the record (e.g., API, File Upload)
-          $ref: '#/components/schemas/SourceSystem.schema'
-        changeReason:
-          description: Optional description of why a change was made
-          type: string
-      required:
-      - name
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,152 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Shared Outreach Recipients API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: SharedOutreachRecipients
+  description: The NSCP shared outreach composer's recipient list, across member tenants (internal).
+paths:
+  /api/v1/anchor-groups/{anchorGroupId}/shared-credentialing-workflows/{id}/outreach-recipients:
+    get:
+      summary: Every email address the member tenants hold for a shared workflow's practitioner
+      description: 'For the shared outreach composer to pre-fill "To": the practitioner email fields of every participating member workflow and the email from its CAQH application form, private ones included, de-duplicated case-insensitively. For sending only: not a data record, and nothing is stored. Needs credentialing-workflow:read and tenant-settings:outreach:read on every participating member tenant.'
+      operationId: readSharedOutreachRecipients
+      tags:
+      - SharedOutreachRecipients
+      parameters:
+      - description: Anchor Group id
+        required: true
+        name: anchorGroupId
+        in: path
+        schema:
+          type: string
+      - description: Shared credentialing workflow id
+        required: true
+        name: id
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The recipients; an empty list when no member holds an address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedOutreachRecipientsResponse'
+        '400':
+          description: 'INVALID_REQUEST: a blank anchor group id or shared workflow id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: No such shared workflow in this anchor group, no participating member, a missing permission on one of its participating tenants, or the feature is off
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: The read failed; no partial list is returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    SharedOutreachRecipient:
+      type: object
+      required:
+      - email
+      - tenantIds
+      - sources
+      description: One address the composer may send to.
+      properties:
+        email:
+          type: string
+          description: The address, trimmed, in the casing it was first found in.
+        tenantIds:
+          type: array
+          items:
+            type: string
+          description: The member tenants holding this address, in tenant order.
+        sources:
+          type: array
+          items:
+            type: string
+          description: 'Where it was found, each one of: primaryEmail, caqhPrimaryEmail, secondaryEmail, emails (the practitioner email fields on a member workflow), or caqhExtracted (the email read from the member''s CAQH application form).'
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    SharedOutreachRecipientsResponse:
+      type: object
+      required:
+      - recipients
+      description: 'Every email address the participating member tenants hold for the practitioner, private ones included, to pre-fill the shared outreach composer. For sending only: not a data record, and nothing is stored when it is read.'
+      properties:
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/SharedOutreachRecipient'
+          description: One entry per distinct address (case-insensitive); may be empty.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

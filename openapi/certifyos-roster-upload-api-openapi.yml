@@ -20,68 +20,244 @@ tags:
 - name: Roster upload
   description: APIs for roster upload file column mappings
 paths:
+  /roster-upload/system-fields:
+    get:
+      summary: Retrieve grouping metadata for tenant system fields
+      description: 'Returns the grouping rules that apply to each of the tenant''s system fields, keyed by the field''s `mappedKey`.
+
+
+        **When to use:** call this while building the column mapping screen, to decide whether a mapped column additionally needs an Entity Group or a Separator input from the user. Pair it with `POST /roster-upload/{templateId}/column-mapping`, which returns the fields themselves but not their grouping rules.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `jobType` query parameter; both are required and a missing or blank value returns 400. The tenant must have the column mapping feature enabled and the caller must hold the UPDATE_ROSTER_UPLOAD permission - both failures return 403, distinguished by the `reason` field of the error body (`FEATURE_DISABLED` identifies the feature-flag case). Tenant-specific schema paths are used when the tenant has them configured; otherwise the platform default schemas apply.
+
+
+        **What you get back:** an object keyed by `mappedKey`, where each value carries up to four grouping descriptors - `valueArrayGrouping` (the column holds several values in one cell, separated by a delimiter), `objectArrayGrouping` (the column contributes to one entry of a repeating object, such as a license), `objectGrouping` (the column contributes to a single nested object, such as user-defined fields), and `entityInstanceGrouping` (the column belongs to a numbered instance of an entity, such as a second practice location). A field with no grouping rules is returned with all four descriptors absent. Read-only; no state is mutated.'
+      operationId: getSystemFieldsGroupingMetadata
+      tags:
+      - Roster upload
+      parameters:
+      - description: Entity catalogue whose system fields should be described. One of `PRACTITIONER`, `FACILITY`, or `GROUP`. Required - there is no default.
+        required: true
+        name: jobType
+        in: query
+        schema:
+          $ref: '#/components/schemas/RosterJobType'
+      - description: Unique identifier of the tenant whose system fields are being read. Obtained from your account configuration.
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Grouping rules for the tenant's system fields, keyed by the field's `mappedKey`.
+          content:
+            application/json:
+              examples:
+                groupingMetadata:
+                  value:
+                    licenseNumber:
+                      objectArrayGrouping:
+                        enabled: true
+                        arrayKey: licenses
+                    udfContractEntityType:
+                      objectGrouping:
+                        enabled: true
+                        objectKey: userDefinedFields
+                    npi: {}
+              schema:
+                type: object
+                description: Map keyed by system field name; each value carries that field's grouping metadata (group, label, ordering).
+        '400':
+          description: Returned when the `tenant-id` header is missing or blank, or the `jobType` query parameter is absent. Supply both and retry.
+          content:
+            application/json:
+              examples:
+                missingJobType:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: BAD_REQUEST
+                      title: Missing jobType
+                      detail: The jobType query parameter is required.
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Returned when the column mapping feature is disabled for the tenant (`reason` is `FEATURE_DISABLED`) or the caller lacks the UPDATE_ROSTER_UPLOAD permission. Ask an administrator to enable the feature or grant the permission.
+          content:
+            application/json:
+              examples:
+                featureDisabled:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FEATURE_DISABLED
+                      title: Column Mapping Feature Disabled
+                      detail: The column mapping feature is currently disabled. Please contact your administrator to enable it.
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '500':
+          description: Returned when the grouping metadata cannot be resolved. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                unexpectedError:
+                  value:
+                    error: An unexpected error occurred
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+      security:
+      - jwt: []
   /roster-upload/{templateId}/column-mapping:
     post:
-      summary: Get mappings for the upload in a given template
-      description: Get mappings details for the uploaded columns in a given template. Requires the column_mapping_enabled feature flag to be enabled. Uses tenant-specific schema paths from tenant_configurations if configured, otherwise falls back to default schemas.
+      summary: Retrieve column mappings for a roster upload template
+      description: 'Matches the raw column headers of an uploaded roster file against a named roster upload template and reports which headers resolve to known fields.
+
+
+        **When to use:** call this after reading the header row of the uploaded file and before persisting anything, then pass the resolved mappings to `POST /roster-upload/{templateId}/column-mapping/template` to save them as a template.
+
+
+        **Preconditions:** supply the `tenant-id` header and a `templateId` that exists for that tenant; in the request body, `columns` carries the raw header strings read from the uploaded file and `jobType` selects which field catalogue to match against. The tenant must have the column mapping feature enabled and the caller must hold the UPDATE_ROSTER_UPLOAD permission - both failures return 403, distinguished by the `reason` field of the error body (`FEATURE_DISABLED` identifies the feature-flag case).
+
+
+        **Matching behaviour:** headers are matched to template fields by exact name only; there is no fuzzy matching. A header matching a field that was explicitly skipped on a previous mapping is reported under `skipped` rather than `mapped`. Headers with no template match are then looked up in the tenant''s column mapping cache, and any hits are returned under `cachedMapped` as suggestions. By default a cache hit is also kept in `unMapped`, so render `cachedMapped` as pre-filled suggestions for those headers.
+
+
+        **What you get back:** five lists - `mapped` (headers resolved to a template field), `unMapped` (headers with no template match), `skipped` (headers matching a previously excluded field), `systemFields` (platform-managed fields populated by the system rather than by file columns), and `cachedMapped` (suggested mappings recovered from the tenant cache). Setting `compareAgainstTemplate` to `true` clears `mappedEntity` on every `systemFields` entry and enables verbose per-column diagnostic logging; it does not change how columns are matched. The operation is read-only under either setting - no template, mapping, or cache state is written.'
       operationId: getMappingsForTheUploadInAGivenTemplate
       tags:
       - Roster upload
       parameters:
-      - description: Template ID to fetch
+      - description: Identifier of the roster upload template to match the submitted column headers against. Obtained from the tenant's template list.
         required: true
         name: templateId
         in: path
         schema:
           type: string
-      - description: Tenant identifier
+      - description: Unique identifier of the tenant whose roster upload configuration is being read. Obtained from your account configuration.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Raw column headers read from the uploaded roster file, plus the job type that selects which field catalogue to match them against.
         content:
           application/json:
+            examples:
+              practitionerHeaders:
+                value:
+                  columns:
+                  - NPI
+                  - First Name
+                  - Provider Nickname
+                  jobType: PRACTITIONER
+                  compareAgainstTemplate: false
             schema:
               $ref: '#/components/schemas/GetUploadMappingsRequest'
         required: true
       responses:
         '200':
-          description: Mapping details retrieved successfully
+          description: Mapping analysis for the submitted column headers, split into matched, unmatched, skipped, system-managed, and cache-suggested fields.
           content:
             application/json:
+              examples:
+                mappingAnalysis:
+                  value:
+                    mapped:
+                    - name: NPI
+                      mappedKey: npi
+                      mappedEntity: CorePractitioner
+                      isRequired: true
+                      isStaticField: false
+                      isSingleSelect: false
+                    unMapped:
+                    - Provider Nickname
+                    - Primary Specialty
+                    skipped:
+                    - Internal Notes
+                    systemFields:
+                    - name: Roster Source File ID
+                      mappedKey: udfRosterSourceFileID
+                      mappedEntity: CorePractitioner
+                      isRequired: false
+                    cachedMapped:
+                    - name: Primary Specialty
+                      mappedKey: primarySpecialty
+                      isRequired: false
               schema:
                 $ref: '#/components/schemas/GetUploadMappingsResponse'
-        '400':
-          description: Bad Request
-        '401':
-          description: Unauthorized - Authentication required
         '403':
-          description: Forbidden - Column mapping feature is disabled or insufficient permissions
+          description: Returned when the column mapping feature is disabled for the tenant (`reason` is `FEATURE_DISABLED`) or the caller lacks the UPDATE_ROSTER_UPLOAD permission. Ask an administrator to enable the feature or grant the permission.
           content:
             application/json:
+              examples:
+                featureDisabled:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FEATURE_DISABLED
+                      title: Column Mapping Feature Disabled
+                      detail: The column mapping feature is currently disabled. Please contact your administrator to enable it.
               schema:
                 $ref: '#/components/schemas/ApiError'
         '404':
-          description: Template not found
+          description: Returned when no template with the supplied `templateId` exists for the tenant. Verify the identifier against the tenant's template list.
           content:
             application/json:
+              examples:
+                templateNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Template not found
+                      detail: No template found for templateId 7f3c1d9e-2b84-4a17-9c55-0e6d8f4b21aa
               schema:
                 $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Returned when the request carries no valid authentication.
         '500':
-          description: Internal server error
+          description: Returned when the mapping analysis fails unexpectedly. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                unexpectedError:
+                  value:
+                    error: An unexpected error occurred
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '400':
+          description: Bad Request
       security:
       - jwt: []
   /roster-upload/{templateId}/column-mapping/template:
     post:
-      summary: create template from column mappings
-      description: Creates a new template from the provided column mappings. Requires the column_mapping_enabled feature flag to be enabled. The mappings are validated against tenant-specific schemas if configured.
+      summary: Save column mappings as a roster upload template
+      description: 'Creates a new roster upload template from a set of confirmed column mappings, or updates an existing one.
+
+
+        **When to use:** call this after reviewing the analysis returned by `POST /roster-upload/{templateId}/column-mapping`; this endpoint persists the mappings the user confirmed.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `templateId` the mappings belong to. In the request body, set `updateExistingTemplate` to `true` to update the template identified by `templateId`, or omit it (or set it to `false`) to create a new one; `mappings` carries the confirmed field list and `jobType` selects the field catalogue. A null `mappings` list is treated as an empty list rather than rejected. `templateName` and `templateDescription` are not enforced by this endpoint on either create or update. The tenant must have the column mapping feature enabled and the caller must hold the UPDATE_ROSTER_UPLOAD permission - both failures return 403, distinguished by the `reason` field of the error body (`FEATURE_DISABLED` identifies the feature-flag case).
+
+
+        **Validation:** the field mappings are validated before anything is written. If validation fails the request returns 400 carrying the individual field errors and no template state is changed.
+
+
+        **What you get back:** the resulting template record, including `templateId`, `templateUrl`, `schemaUrl`, the persisted `fields`, and `status`. Both creation and update return 200.
+
+
+        **Side effects:** on success the confirmed mappings are also written to a tenant-scoped column mapping cache, which later mapping analyses use to suggest matches for unmapped headers. That cache write is fail-open - if it fails the template is still saved and the request still succeeds. The operation is not idempotent: submitting the same mappings twice with `updateExistingTemplate` set to `false` creates two templates.'
       operationId: createTemplateFromMappings
       tags:
       - Roster upload
       parameters:
-      - description: Template ID to fetch
+      - description: Identifier of the roster upload template to create or update. Obtained from the tenant's template list.
         required: true
         name: templateId
         in: path
@@ -94,56 +270,170 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Confirmed column mappings to persist, and whether they should create a new template or update the one identified by the path parameter.
         content:
           application/json:
+            examples:
+              saveNewTemplate:
+                value:
+                  updateExistingTemplate: false
+                  jobType: PRACTITIONER
+                  templateName: Florida Blue Practitioner Roster
+                  templateDescription: Monthly practitioner roster layout
+                  mappings:
+                  - name: NPI
+                    mappedKey: npi
+                    mappedEntity: CorePractitioner
+                    isRequired: true
             schema:
               $ref: '#/components/schemas/SaveMappingsRequest'
         required: true
       responses:
         '200':
-          description: Template created successfully
+          description: The saved template, including its identifier, hosted URLs, and the persisted field mappings. Returned for both creation and update.
           content:
             application/json:
+              examples:
+                savedTemplate:
+                  value:
+                    templateId: 7f3c1d9e-2b84-4a17-9c55-0e6d8f4b21aa
+                    templateUrl: https://storage.googleapis.com/certifyos-rosters/templates/7f3c1d9e-2b84-4a17-9c55-0e6d8f4b21aa.csv
+                    schemaUrl: https://storage.googleapis.com/certifyos-rosters/schemas/7f3c1d9e-2b84-4a17-9c55-0e6d8f4b21aa.json
+                    status: ACTIVE
+                    fields:
+                    - name: NPI
+                      mappedKey: npi
+                      mappedEntity: CorePractitioner
+                      isRequired: true
               schema:
                 $ref: '#/components/schemas/SingleStepTemplateFlowResponse'
         '400':
-          description: Invalid input or request
+          description: Returned when the submitted field mappings fail validation. The body lists the offending fields; no template or cache state is written. Correct the listed fields and resubmit.
           content:
             application/json:
+              examples:
+                invalidMappings:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Invalid field mapping
+                      detail: Column 'NPI' is mapped to unknown attribute 'npiNumber'
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Returned when the column mapping feature is disabled for the tenant (`reason` is `FEATURE_DISABLED`) or the caller lacks the UPDATE_ROSTER_UPLOAD permission. Ask an administrator to enable the feature or grant the permission.
+          content:
+            application/json:
+              examples:
+                featureDisabled:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FEATURE_DISABLED
+                      title: Column Mapping Feature Disabled
+                      detail: The column mapping feature is currently disabled. Please contact your administrator to enable it.
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Column mapping feature is disabled or insufficient permissions
+          description: Returned when the request carries no valid authentication.
+        '500':
+          description: Returned when saving the template fails unexpectedly. Retry; if the failure persists, contact support.
           content:
             application/json:
+              examples:
+                unexpectedError:
+                  value:
+                    error: An unexpected error occurred
               schema:
-                $ref: '#/components/schemas/ApiError'
-        '500':
-          description: Internal server error
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
 components:
   schemas:
-    GetUploadMappingsResponse:
+    GetUploadMappingsRequest:
       type: object
+      description: Column headers read from an uploaded roster file, submitted for mapping analysis.
       properties:
-        mapped:
+        columns:
           type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        unMapped:
-          type: array
+          examples:
+          - - NPI
+            - First Name
+            - Provider Nickname
           items:
             type: string
-        systemFields:
+          description: Raw column headers exactly as they appear in the uploaded file's header row. Order is preserved in the analysis.
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+          type: string
+          examples:
+          - PRACTITIONER
+          description: Entity catalogue the headers should be matched against. One of PRACTITIONER, FACILITY, or GROUP.
+        compareAgainstTemplate:
+          type: boolean
+          description: When true, clears mappedEntity on every returned system field and enables verbose diagnostic logging. Does not change how columns are matched, and the operation stays read-only either way. Defaults to false.
+          default: false
+    SaveMappingsRequest:
+      type: object
+      description: Confirmed column mappings to persist as a roster upload template.
+      properties:
+        updateExistingTemplate:
+          type: boolean
+          description: When true, updates the template named by the path parameter; when false or omitted, creates a new template. Creating twice with the same mappings produces two templates.
+          default: false
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+          type: string
+          examples:
+          - PRACTITIONER
+          description: Entity catalogue the mappings belong to. One of PRACTITIONER, FACILITY, or GROUP, and must match the template being created or updated.
+        mappings:
           type: array
           items:
             $ref: '#/components/schemas/Field'
-    ApiError:
-      description: Standard API error response containing a list of error objects
+          description: The confirmed column-to-field mappings to persist. Validated before anything is written; a null list is treated as empty rather than rejected.
+        templateName:
+          type: string
+          examples:
+          - Florida Blue Practitioner Roster
+          description: Human-readable name for the template, shown when choosing a template for a future upload. Not enforced by this endpoint on create or update.
+        templateDescription:
+          type: string
+          examples:
+          - Monthly practitioner roster layout
+          description: Longer note describing what this template is for. Not enforced by this endpoint on create or update.
+    ErrorObject:
       type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
       properties:
         errors:
           type: array
@@ -155,99 +445,179 @@ components:
       enum:
       - PRACTITIONER
       - FACILITY
+      - GROUP
     Field:
       type: object
+      description: One roster column and the Certify system field it maps to.
       properties:
         name:
           type: string
+          examples:
+          - First Name
+          description: CSV column header this mapping applies to, exactly as it appears in the roster file.
         mappedKey:
           type: string
+          examples:
+          - firstName
+          description: 'Key of the Certify system field this column maps to, from the field catalog returned by `GET /templates/fields`. The sentinel `[skipped]` marks a column the user explicitly chose not to map: skipped columns persist in the template/mappings CSVs but are excluded from the generated validation schema.'
         mappedEntity:
           type: string
+          examples:
+          - practitioner
+          description: Entity that owns the mapped attribute (for example `practitioner` or `location`). When set, `mappedKey` is accepted as-is instead of being validated against the system-field catalog.
         entityGroup:
           type: string
+          examples:
+          - license
+          description: Group label linking columns that belong to the same repeating entity instance (a multiple-value group), so related columns are ingested together.
         isRequired:
           type: boolean
+          description: Whether every roster row must supply a value for this column; drives the `required` constraint in the generated validation schema.
         isStaticField:
           type: boolean
+          description: 'Catalog metadata: whether the mapped system field is a static (fixed-value) field rather than one populated from roster data.'
         isSingleSelect:
           type: boolean
+          description: 'Catalog metadata: whether the mapped system field accepts a single value from a fixed option list.'
         validationRegex:
           type: string
+          examples:
+          - ^\d{10}$
+          description: Regular expression applied to this column's values during roster validation. Rows whose values do not match are rejected.
         description:
           type: string
+          description: Human-readable description of the mapped system field, from the field catalog.
+        hasPattern:
+          type: boolean
+          description: 'Catalog metadata (CP-40222): true when the system field schema validates values with a regular expression. The expression itself is deliberately NOT exposed here — the mapping UI shows the plain-language `message.pattern` text instead, and `validationRegex` stays reserved for user-defined per-column rules so a catalog entry posted back as a mapping cannot tighten the generated schema.'
+        format:
+          type:
+          - string
+          - 'null'
+          examples:
+          - date
+          description: JSON Schema `format` of the system field (`date`, `email`, `uri`, ...) when it has one. Catalog metadata for the mapping UI (CP-40222); the accepted formats are described in `message.format`.
+        message:
+          type:
+          - object
+          - 'null'
+          examples:
+          - pattern: Must be exactly 10 digits
+          additionalProperties:
+            type: string
+          description: Plain-language validation texts from the system field schema, keyed by the rule they describe (`pattern`, `format`, `enum`, `type`, `minLength`, `maxLength`). The mapping UI shows these instead of raw regexes (CP-40222). Absent when the schema defines none.
+        conditionallyRequired:
+          type:
+          - object
+          - 'null'
+          examples:
+          - condition: tenantFacilityUniquenessMode
+            value: EXTERNAL_ID
+            message: Facility External ID is required when ...
+          additionalProperties: {}
+          description: 'When present, the field is required only under a tenant condition: `condition` names the tenant setting, `value` the value that triggers the requirement and `message` the explanation shown to users (CP-40222).'
+        minLength:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Minimum accepted length of the value, when the schema bounds it.
+        maxLength:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Maximum accepted length of the value, when the schema bounds it.
         enum:
           type: array
           items:
             type: string
+          description: Allowed values for enum-type system fields; roster values outside this list fail validation. Absent for free-form fields.
+        separator:
+          type: string
+          examples:
+          - ;
+          description: Literal separator character used to split a single cell value into multiple tokens for multi-value attributes. Blank or absent defaults to a comma at schema-generation time.
+        notes:
+          type:
+          - string
+          - 'null'
+          examples:
+          - Strip leading zeros before mapping
+          description: Free-text note on this template column, such as a pre-processing instruction. Stored per template in the `Notes` column of the template's mappings CSV; not used by validation or ingestion. Blank or absent means no note.
         singleSelect:
           type: boolean
+        skipped:
+          type: boolean
+    ErrorMessage:
+      type: object
+      description: Single-message error body returned by the roster endpoints' error paths.
+      properties:
+        error:
+          type: string
+          description: Human-readable message describing why the request failed.
+    GetUploadMappingsResponse:
+      type: object
+      description: Result of matching a file's column headers against a roster upload template. Every submitted header appears in mapped, unMapped, skipped, or cachedMapped. A cachedMapped header is also listed in unMapped while the cache-hits-also-unmapped setting is on (the default), so clients should treat cachedMapped as pre-filled suggestions for those unMapped headers.
+      properties:
+        mapped:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: Headers matched to a template field by exact name, each carrying the system field it resolves to. Matching is exact-name only; there is no fuzzy matching.
+        unMapped:
+          type: array
+          examples:
+          - - Provider Nickname
+          items:
+            type: string
+          description: Headers with no template match. These need a mapping decision before the template can be saved. While the cache-hits-also-unmapped setting is on (the default), this also includes headers that have a suggestion in cachedMapped.
+        skipped:
+          type: array
+          examples:
+          - - Internal Notes
+          items:
+            type: string
+          description: Headers matching a template field that was explicitly excluded on a previous mapping, so they are excluded again automatically.
+        systemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: Platform-managed fields available for this job type. They are populated by the system rather than driven by file columns, and are returned so the mapping UI can offer them. When compareAgainstTemplate is true, mappedEntity is cleared on each entry.
+        cachedMapped:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: Suggested mappings for headers the template did not match, recovered from the tenant's column mapping cache of previously confirmed choices. Suggestions only - nothing is applied until the mappings are saved. Each entry carries the header in name and the suggested system field in mappedKey.
     SingleStepTemplateFlowResponse:
       type: object
+      description: 'Result of a single-step template create or update: the resolved column mappings, final status, and the GCS object paths of the template artifacts.'
       properties:
         fields:
           type: array
           items:
             $ref: '#/components/schemas/Field'
+          description: The template's resolved column mappings. After a file upload these are the mappings extracted from the uploaded mappings CSV; after a metadata-only update they are the template's existing stored columns.
         status:
           type: string
+          examples:
+          - success
+          description: Final template status. `success` when the validation schema was generated and the template is ready for roster uploads; `failure` when schema generation failed with an I/O error. Metadata-only updates preserve and return the template's existing status.
         templateId:
           type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated ID of the created or updated template.
         templateUrl:
           type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+          description: GCS object path (not a signed URL) of the stored template CSV. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `templateUrl` in the record's `data`.
         schemaUrl:
           type: string
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
           examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
-    GetUploadMappingsRequest:
-      type: object
-      properties:
-        columns:
-          type: array
-          items:
-            type: string
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        compareAgainstTemplate:
-          type: boolean
-    SaveMappingsRequest:
-      type: object
-      properties:
-        updateExistingTemplate:
-          type: boolean
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        mappings:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-        templateName:
-          type: string
-        templateDescription:
-          type: string
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+          description: GCS object path (not a signed URL) of the generated JSON validation schema. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `schemaUrl` in the record's `data`.
   securitySchemes:
     jwt:
       type: http

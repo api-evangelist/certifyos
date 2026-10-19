@@ -1,8 +1,8 @@
 openapi: 3.2.0
 info:
-  title: Certifyos Webhooks API
-  version: '1.0'
-  description: 'Operations tagged Webhooks across 2 of this provider''s published API definitions: certifyos-api-service-openapi.yml, certifyos-application-openapi.json. Each path carries the servers of the definition it was published in.'
+  description: API for Certify application
+  title: Certify API Layer Webhooks API
+  version: 1.0.0
 servers:
 - url: http://localhost:9000
   description: Local Development Server
@@ -16,543 +16,351 @@ servers:
   description: Demo Server
 - url: https://api-service.certifyos.com
   description: Production Server
-- url: https://ng-api-production.certifyos.com
-  description: Production
-- url: https://ng-api-stg.certifyos.com/
-  description: Staging (Test Data)
 tags:
 - name: Webhooks
   description: APIs for managing webhooks
 paths:
   /webhooks/cloud-deliver:
     post:
-      summary: Cloud Task callback for webhook delivery
-      description: Called by Cloud Tasks to deliver a webhook event to a partner URL. The Cloud Tasks queue rate-limits dispatches to prevent exceeding partner rate limits.
+      summary: Deliver a webhook event to a partner URL
+      description: 'What it does: Executes an outbound HTTP POST to the partner URL in the request body, delivering a webhook event payload on behalf of the credentialing platform. The service sets an Idempotency-Key header (SHA-256 over messageId, webhookId, and eventType) on the outbound request and, when OAuth is configured, mints an Authorization: Bearer token before dispatching.
+
+
+        When to use: This endpoint is an internal callback invoked by the Cloud Tasks delivery queue; it is not intended to be called directly by external API consumers.
+
+
+        How (preconditions and authentication): The request must include the X-Credentialing-Api-Key header with a valid key; an absent or invalid key returns 401. The body must be a JSON object containing at minimum webhookUrl (the partner''s receiving endpoint) and eventType. Optional body fields include webhookId, messageId, headers (additional outbound headers), eventPayload (the event body sent to the partner), and oauthConfiguration (when absent or blank, the service falls back to static-header authentication mode). The tenant-id and user-id headers are forwarded as delivery context. A 400 is returned when the body is null or when webhookUrl or eventType is missing or blank; supply all required fields to resolve.
+
+
+        What you get back: On success (200) the partner endpoint returned a 2xx response and the body is {"message": "Webhook delivered successfully"}. The service performs internal exponential-backoff retries (configurable maximum) before giving up; if all retries are exhausted it returns 502 with a body of the form {"message": ..., "statusCode": ..., "error": ...}. When the dead-letter queue is enabled, an exhausted event is instead published to the DLQ and acknowledged with a 200 {"message": ..., "dlq": true} body so it can be replayed later.'
       operationId: webhookDeliveryCallback
       tags:
       - Webhooks
       parameters:
-      - description: Tenant ID
+      - description: Zero-indexed Cloud Tasks retry count, set by Cloud Tasks on each attempt. Used to detect the final attempt and route exhausted events to the DLQ. Defaults to 0 when absent or unparseable.
+        name: X-CloudTasks-TaskRetryCount
+        in: header
+        schema:
+          type: string
+      - description: Tenant identifier forwarded to the delivery service as delivery context. Optional; when omitted no tenant context is attached to the delivery.
         name: tenant-id
         in: header
         schema:
           type: string
-      - description: User ID for service-to-service calls
+      - description: User identifier for service-to-service call context. Optional; accepted for request-context propagation.
         name: user-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Webhook delivery task payload enqueued by the Cloud Tasks delivery queue. webhookUrl and eventType are required; all other fields are optional.
         content:
           application/json:
+            examples:
+              deliverWebhook:
+                value:
+                  messageId: msg_01HZX8N4QK2P7Y3B
+                  webhookId: wh_9f8c2b1a4d6e
+                  eventType: provider.credentialing.completed
+                  webhookUrl: https://partner.example.com/webhooks/certifyos
+                  headers:
+                    X-Partner-Signature: v1=abc123
+                  eventPayload:
+                    providerId: prov_12345
+                    npi: '1234567890'
+                    status: COMPLETED
+                    completedAt: '2026-07-21T14:32:00Z'
+                  oauthConfiguration:
+                    tokenUrl: https://auth.example.com/oauth/token
+                    clientId: certifyos-webhooks
+                    clientSecret: s3cr3t
+                    scope: webhooks:write
             schema:
-              $ref: '#/components/schemas/JsonNode'
+              type: object
+              description: Free-form Cloud Tasks delivery payload; see field descriptions above.
         required: true
       responses:
         '200':
-          description: Webhook delivered successfully
+          description: The partner endpoint acknowledged the event with a 2xx response, or the exhausted event was published to the dead-letter queue for later replay.
+          content:
+            application/json:
+              examples:
+                delivered:
+                  summary: Partner acknowledged the event
+                  value:
+                    message: Webhook delivered successfully
+                publishedToDlq:
+                  summary: Retries exhausted; event published to the DLQ
+                  value:
+                    message: Webhook delivery failed - event published to DLQ
+                    dlq: true
         '400':
-          description: Missing required fields in task payload
+          description: 'Two distinct 400 shapes are possible. (1) The task payload was well-formed JSON but missing or malformed: the body was null, or webhookUrl or eventType was absent or blank; resend the task with both required fields populated. This returns the flat {"message": ...} body shown in the missingRequiredFields example. (2) The request body was not valid JSON: this is caught by the framework before the handler runs and returns the structured ApiError shape shown in the malformedJson example instead.'
+          content:
+            application/json:
+              examples:
+                missingRequiredFields:
+                  summary: webhookUrl or eventType absent or blank
+                  value:
+                    message: 'Missing required fields: webhookUrl, eventType'
+                malformedJson:
+                  summary: Request body is not valid JSON
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Invalid request data
+                      detail: Unexpected character (...) - malformed JSON
+        '401':
+          description: The X-Credentialing-Api-Key header was missing or did not match the configured key. Supply the correct credentialing API key and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '502':
-          description: Webhook delivery failed - Cloud Tasks will retry
-    servers:
-    - url: http://localhost:9000
-      description: Local Development Server
-    - url: https://api-service.staging.certifyos.com
-      description: Staging Server
-    - url: https://api-service.internal.certifyos.com
-      description: Internal Server
-    - url: https://api-service.test.certifyos.com
-      description: Test Server
-    - url: https://api-service.demo.certifyos.com
-      description: Demo Server
-    - url: https://api-service.certifyos.com
-      description: Production Server
-  /v2/webhooks:
-    get:
-      operationId: WebhooksController_fetchAll
-      summary: Retrieve all registered webhooks
-      description: Retrieve all webhooks registered for the organization, including basic configuration details. Sensitive information like oauth_configuration will be masked in the response.
+          description: The partner endpoint returned a non-2xx response or was unreachable for this delivery attempt. This is returned both on non-final attempts (Cloud Tasks will retry) and on the final attempt when the event could not be published to the DLQ (e.g. the DLQ is disabled, or publishing itself failed). Inspect statusCode and error, verify the partner endpoint, then allow Cloud Tasks to retry.
+          content:
+            application/json:
+              examples:
+                deliveryFailed:
+                  value:
+                    message: Webhook delivery failed
+                    statusCode: 503
+                    error: Service Unavailable
+  /webhooks/dlq/drain:
+    post:
+      summary: Drain the webhook delivery DLQ
+      description: 'Pulls failed webhook delivery events from the DLQ Pub/Sub subscription and re-enqueues them as Cloud Tasks for redelivery. Supports filtering by webhookId and tenantId. Use dryRun=true to preview without re-enqueuing. Requires the webhook:create permission and a tenant-id header. Note: the drain does a single bounded pull (maxMessages) and filters client-side, so on a DLQ dominated by other tenants a tenant-scoped drain may pull mostly non-matching messages and need to be re-run; increase maxMessages and/or repeat until the summary shows requeued==0 with an empty pull.'
+      operationId: drainWebhookDlq
+      tags:
+      - Webhooks
       parameters:
-      - name: organization-id
+      - description: 'Caller''s tenant identifier. Required. The drain is scoped to this tenant: it overrides any tenantId supplied in the request body so callers cannot drain other tenants'' failed webhooks.'
         in: header
+        required: true
+        name: tenant-id
         schema:
           type: string
+      requestBody:
+        description: Drain parameters. All fields are optional; an empty body drains up to 100 messages to the default delivery queue without dry-run. A caller-supplied tenantId is ignored and replaced with the tenant-id header for security.
+        content:
+          application/json:
+            examples:
+              drainForWebhook:
+                summary: Re-enqueue failed events for one webhook
+                value:
+                  maxMessages: 200
+                  webhookId: wh_9f8c2b1a4d6e
+                  targetQueue: webhook-delivery
+                  dryRun: false
+              dryRunPreview:
+                summary: Inspect matching events without re-enqueuing
+                value:
+                  maxMessages: 100
+                  dryRun: true
+            schema:
+              $ref: '#/components/schemas/DrainDlqRequest'
+        required: true
       responses:
         '200':
-          description: List of registered webhooks retrieved successfully
+          description: 'Drain summary: counts of messages pulled, re-enqueued, filtered out, and failed, plus per-message results. On a dry run, matching events are reported with status DRY_RUN and none are re-enqueued.'
           content:
             application/json:
+              examples:
+                drainSummary:
+                  value:
+                    totalPulled: 12
+                    requeued: 8
+                    filtered: 3
+                    failed: 1
+                    results:
+                    - messageId: '7654321098765432'
+                      webhookId: wh_9f8c2b1a4d6e
+                      tenantId: tenant_acme
+                      status: REQUEUED
+                      detail: to webhook-delivery
+                    - messageId: '7654321098765433'
+                      webhookId: wh_2a1b3c4d5e6f
+                      tenantId: tenant_other
+                      status: FILTERED
+                      detail: did not match filter
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WebhookResponseDto'
-        '401':
-          description: Authorization token is missing or invalid.
-        '403':
-          description: User does not have permission to access this resource.
-      tags:
-      - Webhooks
-      security:
-      - BearerAuth: []
-    post:
-      operationId: WebhooksController_create
-      summary: Register Webhook (Credentialing Events)
-      description: Register a webhook for credentialing events of a provider. If headers are included, they will be sent with every request. If oauth_configuration is set, the token_url will be called with client_id and client_secret and a form urlencoded POST request to generate an access token. The response includes the webhook ID and configuration details.
-      parameters:
-      - name: organization-id
-        in: header
-        schema:
-          type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWebhooksDto'
-      responses:
-        '201':
-          description: Webhook Created Successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreateWebhookResponseDto'
+                $ref: '#/components/schemas/DrainDlqResponse'
         '400':
-          description: Bad request because the wrong parameters are provided in the request body.
+          description: 'Two distinct 400 shapes are possible. (1) The requested targetQueue is not an allowed webhook delivery queue: re-run with an allowed queue name (or omit targetQueue to use the default delivery queue); this returns the flat {"message": ...} body shown in the invalidTargetQueue example. (2) The request failed Bean Validation — the tenant-id header is missing, or maxMessages is outside the 1-1000 range: this returns the structured ApiError shape shown in the validationError example instead.'
           content:
             application/json:
-              schema:
-                example:
-                  message: Invalid request body
-                  errors:
-                  - url must be a valid URL
+              examples:
+                invalidTargetQueue:
+                  summary: targetQueue is not an allowed delivery queue
+                  value:
+                    message: 'Invalid targetQueue. Allowed values: [webhook-delivery, webhook-delivery-overflow]'
+                validationError:
+                  summary: Bean Validation failure (missing tenant-id header, or maxMessages outside 1-1000)
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: drain.tenantId'
+                      detail: must not be null
         '401':
-          description: Authorization token is missing or invalid.
+          description: Authentication is required or the JWT is missing/invalid. Retry with a valid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: User does not have permission to access this resource.
-      tags:
-      - Webhooks
+          description: The caller lacks the webhook:create permission required to drain the DLQ.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: Pulling messages from the DLQ Pub/Sub subscription failed (for example, Pub/Sub was unavailable). Distinguishes a transient outage from an empty queue; retry the drain.
+          content:
+            application/json:
+              examples:
+                drainFailed:
+                  value:
+                    message: 'Failed to drain DLQ: Pub/Sub subscription unavailable'
       security:
-      - BearerAuth: []
-    delete:
-      operationId: WebhooksController_remove
-      summary: Remove Registered Webhook
-      description: Remove a previously registered webhook by providing its configuration.
-      parameters:
-      - name: organization-id
-        in: header
-        schema:
-          type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RemoveWebhooksDto'
-      responses:
-        '204':
-          description: Webhook deleted successfully.
-        '400':
-          description: Bad request because the wrong parameters are provided in the request body.
-          content:
-            application/json:
-              schema:
-                example:
-                  message: Invalid request body
-                  errors:
-                  - id is required
-        '401':
-          description: Authorization token is missing or invalid.
-        '403':
-          description: User does not have permission to access this resource.
-        '404':
-          description: Webhook or related resource not found.
-          content:
-            application/json:
-              schema:
-                example:
-                  message: Webhook not found
-      tags:
-      - Webhooks
-      security:
-      - BearerAuth: []
-    servers:
-    - url: https://ng-api-production.certifyos.com
-      description: Production
-    - url: https://ng-api-stg.certifyos.com/
-      description: Staging (Test Data)
-  /v2/webhooks/{webhookId}/test-event:
-    post:
-      operationId: WebhooksController_testWebhook
-      summary: Test a registered webhook
-      description: Send a test event to a registered webhook. This is useful for verifying that the webhook endpoint is reachable and correctly configured.
-      parameters:
-      - name: organization-id
-        in: header
-        schema:
-          type: string
-      - name: webhookId
-        required: true
-        in: path
-        description: Webhook ID returned when registering a webhook
-        example: webhook_123
-        schema:
-          type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateWebhookTestEventDto'
-      responses:
-        '201':
-          description: Webhook test event sent successfully
-          content:
-            application/json:
-              schema:
-                example:
-                  message: Test event sent successfully
-        '400':
-          description: Bad request because the wrong parameters are provided in the request body.
-          content:
-            application/json:
-              schema:
-                example:
-                  message: Invalid request body
-                  errors:
-                  - eventType is required
-        '401':
-          description: Authorization token is missing or invalid.
-        '403':
-          description: User does not have permission to access this resource.
-        '422':
-          description: The test event could not be sent using the webhook configuration.
-          content:
-            application/json:
-              schema:
-                example:
-                  message: Failed to send test event
-                  reason: Invalid endpoint
-      tags:
-      - Webhooks
-      security:
-      - BearerAuth: []
-    servers:
-    - url: https://ng-api-production.certifyos.com
-      description: Production
-    - url: https://ng-api-stg.certifyos.com/
-      description: Staging (Test Data)
+      - jwt: []
 components:
   schemas:
-    JsonNode:
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    DrainResult:
       type: object
       properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    ClientCredentialsConfigurationDto:
-      type: object
-      properties:
-        client_id:
+        messageId:
           type: string
-          description: Client ID for OAuth token exchange
-          example: my-client-id
-        client_secret:
+          examples:
+          - '7654321098765432'
+          description: Pub/Sub message id of the DLQ message.
+        webhookId:
           type: string
-          description: Client secret for OAuth token exchange
-          example: my-client-secret
-        token_url:
+          examples:
+          - wh_9f8c2b1a4d6e
+          description: Webhook id extracted from the failed event, when available.
+        tenantId:
           type: string
-          description: URL for OAuth token exchange
-          example: https://auth.example.com/oauth/token
-        scope:
-          type:
-          - string
-          - 'null'
-          description: Scope for OAuth token exchange
-          example: resource.read
-        headers:
-          type:
-          - object
-          - 'null'
-          description: Key-value pairs of custom headers to send in the OAuth token exchange request to {token_url}.
-          example:
-            X-Domain-Name: example.com
-      required:
-      - client_id
-      - client_secret
-      - token_url
-    CreateWebhookTestEventDto:
-      type: object
-      properties:
-        message:
+          examples:
+          - tenant_acme
+          description: Tenant id extracted from the failed event, when available.
+        status:
           type: string
-          description: Message to include in the test event sent to the webhook
-        eventType:
           enum:
-          - IN_PROGRESS
-          - PSV_COMPLETED
-          - CREDENTIALING_COMPLETED
-          - PROVIDER_TERMINATED
-          - FACILITY_NOT_SENT_TO_CREDENTIALING
-          - FACILITY_IN_PROGRESS
-          - FACILITY_DATA_MISSING
-          - FACILITY_OUTREACH_IN_PROGRESS
-          - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
-          - FACILITY_CREDENTIALING_RESTARTED
-          - FACILITY_PSV_READY
-          - FACILITY_CRED_APPROVED
-          - FACILITY_HOLD_FOR_CRED_COMM
-          - FACILITY_CRED_DENIED
-          - FACILITY_TERMINATED
-          - FACILITY_RECREDENTIALING_IN_PROGRESS
-          - FACILITY_TABLED
-          - FACILITY_WITHDRAWN_CANCELLED
-          - FACILITY_NOT_STARTED
-          - PROVIDER_NOT_SENT_TO_CREDENTIALING
-          - PROVIDER_NOT_STARTED
-          - PROVIDER_IN_PROGRESS
-          - PROVIDER_DATA_MISSING
-          - PROVIDER_OUTREACH_IN_PROGRESS
-          - PROVIDER_PSV_COMPLETED
-          - PROVIDER_CREDENTIALING_RESTARTED
-          - PROVIDER_PSV_READY
-          - PROVIDER_CRED_APPROVED
-          - PROVIDER_HOLD_FOR_CRED_COMM
-          - PROVIDER_CRED_DENIED
-          - PROVIDER_RECREDENTIALING_IN_PROGRESS
-          - PROVIDER_TABLED
-          - PROVIDER_WITHDRAWN_CANCELLED
-          - FORM_SUBMISSION_CREATED
+          - REQUEUED
+          - FILTERED
+          - DRY_RUN
+          - FAILED
+          examples:
+          - REQUEUED
+          description: 'Outcome for this message. One of: REQUEUED (re-enqueued to the target queue), FILTERED (did not match the filter), DRY_RUN (matched but not re-enqueued because dryRun was true), FAILED (could not be re-enqueued or the payload was malformed).'
+        detail:
           type: string
-          description: Event type for the test event sent to the webhook
-      required:
-      - message
-      - eventType
-    CreateWebhooksDto:
+          examples:
+          - to webhook-delivery
+          description: Human-readable detail for the outcome, such as the target queue or the failure reason.
+    ApiError:
       type: object
+      description: Standard API error response containing a list of error objects
       properties:
-        url:
-          type: string
-          description: Callback URL to which data should be posted
-          example: https://yourdomain.com/webhook-endpoint
-        event_types:
+        errors:
           type: array
-          description: "Webhook event(s) that should trigger a post.\n    \nValues:\n- IN_PROGRESS: Credentialing is in progress\n- PSV_COMPLETED: Primary source verification completed\n- CREDENTIALING_COMPLETED: Credentialing completed\n- PROVIDER_TERMINATED: Provider terminated\n- FACILITY_NOT_SENT_TO_CREDENTIALING: Facility not sent to credentialing\n- FACILITY_IN_PROGRESS: Facility credentialing in progress\n- FACILITY_DATA_MISSING: Facility data missing\n- FACILITY_OUTREACH_IN_PROGRESS: Facility outreach in progress\n- FACILITY_PSV_COMPLETE_BY_CERTIFYOS: Facility PSV complete by CertifyOS\n- FACILITY_CREDENTIALING_RESTARTED: Facility credentialing restarted\n- FACILITY_PSV_READY: Facility PSV ready\n- FACILITY_CRED_APPROVED: Facility credentialing approved\n- FACILITY_HOLD_FOR_CRED_COMM: Facility hold for credentialing committee\n- FACILITY_CRED_DENIED: Facility credentialing denied\n- FACILITY_TERMINATED: Facility terminated\n- FACILITY_RECREDENTIALING_IN_PROGRESS: Facility recredentialing in progress\n- FACILITY_TABLED: Facility tabled\n- FACILITY_WITHDRAWN_CANCELLED: Facility withdrawn or cancelled\n- FACILITY_NOT_STARTED: Facility credentialing not started\n- PROVIDER_NOT_SENT_TO_CREDENTIALING: Provider not sent to credentialing\n- PROVIDER_NOT_STARTED: Provider credentialing not started\n- PROVIDER_IN_PROGRESS: Provider credentialing in progress\n- PROVIDER_DATA_MISSING: Provider data missing\n- PROVIDER_OUTREACH_IN_PROGRESS: Provider outreach in progress\n- PROVIDER_PSV_COMPLETED: Provider PSV completed\n- PROVIDER_CREDENTIALING_RESTARTED: Provider credentialing restarted\n- PROVIDER_PSV_READY: Provider PSV ready\n- PROVIDER_CRED_APPROVED: Provider credentialing approved\n- PROVIDER_HOLD_FOR_CRED_COMM: Provider hold for credentialing committee\n- PROVIDER_CRED_DENIED: Provider credentialing denied\n- PROVIDER_RECREDENTIALING_IN_PROGRESS: Provider recredentialing in progress\n- PROVIDER_TABLED: Provider tabled\n- PROVIDER_WITHDRAWN_CANCELLED: Provider withdrawn or cancelled\n- FORM_SUBMISSION_CREATED: Form submission created"
           items:
-            type: string
-            enum:
-            - IN_PROGRESS
-            - PSV_COMPLETED
-            - CREDENTIALING_COMPLETED
-            - PROVIDER_TERMINATED
-            - FACILITY_NOT_SENT_TO_CREDENTIALING
-            - FACILITY_IN_PROGRESS
-            - FACILITY_DATA_MISSING
-            - FACILITY_OUTREACH_IN_PROGRESS
-            - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
-            - FACILITY_CREDENTIALING_RESTARTED
-            - FACILITY_PSV_READY
-            - FACILITY_CRED_APPROVED
-            - FACILITY_HOLD_FOR_CRED_COMM
-            - FACILITY_CRED_DENIED
-            - FACILITY_TERMINATED
-            - FACILITY_RECREDENTIALING_IN_PROGRESS
-            - FACILITY_TABLED
-            - FACILITY_WITHDRAWN_CANCELLED
-            - FACILITY_NOT_STARTED
-            - PROVIDER_NOT_SENT_TO_CREDENTIALING
-            - PROVIDER_NOT_STARTED
-            - PROVIDER_IN_PROGRESS
-            - PROVIDER_DATA_MISSING
-            - PROVIDER_OUTREACH_IN_PROGRESS
-            - PROVIDER_PSV_COMPLETED
-            - PROVIDER_CREDENTIALING_RESTARTED
-            - PROVIDER_PSV_READY
-            - PROVIDER_CRED_APPROVED
-            - PROVIDER_HOLD_FOR_CRED_COMM
-            - PROVIDER_CRED_DENIED
-            - PROVIDER_RECREDENTIALING_IN_PROGRESS
-            - PROVIDER_TABLED
-            - PROVIDER_WITHDRAWN_CANCELLED
-            - FORM_SUBMISSION_CREATED
-        description:
-          type: string
-          description: Title/description of the webhook being registered
-          example: Provider Created Webhook
-        headers:
-          type: object
-          description: Key-value pairs of custom static headers sent with the webhook requests (e.g., for API keys or tokens). To send headers in the OAuth token exchange, set the oauth_configuration.headers property.
-          example:
-            X-Api-Key: abcdef123456
-        oauth_configuration:
-          description: OAuth2 client credentials configuration for token-based authentication.
-          example:
-            client_id: my-client-id
-            client_secret: my-client-secret
-            token_url: https://auth.example.com/oauth/token
-          allOf:
-          - $ref: '#/components/schemas/ClientCredentialsConfigurationDto'
-      required:
-      - url
-      - event_types
-    WebhookResponseDto:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    DrainDlqResponse:
       type: object
       properties:
-        id:
-          type: string
-          description: Unique identifier for the webhook registration
-        organization_id:
-          type: string
-          description: Unique identifier for the client organization
-        url:
-          type: string
-          description: Callback URL to which data should be posted
-          example: https://yourdomain.com/webhook-endpoint
-        event_types:
+        totalPulled:
+          type: integer
+          format: int32
+          examples:
+          - 12
+          description: Total messages pulled from the DLQ subscription in this drain.
+        requeued:
+          type: integer
+          format: int32
+          examples:
+          - 8
+          description: Messages successfully re-enqueued to the target Cloud Tasks queue.
+        filtered:
+          type: integer
+          format: int32
+          examples:
+          - 3
+          description: Messages skipped because they did not match the webhookId/tenantId filter.
+        failed:
+          type: integer
+          format: int32
+          examples:
+          - 1
+          description: Messages that failed to re-enqueue; they remain in the DLQ and are retried on the next drain.
+        results:
           type: array
-          description: "Credentialing event(s) that should trigger a post.\n    \nValues:\n- IN_PROGRESS: Credentialing is in progress\n- PSV_COMPLETED: Primary source verification completed\n- CREDENTIALING_COMPLETED: Credentialing completed\n- PROVIDER_TERMINATED: Provider terminated\n- FACILITY_NOT_SENT_TO_CREDENTIALING: Facility not sent to credentialing\n- FACILITY_IN_PROGRESS: Facility credentialing in progress\n- FACILITY_DATA_MISSING: Facility data missing\n- FACILITY_OUTREACH_IN_PROGRESS: Facility outreach in progress\n- FACILITY_PSV_COMPLETE_BY_CERTIFYOS: Facility PSV complete by CertifyOS\n- FACILITY_CREDENTIALING_RESTARTED: Facility credentialing restarted\n- FACILITY_PSV_READY: Facility PSV ready\n- FACILITY_CRED_APPROVED: Facility credentialing approved\n- FACILITY_HOLD_FOR_CRED_COMM: Facility hold for credentialing committee\n- FACILITY_CRED_DENIED: Facility credentialing denied\n- FACILITY_TERMINATED: Facility terminated\n- FACILITY_RECREDENTIALING_IN_PROGRESS: Facility recredentialing in progress\n- FACILITY_TABLED: Facility tabled\n- FACILITY_WITHDRAWN_CANCELLED: Facility withdrawn or cancelled\n- FACILITY_NOT_STARTED: Facility credentialing not started\n- PROVIDER_NOT_SENT_TO_CREDENTIALING: Provider not sent to credentialing\n- PROVIDER_NOT_STARTED: Provider credentialing not started\n- PROVIDER_IN_PROGRESS: Provider credentialing in progress\n- PROVIDER_DATA_MISSING: Provider data missing\n- PROVIDER_OUTREACH_IN_PROGRESS: Provider outreach in progress\n- PROVIDER_PSV_COMPLETED: Provider PSV completed\n- PROVIDER_CREDENTIALING_RESTARTED: Provider credentialing restarted\n- PROVIDER_PSV_READY: Provider PSV ready\n- PROVIDER_CRED_APPROVED: Provider credentialing approved\n- PROVIDER_HOLD_FOR_CRED_COMM: Provider hold for credentialing committee\n- PROVIDER_CRED_DENIED: Provider credentialing denied\n- PROVIDER_RECREDENTIALING_IN_PROGRESS: Provider recredentialing in progress\n- PROVIDER_TABLED: Provider tabled\n- PROVIDER_WITHDRAWN_CANCELLED: Provider withdrawn or cancelled"
           items:
-            type: string
-            enum:
-            - IN_PROGRESS
-            - PSV_COMPLETED
-            - CREDENTIALING_COMPLETED
-            - PROVIDER_TERMINATED
-            - FACILITY_NOT_SENT_TO_CREDENTIALING
-            - FACILITY_IN_PROGRESS
-            - FACILITY_DATA_MISSING
-            - FACILITY_OUTREACH_IN_PROGRESS
-            - FACILITY_PSV_COMPLETE_BY_CERTIFYOS
-            - FACILITY_CREDENTIALING_RESTARTED
-            - FACILITY_PSV_READY
-            - FACILITY_CRED_APPROVED
-            - FACILITY_HOLD_FOR_CRED_COMM
-            - FACILITY_CRED_DENIED
-            - FACILITY_TERMINATED
-            - FACILITY_RECREDENTIALING_IN_PROGRESS
-            - FACILITY_TABLED
-            - FACILITY_WITHDRAWN_CANCELLED
-            - FACILITY_NOT_STARTED
-            - PROVIDER_NOT_SENT_TO_CREDENTIALING
-            - PROVIDER_NOT_STARTED
-            - PROVIDER_IN_PROGRESS
-            - PROVIDER_DATA_MISSING
-            - PROVIDER_OUTREACH_IN_PROGRESS
-            - PROVIDER_PSV_COMPLETED
-            - PROVIDER_CREDENTIALING_RESTARTED
-            - PROVIDER_PSV_READY
-            - PROVIDER_CRED_APPROVED
-            - PROVIDER_HOLD_FOR_CRED_COMM
-            - PROVIDER_CRED_DENIED
-            - PROVIDER_RECREDENTIALING_IN_PROGRESS
-            - PROVIDER_TABLED
-            - PROVIDER_WITHDRAWN_CANCELLED
-            - FORM_SUBMISSION_CREATED
-        description:
-          type: string
-          description: Title/description of the webhook being registered
-          example: Provider Created Webhook
-        headers:
-          type: object
-          description: Key-value pairs of custom static headers sent with the webhook requests (e.g., for API keys or tokens). These are masked in the response.
-          example:
-            X-Api-Key: '****'
-        oauth_configuration:
-          description: OAuth2 client credentials configuration for token-based authentication. These are masked in the response.
-          example:
-            client_id: my-client-id
-            client_secret: '****'
-            token_url: https://auth.example.com/oauth/token
-          allOf:
-          - $ref: '#/components/schemas/ClientCredentialsConfigurationDto'
-        created_at:
-          type: string
-          description: Timestamp when the webhook was created
-      required:
-      - id
-      - organization_id
-      - url
-      - event_types
-      - created_at
-    CreateWebhookResponseDto:
+            $ref: '#/components/schemas/DrainResult'
+          description: Per-message outcome details for the messages pulled in this drain.
+    DrainDlqRequest:
       type: object
       properties:
-        id:
+        maxMessages:
+          type: integer
+          format: int32
+          examples:
+          - 100
+          description: Maximum number of messages to pull from the DLQ in this invocation. Integer between 1 and 1000; defaults to 100 when omitted.
+          maximum: 1000
+          minimum: 1
+        webhookId:
           type: string
-      required:
-      - id
-    RemoveWebhooksDto:
-      type: object
-      properties:
-        id:
+          examples:
+          - wh_9f8c2b1a4d6e
+          description: 'Optional filter: only re-enqueue events for this webhook id. When omitted, events for all webhooks (within the tenant) are eligible.'
+        tenantId:
           type: string
-          description: ID assigned to the Webhook
-      required:
-      - id
+          description: Optional in the payload but always overridden by the tenant-id header for security; a caller-supplied value that differs from the header is ignored.
+        targetQueue:
+          type: string
+          examples:
+          - webhook-delivery
+          description: Optional Cloud Tasks queue to re-enqueue matching events to. Must be an allowed webhook delivery queue; defaults to the primary webhook-delivery queue when omitted.
+        dryRun:
+          type: boolean
+          examples:
+          - false
+          description: When true, pull and inspect matching messages but do not re-enqueue them (messages are nacked back to the subscription). Defaults to false.
   securitySchemes:
     jwt:
       type: http
       description: JWT Authentication - Provide only the raw token without Bearer prefix
       scheme: bearer
       bearerFormat: JWT
-    BearerAuth:
-      scheme: bearer
-      bearerFormat: JWT
-      type: http
-x-refined-from:
-- certifyos-api-service-openapi.yml
-- certifyos-application-openapi.json

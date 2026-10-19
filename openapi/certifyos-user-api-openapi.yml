@@ -76,6 +76,51 @@ paths:
           description: Users retrieved successfully. When includeRoles is true, returns UserListResponseWithRolesDto containing users with their roles. When includeRoles is false or not provided, returns UserListResponseDto containing only user objects without roles.
           content:
             application/json:
+              examples:
+                withoutRoles:
+                  summary: includeRoles omitted or false
+                  value:
+                    data:
+                    - id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                      email: jane.doe@example.com
+                      firstName: Jane
+                      lastName: Doe
+                      tenantId: tenant-123-mock
+                      createdAt: '2026-01-15T09:30:00Z'
+                      updatedAt: '2026-02-20T14:05:00Z'
+                      createdBy: admin-user-001
+                      updatedBy: admin-user-001
+                      roles: []
+                    totalCount: 42
+                    links:
+                      self: /users?page=0&size=50
+                      next: /users?page=1&size=50
+                withRoles:
+                  summary: includeRoles=true
+                  value:
+                    data:
+                    - id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                      email: jane.doe@example.com
+                      firstName: Jane
+                      lastName: Doe
+                      tenantId: tenant-123-mock
+                      createdAt: '2026-01-15T09:30:00Z'
+                      updatedAt: '2026-02-20T14:05:00Z'
+                      createdBy: admin-user-001
+                      updatedBy: admin-user-001
+                      roles:
+                      - id: role_a1b2c3d4
+                        name: Analyst
+                        description: Standard analyst role
+                        tenantId: tenant-123-mock
+                        createdAt: '2026-01-10T08:00:00Z'
+                        createdBy: admin-user-001
+                        updatedAt: '2026-01-10T08:00:00Z'
+                        updatedBy: admin-user-001
+                    totalCount: 42
+                    links:
+                      self: /users?page=0&size=50&includeRoles=true
+                      next: /users?page=1&size=50&includeRoles=true
               schema:
                 oneOf:
                 - $ref: '#/components/schemas/UserListResponseDto'
@@ -103,8 +148,16 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Details of the user to create
         content:
           application/json:
+            examples:
+              createUser:
+                value:
+                  email: jane.doe@example.com
+                  password: S3curePass!23
+                  firstName: Jane
+                  lastName: Doe
             schema:
               $ref: '#/components/schemas/CreateUserRequest'
         required: true
@@ -113,6 +166,15 @@ paths:
           description: User created successfully
           content:
             application/json:
+              examples:
+                userCreated:
+                  value:
+                    id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                    auth0UserId: auth0|64f1a2b3c4d5e6f7a8b9c0d1
+                    email: jane.doe@example.com
+                    firstName: Jane
+                    lastName: Doe
+                    status: active
               schema:
                 $ref: '#/components/schemas/UserCreationResponse'
         '400':
@@ -149,7 +211,38 @@ paths:
         '200':
           description: Analyst users retrieved successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                analysts:
+                  value:
+                    data:
+                    - id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                      email: analyst.one@example.com
+                      firstName: Alex
+                      lastName: Analyst
+                      tenantId: tenant-123-mock
+                      createdAt: '2026-01-15'
+                      updatedAt: '2026-02-20'
+                      createdBy: admin-user-001
+                      updatedBy: admin-user-001
+                      roles:
+                      - id: role_a1b2c3d4
+                        name: Analyst
+                        description: Standard analyst role
+                        tenantId: tenant-123-mock
+                        isInternal: false
+                        createdAt: '2026-01-10'
+                        createdBy: admin-user-001
+                        updatedAt: '2026-01-10'
+                        updatedBy: admin-user-001
+              schema:
+                type: object
+                description: Wraps the DAL UserResponse list returned by UserApi#getAnalysts.
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserResponse'
         '400':
           description: Missing tenant-id header
           content:
@@ -186,7 +279,38 @@ paths:
         '200':
           description: Facility analyst users retrieved successfully
           content:
-            application/json: {}
+            application/json:
+              examples:
+                facilityAnalysts:
+                  value:
+                    data:
+                    - id: 7a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d
+                      email: facility.analyst@example.com
+                      firstName: Blair
+                      lastName: Reviewer
+                      tenantId: tenant-123-mock
+                      createdAt: '2026-01-15'
+                      updatedAt: '2026-02-20'
+                      createdBy: admin-user-001
+                      updatedBy: admin-user-001
+                      roles:
+                      - id: role_b2c3d4e5
+                        name: FacilityAnalyst
+                        description: Facility review analyst role
+                        tenantId: tenant-123-mock
+                        isInternal: false
+                        createdAt: '2026-01-10'
+                        createdBy: admin-user-001
+                        updatedAt: '2026-01-10'
+                        updatedBy: admin-user-001
+              schema:
+                type: object
+                description: Wraps the DAL UserResponse list returned by UserApi#getFacilityAnalysts.
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserResponse'
         '400':
           description: Missing tenant-id header
           content:
@@ -214,8 +338,15 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Details of the user to invite
         content:
           application/json:
+            examples:
+              inviteUser:
+                value:
+                  email: jane.doe@example.com
+                  firstName: Jane
+                  lastName: Doe
             schema:
               $ref: '#/components/schemas/InviteUserRequest'
         required: true
@@ -226,13 +357,13 @@ paths:
             application/json:
               schema:
                 type: object
+                examples:
+                - userId: user_123456
+                description: user id of the invited user
                 properties:
                   userId:
                     type: string
                     description: user id of the invited user
-                description: user id of the invited user
-                examples:
-                - userId: user_123456
         '400':
           description: Bad Request - Malformed request body
         '401':
@@ -260,6 +391,18 @@ paths:
           description: User profile retrieved
           content:
             application/json:
+              examples:
+                userProfile:
+                  value:
+                    id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                    email: jane.doe@example.com
+                    firstName: Jane
+                    lastName: Doe
+                    tenants:
+                    - id: tenant-123-mock
+                      name: Acme Health
+                    - id: tenant-456-mock
+                      name: Springfield Clinic
               schema:
                 $ref: '#/components/schemas/UserProfileResponse'
         '401':
@@ -294,8 +437,8 @@ paths:
                   role:
                   - read
               schema:
-                description: "Map of tenant IDs to resource permission maps.\n\nExample shape:\n```json\n{\n  \"tenant-123-mock\": {\n    \"roster\": [\"read\", \"create\", \"update\"],\n    \"role\": [\"read\"],\n    ...\n  },\n  \"tenant-456-mock\": {\n    ...\n  },\n  ...\n}\n```\n"
                 type: object
+                description: "Map of tenant IDs to resource permission maps.\n\nExample shape:\n```json\n{\n  \"tenant-123-mock\": {\n    \"roster\": [\"read\", \"create\", \"update\"],\n    \"role\": [\"read\"],\n    ...\n  },\n  \"tenant-456-mock\": {\n    ...\n  },\n  ...\n}\n```\n"
         '401':
           description: Authentication required - Valid authentication token is missing or invalid
         '403':
@@ -322,8 +465,14 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Full set of updatable user fields
         content:
           application/json:
+            examples:
+              replaceUser:
+                value:
+                  firstName: Jane
+                  lastName: Doe-Smith
             schema:
               $ref: '#/components/schemas/UpdateUserRequest'
         required: true
@@ -332,6 +481,18 @@ paths:
           description: User replaced successfully
           content:
             application/json:
+              examples:
+                userReplaced:
+                  value:
+                    id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                    email: jane.doe@example.com
+                    firstName: Jane
+                    lastName: Doe-Smith
+                    tenantId: tenant-123-mock
+                    createdAt: '2026-01-15T09:30:00Z'
+                    updatedAt: '2026-07-21T11:15:00Z'
+                    createdBy: admin-user-001
+                    updatedBy: admin-user-002
               schema:
                 $ref: '#/components/schemas/UserResponseDto'
         '400':
@@ -363,8 +524,14 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Subset of user fields to update; omitted fields are left unchanged
         content:
           application/json:
+            examples:
+              patchUser:
+                value:
+                  firstName: Jane
+                  lastName: Doe-Smith
             schema:
               $ref: '#/components/schemas/PartialUpdateUserRequest'
         required: true
@@ -373,6 +540,18 @@ paths:
           description: User patched successfully
           content:
             application/json:
+              examples:
+                userPatched:
+                  value:
+                    id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                    email: jane.doe@example.com
+                    firstName: Jane
+                    lastName: Doe-Smith
+                    tenantId: tenant-123-mock
+                    createdAt: '2026-01-15T09:30:00Z'
+                    updatedAt: '2026-07-21T11:20:00Z'
+                    createdBy: admin-user-001
+                    updatedBy: admin-user-002
               schema:
                 $ref: '#/components/schemas/UserResponseDto'
         '400':
@@ -408,6 +587,18 @@ paths:
           description: User retrieved successfully
           content:
             application/json:
+              examples:
+                user:
+                  value:
+                    id: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                    email: jane.doe@example.com
+                    firstName: Jane
+                    lastName: Doe
+                    tenantId: tenant-123-mock
+                    createdAt: '2026-01-15T09:30:00Z'
+                    updatedAt: '2026-02-20T14:05:00Z'
+                    createdBy: admin-user-001
+                    updatedBy: admin-user-001
               schema:
                 $ref: '#/components/schemas/UserResponseDto'
         '400':
@@ -443,6 +634,10 @@ paths:
           description: User deleted successfully
           content:
             application/json:
+              examples:
+                userDeleted:
+                  value:
+                    message: User deleted successfully
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
@@ -487,8 +682,8 @@ paths:
                 role:
                 - read
               schema:
-                description: "Returns a list of resources with their permissions.\n\nExample shape:\n```json\n{\n    \"roster\": [\"read\", \"create\", \"update\"],\n    \"role\": [\"read\"],\n    ...\n}\n```\n"
                 type: object
+                description: "Returns a list of resources with their permissions.\n\nExample shape:\n```json\n{\n    \"roster\": [\"read\", \"create\", \"update\"],\n    \"role\": [\"read\"],\n    ...\n}\n```\n"
         '400':
           description: Bad request - Invalid request parameters or missing required headers
         '401':
@@ -521,6 +716,19 @@ paths:
           description: User roles retrieved successfully
           content:
             application/json:
+              examples:
+                userRoles:
+                  value:
+                    data:
+                    - id: ur_7c3e9a1b2d4f
+                      userId: 5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f
+                      tenantId: tenant-123-mock
+                      roleId: role_a1b2c3d4
+                      createdAt: '2026-01-15T09:30:00Z'
+                      createdBy: admin-user-001
+                    totalCount: 1
+                    links:
+                      self: /users/5f9d7a3e-2b1c-4e8a-9f6d-1a2b3c4d5e6f/roles?page=0&size=50
               schema:
                 $ref: '#/components/schemas/UserRolesResponseDto'
         '400':
@@ -551,8 +759,17 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Role IDs to add and/or remove for the user
         content:
           application/json:
+            examples:
+              bulkRoleUpdate:
+                value:
+                  add:
+                  - role_a1b2c3d4
+                  - role_e5f6a7b8
+                  remove:
+                  - role_c9d0e1f2
             schema:
               $ref: '#/components/schemas/UserRoleBulkUpdateRequest'
         required: true
@@ -561,6 +778,10 @@ paths:
           description: User roles updated successfully
           content:
             application/json:
+              examples:
+                bulkRoleUpdated:
+                  value:
+                    message: User roles updated successfully
               schema:
                 $ref: '#/components/schemas/BulkRoleUpdateResponse'
         '400':
@@ -600,6 +821,10 @@ paths:
           description: Role removed successfully
           content:
             application/json:
+              examples:
+                roleRemoved:
+                  value:
+                    message: Role removed successfully
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
@@ -638,6 +863,10 @@ paths:
           description: User roles updated successfully
           content:
             application/json:
+              examples:
+                roleAssigned:
+                  value:
+                    message: User roles updated successfully
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
@@ -652,39 +881,59 @@ paths:
       - jwt: []
 components:
   schemas:
-    InviteUserRequest:
-      description: Request body for inviting a new user
+    CreateUserRequest:
       type: object
       required:
       - email
+      - password
       - firstName
       - lastName
+      description: Request body for creating a new user
       properties:
         email:
           type: string
-          description: User email address
           examples:
           - user@example.com
           pattern: \S
+          description: User email address
+        password:
+          type: string
+          minLength: 8
+          examples:
+          - password123
+          pattern: \S
+          description: User password
         firstName:
           type: string
-          description: User first name
           examples:
           - John
-          pattern: \S
           maxLength: 100
+          pattern: \S
+          description: User first name
         lastName:
           type: string
-          description: User last name
           examples:
           - Doe
-          pattern: \S
           maxLength: 100
+          pattern: \S
+          description: User last name
+    BulkRoleUpdateResponse:
+      type: object
+      description: Response for bulk role update operation
+      properties:
+        message:
+          type: string
+          description: Success message
     OffsetDateTime:
       type: string
       format: date-time
       examples:
       - '2022-03-10T12:15:50-04:00'
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
     UserProfileResponse:
       type: object
       properties:
@@ -699,46 +948,74 @@ components:
         tenants:
           type: array
           items:
-            $ref: '#/components/schemas/Tenant'
-    UserListResponseWithRolesDto:
-      title: UserListResponseWithRolesDto
-      description: Paginated list of users with roles
+            $ref: '#/components/schemas/Tenant1'
+    PartialUpdateUserRequest:
       type: object
+      description: Request body for partially updating user details (email is not updatable)
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserResponseWithRolesDto'
-          description: List of users with roles
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of users
-        links:
-          description: Pagination links
-          type: object
-          $ref: '#/components/schemas/PageLinks1'
-    UserResponseDto:
+        firstName:
+          type: string
+          examples:
+          - John
+          maxLength: 100
+          description: User first name
+        lastName:
+          type: string
+          examples:
+          - Doe
+          maxLength: 100
+          description: User last name
+    RoleResponse1:
       type: object
       properties:
         id:
           type: string
-        email:
+        name:
           type: string
-        firstName:
-          type: string
-        lastName:
+        description:
           type: string
         tenantId:
           type: string
+        isInternal:
+          type: boolean
         createdAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-        updatedAt:
-          $ref: '#/components/schemas/OffsetDateTime'
+          $ref: '#/components/schemas/Date'
         createdBy:
           type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
         updatedBy:
           type: string
+    UserRolesResponseDto:
+      type: object
+      description: User roles response containing list of roles
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleDetails1'
+          description: List of roles assigned to the user
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roles assigned to the user
+        links:
+          $ref: '#/components/schemas/PageLinks'
+          type: object
+          description: Pagination links
+    PageLinks:
+      type: object
+      description: HATEOAS-style pagination links.
+      properties:
+        self:
+          type: string
+          description: Link to the current page.
+        next:
+          type: string
+          description: Link to the next page; null on the last page.
+        prev:
+          type: string
+          description: Link to the previous page; null on the first page.
     RoleDetails1:
       type: object
       properties:
@@ -754,91 +1031,52 @@ components:
           $ref: '#/components/schemas/OffsetDateTime'
         createdBy:
           type: string
-    Tenant:
+    UserResponse:
       type: object
       properties:
         id:
           type: string
-        name:
-          type: string
-    CreateUserRequest:
-      description: Request body for creating a new user
-      type: object
-      required:
-      - email
-      - password
-      - firstName
-      - lastName
-      properties:
-        email:
-          type: string
-          description: User email address
-          examples:
-          - user@example.com
-          pattern: \S
-        password:
-          type: string
-          description: User password
-          examples:
-          - password123
-          pattern: \S
-          minLength: 8
         firstName:
           type: string
-          description: User first name
-          examples:
-          - John
-          pattern: \S
-          maxLength: 100
         lastName:
           type: string
-          description: User last name
-          examples:
-          - Doe
-          pattern: \S
-          maxLength: 100
-    UserRolesResponseDto:
-      description: User roles response containing list of roles
+        email:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleResponse1'
+    Date:
+      type: string
+      format: date
+    UserListResponseDto:
       type: object
+      description: Paginated list of users
+      title: UserListResponseDto
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/RoleDetails1'
-          description: List of roles assigned to the user
+            $ref: '#/components/schemas/UserResponseDto'
+          description: List of users
         totalCount:
           type: integer
           format: int64
-          description: Total number of roles assigned to the user
+          description: Total number of users
         links:
-          description: Pagination links
+          $ref: '#/components/schemas/PageLinks'
           type: object
-          $ref: '#/components/schemas/PageLinks1'
-    PartialUpdateUserRequest:
-      description: Request body for partially updating user details (email is not updatable)
-      type: object
-      properties:
-        firstName:
-          type: string
-          description: User first name
-          examples:
-          - John
-          maxLength: 100
-        lastName:
-          type: string
-          description: User last name
-          examples:
-          - Doe
-          maxLength: 100
-    PageLinks1:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
+          description: Pagination links
     UserRoleBulkUpdateRequest:
       type: object
       properties:
@@ -850,21 +1088,80 @@ components:
           type: array
           items:
             type: string
-    UserCreationResponse:
+    Tenant1:
       type: object
       properties:
         id:
           type: string
-        auth0UserId:
+        name:
           type: string
+    UserListResponseWithRolesDto:
+      type: object
+      description: Paginated list of users with roles
+      title: UserListResponseWithRolesDto
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponseWithRolesDto'
+          description: List of users with roles
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of users
+        links:
+          $ref: '#/components/schemas/PageLinks'
+          type: object
+          description: Pagination links
+    InviteUserRequest:
+      type: object
+      required:
+      - email
+      - firstName
+      - lastName
+      description: Request body for inviting a new user
+      properties:
         email:
           type: string
+          examples:
+          - user@example.com
+          pattern: \S
+          description: User email address
         firstName:
           type: string
+          examples:
+          - John
+          maxLength: 100
+          pattern: \S
+          description: User first name
         lastName:
           type: string
-        status:
+          examples:
+          - Doe
+          maxLength: 100
+          pattern: \S
+          description: User last name
+    UpdateUserRequest:
+      type: object
+      required:
+      - firstName
+      - lastName
+      description: Request body for updating user details (full update - email is not updatable)
+      properties:
+        firstName:
           type: string
+          examples:
+          - John
+          maxLength: 100
+          pattern: \S
+          description: User first name
+        lastName:
+          type: string
+          examples:
+          - Doe
+          maxLength: 100
+          pattern: \S
+          description: User last name
     UserResponseWithRolesDto:
       type: object
       description: User response with roles included
@@ -892,31 +1189,42 @@ components:
           items:
             $ref: '#/components/schemas/RoleDetails'
           description: List of roles assigned to the user
-    UserListResponseDto:
-      title: UserListResponseDto
-      description: Paginated list of users
+    UserResponseDto:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserResponseDto'
-          description: List of users
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of users
-        links:
-          description: Pagination links
-          type: object
-          $ref: '#/components/schemas/PageLinks1'
-    BulkRoleUpdateResponse:
-      description: Response for bulk role update operation
-      type: object
-      properties:
-        message:
+        id:
           type: string
-          description: Success message
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+    UserCreationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        auth0UserId:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        status:
+          type: string
     RoleDetails:
       type: object
       description: Role details with full role information
@@ -936,32 +1244,6 @@ components:
         updatedAt:
           $ref: '#/components/schemas/OffsetDateTime'
         updatedBy:
-          type: string
-    UpdateUserRequest:
-      description: Request body for updating user details (full update - email is not updatable)
-      type: object
-      required:
-      - firstName
-      - lastName
-      properties:
-        firstName:
-          type: string
-          description: User first name
-          examples:
-          - John
-          pattern: \S
-          maxLength: 100
-        lastName:
-          type: string
-          description: User last name
-          examples:
-          - Doe
-          pattern: \S
-          maxLength: 100
-    SuccessResponse:
-      type: object
-      properties:
-        message:
           type: string
   securitySchemes:
     jwt:

@@ -22,36 +22,62 @@ tags:
 paths:
   /contracts:
     get:
-      summary: Find Contract by filter criteria with pagination
-      description: Returns a paginated filtered list of all Contracts based on the provided criteria. Supports both offset-based (page/size) and cursor-based (startAfter/endAt) pagination.
+      summary: List contracts with pagination
+      description: 'Returns a paginated list of contracts for the tenant identified by the `tenant-id` header.
+
+
+        **When to use:** Use this endpoint to browse or page through the contract catalogue. For a single known contract, prefer `GET /contracts/{id}` to avoid scanning a page of results.
+
+
+        **Preconditions:** Requires the `READ_CONTRACT` permission.
+
+
+        **Pagination:** Two modes are supported and should not be combined:
+
+        - *Offset-based*: provide `page` (0-based; treated as `0` if omitted or negative) and `size` (records per page; defaults to `50` if omitted or non-positive, silently clamped to a maximum of `100` if a larger value is supplied).
+
+        - *Cursor-based*: provide `startAfterId` to page forward or `endAtId` to page backward, using the contract''s server-assigned `id` field (not `documentId`) from a previous response. If either cursor parameter is supplied, it takes precedence over `page` even if both are sent.
+
+        If none of `page`, `startAfterId`, or `endAtId` are supplied, the first page is returned in cursor mode, ordered ascending by `id`.
+
+
+        **Filtering:** This operation does not currently accept a filter query parameter - every call returns the full unfiltered set of contracts for the tenant, paginated. (The underlying data layer supports filtering by `planId`/`networkId`/`documentId`, but this endpoint does not yet forward a filter to it.)
+
+
+        **Response:** A paginated envelope containing a `data` array of Contract objects, a `links` object with `self`/`next`/`prev` navigation URLs (`next`/`prev` are `null` when there is no further page in that direction), and a `totalCount` of matching records. No state is changed; this operation is safe and idempotent.'
       operationId: contractsFindMany
       tags:
       - Contracts
       parameters:
-      - description: End at document ID, for backward cursor-based pagination
+      - description: Contract `id` to end at, for backward cursor-based pagination. Takes precedence over `page` when supplied.
+        example: ctr_8a2f3e91
         name: endAtId
         in: query
         schema:
           type: string
-      - description: Page number (0-based), for offset-based pagination
+      - description: Page number (0-based), for offset-based pagination. Ignored if `startAfterId` or `endAtId` is supplied.
+        example: 0
         name: page
         in: query
         schema:
           type: integer
           format: int32
-      - description: Page size
+      - description: Number of records per page. Defaults to 50 if omitted or non-positive; values above 100 are silently clamped to 100.
+        example: 50
         name: size
         in: query
         schema:
           type: integer
           format: int32
           default: '50'
-      - description: Start after document ID, for forward cursor-based pagination
+      - description: Contract `id` to start after, for forward cursor-based pagination. Takes precedence over `page` when supplied.
+        example: ctr_8a2f3e91
         name: startAfterId
         in: query
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant ID used to scope the results to the caller's tenant.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
@@ -59,13 +85,38 @@ paths:
           type: string
       responses:
         '200':
-          description: List of Contracts found
+          description: Paginated list of contracts for the tenant, in the order determined by the pagination mode used (see description).
           content:
             application/json:
+              examples:
+                contractsPage:
+                  value:
+                    data:
+                    - id: ctr_8a2f3e91
+                      planId: plan_40921
+                      networkId: network_58213
+                      documentId: doc_2026_04821
+                      createdBy: user_30172
+                      updatedBy: user_58890
+                      generalInfo:
+                        contractId: GC-2026-0417
+                        contractName: Acme Health Network FFS Agreement
+                        contractType: FFS
+                        contractStatus: Active
+                        contractAgreementType: Single
+                        networkId: network_58213
+                        planId: plan_40921
+                      lifecycle:
+                        contractEffectiveDate: '2026-01-01'
+                        initialTermDate: '2027-01-01'
+                    links:
+                      self: https://api.certifyos.com/contracts?page=0&size=50
+                      next: https://api.certifyos.com/contracts?startAfterId=ctr_8a2f3e91&size=50
+                    totalCount: 137
               schema:
                 $ref: '#/components/schemas/PagedContractResponse'
         '400':
-          description: Invalid filter criteria
+          description: Reserved for invalid filter criteria. This endpoint does not currently expose a filter query parameter, so in practice this status is not triggered by any input to this operation today.
           content:
             application/json:
               schema:
@@ -77,35 +128,102 @@ paths:
       security:
       - jwt: []
     post:
-      summary: Create a new Contract
-      description: Creates a new Contract with the provided details
+      summary: Create a new contract for the authenticated tenant
+      description: 'Creates a new Contract record and returns the persisted object with server-assigned identifiers.
+
+
+        **What it does:** Registers a new contract for the tenant identified by the `tenant-id` header. The server assigns `id` (a UUID); any `id` supplied in the request body is ignored and discarded before the request reaches storage. `createdBy` and `updatedBy` are always set from the authenticated caller''s user ID - any values supplied in the body are ignored.
+
+
+        **When to use:** Use this endpoint to introduce a net-new contract. To modify an existing contract, use `PUT /contracts/{id}` instead.
+
+
+        **Preconditions:** Requires the `CREATE_CONTRACT` permission. `documentId`, `networkId`, and `planId` are required top-level identifiers (caller-supplied, not server-generated). Within `generalInfo`, `contractId`, `contractName`, `contractType`, and `contractStatus` are required; all other fields and sections are optional.
+
+
+        **Response:** Returns `201 Created` with the full Contract object, including the server-assigned `id`. No async jobs, webhooks, or downstream events are triggered by this operation as of this writing.'
       operationId: contractsCreate
       tags:
       - Contracts
       parameters:
-      - description: Tenant ID
+      - description: Tenant ID the new contract will belong to.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Contract to create. Omit `id`, `createdBy`, and `updatedBy` - they are server-controlled and any values supplied here are ignored.
         content:
           application/json:
+            examples:
+              createContract:
+                value:
+                  planId: plan_40921
+                  networkId: network_58213
+                  documentId: doc_2026_04821
+                  generalInfo:
+                    contractId: GC-2026-0417
+                    contractName: Acme Health Network FFS Agreement
+                    contractType: FFS
+                    contractStatus: Active
+                    contractAgreementType: Single
+                    networkId: network_58213
+                    planId: plan_40921
+                  lifecycle:
+                    contractEffectiveDate: '2026-01-01'
+                    initialTermDate: '2027-01-01'
+                  financial:
+                    feeSchedule: Medicare FFS 2026
+                    contractPaymentType: Per Claim
+                    claimSubmissionCycle: Monthly
             schema:
               $ref: '#/components/schemas/Contract'
         required: true
       responses:
         '201':
-          description: Contract created successfully
+          description: The newly created Contract, including its server-assigned `id`.
           content:
             application/json:
+              examples:
+                contractCreated:
+                  value:
+                    id: ctr_8a2f3e91
+                    planId: plan_40921
+                    networkId: network_58213
+                    documentId: doc_2026_04821
+                    createdBy: user_30172
+                    updatedBy: user_30172
+                    generalInfo:
+                      contractId: GC-2026-0417
+                      contractName: Acme Health Network FFS Agreement
+                      contractType: FFS
+                      contractStatus: Active
+                      contractAgreementType: Single
+                      networkId: network_58213
+                      planId: plan_40921
+                    lifecycle:
+                      contractEffectiveDate: '2026-01-01'
+                      initialTermDate: '2027-01-01'
+                    financial:
+                      feeSchedule: Medicare FFS 2026
+                      contractPaymentType: Per Claim
+                      claimSubmissionCycle: Monthly
               schema:
                 $ref: '#/components/schemas/Contract'
         '400':
-          description: Invalid input
+          description: The request body failed validation - for example, a required field such as `documentId`/`networkId`/`planId`, or `generalInfo.contractId`/`contractName`/`contractType`/`contractStatus`, was missing, or an enum field was set to a value outside its allowed set.
           content:
             application/json:
+              examples:
+                missingRequiredField:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Invalid Contract details
+                      detail: Field 'documentId' is required
               schema:
                 $ref: '#/components/schemas/ApiError1'
         '401':
@@ -116,40 +234,110 @@ paths:
       - jwt: []
   /contracts/{id}:
     put:
-      summary: Update (replace) an existing Contract
-      description: Replace the data for an existing Contract
+      summary: Fully replace an existing contract's data
+      description: 'Replaces the `generalInfo`/`lifecycle`/`financial`/`administrativeAndLegal`/`clinicalAndQuality` data of an existing Contract with the values supplied in the request body.
+
+
+        **What it does:** This is a full-replace operation for the contract''s data sections - the stored `data` object is entirely overwritten with the request payload, not merged field by field, so any previously-set optional field left out of the request body is removed from the stored record. The contract''s identity fields - `id`, `planId`, `networkId`, and `documentId` - are always preserved from the existing record; any values supplied for them in the request body are silently ignored, so this endpoint cannot be used to move a contract to a different plan or network. `createdBy` is likewise always preserved from the original record. `updatedBy` is set from the authenticated caller''s user ID on every call.
+
+
+        **When to use:** Use this endpoint to update a contract you have previously created. There is no partial-update (PATCH) path for this resource - every call must supply the complete `data` payload, including the required `generalInfo` fields. Do not use this endpoint to create a new contract - use `POST /contracts` instead.
+
+
+        **Preconditions:** Requires the `UPDATE_CONTRACT` permission. The `{id}` path parameter is the server-assigned `id` of the contract to replace. `generalInfo.contractId`, `contractName`, `contractType`, and `contractStatus` are required in the request body; all other fields and sections are optional.
+
+
+        **Response:** Returns `200 OK` with the full updated Contract object. This operation is not idempotent, since `updatedBy` changes on every successful call.'
       operationId: contractsReplace
       tags:
       - Contracts
       parameters:
-      - name: id
+      - description: Server-assigned `id` of the Contract to replace.
+        example: ctr_8a2f3e91
+        name: id
         in: path
         required: true
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant ID that owns the contract being replaced.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Complete replacement data for the contract. `id`, `planId`, `networkId`, `documentId`, and `createdBy` are ignored if supplied - they are always preserved from the existing record.
         content:
           application/json:
+            examples:
+              replaceContract:
+                value:
+                  generalInfo:
+                    contractId: GC-2026-0417
+                    contractName: Acme Health Network FFS Agreement
+                    contractType: FFS
+                    contractStatus: Terminated
+                    contractAgreementType: Single
+                    networkId: network_58213
+                    planId: plan_40921
+                  lifecycle:
+                    contractEffectiveDate: '2026-01-01'
+                    initialTermDate: '2027-01-01'
+                    terminationInformedDate: '2026-11-01'
+                    terminationDate: '2026-12-31'
+                  financial:
+                    feeSchedule: Medicare FFS 2026
+                    contractPaymentType: Per Claim
+                    claimSubmissionCycle: Monthly
             schema:
               $ref: '#/components/schemas/Contract'
         required: true
       responses:
         '200':
-          description: Contract updated successfully
+          description: The updated Contract, with `data` fully replaced and `updatedBy` set to the caller.
           content:
             application/json:
+              examples:
+                contractReplaced:
+                  value:
+                    id: ctr_8a2f3e91
+                    planId: plan_40921
+                    networkId: network_58213
+                    documentId: doc_2026_04821
+                    createdBy: user_30172
+                    updatedBy: user_58890
+                    generalInfo:
+                      contractId: GC-2026-0417
+                      contractName: Acme Health Network FFS Agreement
+                      contractType: FFS
+                      contractStatus: Active
+                      contractAgreementType: Single
+                      networkId: network_58213
+                      planId: plan_40921
+                    lifecycle:
+                      contractEffectiveDate: '2026-01-01'
+                      initialTermDate: '2027-01-01'
+                      terminationInformedDate: '2026-11-01'
+                      terminationDate: '2026-12-31'
+                    financial:
+                      feeSchedule: Medicare FFS 2026
+                      contractPaymentType: Per Claim
+                      claimSubmissionCycle: Monthly
               schema:
                 $ref: '#/components/schemas/Contract'
         '400':
-          description: Invalid Contract details
+          description: The request body failed validation - for example, a required `generalInfo` field was missing, or an enum field was set to a value outside its allowed set.
           content:
             application/json:
+              examples:
+                invalidEnumValue:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Invalid Contract details
+                      detail: 'Field ''generalInfo.contractType'' must be one of: FFS, Capitation, VBC'
               schema:
                 $ref: '#/components/schemas/ApiError1'
         '401':
@@ -157,27 +345,46 @@ paths:
         '403':
           description: Forbidden - Insufficient permissions
         '404':
-          description: Contract not found
+          description: No contract exists with the given `id`. `PUT` never creates a new contract - use `POST /contracts` if the contract does not yet exist.
           content:
             application/json:
+              examples:
+                contractNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Contract not found
+                      detail: No contract found with ID ctr_8a2f3e91 for tenant tenant_001
               schema:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
     get:
-      summary: Find a Contract by their ID
-      description: Returns a single Contract by their ID
+      summary: Fetch a single contract by its ID
+      description: 'Returns a single Contract identified by its server-assigned `id`.
+
+
+        **When to use:** Use this endpoint when you already hold a specific contract `id` (returned by a prior create, replace, or list call) and need the full record. To search or page through all contracts for a tenant, use `GET /contracts` instead.
+
+
+        **Preconditions:** Requires the `READ_CONTRACT` permission. The `tenant-id` header must identify the tenant the contract belongs to. The `{id}` path parameter is the server-assigned `id` field (a distinct value from `documentId`, which is a caller-supplied identifier).
+
+
+        **Response:** Returns the full Contract object, including its `generalInfo`, `lifecycle`, `financial`, `administrativeAndLegal`, and `clinicalAndQuality` sections. This operation is safe and idempotent; it makes no changes.'
       operationId: contractsFindById
       tags:
       - Contracts
       parameters:
-      - description: ID of Contract to fetch
+      - description: Server-assigned `id` of the Contract to fetch (not the `documentId`).
+        example: ctr_8a2f3e91
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant ID used to scope the lookup to the caller's tenant.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
@@ -185,9 +392,62 @@ paths:
           type: string
       responses:
         '200':
-          description: Contract found
+          description: The Contract identified by `id`, with all composite sections populated as stored.
           content:
             application/json:
+              examples:
+                contractFound:
+                  value:
+                    id: ctr_8a2f3e91
+                    planId: plan_40921
+                    networkId: network_58213
+                    documentId: doc_2026_04821
+                    createdBy: user_30172
+                    updatedBy: user_58890
+                    generalInfo:
+                      contractId: GC-2026-0417
+                      contractName: Acme Health Network FFS Agreement
+                      contractTemplate: Standard FFS Template v3
+                      contractRate: 100% Medicare
+                      reimbursementCode: RC-1042
+                      contractType: FFS
+                      contractStatus: Active
+                      contractAgreementType: Single
+                      groupId: group_12345
+                      networkId: network_58213
+                      planId: plan_40921
+                    lifecycle:
+                      contractEffectiveDate: '2026-01-01'
+                      initialTermDate: '2027-01-01'
+                      billingEffectiveDate: '2026-01-01'
+                    financial:
+                      feeSchedule: Medicare FFS 2026
+                      contractPaymentType: Per Claim
+                      providerRateCalculation: Standard Medicare fee schedule
+                      rateLesserOfClaimAllowed: true
+                      sequestrationAllowed: true
+                      sharedSavings: false
+                      bonus: false
+                      claimSubmissionCycle: Monthly
+                    administrativeAndLegal:
+                      amendmentOnFile: false
+                      practitionersTerminationNoticePeriod: '90'
+                      providersManualUpdatesNoticePeriod: '60'
+                      policyUpdateNotificationRequired: true
+                      claimFilingLimit: 180 days from date of service
+                      reimbursementScheduleUpdateFrequency: Quarterly
+                      timelyPaymentCommitment: 30
+                    clinicalAndQuality:
+                      hasQualityProgram: true
+                      qualityProgramInitiatives: HEDIS measure incentives
+                      averageStarsAndPmpmBonus: 4.5 stars / $10 PMPM
+                      hasMlrTarget: false
+                      performanceReportingRequirements: Quarterly HEDIS and CAHPS reporting
+                      credentialingDelegation: false
+                      recredentialingInterval: 3 yr
+                      referralRequirements: false
+                      priorAuthorizationRequired: true
+                      providerRosterUpdateFrequency: Monthly
               schema:
                 $ref: '#/components/schemas/Contract'
         '401':
@@ -195,27 +455,49 @@ paths:
         '403':
           description: Forbidden - Insufficient permissions
         '404':
-          description: Contract not found
+          description: No contract exists with the given `id` for the tenant identified by the `tenant-id` header. Verify the `id` is correct and that it belongs to the calling tenant.
           content:
             application/json:
+              examples:
+                contractNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Contract not found
+                      detail: No contract found with ID ctr_8a2f3e91 for tenant tenant_001
               schema:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
     delete:
-      summary: Delete a Contract
-      description: Deletes a Contract by their ID
+      summary: Permanently delete a contract by its ID
+      description: 'Permanently removes the Contract identified by `{id}`.
+
+
+        **What it does:** This is a hard delete - the record is removed from storage and cannot be recovered; there is no soft-delete/restore path for this resource. Deleting a contract does not cascade to any other entity (plans, networks, etc.); this operation only removes the contract row itself.
+
+
+        **When to use:** Use this endpoint when a contract record must be permanently removed. Ensure you hold the correct `{id}` before calling - there is no undo.
+
+
+        **Preconditions:** Requires the `DELETE_CONTRACT` permission. The `{id}` path parameter is the server-assigned `id` of the contract to delete.
+
+
+        **Response:** Returns `204 No Content` with an empty body on success. This operation is not idempotent: calling it again on the same `id` after a successful delete returns `404`, not a second `204`.'
       operationId: contractsDelete
       tags:
       - Contracts
       parameters:
-      - description: ID of Contract to delete
+      - description: Server-assigned `id` of the Contract to delete.
+        example: ctr_8a2f3e91
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant ID that owns the contract being deleted.
+        example: tenant_001
         required: true
         name: tenant-id
         in: header
@@ -223,22 +505,49 @@ paths:
           type: string
       responses:
         '204':
-          description: Contract successfully deleted
+          description: The contract was permanently deleted; no response body.
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - Insufficient permissions
         '404':
-          description: Contract not found
+          description: No contract exists with the given `id`. This is also returned on a repeat delete of an `id` that was already removed by a prior call.
           content:
             application/json:
+              examples:
+                contractNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Contract not found
+                      detail: No contract found with ID ctr_8a2f3e91 for tenant tenant_001
               schema:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
 components:
   schemas:
-    PageLinks:
+    PagedContractResponse:
+      type: object
+      description: A single page of Contracts, matching either offset-based or cursor-based pagination.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+          description: Contracts on this page, in the order determined by the pagination mode used.
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: Navigation URLs for this result set. `next`/`prev` are `null` when there is no further page in that direction.
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 137
+          description: Total number of contracts matching the request, across all pages.
+    PageLinks1:
       type: object
       properties:
         self:
@@ -247,6 +556,61 @@ components:
           type: string
         prev:
           type: string
+    ContractClinicalAndQualityInfo:
+      type: object
+      description: Contract clinical and quality program terms. All fields are optional.
+      properties:
+        hasQualityProgram:
+          type: boolean
+          description: Whether this contract includes a quality incentive program.
+        qualityProgramInitiatives:
+          type: string
+          description: Free-text description of the quality program's initiatives.
+        averageStarsAndPmpmBonus:
+          type: string
+          examples:
+          - 4.5 stars / $10 PMPM
+          description: Free-text summary of the star rating and per-member-per-month (PMPM) bonus tied to it.
+        hasMlrTarget:
+          type: boolean
+          description: Whether this contract includes a medical loss ratio (MLR) target.
+        mlrTargetDescription:
+          type: string
+          description: Free-text description of the medical loss ratio (MLR) target, if any.
+        performanceReportingRequirements:
+          type: string
+          examples:
+          - Quarterly HEDIS and CAHPS reporting
+          description: Description of the performance reporting the provider must submit under this contract.
+        credentialingDelegation:
+          type: boolean
+          description: Whether credentialing responsibilities are delegated to the provider organization.
+        recredentialingInterval:
+          type: string
+          enum:
+          - 1 yr
+          - 2 yr
+          - 3 yr
+          examples:
+          - 3 yr
+          description: How often practitioners under this contract must be recredentialed.
+        referralRequirements:
+          type: boolean
+          description: Whether this contract imposes referral requirements (e.g. requires PCP referral).
+        priorAuthorizationRequired:
+          type: boolean
+          description: Whether prior authorization is required for services under this contract.
+        panelSizeLimits:
+          type: string
+          description: Free-text description of any panel size limits imposed on providers.
+        providerRosterUpdateFrequency:
+          type: string
+          enum:
+          - Monthly
+          - Quarterly
+          examples:
+          - Monthly
+          description: How often the provider roster must be updated under this contract.
     ErrorObject1:
       type: object
       properties:
@@ -259,180 +623,65 @@ components:
           format: int32
         title:
           type: string
-    Contract:
-      type: object
-      properties:
-        id:
+        workflowId:
           type: string
-        planId:
+        section:
           type: string
-        networkId:
-          type: string
-        documentId:
-          type: string
-        createdBy:
-          type: string
-        updatedBy:
-          type: string
-        generalInfo:
-          $ref: '#/components/schemas/ContractGeneralInfo'
-        lifecycle:
-          $ref: '#/components/schemas/ContractLifeCycleInfo'
-        financial:
-          $ref: '#/components/schemas/ContractFinancialInfo'
-        administrativeAndLegal:
-          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
-        clinicalAndQuality:
-          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
-    ContractGeneralInfo:
-      type: object
-      properties:
-        contractId:
-          type: string
-        contractName:
-          type: string
-        contractTemplate:
-          type: string
-        contractRate:
-          type: string
-        reimbursementCode:
-          type: string
-        contractType:
-          type: string
-        vbcAttribution:
-          type: string
-        contractStatus:
-          type: string
-        contractAgreementType:
-          type: string
-        groupId:
-          type: string
-        practitionerId:
-          type: string
-        networkId:
-          type: string
-        planId:
-          type: string
-    ContractFinancialInfo:
-      type: object
-      properties:
-        feeSchedule:
-          type: string
-        additionalFeeSchedule:
-          type: string
-        contractPaymentType:
-          type: string
-        nonTypicalContractTerms:
-          type: string
-        providerRateCalculation:
-          type: string
-        rateLesserOfClaimAllowed:
-          type: boolean
-        sequestrationAllowed:
-          type: boolean
-        sharedSavings:
-          type: boolean
-        bonus:
-          type: boolean
-        claimSubmissionCycle:
-          type: string
-        snfCorporateChampionRate:
-          type: number
-        snfCapitationPartARate:
-          type: number
-        snfCapitationPartBRate:
-          type: number
-        snfCapitationBillAboveRate:
-          type: number
-        hasGssRate:
-          type: boolean
-        gssRateDetails:
-          type: string
-        gssMinimumMM:
+        opIndex:
           type: integer
           format: int32
-        gssTerm:
-          type: string
-        gssFrequency:
-          type: string
-        appPenalty:
-          type: string
-        telehealthNoShow:
-          type: string
-    ContractClinicalAndQualityInfo:
-      type: object
-      properties:
-        hasQualityProgram:
-          type: boolean
-        qualityProgramInitiatives:
-          type: string
-        averageStarsAndPmpmBonus:
-          type: string
-        hasMlrTarget:
-          type: boolean
-        mlrTargetDescription:
-          type: string
-        performanceReportingRequirements:
-          type: string
-        credentialingDelegation:
-          type: boolean
-        recredentialingInterval:
-          type: string
-        referralRequirements:
-          type: boolean
-        priorAuthorizationRequired:
-          type: boolean
-        panelSizeLimits:
-          type: string
-        providerRosterUpdateFrequency:
-          type: string
-    PagedContractResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Contract'
-        links:
-          $ref: '#/components/schemas/PageLinks'
-        totalCount:
-          type: integer
-          format: int64
     ContractAdministrativeAndLegalInfo:
       type: object
+      description: Contract administrative and legal terms. All fields are optional.
       properties:
         amendmentOnFile:
           type: boolean
+          description: Whether a signed amendment to this contract is on file.
         amendmentNumber:
           type: string
+          description: Identifier/number of the amendment on file, if any.
         practitionersTerminationNoticePeriod:
           type: string
+          enum:
+          - '30'
+          - '60'
+          - '90'
+          - '120'
+          examples:
+          - '90'
+          description: Notice period, in days, a practitioner must give before terminating this contract.
         providersManualUpdatesNoticePeriod:
           type: string
+          enum:
+          - '30'
+          - '60'
+          - '90'
+          - '120'
+          examples:
+          - '60'
+          description: Notice period, in days, the payer must give providers before manual updates take effect.
         policyUpdateNotificationRequired:
           type: boolean
+          description: Whether providers must be notified before a policy update takes effect.
         claimFilingLimit:
           type: string
+          examples:
+          - 180 days from date of service
+          description: Deadline for submitting claims after the date of service.
         reimbursementScheduleUpdateFrequency:
           type: string
+          enum:
+          - Monthly
+          - Quarterly
+          examples:
+          - Quarterly
+          description: How often the reimbursement schedule is updated.
         timelyPaymentCommitment:
           type: integer
           format: int32
-    ContractLifeCycleInfo:
-      type: object
-      properties:
-        contractEffectiveDate:
-          type: string
-        initialTermDate:
-          type: string
-        terminationInformedDate:
-          type: string
-        terminationDate:
-          type: string
-        billingEffectiveDate:
-          type: string
-        billingTerminationDate:
-          type: string
+          examples:
+          - 30
+          description: Number of days within which the payer commits to paying a clean claim.
     ApiError1:
       type: object
       properties:
@@ -440,6 +689,267 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ErrorObject1'
+    Contract:
+      type: object
+      description: A contract between a healthcare provider and a payer.
+      properties:
+        id:
+          type: string
+          examples:
+          - ctr_8a2f3e91
+          description: Server-assigned unique identifier (UUID). Ignored if supplied in a create request; on replace (PUT), the existing contract's id is always preserved regardless of what is sent.
+        planId:
+          type: string
+          examples:
+          - plan_40921
+          description: Identifier of the plan this contract belongs to. Required on create. On replace (PUT), any value supplied here is ignored - the existing contract's planId is always preserved.
+        networkId:
+          type: string
+          examples:
+          - network_58213
+          description: Identifier of the network this contract belongs to. Required on create. On replace (PUT), any value supplied here is ignored - the existing contract's networkId is always preserved.
+        documentId:
+          type: string
+          examples:
+          - doc_2026_04821
+          description: Caller-supplied business document identifier for this contract. Required on create. On replace (PUT), any value supplied here is ignored - the existing contract's documentId is always preserved.
+        createdBy:
+          type: string
+          examples:
+          - user_30172
+          description: User ID of the caller who originally created the contract. Always set by the server from the authenticated caller on create; any value supplied in the request body is ignored. Preserved unchanged on every subsequent replace (PUT), regardless of the request body.
+        updatedBy:
+          type: string
+          examples:
+          - user_58890
+          description: User ID of the caller who most recently created or replaced the contract. Always set by the server from the authenticated caller; any value supplied in the request body is ignored.
+        generalInfo:
+          $ref: '#/components/schemas/ContractGeneralInfo'
+          type: object
+          description: Core contract identity and classification fields. The section itself is not strictly required, but if supplied, its `contractId`/`contractName`/`contractType`/`contractStatus` fields are required.
+        lifecycle:
+          $ref: '#/components/schemas/ContractLifeCycleInfo'
+          type: object
+          description: Contract lifecycle dates (effective, term, termination, billing). Optional.
+        financial:
+          $ref: '#/components/schemas/ContractFinancialInfo'
+          type: object
+          description: Contract financial and payment terms. Optional.
+        administrativeAndLegal:
+          $ref: '#/components/schemas/ContractAdministrativeAndLegalInfo'
+          type: object
+          description: Contract administrative and legal terms (notice periods, filing limits). Optional.
+        clinicalAndQuality:
+          $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
+          type: object
+          description: Contract clinical and quality program terms. Optional.
+    ContractFinancialInfo:
+      type: object
+      description: Contract financial and payment terms. All fields are optional.
+      properties:
+        feeSchedule:
+          type: string
+          examples:
+          - Medicare FFS 2026
+          description: Name of the fee schedule used for standard reimbursement.
+        additionalFeeSchedule:
+          type: string
+          description: Name of a supplemental fee schedule applied alongside the primary one, if any.
+        contractPaymentType:
+          type: string
+          enum:
+          - Per Claim
+          - Capitation
+          - Shared Savings
+          examples:
+          - Per Claim
+          description: How the provider is paid under this contract.
+        nonTypicalContractTerms:
+          type: string
+          description: Free-text description of any non-standard financial terms in this contract.
+        providerRateCalculation:
+          type: string
+          examples:
+          - Standard Medicare fee schedule
+          description: Description of how the provider's reimbursement rate is calculated.
+        rateLesserOfClaimAllowed:
+          type: boolean
+          description: Whether the contract allows paying the lesser of the billed charge or the contracted rate.
+        sequestrationAllowed:
+          type: boolean
+          description: Whether Medicare sequestration reductions apply to payments under this contract.
+        sharedSavings:
+          type: boolean
+          description: Whether this contract includes a shared-savings arrangement.
+        bonus:
+          type: boolean
+          description: Whether this contract includes a performance bonus arrangement.
+        claimSubmissionCycle:
+          type: string
+          enum:
+          - Weekly
+          - Biweekly
+          - Monthly
+          examples:
+          - Monthly
+          description: How often claims must be submitted under this contract.
+        snfCorporateChampionRate:
+          type: number
+          description: SNF corporate champion capitation rate, in dollars.
+        snfCapitationPartARate:
+          type: number
+          description: SNF Medicare Part A capitation rate, in dollars.
+        snfCapitationPartBRate:
+          type: number
+          description: SNF Medicare Part B capitation rate, in dollars.
+        snfCapitationBillAboveRate:
+          type: number
+          description: Per-diem rate billed above the SNF capitation threshold, in dollars.
+        hasGssRate:
+          type: boolean
+          description: Whether this contract includes a gain-share/shared-savings (GSS) rate.
+        gssRateDetails:
+          type: string
+          description: Free-text details of the gain-share/shared-savings (GSS) rate arrangement.
+        gssMinimumMM:
+          type: integer
+          format: int32
+          description: Minimum member-months (MM) required for the GSS rate to apply.
+        gssTerm:
+          type: string
+          description: Free-text description of the GSS rate's contract term.
+        gssFrequency:
+          type: string
+          enum:
+          - Monthly
+          - Quarterly
+          - Annual
+          description: How often the GSS rate is calculated and settled.
+        appPenalty:
+          type: string
+          description: Description of any penalty applied for missed appointment (no-show) policies.
+        telehealthNoShow:
+          type: string
+          description: Description of the telehealth no-show policy for this contract.
+    ContractGeneralInfo:
+      type: object
+      description: Core contract identity and classification fields.
+      properties:
+        contractId:
+          type: string
+          examples:
+          - GC-2026-0417
+          description: Business contract identifier assigned by the caller. Distinct from the top-level server-assigned `Contract.id`. Required.
+        contractName:
+          type: string
+          examples:
+          - Acme Health Network FFS Agreement
+          description: Human-readable name of the contract. Required.
+        contractTemplate:
+          type: string
+          examples:
+          - Standard FFS Template v3
+          description: Name of the contract template this agreement was drafted from.
+        contractRate:
+          type: string
+          examples:
+          - 100% Medicare
+          description: Free-text description of the contracted rate.
+        reimbursementCode:
+          type: string
+          examples:
+          - RC-1042
+          description: Reimbursement code associated with this contract.
+        contractType:
+          type: string
+          enum:
+          - FFS
+          - Capitation
+          - VBC
+          examples:
+          - FFS
+          description: Type of contract arrangement. Required. `FFS` = fee-for-service (paid per rendered service); `Capitation` = fixed per-member payment regardless of services rendered; `VBC` = value-based care (payment tied to outcomes/quality rather than volume).
+        vbcAttribution:
+          type: string
+          description: Description of value-based-care attribution methodology, if applicable.
+        contractStatus:
+          type: string
+          enum:
+          - Active
+          - Terminated
+          - Contracting
+          - Not Known
+          examples:
+          - Active
+          description: Current lifecycle status of the contract. Required. `Active` = currently in effect; `Terminated` = ended; `Contracting` = under negotiation, not yet effective; `Not Known` = status could not be determined at the time of entry.
+        contractAgreementType:
+          type: string
+          enum:
+          - Single
+          - Multiple Provider
+          - IPA
+          - System
+          examples:
+          - Single
+          description: Structure of the contracting arrangement. Optional. `Single` = one provider entity; `Multiple Provider` = a named group of provider entities; `IPA` = Independent Practice Association (a legal entity of independent providers contracting collectively); `System` = a health system encompassing multiple facilities/providers.
+        groupId:
+          type: string
+          examples:
+          - group_12345
+          description: Identifier of the group this contract applies to, if any.
+        practitionerId:
+          type: string
+          description: Identifier of the individual practitioner this contract applies to, if any.
+        networkId:
+          type: string
+          examples:
+          - network_58213
+          description: Identifier of the network this contract belongs to, mirroring the top-level `Contract.networkId`.
+        planId:
+          type: string
+          examples:
+          - plan_40921
+          description: Identifier of the plan this contract belongs to, mirroring the top-level `Contract.planId`.
+    ContractLifeCycleInfo:
+      type: object
+      description: Contract lifecycle dates. All fields are optional and use the ISO-8601 `date` format (YYYY-MM-DD, no time or offset).
+      properties:
+        contractEffectiveDate:
+          type: string
+          format: date
+          examples:
+          - '2026-01-01'
+          description: Date the contract terms take effect.
+        initialTermDate:
+          type: string
+          format: date
+          examples:
+          - '2027-01-01'
+          description: Date the contract's initial term ends (subject to renewal).
+        terminationInformedDate:
+          type: string
+          format: date
+          examples:
+          - '2026-11-01'
+          description: Date on which notice of termination was given.
+        terminationDate:
+          type: string
+          format: date
+          examples:
+          - '2026-12-31'
+          description: Date the contract terminates.
+        billingEffectiveDate:
+          type: string
+          format: date
+          examples:
+          - '2026-01-01'
+          description: Date from which billing under this contract is effective.
+        billingTerminationDate:
+          type: string
+          format: date
+          examples:
+          - '2026-12-31'
+          description: Date after which billing under this contract stops.
   securitySchemes:
     jwt:
       type: http

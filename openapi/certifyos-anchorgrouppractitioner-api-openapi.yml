@@ -1,0 +1,428 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Anchor Group Practitioner API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AnchorGroupPractitioner
+  description: The Anchor Date Operations inventory (internal, read-only).
+paths:
+  /api/v1/anchor-groups/{anchorGroupId}/practitioners:
+    get:
+      summary: The Anchor Ops inventory for one Anchor Group
+      description: Paginated practitioner rows — exactly the seven inventory columns, served by the DAL's enriched read (CP-38261) in one call. Ordered by effective anchor date, oldest first, nulls last (fixed server-side; the grid offers no sorting). Name searches match case-insensitively on any part of the name; NPI must be exact. The Tenant filter matches practitioners whose effective participating tenants include the given tenant.
+      operationId: anchorOperationsListPractitioners
+      tags:
+      - AnchorGroupPractitioner
+      parameters:
+      - description: Anchor Group id
+        required: true
+        name: anchorGroupId
+        in: path
+        schema:
+          type: string
+      - description: First name search (contains, case-insensitive)
+        name: firstName
+        in: query
+        schema:
+          type: string
+      - description: Last name search (contains, case-insensitive)
+        name: lastName
+        in: query
+        schema:
+          type: string
+      - description: Exact NPI
+        name: npi
+        in: query
+        schema:
+          type: string
+      - description: Operational statuses to include (AUTOMATIC, MANUAL_OVERRIDE, REVIEW_REQUIRED, NO_ANCHOR_YET); repeat the parameter for several
+        name: operationalStatus
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - description: Page number (0-based)
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Page size (max 100)
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '10'
+      - description: Only practitioners effectively participating with any of these tenants; repeat the parameter or comma-join for several
+        name: tenantId
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Inventory page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorGroupPractitionerPagedResponse'
+        '400':
+          description: Invalid parameters (bad pagination or unknown status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /api/v1/anchor-groups/{anchorGroupId}/practitioners/summary:
+    get:
+      summary: The four Anchor Ops summary cards for one Anchor Group
+      description: 'Group-level counts, deliberately independent of the list filters (PO, 2026-08-26): the frontend refetches them only when the Anchor Group selection changes. manualOverride and reviewRequired are nonzero only once a recompute has observed an override on the row.'
+      operationId: anchorOperationsSummary
+      tags:
+      - AnchorGroupPractitioner
+      parameters:
+      - description: Anchor Group id
+        required: true
+        name: anchorGroupId
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Card counts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorOperationsSummary'
+        '401':
+          description: Not authenticated
+      security:
+      - jwt: []
+  /api/v1/anchor-groups/{anchorGroupId}/practitioners/{npi}:
+    get:
+      summary: One practitioner's anchor state within one Anchor Group
+      description: 'Everything the detail panel renders: the three dates, the stored status, the contributing tenant, and every tenant''s eligibility, participation and stored scheduling date. Dates and statuses are stored values rendered as-is, never re-derived on read. The payload carries anchorGroupPractitionerId because reads are keyed by NPI while every write is keyed by that id. Answers a uniform 404 when the pair names nothing — ''no such NPI'' and ''not in this group'' are deliberately indistinguishable.'
+      operationId: anchorOperationsPractitionerDetail
+      tags:
+      - AnchorGroupPractitioner
+      parameters:
+      - description: Anchor Group id
+        required: true
+        name: anchorGroupId
+        in: path
+        schema:
+          type: string
+      - description: The practitioner's NPI
+        required: true
+        name: npi
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The practitioner's anchor detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorPractitionerDetail'
+        '404':
+          description: No anchor record for that practitioner in that group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    AnchorGroupPractitionerRow:
+      type: object
+      required:
+      - anchorGroupPractitionerId
+      description: One practitioner row of the Anchor Ops inventory.
+      properties:
+        anchorGroupPractitionerId:
+          type: string
+          description: Anchor group practitioner id.
+        practitionerRegistryId:
+          type: string
+          description: Practitioner registry id.
+        firstName:
+          type: string
+          description: Practitioner first name.
+        lastName:
+          type: string
+          description: Practitioner last name.
+        npi:
+          type: string
+          description: Practitioner NPI.
+        effectiveAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Effective anchor date (yyyy-MM-dd).
+        computedAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Platform-calculated anchor date (yyyy-MM-dd).
+        participatingTenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipatingTenant'
+          description: Tenants this anchor currently covers.
+        operationalStatus:
+          type: string
+          description: Operational status.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Last update to the row.
+    AnchorTenantParticipation:
+      type: object
+      required:
+      - tenantId
+      description: One tenant's eligibility, participation and scheduling date for a practitioner.
+      properties:
+        tenantId:
+          type: string
+          description: Tenant id.
+        tenantName:
+          type: string
+          description: Tenant display name.
+        eligible:
+          type: boolean
+          description: Whether the platform currently rates this tenant eligible.
+        exclusionReason:
+          type: string
+          description: Exclusion reason code when not eligible.
+        participating:
+          type: boolean
+          description: Effective participation — the value the checkbox renders from.
+        participationOverride:
+          type: boolean
+          description: Raw stored is_participating; null means 'follows eligibility'.
+        tenantSchedulingDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Stored tenant scheduling date (yyyy-MM-dd).
+        tenantSchedulingDateSource:
+          type: string
+          description: Source of the stored scheduling date.
+    AnchorPractitionerDetail:
+      type: object
+      required:
+      - anchorGroupPractitionerId
+      description: The Anchor Ops detail panel payload for one practitioner in one anchor group.
+      properties:
+        anchorGroupPractitionerId:
+          type: string
+          description: Anchor group practitioner id — the key every write uses.
+        anchorGroupId:
+          type: string
+          description: Anchor group id.
+        practitionerRegistryId:
+          type: string
+          description: Practitioner registry id.
+        firstName:
+          type: string
+          description: Practitioner first name.
+        lastName:
+          type: string
+          description: Practitioner last name.
+        npi:
+          type: string
+          description: Practitioner NPI.
+        effectiveAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Effective anchor date (yyyy-MM-dd).
+        computedAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Platform-calculated anchor date (yyyy-MM-dd).
+        manualOverrideAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Stored manual override anchor date (yyyy-MM-dd).
+        contributingTenantId:
+          type: string
+          description: Tenant that contributed the platform date.
+        controlStatus:
+          type: string
+          description: Who owns the date — AUTOMATIC or MANUAL. Null only on a row no writer has touched.
+        reviewStatus:
+          type: string
+          description: Whether review is required — REQUIRED or NOT_REQUIRED. Null only on a row no writer has touched.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Last change to the row, by any writer.
+        updatedBy:
+          type: string
+          description: The operator who last acted on this record. Not tied to updatedAt — the two describe different events. Null until an operator acts.
+        updatedByName:
+          type: string
+          description: That operator's name, or email when no name is on file. Null when the lookup found nothing; the panel falls back to updatedBy.
+        lastOperatorActionAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: When that operator acted. Pairs with updatedBy — same audit event — not with updatedAt. Null until an operator acts.
+        reviewRaisedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: When the platform raised the current review. Pairs with reviewStatus — not with updatedBy, who did not raise it. Null unless review is REQUIRED.
+        participatingTenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnchorTenantParticipation'
+          description: Every tenant with a participation row under this record.
+        overrideActive:
+          type: boolean
+          description: Whether an operator override is in force on this record.
+        operationalStatus:
+          type: string
+          description: 'Operational status: AUTOMATIC, MANUAL_OVERRIDE, REVIEW_REQUIRED or NO_ANCHOR_YET.'
+        platformEligibleTenantIds:
+          type: array
+          items:
+            type: string
+          description: Tenants the platform currently rates eligible for this practitioner.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    AnchorOperationsSummary:
+      type: object
+      description: Group-level counts for the four Anchor Ops summary cards.
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total practitioners in the Anchor Group.
+        automatic:
+          type: integer
+          format: int64
+          description: Practitioners with an automatic anchor.
+        manualOverride:
+          type: integer
+          format: int64
+          description: Practitioners with a manual override. Nonzero only once a recompute has observed an override on the row.
+        reviewRequired:
+          type: integer
+          format: int64
+          description: Practitioners flagged for review. Nonzero only once a recompute has observed an override on the row and platform drift under it.
+    ParticipatingTenant:
+      type: object
+      required:
+      - tenantId
+      description: A tenant this practitioner's anchor currently covers.
+      properties:
+        tenantId:
+          type: string
+          description: Tenant id.
+        tenantName:
+          type: string
+          description: Tenant display name.
+        withdrawable:
+          type: boolean
+          description: 'Withdraw preview only: whether this tenant has a member that can be withdrawn. Absent outside the preview.'
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    AnchorGroupPractitionerPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated Anchor Ops inventory.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnchorGroupPractitionerRow'
+          description: Inventory rows on this page.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total matching rows across all pages.
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    LocalDate:
+      type: string
+      format: date
+      examples:
+      - '2022-03-10'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

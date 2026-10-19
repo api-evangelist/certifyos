@@ -1,0 +1,73 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Anchor Recomputation Worker API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AnchorRecomputationWorker
+  description: Anchor recomputation batch transport (worker only).
+paths:
+  /anchor-recomputation/batches/{bulkActionId}:
+    post:
+      summary: Run one recomputation batch (worker only)
+      description: 'Claims the next batch of members after the run''s cursor, recomputes each, advances the cursor under compare-and-set and enqueues the next batch. Idempotent under redelivery: a duplicate loses the compare-and-set and writes nothing, and a task whose batchIndex no longer matches the run is stale and does nothing at all. 204 consumes the task, anything else holds it for redelivery.'
+      operationId: anchorRecomputationRunBatch
+      tags:
+      - AnchorRecomputationWorker
+      parameters:
+      - name: bulkActionId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnchorRecomputationBatchRequest'
+        required: true
+      responses:
+        '204':
+          description: Batch finished, or the task was stale; the chain continues or the run completed
+        '404':
+          description: Handler flag off on this deployable
+        '503':
+          description: Recomputation switched off, or the batch failed; the queue retries
+        '400':
+          description: Bad Request
+components:
+  schemas:
+    AnchorRecomputationBatchRequest:
+      type: object
+      description: Cloud Tasks payload for one anchor-recomputation batch (worker only)
+      properties:
+        bulkActionId:
+          type: string
+        batchIndex:
+          type: integer
+          format: int64
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

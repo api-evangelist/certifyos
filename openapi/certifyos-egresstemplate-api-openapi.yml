@@ -22,61 +22,206 @@ tags:
 paths:
   /api/v1/egress-templates:
     get:
-      summary: List egress templates
-      description: Returns a list of egress templates for a tenant with optional filtering
+      summary: List egress templates for a tenant
+      description: 'Returns a page of egress templates scoped to the tenant identified by the required `tenant-id` header. Use this to browse, filter, or search for a template before fetching a single record with `GET /api/v1/egress-templates/{templateId}`.
+
+
+        Preconditions: `tenant-id` header must be present and non-blank; omitting it returns 400.
+
+
+        Filtering: supply `status` and/or `entityType` to narrow results; both filters are combined with AND. `status` accepts `active`, `inactive`, or `draft`; when omitted, only `active` and `draft` templates are returned — soft-deleted (`inactive`) templates are hidden by default and must be requested explicitly via `status=inactive`. `entityType` accepts `practitioner`, `facility`, or `group`; when omitted, all entity types are returned. `search` performs a case-insensitive substring match on `templateName`. An unrecognised `status` or `entityType` value returns 400.
+
+
+        Pagination: page-based. `page` is the zero-based page number and defaults to 0 when omitted or negative. `size` is the page size and defaults to 25 when omitted or non-positive; there is no enforced upper bound on `size`.
+
+
+        Returns: a page of egress template objects for the tenant, plus `total`, `page`, `size`, and `hasMore` for pagination. Returns an empty `templates` array (not 404) when no templates match. This operation is read-only with no side effects.'
       operationId: listEgressTemplates
       tags:
       - EgressTemplate
       parameters:
-      - description: Filter by entity type (practitioner, facility)
+      - description: Restricts results to templates created by this user ID (exact match on the raw `createdBy` value). When omitted, no created-by filtering is applied.
+        name: createdBy
+        in: query
+        schema:
+          type: string
+      - description: Restricts results to templates for this entity type. One of `practitioner`, `facility`, `group`. When omitted, templates for all entity types are returned.
         name: entityType
         in: query
         schema:
           type: string
-      - name: limit
+      - description: 'Restricts results to templates of this export type (CP-41057): `FULL_ROSTER_EXPORT` or `CHANGE_FILE`. When omitted, both are returned.'
+        name: exportType
+        in: query
+        schema:
+          type: string
+      - description: Zero-based page number to return. Defaults to 0 when omitted or negative.
+        name: page
         in: query
         schema:
           type: integer
           format: int32
-      - name: offset
+      - description: 'Restricts results by schedule state: `true` returns only templates with an enabled schedule, `false` only those without. When omitted, both are returned.'
+        name: scheduleEnabled
+        in: query
+        schema:
+          type: boolean
+      - description: Case-insensitive substring match against `templateName`. When omitted, no name filtering is applied.
+        name: search
+        in: query
+        schema:
+          type: string
+      - description: Number of templates per page. Defaults to 25 when omitted or non-positive; no enforced upper bound.
+        name: size
         in: query
         schema:
           type: integer
           format: int32
-      - description: Filter by status (active, inactive, draft)
+      - description: Restricts results to templates in this status. One of `active`, `inactive`, `draft`. When omitted, `inactive` (soft-deleted) templates are excluded and only `active`/`draft` templates are returned.
         name: status
         in: query
         schema:
           type: string
-      - name: tenant-id
-        in: header
+      - description: 'Restricts results to templates with this trigger mode: `SCHEDULED` or `MANUAL`. Only Change File templates carry a trigger mode, so full roster exports never match. When omitted, no trigger-mode filtering is applied.'
+        name: triggerMode
+        in: query
         schema:
           type: string
-      - name: x-user-id
+      - required: true
+        name: tenant-id
         in: header
         schema:
           type: string
       responses:
         '200':
-          description: List of templates
+          description: A page of egress templates matching the tenant, filters, and search term, with pagination metadata
+          content:
+            application/json:
+              examples:
+                withResults:
+                  summary: A page containing matching templates
+                  value:
+                    templates:
+                    - id: b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02
+                      tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                      createdAt: '2026-06-02T14:32:07Z'
+                      createdBy: auth0|64f1c2d3e4b5a6
+                      updatedAt: '2026-08-04T09:15:41Z'
+                      updatedBy: auth0|64f1c2d3e4b5a6
+                      templateName: Q3 Practitioner Roster Export
+                      description: Quarterly practitioner roster export for credentialing
+                      entityType: practitioner
+                      outputFormat: csv
+                      separator: ','
+                      status: active
+                      version: 3
+                      mappingsCsvUrl: https://storage.googleapis.com/certifyos-egress-templates/8f14e45f-ceea-467e-9906-ccfb98d21f95/b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02/v3/mappings.csv
+                      scheduleEnabled: true
+                      scheduleFrequency: weekly
+                      scheduleTime: 02:00
+                      scheduleDayOfWeek: 2
+                      scheduleTimezone: America/New_York
+                      scheduleDaysOfWeek: 2,4,6
+                      lastExportAt: '2026-08-04T02:00:00Z'
+                      nextExportAt: '2026-08-11T02:00:00Z'
+                      jobType: SCHEDULED
+                      createdByName: Jordan Reyes
+                      createdByEmail: jordan.reyes@certifyos.com
+                    - id: d4a6e8c1-2b3f-4d5e-9a7c-6f1b8e3d5c90
+                      tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                      createdAt: '2026-07-20T11:05:00Z'
+                      createdBy: auth0|71a2b4c6d8e0f2
+                      updatedAt: '2026-07-20T11:05:00Z'
+                      updatedBy: auth0|71a2b4c6d8e0f2
+                      templateName: Facility Directory Export
+                      description: Facility roster for the payer directory feed
+                      entityType: facility
+                      outputFormat: csv
+                      separator: ','
+                      status: draft
+                      version: 1
+                      mappingsCsvUrl: https://storage.googleapis.com/certifyos-egress-templates/8f14e45f-ceea-467e-9906-ccfb98d21f95/d4a6e8c1-2b3f-4d5e-9a7c-6f1b8e3d5c90/v1/mappings.csv
+                      scheduleEnabled: false
+                      scheduleFrequency: daily
+                      scheduleTime: 02:00
+                      scheduleTimezone: UTC
+                      jobType: MANUAL
+                      createdByName: Priya Nair
+                      createdByEmail: priya.nair@certifyos.com
+                    total: 2
+                    page: 0
+                    size: 25
+                    hasMore: false
+                empty:
+                  summary: No templates match the given filters
+                  value:
+                    templates: []
+                    total: 0
+                    page: 0
+                    size: 25
+                    hasMore: false
+              schema:
+                $ref: '#/components/schemas/EgressTemplateListResponse'
         '401':
-          description: Not Authorized
+          description: The request is missing a valid bearer token; re-authenticate and retry
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: A valid bearer token is required
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: Not Allowed
+          description: The authenticated caller lacks the read-template permission for this tenant
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FORBIDDEN
+                      title: Insufficient permissions
+                      detail: The authenticated user lacks the read-template permission for this tenant
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
     post:
-      summary: Create a new egress template
-      description: Uploads a mapping CSV and metadata to create a new egress template. The CSV defines column mappings from system fields to output columns.
+      summary: Create an egress template with mapping CSV
+      description: 'Uploads a CSV column-mapping file and associated metadata to define a new egress template for data export.
+
+
+        When to use: call this when no existing template covers the target tenant and entity type. To replace the CSV or update metadata on a template that already exists, use `PUT /api/v1/egress-templates/{templateId}` instead.
+
+
+        Preconditions: `tenant-id` header must be present and non-blank (returns 400 if missing). `templateName` and `entityType` are required form fields; `entityType` must be one of `practitioner`, `facility`, `group`. `status` on creation is limited to `draft` or `active` — `inactive` is rejected with 400 at create time.
+
+
+        Defaults applied when omitted: `outputFormat` -> `csv`, `separator` -> `,`, `status` -> `draft`, `scheduleEnabled` -> `false`, `scheduleFrequency` -> `daily`, `scheduleTime` -> `02:00`, `scheduleTimezone` -> `UTC` (the `scheduleFrequency`/`scheduleTime` defaults are skipped when `scheduleCron` is supplied).
+
+
+        Schedule field rules: `scheduleFrequency` accepts `daily`, `weekly`, `monthly`, or `custom`. `scheduleCron` (Quartz cron syntax, not Unix cron) is required when `scheduleFrequency=custom` and is rejected for any other frequency. `scheduleTime` (24-hour `HH:mm`) is required for `daily`/`weekly`/`monthly`. `scheduleDayOfWeek` (1 = Sunday ... 7 = Saturday) is required, and only allowed, for `weekly`. `scheduleDayOfMonth` (1-31) is required, and only allowed, for `monthly`.
+
+
+        CSV constraints: maximum file size is 5 MB; exceeding this returns 400. Column attribute paths are validated against the entity type''s field schema.
+
+
+        Side effects: the CSV is uploaded to GCS before the template record is written. If the data-store write fails after a successful GCS upload, the GCS object is rolled back so no orphaned file is left behind. Not idempotent — each successful call creates a new template.
+
+
+        Returns: the created template, including the server-assigned `id`, `version` set to 1, and `mappingsCsvUrl` pointing at the uploaded CSV in GCS.'
       operationId: createEgressTemplate
       tags:
       - EgressTemplate
       parameters:
-      - name: tenant-id
-        in: header
-        schema:
-          type: string
-      - name: x-user-id
+      - required: true
+        name: tenant-id
         in: header
         schema:
           type: string
@@ -121,42 +266,278 @@ paths:
                   type: string
                 scheduleTimezone:
                   type: string
+                scheduleDaysOfWeek:
+                  type: string
+                scheduleInterval:
+                  type: integer
+                  format: int32
                 metadata:
                   type: string
+                exportType:
+                  type: string
+                triggerMode:
+                  type: string
+            examples:
+              practitionerRosterExport:
+                summary: Create a draft practitioner export template with a weekly-eligible schedule
+                value: "{\n  \"file\": \"<mappings.csv binary part>\",\n  \"templateName\": \"Q3 Practitioner Roster Export\",\n  \"description\": \"Quarterly practitioner roster export for credentialing\",\n  \"entityType\": \"practitioner\",\n  \"outputFormat\": \"csv\",\n  \"separator\": \",\",\n  \"rowExpansionKeys\": \"[\\\"locations\\\"]\",\n  \"status\": \"draft\",\n  \"extExportConfig\": \"{\\\"bigquery\\\":{\\\"enabled\\\":true}}\",\n  \"scheduleEnabled\": true,\n  \"scheduleFrequency\": \"weekly\",\n  \"scheduleTime\": \"02:00\",\n  \"scheduleDayOfWeek\": 2,\n  \"scheduleTimezone\": \"America/New_York\",\n  \"metadata\": \"{\\\"team\\\":\\\"credentialing\\\",\\\"notes\\\":\\\"quarterly roster export\\\"}\"\n}"
         required: true
       responses:
         '201':
-          description: Template created successfully
+          description: The newly created egress template, with server-assigned id, version=1, and the mappings CSV's GCS URL
           content:
             application/json:
+              examples:
+                created:
+                  summary: A draft template just created with defaults applied
+                  value:
+                    id: b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02
+                    tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                    createdAt: '2026-08-11T14:32:07Z'
+                    createdBy: auth0|64f1c2d3e4b5a6
+                    updatedAt: '2026-08-11T14:32:07Z'
+                    updatedBy: auth0|64f1c2d3e4b5a6
+                    templateName: Q3 Practitioner Roster Export
+                    description: Quarterly practitioner roster export for credentialing
+                    entityType: practitioner
+                    outputFormat: csv
+                    separator: ','
+                    status: draft
+                    version: 1
+                    mappingsCsvUrl: https://storage.googleapis.com/certifyos-egress-templates/8f14e45f-ceea-467e-9906-ccfb98d21f95/b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02/v1/mappings.csv
+                    scheduleEnabled: false
+                    scheduleFrequency: daily
+                    scheduleTime: 02:00
+                    scheduleTimezone: UTC
+                    jobType: MANUAL
               schema:
                 $ref: '#/components/schemas/EgressTemplateResponse'
         '400':
-          description: Invalid input - CSV parsing errors or invalid metadata
+          description: The request is missing required fields, references an unsupported entityType/status, the CSV failed to parse or exceeds 5 MB, or schedule fields violate the frequency's rules; the error message states which field and why
+          content:
+            application/json:
+              examples:
+                missingRequiredField:
+                  summary: A required field was omitted
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Validation failed
+                      detail: templateName is required
+                unsupportedEntityType:
+                  summary: entityType is not one of the supported values
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Validation failed
+                      detail: 'entityType must be one of: practitioner, facility, group'
+                scheduleRuleViolation:
+                  summary: A schedule field is missing or not allowed for the chosen frequency
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Validation failed
+                      detail: scheduleCron is required when scheduleFrequency is custom
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
-          description: Unauthorized
+          description: The request is missing a valid bearer token; re-authenticate and retry
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: A valid bearer token is required
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: Not Allowed
+          description: The authenticated caller lacks the create-template permission for this tenant
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FORBIDDEN
+                      title: Insufficient permissions
+                      detail: The authenticated user lacks the create-template permission for this tenant
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
-  /api/v1/egress-templates/{templateId}:
-    put:
-      summary: Update an egress template
-      description: Updates template metadata and/or mappings CSV. Auto-increments version.
-      operationId: updateEgressTemplate
+  /api/v1/egress-templates/created-by:
+    get:
+      summary: List distinct egress-template creators for the Created By filter
+      operationId: listTemplateCreators
       tags:
       - EgressTemplate
       parameters:
-      - name: templateId
-        in: path
-        required: true
+      - required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Creators retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateCreatorsResponse'
+        '400':
+          description: Bad Request - tenant-id header is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+        '403':
+          description: Forbidden - Insufficient permissions
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /api/v1/egress-templates/fields:
+    get:
+      summary: List the egress template attribute catalog
+      description: Returns the selectable attributes for building egress template columns for a given entity type, including expansion and sensitivity flags used by the builder UI.
+      operationId: listEgressTemplateFields
+      tags:
+      - EgressTemplate
+      parameters:
+      - description: Entity type (practitioner, facility)
+        name: type
+        in: query
         schema:
           type: string
       - name: tenant-id
         in: header
         schema:
           type: string
-      - name: x-user-id
+      responses:
+        '200':
+          description: Attribute catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressFieldCatalogResponse'
+        '400':
+          description: Missing or unsupported entity type
+        '401':
+          description: Not Authorized
+        '403':
+          description: Not Allowed
+      security:
+      - jwt: []
+  /api/v1/egress-templates/suggest-mappings:
+    post:
+      summary: Suggest attribute mappings for a not-yet-created egress template
+      description: Given a list of column names parsed client-side from an uploaded file (CP-35814), returns ranked attribute-catalog suggestions per column, fuzzy-matched against the entity type's egress field catalog. The egress counterpart of the ingress /templates/scratch/suggest-mappings endpoint.
+      operationId: suggestEgressColumnMappings
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestEgressColumnMappingsRequest'
+        required: true
+      responses:
+        '200':
+          description: Suggestions generated successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EgressFieldSuggestion'
+        '400':
+          description: Missing or malformed tenant-id header, missing/unsupported entity type, or too many columns
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+      security:
+      - jwt: []
+  /api/v1/egress-templates/transformations:
+    get:
+      summary: List data-transformation functions
+      description: Returns the catalog of data-transformation functions available for template columns, including each function's parameters, description, and example for the builder UI.
+      operationId: listEgressTemplateTransformations
+      tags:
+      - EgressTemplate
+      responses:
+        '200':
+          description: Transformation function catalog
+          content:
+            application/json: {}
+        '502':
+          description: Transformation catalog temporarily unavailable
+        '401':
+          description: Not Authorized
+        '403':
+          description: Not Allowed
+      security:
+      - jwt: []
+      parameters:
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+  /api/v1/egress-templates/{templateId}:
+    put:
+      summary: Update an existing egress template
+      description: 'Updates the metadata and/or mapping CSV of an existing egress template and increments its version.
+
+
+        When to use: call this to replace the column-mapping CSV or change configuration on a template previously created with `POST /api/v1/egress-templates`.
+
+
+        Partial-update semantics: only fields explicitly included in the request are changed; omitted fields keep their current stored values. `entityType` is immutable and is not an accepted field on this endpoint — it is always taken from the existing record.
+
+
+        Preconditions: `tenant-id` header must be present. The template must belong to the requesting tenant; cross-tenant access returns 404 (not 403). `status`, if supplied, is limited to `draft` or `active` — `inactive` is rejected with 400 on update.
+
+
+        Side effects: if a new CSV is supplied, it is uploaded to GCS at a new versioned path and the previous CSV object is left in place. Unlike create, a data-store write failure after a successful CSV upload does not roll back the new GCS object. `file` is optional; when omitted, the existing CSV is preserved.
+
+
+        Schedule field rules: the same daily/weekly/monthly/custom interdependencies as `POST /api/v1/egress-templates` apply.
+
+
+        Returns: the updated `EgressTemplateResponse` with the incremented `version` and, if a new CSV was uploaded, the updated `mappingsCsvUrl`.'
+      operationId: updateEgressTemplate
+      tags:
+      - EgressTemplate
+      parameters:
+      - description: ID of the egress template to update.
+        name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+      - required: true
+        name: tenant-id
         in: header
         schema:
           type: string
@@ -199,157 +580,725 @@ paths:
                   type: string
                 scheduleTimezone:
                   type: string
+                scheduleDaysOfWeek:
+                  type: string
+                scheduleInterval:
+                  type: integer
+                  format: int32
                 metadata:
                   type: string
+                exportType:
+                  type: string
+                triggerMode:
+                  type: string
+            examples:
+              switchToMonthlySchedule:
+                summary: Change the description and move to a monthly schedule; all other fields keep their stored values
+                value: "{\n  \"description\": \"Quarterly practitioner roster export, now including terminated providers\",\n  \"status\": \"active\",\n  \"scheduleEnabled\": true,\n  \"scheduleFrequency\": \"monthly\",\n  \"scheduleTime\": \"03:30\",\n  \"scheduleDayOfMonth\": 1,\n  \"scheduleTimezone\": \"America/New_York\"\n}"
         required: true
       responses:
         '200':
-          description: Template updated successfully
+          description: The updated egress template, with incremented version and, if a new CSV was uploaded, the updated mappings CSV URL
+          content:
+            application/json:
+              examples:
+                updated:
+                  summary: A template updated to a monthly schedule, version incremented
+                  value:
+                    id: b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02
+                    tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                    createdAt: '2026-06-02T14:32:07Z'
+                    createdBy: auth0|64f1c2d3e4b5a6
+                    updatedAt: '2026-08-11T16:47:22Z'
+                    updatedBy: auth0|71a2b4c6d8e0f2
+                    templateName: Q3 Practitioner Roster Export
+                    description: Quarterly practitioner roster export, now including terminated providers
+                    entityType: practitioner
+                    outputFormat: csv
+                    separator: ','
+                    status: active
+                    version: 4
+                    mappingsCsvUrl: https://storage.googleapis.com/certifyos-egress-templates/8f14e45f-ceea-467e-9906-ccfb98d21f95/b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02/v4/mappings.csv
+                    scheduleEnabled: true
+                    scheduleFrequency: monthly
+                    scheduleTime: 03:30
+                    scheduleDayOfMonth: 1
+                    scheduleTimezone: America/New_York
+                    lastExportAt: '2026-08-01T03:30:00Z'
+                    nextExportAt: '2026-09-01T03:30:00Z'
+                    jobType: SCHEDULED
+                    createdByName: Jordan Reyes
+                    createdByEmail: jordan.reyes@certifyos.com
+              schema:
+                $ref: '#/components/schemas/EgressTemplateResponse'
+        '400':
+          description: The request supplies an unsupported status, an invalid CSV, or schedule fields that violate the frequency's rules; the error message states which field and why
+          content:
+            application/json:
+              examples:
+                unsupportedStatus:
+                  summary: status was set to a value not accepted on update
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Validation failed
+                      detail: 'status must be one of: draft, active'
+                scheduleRuleViolation:
+                  summary: A schedule field is missing or not allowed for the chosen frequency
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Validation failed
+                      detail: scheduleDayOfWeek is required when scheduleFrequency is weekly
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
-          description: Not Authorized
+          description: The request is missing a valid bearer token; re-authenticate and retry
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: A valid bearer token is required
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: Not Allowed
+          description: The authenticated caller lacks the update-template permission for this tenant
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FORBIDDEN
+                      title: Insufficient permissions
+                      detail: The authenticated user lacks the update-template permission for this tenant
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
-          description: Template not found
+          description: No template with this id exists for the requesting tenant, or it belongs to a different tenant
+          content:
+            application/json:
+              examples:
+                notFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Template not found
+                      detail: Template with the given ID does not exist
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
     get:
-      summary: Get egress template by ID
-      description: Returns a single egress template with its metadata
+      summary: Fetch a single egress template by ID
+      description: 'Returns the full egress template record for the given `templateId`, including schedule configuration, version, and the GCS URL of the current mapping CSV.
+
+
+        When to use: call this to retrieve complete template detail before an update, or to inspect the current mapping and schedule configuration.
+
+
+        Preconditions: `tenant-id` header must be present. The template must belong to the tenant identified by `tenant-id`.
+
+
+        Cross-tenant isolation: if `templateId` exists but belongs to a different tenant, this returns 404 (not 403) to avoid revealing that the ID exists. Consumers should not interpret a 404 as proof the template does not exist for any tenant.
+
+
+        Returns: the full `EgressTemplateResponse` object. This operation is read-only with no side effects.'
       operationId: getEgressTemplate
       tags:
       - EgressTemplate
       parameters:
-      - name: templateId
+      - description: ID of the egress template to fetch, as returned by create/list.
+        name: templateId
         in: path
         required: true
         schema:
           type: string
-      - name: tenant-id
-        in: header
-        schema:
-          type: string
-      - name: x-user-id
+      - required: true
+        name: tenant-id
         in: header
         schema:
           type: string
       responses:
         '200':
-          description: Template found
+          description: The egress template's full metadata, schedule configuration, and mapping CSV location
           content:
             application/json:
+              examples:
+                active:
+                  summary: An active template with a weekly schedule
+                  value:
+                    id: b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02
+                    tenantId: 8f14e45f-ceea-467e-9906-ccfb98d21f95
+                    createdAt: '2026-06-02T14:32:07Z'
+                    createdBy: auth0|64f1c2d3e4b5a6
+                    updatedAt: '2026-08-04T09:15:41Z'
+                    updatedBy: auth0|64f1c2d3e4b5a6
+                    templateName: Q3 Practitioner Roster Export
+                    description: Quarterly practitioner roster export for credentialing
+                    entityType: practitioner
+                    outputFormat: csv
+                    separator: ','
+                    status: active
+                    version: 3
+                    mappingsCsvUrl: https://storage.googleapis.com/certifyos-egress-templates/8f14e45f-ceea-467e-9906-ccfb98d21f95/b3e1f2a4-7c9d-4e2b-8a6f-1d5c3e9b7a02/v3/mappings.csv
+                    scheduleEnabled: true
+                    scheduleFrequency: weekly
+                    scheduleTime: 02:00
+                    scheduleDayOfWeek: 2
+                    scheduleTimezone: America/New_York
+                    scheduleDaysOfWeek: 2,4,6
+                    lastExportAt: '2026-08-04T02:00:00Z'
+                    nextExportAt: '2026-08-11T02:00:00Z'
+                    jobType: SCHEDULED
+                    createdByName: Jordan Reyes
+                    createdByEmail: jordan.reyes@certifyos.com
               schema:
                 $ref: '#/components/schemas/EgressTemplateResponse'
         '401':
-          description: Not Authorized
+          description: The request is missing a valid bearer token; re-authenticate and retry
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: A valid bearer token is required
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
-          description: Not Allowed
+          description: The authenticated caller lacks the read-template permission for this tenant
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FORBIDDEN
+                      title: Insufficient permissions
+                      detail: The authenticated user lacks the read-template permission for this tenant
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
-          description: Template not found
+          description: No template with this id exists for the requesting tenant, or it belongs to a different tenant
+          content:
+            application/json:
+              examples:
+                notFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Template not found
+                      detail: Template with the given ID does not exist
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
     delete:
-      summary: Delete an egress template
-      description: Soft-deletes a template by setting status to inactive
+      summary: Soft-delete an egress template by ID
+      description: 'Marks an egress template as inactive by setting its `status` to `inactive`. The record is not removed from the data store and remains retrievable via `GET /api/v1/egress-templates/{templateId}` and `GET /api/v1/egress-templates` (when filtering by `status=inactive`). No GCS files are deleted.
+
+
+        When to use: call this to retire a template from active use without permanently destroying its configuration or mapping history.
+
+
+        Preconditions: `tenant-id` header must be present. The template must belong to the requesting tenant; cross-tenant access returns 404 (not 403). If an export driven by this template is currently in progress, the request is rejected until that export completes.
+
+
+        Idempotency: calling delete again on an already-inactive template succeeds and is a no-op — `version` is not incremented by this operation, on first or subsequent calls.
+
+
+        Side effects: only the template''s `status` field is updated. GCS files are untouched.
+
+
+        Returns: 204 No Content on success, with no response body.'
       operationId: deleteEgressTemplate
       tags:
       - EgressTemplate
       parameters:
-      - name: templateId
+      - description: ID of the egress template to soft-delete.
+        name: templateId
         in: path
         required: true
         schema:
           type: string
-      - name: tenant-id
-        in: header
-        schema:
-          type: string
-      - name: x-user-id
+      - required: true
+        name: tenant-id
         in: header
         schema:
           type: string
       responses:
         '204':
-          description: Template deleted
+          description: The template was marked inactive (or already was); no body
+        '401':
+          description: The request is missing a valid bearer token; re-authenticate and retry
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Authentication required
+                      detail: A valid bearer token is required
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: The authenticated caller lacks the delete-template permission for this tenant
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: FORBIDDEN
+                      title: Insufficient permissions
+                      detail: The authenticated user lacks the delete-template permission for this tenant
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: No template with this id exists for the requesting tenant, or it belongs to a different tenant
+          content:
+            application/json:
+              examples:
+                notFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Template not found
+                      detail: Template with the given ID does not exist
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /api/v1/egress-templates/{templateId}/columns:
+    get:
+      summary: Get parsed column mappings for a template
+      description: Reads the template's stored mappings CSV and returns the parsed columns as JSON so the builder can be re-hydrated for editing.
+      operationId: getEgressTemplateColumns
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+      - required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Parsed columns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressTemplateColumnsResponse'
+        '404':
+          description: Template not found
         '401':
           description: Not Authorized
         '403':
           description: Not Allowed
+      security:
+      - jwt: []
+  /api/v1/egress-templates/{templateId}/mappings:
+    get:
+      summary: Get a signed download URL for a template's mappings CSV
+      description: Returns a short-lived signed URL for previewing/downloading the mappings CSV associated with the template.
+      operationId: getEgressTemplateMappings
+      tags:
+      - EgressTemplate
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+      - required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Signed download URL returned
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
         '404':
-          description: Template not found
+          description: Template or mappings CSV not found
       security:
       - jwt: []
 components:
   schemas:
+    EgressFieldCatalogItem:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        entityGroup:
+          type: string
+        dataType:
+          type: string
+        isDate:
+          type: boolean
+        isExpandable:
+          type: boolean
+        isSensitive:
+          type: boolean
+        expansionKey:
+          type: string
+        isJoinable:
+          type: boolean
+        mappedEntity:
+          type: string
+        description:
+          type: string
+        hasPattern:
+          type: boolean
+        format:
+          type: string
+        message:
+          type: object
+          additionalProperties:
+            type: string
+        minLength:
+          type: integer
+          format: int32
+        maxLength:
+          type: integer
+          format: int32
+        enum:
+          type: array
+          items:
+            type: string
+    EgressFieldSuggestion:
+      type: object
+      properties:
+        name:
+          type: string
+        suggestedMatches:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressFieldCatalogItem'
+    TemplateCreatorsResponse:
+      type: object
+      description: Distinct egress-template creators, with a truncation signal for the bounded scan
+      properties:
+        creators:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateCreatorResponse'
+          description: Distinct creators, in first-seen order
+        truncated:
+          type: boolean
+          description: True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    SuggestEgressColumnMappingsRequest:
+      type: object
+      properties:
+        entityType:
+          type: string
+        columnNames:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+        sampleValues:
+          type: array
+          maxItems: 500
+          items:
+            type: array
+            items:
+              type: string
     EgressTemplateResponse:
       type: object
       properties:
         id:
           type: string
+          description: Server-assigned unique identifier of the template.
         tenantId:
           type: string
+          description: ID of the tenant that owns this template.
         createdAt:
           $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp the template was created, ISO-8601.
         createdBy:
           type: string
+          description: ID of the user who created the template.
         updatedAt:
           $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp the template was last updated, ISO-8601.
         updatedBy:
           type: string
+          description: ID of the user who last updated the template.
         templateName:
           type: string
+          description: Human-readable template name.
         description:
           type: string
+          description: Free-text description of the template's purpose.
         entityType:
           type: string
+          description: 'Entity type this template maps: `practitioner`, `facility`, or `group`. Immutable after creation.'
         outputFormat:
           type: string
+          description: Output file format produced by exports run from this template, e.g. `csv`.
         separator:
           type: string
+          description: Delimiter used in the output CSV.
         status:
           type: string
+          description: 'Template lifecycle status: `draft`, `active`, or `inactive` (soft-deleted).'
         version:
           type: integer
           format: int32
+          description: Version number, incremented on each successful update. Not incremented by delete.
         mappingsCsvUrl:
           type: string
+          description: GCS URL of the current mapping CSV for this template version.
         rowExpansionKeys:
           $ref: '#/components/schemas/JsonNode'
+          type: object
+          examples:
+          - - locations
+          description: 'JSON array of field keys that trigger row expansion on export. Each key names an array-valued field of the entity; on export one output row is emitted per element of that array instead of collapsing the array into a single cell. Supported keys: `locations`, `networks`, `groups`, `specialties`, `licenses`, `contacts`, `accreditations`, `addressType2Npi`. Null or an empty array means no expansion (one row per entity). As supplied on create/update.'
         extExportConfig:
           $ref: '#/components/schemas/JsonNode'
+          type: object
+          examples:
+          - bigquery:
+              enabled: true
+            sensitive_fields:
+              ssn: masked
+          description: 'External export destination and sensitive-field configuration, as supplied on create/update. Recognized blocks: `bigquery` (`{"enabled": boolean, "dataset": string, "tableName": string}`) and `sensitive_fields` (per-field exposure mode, e.g. `{"ssn": "masked"}`; only `ssn` supported today, values `full` or `masked`).'
         scheduleEnabled:
           type: boolean
+          description: Whether scheduled (unattended) exports are enabled for this template.
         scheduleFrequency:
           type: string
+          description: 'Schedule cadence: `daily`, `weekly`, `monthly`, or `custom`. Null when no schedule is configured.'
         scheduleTime:
           type: string
+          description: Time of day the schedule runs, 24-hour `HH:mm`. Null when scheduleFrequency is `custom` or no schedule is configured.
         scheduleDayOfWeek:
           type: integer
           format: int32
+          description: 'Day of week the schedule runs: 1 = Sunday ... 7 = Saturday. Only set when scheduleFrequency=`weekly`.'
         scheduleDayOfMonth:
           type: integer
           format: int32
+          description: Day of month (1-31) the schedule runs. Only set when scheduleFrequency=`monthly`.
         scheduleCron:
           type: string
+          examples:
+          - 0 0 8 ? * MON
+          description: Quartz cron expression (6-7 fields, not standard 5-field Unix cron) defining the schedule. Only set when scheduleFrequency=`custom`.
         scheduleTimezone:
           type: string
+          description: IANA timezone identifier the schedule runs in, e.g. `America/New_York`.
+        scheduleDaysOfWeek:
+          type: string
+          examples:
+          - 2,4,6
+          description: 'Comma-separated days of week the schedule runs: 1 = Sunday ... 7 = Saturday. Only set when scheduleFrequency=`weekly`.'
+        scheduleInterval:
+          type: integer
+          format: int32
+          examples:
+          - 6
+          description: Interval in hours between runs (1, 2, 3, 4, 6, 8 or 12 — divisors of 24). Only set when scheduleFrequency=`hourly`.
         lastExportAt:
           $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp of the most recent export run from this template, ISO-8601. Null if no export has run yet.
         nextExportAt:
           $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp of the next scheduled export run, ISO-8601. Null when scheduling is disabled.
         metadata:
           $ref: '#/components/schemas/JsonNode'
+          type: object
+          examples:
+          - team: credentialing
+            notes: quarterly roster export
+          description: Arbitrary caller-defined metadata stored with the template. Not interpreted by the service; persisted and returned as-is.
+        jobType:
+          type: string
+          description: 'Derived export trigger type for the Activity Center UI: `SCHEDULED` when a schedule is enabled, `MANUAL` otherwise. Not persisted by the data store.'
+        createdByName:
+          type: string
+          description: Display name resolved from createdBy, when resolvable. Null if resolution failed or has not been attempted; callers should fall back to createdByEmail then createdBy in that case.
+        createdByEmail:
+          type: string
+          description: Email resolved from createdBy, when resolvable. Null if resolution failed or has not been attempted; used as the display fallback between createdByName and the raw createdBy id.
+        exportType:
+          type: string
+          enum:
+          - FULL_ROSTER_EXPORT
+          - CHANGE_FILE
+          description: 'Export type (CP-41057): `FULL_ROSTER_EXPORT` (default; legacy rows read as this) or `CHANGE_FILE` (rows are the changes in a window).'
+        triggerMode:
+          type: string
+          enum:
+          - SCHEDULED
+          - MANUAL
+          description: 'Trigger mode of a Change File template (CP-41062): `SCHEDULED` (generates on its own schedule) or `MANUAL` (generates only through the trigger API with an explicit date range). Null for full roster exports.'
         bqExportEnabled:
           type: boolean
         bqTableName:
           type: string
         bqDataset:
           type: string
+    EgressFieldCatalogResponse:
+      type: object
+      properties:
+        entityType:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressFieldCatalogItem'
+    TemplateCreatorResponse:
+      type: object
+      description: A distinct egress-template creator
+      properties:
+        id:
+          type: string
+          description: Raw createdBy user ID (the value to filter the list endpoint by)
+        name:
+          type: string
+          description: Resolved display name, or null when unresolved
+        email:
+          type: string
+          description: Resolved email, or null when unresolved
+    EgressTemplateColumnDto:
+      type: object
+      properties:
+        outputColumn:
+          type: string
+        attributePath:
+          type: string
+        jsonExtractionPath:
+          type: string
+        multiValueHandling:
+          type: string
+        maxColumns:
+          type: integer
+          format: int32
+        columnOrder:
+          type: integer
+          format: int32
+        entityGroup:
+          type: string
+        defaultValue:
+          type: string
+        dataTransformations:
+          type: string
+        dedupeBy:
+          type: string
+        fallbackJsonExtractionPath:
+          type: string
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    EgressTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressTemplateResponse'
+          description: Egress templates on this page, in DAL-returned order. Empty (not null) when no templates match the filters.
+        total:
+          type: integer
+          format: int32
+          description: Total number of templates matching the filters across all pages.
+        page:
+          type: integer
+          format: int32
+          description: Zero-based page number returned, per the `page` query parameter.
+        size:
+          type: integer
+          format: int32
+          description: Number of templates requested per page, per the `size` query parameter.
+        hasMore:
+          type: boolean
+          description: Whether at least one further page is available after this one.
     Instant:
       type: string
       format: date-time
       examples:
       - '2022-03-10T16:15:50Z'
+    EgressTemplateColumnsResponse:
+      type: object
+      properties:
+        templateId:
+          type: string
+        entityType:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressTemplateColumnDto'
     JsonNode:
       type: object
       properties:

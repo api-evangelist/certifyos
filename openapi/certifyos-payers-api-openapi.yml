@@ -18,22 +18,31 @@ servers:
   description: Production Server
 tags:
 - name: Payers
-  description: This resource represents a payer in the healthcare system. A payer refers to an entity that finances or reimburses the cost of health services. Use it to get, create, and update payers.
+  description: 'A payer is an entity that finances or reimburses the cost of health services (e.g. an insurance company). Payer records are a shared, non-tenant-partitioned catalog: the `tenant-id` header required by these operations is used only for audit-trail attribution, not to scope or restrict which payers a caller can see or modify. Use this resource to browse, look up, create, and replace payers.'
 paths:
   /payers:
     get:
-      summary: Get all payers
-      description: Returns a list of payers for the provided tenant. The payers are returned sorted by creation date, with the most recent payers appearing first.
+      summary: List payers, sorted by ID ascending
+      description: 'Returns a page of payers from the shared payer catalog, ordered by `id` ascending — payer records carry no creation timestamp, so there is no "newest first" ordering. Use this to browse or discover payers before referencing one by ID (e.g. when associating a payer with a plan or network); use `GET /payers/{id}` once you already have a specific payer ID.
+
+
+        Requires the `READ_PAYER` permission. The `tenant-id` header is required, but the payer catalog is not tenant-partitioned: the value is forwarded downstream purely for audit-trail attribution and does not filter or restrict which payers are returned.
+
+
+        **Pagination:** always returns the first 10 records (offset 0); no caller-controlled pagination is currently exposed by this endpoint, even though the underlying payer service supports page/cursor-based pagination. This is a known limitation of this endpoint specifically, not fixed in this change.
+
+
+        Returns a `GetAllPayersResponse` with a `data` array of payer records and a `totalCount`. Each record''s own `data` field is shaped per `https://schemas.certifyos.com/entities/Payer.schema.json`. This operation is read-only and has no side effects.'
       operationId: getPayers
       tags:
       - Payers
       parameters:
-      - description: Optional name to filter the list of payers. The search is case-insensitive and partial.
+      - description: Accepted but not currently forwarded to the payer service — this filter has no effect on the results returned, regardless of value. (Known gap; not fixed in this change.)
         in: query
         name: name
         schema:
           type: string
-      - description: The tenant identifier.
+      - description: Tenant identifier, forwarded to the payer service for audit-trail attribution only. The payer catalog is not tenant-partitioned, so this value does not restrict which payers are returned.
         in: header
         name: tenant-id
         required: true
@@ -41,55 +50,126 @@ paths:
           type: string
       responses:
         '200':
-          description: Returned if the request is successful.
+          description: The requested page of payers, plus the total count of payers in the catalog.
           content:
             application/json:
+              examples:
+                payersPage:
+                  value:
+                    totalCount: 2
+                    data:
+                    - id: payer_018f3a2b7c9d
+                      externalPayerId: '60054'
+                      sourceId: src_nppes
+                      data:
+                        name: Aetna Better Health
+                        category: Commercial
+                        sourceSystem: API
+                    - id: payer_018f3a2b7ca1
+                      externalPayerId: '87726'
+                      sourceId: src_file_upload
+                      data:
+                        name: UnitedHealthcare
+                        category: Commercial
+                        sourceSystem: File Upload
               schema:
                 $ref: '#/components/schemas/GetAllPayersResponse'
         '400':
-          description: Returned if the request is invalid. `tenant-id` and `user-id` headers are required.
+          description: Returned if the `tenant-id` header is missing.
         '401':
           description: Returned if the request is unauthorized. Authentication required.
         '403':
           description: Returned if the request is forbidden. Insufficient permissions.
+        '502':
+          description: Returned if the downstream payer service returned an error response.
+          content:
+            application/json:
+              examples:
+                downstreamError:
+                  value:
+                    error: Downstream service error
+              schema:
+                type: object
+        '503':
+          description: Returned if the downstream payer service is unreachable (network connectivity issue).
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    error: Service temporarily unavailable
+              schema:
+                type: object
         '500':
           description: Returned if the request is an internal server error.
-        '502':
-          description: Returned if the request is a bad gateway. Downstream service error.
-        '503':
-          description: Returned if the request is a service unavailable. Network connectivity issues.
       security:
       - jwt: []
     post:
-      summary: Create a new payer
-      description: Creates a new payer with the provided details
+      summary: Create a payer record
+      description: 'Creates a new payer in the shared payer catalog. Use this before associating a payer with a plan or provider network; the `id` returned here is required by those downstream association endpoints.
+
+
+        Requires the `CREATE_PAYER` permission. The `tenant-id` header is required and forwarded downstream for audit-trail attribution only — because the payer catalog is not tenant-partitioned, the created payer is visible to any tenant with `READ_PAYER` permission; this is not a tenant-private resource.
+
+
+        The request `data` field is validated against the external JSON Schema at `https://schemas.certifyos.com/entities/Payer.schema.json`, which requires `name` and also accepts `category`, `sourceSystem` (`API` or `File Upload`), and `changeReason`. Payloads that fail validation are rejected with `400`.
+
+
+        This operation is **not idempotent** — each successful request creates a distinct payer record, even if the payload is identical to a previous call.
+
+
+        On success, returns `201` with the created `PayerResponse`. This endpoint does not accept `externalPayerId` or `sourceId` in the request, so both are always empty on payers created through it (omitted from the example below); a populated value on an existing payer means it was created through another path (e.g. bulk import).'
       operationId: createPayer
       tags:
       - Payers
       parameters:
-      - description: Tenant ID
+      - description: Tenant identifier, forwarded to the payer service for audit-trail attribution only — see the operation description.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: The payer data to create.
         content:
           application/json:
+            examples:
+              createPayer:
+                value:
+                  data:
+                    name: Aetna Better Health
+                    category: Commercial
+                    sourceSystem: API
             schema:
               $ref: '#/components/schemas/CreatePayerRequest'
         required: true
       responses:
         '201':
-          description: Payer created successfully
+          description: The newly created payer.
           content:
             application/json:
+              examples:
+                payerCreated:
+                  value:
+                    id: payer_018f3a2b7c9d
+                    data:
+                      name: Aetna Better Health
+                      category: Commercial
+                      sourceSystem: API
               schema:
-                $ref: '#/components/schemas/PayerResponse'
+                $ref: '#/components/schemas/PayerResponseSchema'
         '400':
-          description: Bad Request
+          description: Returned if `data` fails validation against the payer JSON Schema (e.g. missing the required `name` field).
           content:
             application/json:
+              examples:
+                validationFailed:
+                  value:
+                    errors:
+                    - JSON Schema validation failed against https://schemas.certifyos.com/entities/Payer.schema.json
+                    errorDetails:
+                      errors:
+                      - '$: required property ''name'' not found'
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
@@ -102,67 +182,110 @@ paths:
       - jwt: []
   /payers/{id}:
     put:
-      summary: Update an existing payer
-      description: Updates a payer with the provided details
+      summary: Replace a payer's full record by ID
+      description: 'Replaces the stored record for the payer identified by `{id}` with the supplied payload. This is a **full replacement, not a partial update** — confirmed against `PayerService.mergeModelsForUpdate` in the payer service, which overwrites `externalPayerId`, `sourceId`, and `data` wholesale from the request body. Any of these fields omitted from the request are cleared rather than preserved from the existing record, so always send the complete payer payload.
+
+
+        Requires the `UPDATE_PAYER` permission. The `tenant-id` header is required, but the payer catalog is not tenant-partitioned: any existing payer ID can be replaced regardless of which `tenant-id` value is supplied — the header is used only for audit-trail attribution. A missing or nonexistent `id` returns `404`.
+
+
+        The request `data` field is validated against the same external JSON Schema used at creation (`https://schemas.certifyos.com/entities/Payer.schema.json`). Payloads that fail validation are rejected with `400`.
+
+
+        On success, returns `200` with the updated `PayerResponse`.'
       operationId: updatePayer
       tags:
       - Payers
       parameters:
-      - description: Payer identifier
+      - description: Server-assigned payer identifier, returned by `GET /payers` or `POST /payers`.
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier, forwarded to the payer service for audit-trail attribution only — see the operation description.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: 'The complete replacement payer data. This is a full replace: fields omitted here are cleared, not preserved from the existing record.'
         content:
           application/json:
+            examples:
+              updatePayer:
+                value:
+                  externalPayerId: '60054'
+                  sourceId: src_nppes
+                  data:
+                    name: Aetna Better Health of California
+                    category: Commercial
+                    sourceSystem: API
             schema:
-              $ref: '#/components/schemas/PayerRequest'
+              $ref: '#/components/schemas/PayerRequestSchema'
         required: true
       responses:
         '200':
-          description: Payer updated successfully
+          description: The updated payer.
           content:
             application/json:
+              examples:
+                payerUpdated:
+                  value:
+                    id: payer_018f3a2b7c9d
+                    externalPayerId: '60054'
+                    sourceId: src_nppes
+                    data:
+                      name: Aetna Better Health of California
+                      category: Commercial
+                      sourceSystem: API
               schema:
-                $ref: '#/components/schemas/PayerResponse'
+                $ref: '#/components/schemas/PayerResponseSchema'
+        '404':
+          description: Returned if no payer exists with the given `id`.
         '400':
-          description: Invalid input
+          description: 'Returned if `data` fails validation against the payer JSON Schema. Note: in the current implementation this specific error path returns an empty body rather than the structured error shape below (existing gap, not fixed in this change — see PR description).'
           content:
             application/json:
+              examples:
+                validationFailed:
+                  value:
+                    errors:
+                    - JSON Schema validation failed against https://schemas.certifyos.com/entities/Payer.schema.json
+                    errorDetails:
+                      errors:
+                      - '$: required property ''name'' not found'
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - Insufficient permissions
-        '404':
-          description: Payer not found
         '500':
           description: Internal server error
       security:
       - jwt: []
     get:
-      summary: Get a payer by ID
-      description: Retrieves a specific payer by its unique identifier
+      summary: Fetch a payer by ID
+      description: 'Retrieves the full record for the payer identified by `{id}`. Use this once you already have a specific payer ID; use `GET /payers` to discover or browse payers.
+
+
+        Requires the `READ_PAYER` permission. The `tenant-id` header is required, but the payer catalog is not tenant-partitioned: any existing payer ID is returned regardless of which `tenant-id` value is supplied — the header is not used to authorize or scope the lookup, only for audit-trail attribution.
+
+
+        Returns a `PayerResponse` with `id`, `externalPayerId`, `sourceId`, and `data` (shaped per `https://schemas.certifyos.com/entities/Payer.schema.json`). This operation is read-only and has no side effects.'
       operationId: getPayerById
       tags:
       - Payers
       parameters:
-      - description: ID of the payer to retrieve
+      - description: Server-assigned payer identifier, returned by `GET /payers` or `POST /payers`.
         required: true
         name: id
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier, forwarded to the payer service for audit-trail attribution only — see the operation description.
         required: true
         name: tenant-id
         in: header
@@ -170,34 +293,39 @@ paths:
           type: string
       responses:
         '200':
-          description: Payer retrieved successfully
+          description: The requested payer.
           content:
             application/json:
+              examples:
+                payer:
+                  value:
+                    id: payer_018f3a2b7c9d
+                    externalPayerId: '60054'
+                    sourceId: src_nppes
+                    data:
+                      name: Aetna Better Health
+                      category: Commercial
+                      sourceSystem: API
               schema:
-                $ref: '#/components/schemas/PayerResponse'
+                $ref: '#/components/schemas/PayerResponseSchema'
+        '404':
+          description: Returned if no payer exists with the given `id`.
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - Insufficient permissions
-        '404':
-          description: Payer not found
         '500':
           description: Internal server error
       security:
       - jwt: []
 components:
   schemas:
-    PayerResponse:
+    CreatePayerRequest:
       type: object
       properties:
-        id:
-          type: string
-        externalPayerId:
-          type: string
-        sourceId:
-          type: string
         data:
-          $ref: '#/components/schemas/JsonNode'
+          $ref: https://schemas.certifyos.com/entities/Payer.schema.json
+          type: object
     GetAllPayersResponse:
       type: object
       properties:
@@ -207,99 +335,10 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Payer.schema'
-    JsonNode:
+            $ref: '#/components/schemas/PayerResponseSchema'
+    PayerResponseSchema:
       type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    SourceSystem.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/SourceSystem.schema.json
-      title: Source System Enum
-      description: Specifies the origin system of a record.
-      type: string
-      enum:
-      - API
-      - File Upload
-    CreatePayerRequest:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/Payer.schema'
-          type: object
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    PayerRequest:
-      type: object
+      description: A payer record.
       properties:
         id:
           type: string
@@ -308,30 +347,34 @@ components:
         sourceId:
           type: string
         data:
-          $ref: '#/components/schemas/JsonNode'
-        dataToValidate:
-          $ref: '#/components/schemas/JsonNode'
-    Payer.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Payer.schema.json
-      title: Payer
-      description: Represents an entity responsible for financing or reimbursing the cost of healthcare services.
+          $ref: https://schemas.certifyos.com/entities/Payer.schema.json
+          type: object
+    BadRequestErrorResponse:
       type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
       properties:
-        name:
-          description: Name of the payer
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    PayerRequestSchema:
+      type: object
+      description: Payer data used to replace an existing payer.
+      properties:
+        externalPayerId:
           type: string
-        category:
-          description: Type of payer
+        sourceId:
           type: string
-        sourceSystem:
-          description: Origin of the record (e.g., API, File Upload)
-          $ref: '#/components/schemas/SourceSystem.schema'
-        changeReason:
-          description: Optional description of why a change was made
-          type: string
-      required:
-      - name
+        data:
+          $ref: https://schemas.certifyos.com/entities/Payer.schema.json
+          type: object
   securitySchemes:
     jwt:
       type: http

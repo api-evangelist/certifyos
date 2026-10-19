@@ -22,8 +22,8 @@ tags:
 paths:
   /networks:
     get:
-      summary: Get all networks
-      description: Returns a list of networks for the provided tenant. The networks are returned sorted by creation date, with the most recent networks appearing first.
+      summary: List networks for a tenant
+      description: Returns a paginated list of networks scoped to the tenant identified by the `tenant-id` header. Results are sorted by creation date, newest first, using offset-based pagination. Use this endpoint to browse or search all networks for a tenant; to fetch a single known network by ID use `GET /networks/{id}` instead. Requires the `READ_NETWORK` permission. Returns 200 with an empty `records` list when the tenant has no networks.
       operationId: getNetworks
       tags:
       - Network
@@ -34,7 +34,7 @@ paths:
         schema:
           type: integer
           format: int32
-      - description: Number of items per page in offset-based pagination. Defaults to 10 if not specified.
+      - description: Number of items per page in offset-based pagination. Defaults to 10 if not specified. Values above 100 are silently capped to 100 by the backend rather than rejected.
         in: query
         name: size
         schema:
@@ -51,6 +51,15 @@ paths:
           description: Returned if the request is successful.
           content:
             application/json:
+              examples:
+                networksPage:
+                  value:
+                    totalCount: 2
+                    records:
+                    - data:
+                        name: Blue Shield PPO Network
+                    - data:
+                        name: Aetna HMO Statewide Network
               schema:
                 $ref: '#/components/schemas/GetAllNetworksResponse'
         '400':
@@ -59,17 +68,17 @@ paths:
           description: Returned if the request is unauthorized. Authentication required.
         '403':
           description: Returned if the request is forbidden. Insufficient permissions.
-        '500':
-          description: Returned if the request is an internal server error.
         '502':
           description: Returned if the request is a bad gateway. Downstream service error.
         '503':
           description: Returned if the request is a service unavailable. Network connectivity issues.
+        '500':
+          description: Returned if the request is an internal server error.
       security:
       - jwt: []
     post:
       summary: Create a new network
-      description: Creates a new network with the provided details
+      description: Creates a new network record for the tenant identified by the `tenant-id` header. The request body's `data` object is validated against the Network JSON schema; currently the only recognized field is `name` (string), with an optional `contractId` also nested inside `data` — no other properties are accepted, and none are required. Requires the `CREATE_NETWORK` permission. On success, returns the created network with its server-assigned ID.
       operationId: createNetwork
       tags:
       - Network
@@ -81,8 +90,15 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Network create payload
         content:
           application/json:
+            examples:
+              createNetwork:
+                value:
+                  data:
+                    name: Blue Shield PPO Network
+                    contractId: 018f2c3a-9b7e-7c21-8b4e-4e7f6a1d2c3c
             schema:
               $ref: '#/components/schemas/CreateNetworkRequest'
         required: true
@@ -91,12 +107,22 @@ paths:
           description: Network created successfully
           content:
             application/json:
+              examples:
+                createdNetwork:
+                  value:
+                    data:
+                      name: Blue Shield PPO Network
               schema:
-                $ref: '#/components/schemas/NetworkResponse.schema'
+                $ref: '#/components/schemas/NetworkResponse'
         '400':
           description: Bad Request
           content:
             application/json:
+              examples:
+                schemaValidationFailed:
+                  value:
+                    errors:
+                    - '$.data.unexpectedField: is not defined in the schema and the schema does not allow additional properties'
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
@@ -109,8 +135,8 @@ paths:
       - jwt: []
   /networks/practitioners/effective-date:
     put:
-      summary: Update effective date of a practitioner in a group for a network
-      description: Updates the effective date of a practitioner in a group for a network. This updates the effectiveDate in the TenantGroupPractitionerNetwork table.
+      summary: Set practitioner network enrollment start date
+      description: Sets the start date of a practitioner's enrollment in a network group, identified by `networkId` and `tenantGroupPractitionerId` in the request body. `effectiveDate` must not be later than the enrollment's existing termination date, or a 400 is returned. This operation is idempotent (upsert semantics). Use this endpoint to set the enrollment start date only; to update specialty-level dates use `PUT /networks/{networkId}/groups/{groupId}/practitioners/{practitionerId}/specialties/{specialtyId}/dates` instead. Requires the `UPDATE_NETWORK` permission.
       operationId: updatePractitionerEffectiveDateInGroupForNetwork
       tags:
       - Network
@@ -121,8 +147,15 @@ paths:
           type: string
         required: true
       requestBody:
+        description: Practitioner network effective-date payload
         content:
           application/json:
+            examples:
+              setEffectiveDate:
+                value:
+                  networkId: 018f2c3a-9b7e-7c21-8b4e-4e7f6a1d2c3b
+                  tenantGroupPractitionerId: 018f2c3a-9b7e-7c21-8b4e-4e7f6a1d5a11
+                  effectiveDate: '2026-01-01'
             schema:
               $ref: '#/components/schemas/UpdateGroupPractitionerNetworkEffectiveDateRequest'
         required: true
@@ -131,18 +164,34 @@ paths:
           description: Practitioner effective date in group for network successfully updated
           content:
             application/json:
+              examples:
+                updatedEnrollment:
+                  value: {}
               schema:
                 $ref: '#/components/schemas/JsonNode'
         '400':
           description: Invalid request body or missing required parameters
           content:
             application/json:
+              examples:
+                effectiveDateAfterTermination:
+                  value:
+                    errors:
+                    - Effective date (2026-06-01) cannot be after termination date (2026-01-01)
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '404':
-          description: TenantGroupPractitionerNetwork not found for the provided networkId and tenantGroupPractitionerId
+          description: Returned when no practitioner-network enrollment exists matching the given networkId and tenantGroupPractitionerId
           content:
             application/json:
+              examples:
+                enrollmentNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Resource not found
+                      detail: No practitioner-network enrollment found for the given networkId and tenantGroupPractitionerId
               schema:
                 $ref: '#/components/schemas/ApiError'
         '500':
@@ -155,8 +204,8 @@ paths:
       - jwt: []
   /networks/{id}:
     put:
-      summary: Update a new network
-      description: Updates a new network with the provided details
+      summary: Update an existing network
+      description: Replaces the network record identified by `id` for the tenant identified by the `tenant-id` header. The request body's `data` object is validated against the same Network JSON schema used on create; currently the only recognized field is `name` (optional). The network must already exist. Requires the `UPDATE_NETWORK` permission. On success, returns the updated network with HTTP 201.
       operationId: updateNetwork
       tags:
       - Network
@@ -175,22 +224,44 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Network update payload
         content:
           application/json:
+            examples:
+              updateNetwork:
+                value:
+                  data:
+                    name: Blue Shield PPO Network (Renewed)
             schema:
               $ref: '#/components/schemas/CreateNetworkRequest'
         required: true
       responses:
         '200':
-          description: Network updated successfully
+          description: Retained for backward documentation compatibility; this operation currently always returns 201 on success (see the 201 response below).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NetworkResponse.schema'
+                $ref: '#/components/schemas/NetworkResponse'
+        '201':
+          description: Network updated successfully
+          content:
+            application/json:
+              examples:
+                updatedNetwork:
+                  value:
+                    data:
+                      name: Blue Shield PPO Network (Renewed)
+              schema:
+                $ref: '#/components/schemas/NetworkResponse'
         '400':
           description: Bad Request
           content:
             application/json:
+              examples:
+                schemaValidationFailed:
+                  value:
+                    errors:
+                    - '$.data.unexpectedField: is not defined in the schema and the schema does not allow additional properties'
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
@@ -202,7 +273,8 @@ paths:
       security:
       - jwt: []
     get:
-      summary: Get a network by id
+      summary: Retrieve a single network by ID
+      description: Returns the full network record identified by `id`, scoped to the tenant identified by the `tenant-id` header. Use this endpoint when the network ID is already known; to browse all networks for a tenant use `GET /networks` instead. Requires the `READ_NETWORK` permission.
       operationId: findNetworkById
       tags:
       - Network
@@ -225,25 +297,49 @@ paths:
           description: Network fetched successfully
           content:
             application/json:
+              examples:
+                network:
+                  value:
+                    data:
+                      name: Blue Shield PPO Network
               schema:
-                $ref: '#/components/schemas/NetworkResponse.schema'
+                $ref: '#/components/schemas/NetworkResponse'
         '400':
           description: Bad Request
           content:
             application/json:
+              examples:
+                invalidNetworkId:
+                  value:
+                    errors:
+                    - networkId must be a valid identifier
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - Insufficient permissions
+        '404':
+          description: Returned when no network exists with the given id for the tenant.
+          content:
+            application/json:
+              examples:
+                networkNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Resource not found
+                      detail: No network found with id 018f2c3a-9b7e-7c21-8b4e-4e7f6a1d2c3b for the tenant
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal server error
       security:
       - jwt: []
     delete:
-      summary: Delete a new network
-      description: Deletes a network with the given id
+      summary: Delete a network by ID
+      description: 'Permanently removes the network identified by `id` for the tenant identified by the `tenant-id` header. This is a hard delete with no soft-delete/undo — the record cannot be recovered afterward. Deletion does not cascade: a network that is still referenced by a group, practitioner, location, or plan association cannot be deleted until those associations are removed first. Requires the `DELETE_NETWORK` permission. On success, returns 204 with no response body.'
       operationId: deleteNetwork
       tags:
       - Network
@@ -270,6 +366,11 @@ paths:
           description: Bad Request
           content:
             application/json:
+              examples:
+                invalidNetworkId:
+                  value:
+                    errors:
+                    - networkId must be a valid identifier
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
@@ -282,8 +383,8 @@ paths:
       - jwt: []
   /networks/{networkId}/groups/{groupId}/practitioners/{practitionerId}/specialties/{specialtyId}/dates:
     put:
-      summary: Update practitioner specialty effective/termination dates in group for network
-      description: Updates the effectiveDate and/or terminationDate in the TenantGroupPractitionerNetworkSpecialty relationship identified by networkId, groupId, practitionerId, and specialtyId.
+      summary: Update practitioner specialty dates in a network group
+      description: 'Updates the effective date and/or termination date for a practitioner''s specialty participation within a network group, identified by networkId, groupId, practitionerId, and specialtyId in the path. `effectiveDate` is required; `terminationDate` is optional but must not precede `effectiveDate`. This operation has cascade side effects: when `applyToAllAssociatedNetworksAndPlans` is true (default when omitted), the dates are propagated to associated plan specialties across all of the practitioner''s network enrollments in the group; when `applyToAllAssociatedLocations` is true (default when omitted), they are also propagated to location-network specialties. Use this endpoint for specialty-level date management; to set a practitioner''s overall network enrollment start date use `PUT /networks/practitioners/effective-date` instead. Requires the `UPDATE_PRACTITIONER` permission.'
       operationId: updatePractitionerSpecialtyDatesInGroupForNetwork
       tags:
       - Network
@@ -306,7 +407,7 @@ paths:
         name: practitionerId
         schema:
           type: string
-      - description: Specialty ID (certify/core specialty id)
+      - description: Specialty ID. Accepts either a Core/Certify specialty ID or a TenantSpecialty ID — the Core/Certify ID is tried first, falling back to a TenantSpecialty ID lookup if no match is found.
         in: path
         required: true
         name: specialtyId
@@ -318,8 +419,16 @@ paths:
           type: string
         required: true
       requestBody:
+        description: Specialty date update payload
         content:
           application/json:
+            examples:
+              updateSpecialtyDates:
+                value:
+                  effectiveDate: '2026-01-01'
+                  terminationDate: '2026-12-31'
+                  applyToAllAssociatedNetworksAndPlans: true
+                  applyToAllAssociatedLocations: true
             schema:
               $ref: '#/components/schemas/UpdateGroupNetworkSpecialtyDatesRequest'
         required: true
@@ -328,18 +437,35 @@ paths:
           description: Group specialty dates in group for network successfully updated
           content:
             application/json:
+              examples:
+                success:
+                  value:
+                    success: true
               schema:
                 description: 'Response with success flag, e.g. {"success": true}'
         '400':
           description: Invalid request body or missing required parameters
           content:
             application/json:
+              examples:
+                terminationBeforeEffective:
+                  value:
+                    errors:
+                    - Termination date must be after Effective date
               schema:
                 $ref: '#/components/schemas/BadRequestErrorResponse'
         '404':
-          description: TenantGroupPractitionerNetworkSpecialty not found for the provided networkId, groupId, practitionerId, and specialtyId
+          description: Returned when no matching practitioner, group, network, or specialty association exists for the provided networkId, groupId, practitionerId, and specialtyId
           content:
             application/json:
+              examples:
+                associationNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Resource not found
+                      detail: No matching practitioner-specialty association found for the given path identifiers
               schema:
                 $ref: '#/components/schemas/ApiError'
         '500':
@@ -352,47 +478,43 @@ paths:
       - jwt: []
 components:
   schemas:
-    UpdateGroupPractitionerNetworkEffectiveDateRequest:
+    ErrorObject:
       type: object
-      required:
-      - networkId
-      - tenantGroupPractitionerId
-      - effectiveDate
+      description: Individual error object containing details about a specific validation or processing error
       properties:
-        networkId:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
           type: string
-          pattern: \S
-        tenantGroupPractitionerId:
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
           type: string
-          pattern: \S
-        effectiveDate:
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
           type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-    CreateNetworkRequest:
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    NetworkResponse:
+      $ref: https://schemas.certifyos.com/api-contracts/response/NetworkResponse.schema.json
       type: object
       properties:
-        data:
-          $ref: '#/components/schemas/Network.schema'
-          type: object
-    NetworkResponse.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/api-contracts/response/NetworkResponse.schema.json
-      title: NetworkResponse
-      type: object
-      properties:
-        data:
-          type: object
-          properties:
-            id:
-              type: string
-              format: uuid
-            name:
-              type: string
-            contractId:
-              type: string
+        jsonNode:
+          $ref: '#/components/schemas/JsonNode'
     ApiError:
-      description: Standard API error response containing a list of error objects
       type: object
+      description: Standard API error response containing a list of error objects
       properties:
         errors:
           type: array
@@ -414,6 +536,43 @@ components:
           type: boolean
         applyToAllAssociatedLocations:
           type: boolean
+    UpdateGroupPractitionerNetworkEffectiveDateRequest:
+      type: object
+      required:
+      - networkId
+      - tenantGroupPractitionerId
+      - effectiveDate
+      properties:
+        networkId:
+          type: string
+          pattern: \S
+        tenantGroupPractitionerId:
+          type: string
+          pattern: \S
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    CreateNetworkRequest:
+      type: object
+      properties:
+        data:
+          $ref: https://schemas.certifyos.com/entities/Network.schema.json
+          type: object
     GetAllNetworksResponse:
       type: object
       properties:
@@ -423,48 +582,7 @@ components:
         records:
           type: array
           items:
-            $ref: '#/components/schemas/NetworkResponse.schema'
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          description: HTTP status code for this error
-          examples:
-          - 400
-        reason:
-          type: string
-          description: Error reason/code
-          examples:
-          - VALIDATION_ERROR
-        title:
-          type: string
-          description: Error title/summary
-          examples:
-          - 'Validation failed for field: eventTypes'
-        detail:
-          type: string
-          description: Detailed error message
-          examples:
-          - eventTypes is required and cannot be empty or null
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
+            $ref: '#/components/schemas/NetworkResponse'
     JsonNode:
       type: object
       properties:
@@ -524,19 +642,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    Network.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Network.schema.json
-      title: Network
-      description: Represents collection of health care providers associated with a plan through a contract.
-      type: object
-      properties:
-        name:
-          description: The name of the network.
-          type: string
-        contractId:
-          description: The identifier of the associated contract.
-          type: string
   securitySchemes:
     jwt:
       type: http

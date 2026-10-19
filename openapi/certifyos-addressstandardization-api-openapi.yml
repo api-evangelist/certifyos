@@ -22,8 +22,17 @@ tags:
 paths:
   /addresses/standardize:
     post:
-      summary: Standardize and validate an address
-      description: Returns the standardized address together with a confidence tier (HIGH/MEDIUM/LOW), a validation status (VALID/PARTIAL/INVALID), and enrichment data (ZIP+4, county, lat/long, timezone). Pass-through to the DAL address cleanser.
+      summary: Standardize and validate a postal address
+      description: 'What: Validates and standardizes a postal address, returning a confidence tier (HIGH / MEDIUM / LOW), a validation status (VALID / PARTIAL / INVALID), and enrichment data (ZIP+4, county, latitude/longitude). Does not persist any data — this is a read-only preview operation.
+
+
+        When: Call this before persisting an address to give users a corrected form they can confirm or override. This is not the persistence write path; saving the address to a provider or facility record requires a separate write call. Applies to all address types (billing, mailing, office, etc.).
+
+
+        How: Authentication is required (valid JWT). The calling tenant must have address standardization enabled in their configuration; requests from tenants without this feature return 403. Supply the tenant-id header and a request body containing at least addressLine1. Omitting country or passing blank defaults it to "US", and "USA" is normalized to "US". The addressType field is an optional free-form hint (values such as billing, mailing, office, remit_to, service, irs).
+
+
+        Returns: A single object with four blocks: standardizedAddress (the cleansed address fields, for display), confidence (the reliability tier), validationStatus (provider validation outcome), and enrichment (ZIP+4, county, coordinates, FIPS codes). Use enrichment — not standardizedAddress — as the authoritative block when persisting. Confidence guidance: HIGH = safe to auto-apply; MEDIUM = present as a suggestion for user review; LOW = warn the user and require manual confirmation. enrichment.timezone is always null in the current release. This endpoint is idempotent — repeated calls with the same input produce the same output and have no side effects.'
       operationId: standardizeAddress
       tags:
       - AddressStandardization
@@ -34,31 +43,66 @@ paths:
           type: string
         required: true
       requestBody:
-        description: Address input to standardize
+        description: The address to standardize. Only addressLine1 is required; all other fields are optional. Omitting country or leaving it blank defaults it to "US", and "USA" is normalized to "US". The payload is used only for a read-only lookup — it is not persisted.
         content:
           application/json:
+            examples:
+              standardizeAddressRequest:
+                value:
+                  addressLine1: 123 Main Street
+                  addressLine2: Suite 100
+                  city: New York
+                  county: New York County
+                  state: NY
+                  zip: '10001'
+                  country: US
+                  addressType: billing
             schema:
               $ref: '#/components/schemas/StandardizeAddressRequest'
         required: true
       responses:
         '200':
-          description: Address standardized successfully
+          description: 'The standardization result. standardizedAddress holds the corrected address fields for display; confidence is the HIGH/MEDIUM/LOW reliability tier; validationStatus is the provider outcome (VALID/PARTIAL/INVALID); enrichment holds ZIP+4, county, latitude, longitude and FIPS codes. Use enrichment — not standardizedAddress — as the authoritative block when saving the address. Interpret confidence to drive UX: HIGH = auto-apply, MEDIUM = suggest for review, LOW = warn and require explicit confirmation. enrichment.timezone is always null in the current release.'
           content:
             application/json:
+              examples:
+                standardizedAddress:
+                  value:
+                    standardizedAddress:
+                      addressLine1: 123 Main St
+                      addressLine2: Ste 100
+                      city: New York
+                      county: New York County
+                      state: NY
+                      zip: '10001'
+                      zip4: '1234'
+                      country: US
+                      formattedAddress: 123 Main St Ste 100, New York, NY 10001-1234
+                    confidence: HIGH
+                    validationStatus: VALID
+                    enrichment:
+                      zip4: '1234'
+                      county: New York County
+                      latitude: 40.750742
+                      longitude: -73.993584
+                      stateFips: '36'
+                      countyFips: '36061'
+                      formattedAddress: 123 Main St Ste 100, New York, NY 10001-1234
+                      timezone: null
               schema:
                 $ref: '#/components/schemas/StandardizeAddressResponse'
         '204':
-          description: Address cleanser is disabled globally; no content returned
+          description: No standardization result was available — the standardizer may be disabled; treat as unavailable and fall back to unvalidated address entry.
         '400':
-          description: Invalid request payload
+          description: 'The request could not be processed due to invalid input. Two body shapes are possible depending on the cause: (1) bean-validation failures on the request body (addressLine1 is blank or missing, or zip does not match the required 5 or 5+4 digit format) and a missing/blank tenant-id header both return the nested shape {"errors": [{"httpStatus", "title", "reason", "detail"}]} — for the missing-header case title is "Missing Headers" and reason/detail are "tenant-id header missing."; (2) a 400 passed through from the upstream DAL standardizer instead uses the flat shape {"title", "detail"}. Fix the indicated field or header and retry.'
         '401':
-          description: Unauthorized - Authentication required
+          description: The request was not authenticated. Obtain a valid JWT and include it in the Authorization header before retrying.
         '403':
-          description: Forbidden - Tenant header missing or insufficient permissions
-        '500':
-          description: Internal server error
+          description: 'Access denied. A missing tenant-id header does not return this status — see the 400 response above. Returned instead when: (1) the identified tenant does not have address standardization enabled in their configuration, returning the flat shape {"title": "Forbidden", "detail": "Address standardization is not enabled for this tenant."}; or (2) the upstream DAL standardizer itself returns 403 for this request, passed through with the same flat {"title", "detail"} shape.'
         '502':
-          description: Bad Gateway - DAL cleanser unavailable
+          description: The upstream address standardization service was unreachable or returned a server-side error. This is a transient condition — retry the request with exponential backoff.
+        '500':
+          description: An unexpected server-side error occurred, such as the upstream standardization service not responding within the configured timeout (default 30 seconds) or an internal processing error. Retry with exponential backoff; if the error persists, contact support.
       security:
       - jwt: []
 components:
@@ -69,69 +113,99 @@ components:
       - HIGH
       - MEDIUM
       - LOW
+    AddressValidationStatus:
+      type: string
+      enum:
+      - VALID
+      - PARTIAL
+      - INVALID
+    StandardizeAddressResponse:
+      type: object
+      description: Standardized address with confidence, validation status, and enrichment data
+      properties:
+        standardizedAddress:
+          $ref: '#/components/schemas/StandardizedAddress'
+          type: object
+          description: Normalized address components
+        confidence:
+          $ref: '#/components/schemas/AddressConfidence'
+          type: string
+          examples:
+          - HIGH
+          description: How much the caller should trust the standardized address
+        validationStatus:
+          $ref: '#/components/schemas/AddressValidationStatus'
+          type: string
+          examples:
+          - VALID
+          description: External validation status
+        enrichment:
+          $ref: '#/components/schemas/AddressEnrichment'
+          type: object
+          description: Enrichment values derived from the standardized address
     StandardizeAddressRequest:
-      description: Input address to be standardized and validated
       type: object
       required:
       - addressLine1
+      description: Input address to be standardized and validated
       properties:
         addressLine1:
           type: string
-          description: Primary street line
           examples:
           - 123 Main Street
           pattern: \S
+          description: Primary street line
         addressLine2:
           type: string
-          description: Secondary street line (apt, suite, unit, floor)
           examples:
           - Suite 100
+          description: Secondary street line (apt, suite, unit, floor)
         city:
           type: string
-          description: City
           examples:
           - New York
+          description: City
         county:
           type: string
-          description: County
           examples:
           - New York County
+          description: County
         state:
           type: string
-          description: State / province code
           examples:
           - NY
+          description: State / province code
         zip:
           type: string
-          description: ZIP / postal code (5 or 5+4, hyphen-separated)
           examples:
           - '10001'
           pattern: \d{5}(?:-\d{4})?
+          description: ZIP / postal code (5 or 5+4, hyphen-separated)
         country:
           type: string
-          description: ISO country code
           examples:
           - US
+          description: ISO country code
           default: US
         addressType:
           type: string
-          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
           examples:
           - billing
+          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
     AddressEnrichment:
       type: object
       description: Enrichment values attached to the standardized address
       properties:
         zip4:
           type: string
-          description: ZIP+4 extension, if available
           examples:
           - '1234'
+          description: ZIP+4 extension, if available
         county:
           type: string
-          description: County name, if available
           examples:
           - New York County
+          description: County name, if available
         latitude:
           type: number
           format: double
@@ -142,44 +216,22 @@ components:
           description: Longitude in decimal degrees, if available
         stateFips:
           type: string
-          description: 2-digit state FIPS code, if available
           examples:
           - '36'
+          description: 2-digit state FIPS code, if available
         countyFips:
           type: string
-          description: 5-digit county FIPS code, if available
           examples:
           - '36061'
+          description: 5-digit county FIPS code, if available
         formattedAddress:
           type: string
           description: Pretty-printed single-line address, if available
         timezone:
-          type: string
+          type:
+          - string
+          - 'null'
           description: IANA timezone ID, if available; always null until timezone enrichment ships
-    StandardizeAddressResponse:
-      description: Standardized address with confidence, validation status, and enrichment data
-      type: object
-      properties:
-        standardizedAddress:
-          description: Normalized address components
-          type: object
-          $ref: '#/components/schemas/StandardizedAddress'
-        confidence:
-          description: How much the caller should trust the standardized address
-          type: string
-          examples:
-          - HIGH
-          $ref: '#/components/schemas/AddressConfidence'
-        validationStatus:
-          description: External validation status
-          type: string
-          examples:
-          - VALID
-          $ref: '#/components/schemas/AddressValidationStatus'
-        enrichment:
-          description: Enrichment values derived from the standardized address
-          type: object
-          $ref: '#/components/schemas/AddressEnrichment'
     StandardizedAddress:
       type: object
       description: Standardized address components
@@ -211,12 +263,6 @@ components:
         formattedAddress:
           type: string
           description: Pretty-printed single-line address
-    AddressValidationStatus:
-      type: string
-      enum:
-      - VALID
-      - PARTIAL
-      - INVALID
   securitySchemes:
     jwt:
       type: http

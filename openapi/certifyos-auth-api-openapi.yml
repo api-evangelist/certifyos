@@ -22,158 +22,218 @@ tags:
 paths:
   /auth/client-credentials:
     post:
-      summary: Client Credentials Exchange
-      description: Performs OAuth2 client credentials grant flow and returns an access token. Uses configured audience.
+      summary: Obtain an access token via OAuth2 client credentials grant
+      description: 'Performs the OAuth2 client credentials grant on behalf of a machine client, exchanging a `clientId` and `clientSecret` for an access token scoped to this service''s configured Auth0 audience. Use this endpoint for automated, non-interactive service accounts and background jobs that do not act on behalf of a human user; for human user login, use `POST /auth/login` instead. No prior authentication is required to call this endpoint. Both `clientId` and `clientSecret` are required and must be non-blank — the server returns 400 if either is missing or empty; this endpoint never falls back to the service''s own configured Auth0 credentials, so a caller cannot obtain a token without supplying valid credentials of their own. On success, returns a JSON object containing `accessToken`, `expiresIn` (lifetime in seconds), and `tokenType` (always `Bearer`). Pass the token as `Authorization: Bearer ` on subsequent requests.'
       operationId: clientCredentials
       tags:
       - Auth
       parameters:
-      - description: use "default" as tenant-id
+      - description: Not required and not used by this endpoint. This operation is marked tenant-agnostic, so the tenant-id presence check is skipped for it and the header value, if supplied, is not read by the handler.
         required: false
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
-        description: Client credentials
+        description: Machine client credentials for the OAuth2 client credentials grant.
         content:
           application/json:
+            examples:
+              clientCredentials:
+                summary: Machine client credentials
+                value:
+                  clientId: svc-billing-integration-7f3a9c21
+                  clientSecret: 8f14e45fceea167a5a36dedd4bea2543
             schema:
               $ref: '#/components/schemas/ClientCredentialsRequest'
-        required: false
+        required: true
       responses:
         '200':
-          description: Authentication successful
+          description: A JSON object containing a bearer access token (`accessToken`), its lifetime in seconds (`expiresIn`), and the token type (`tokenType`, always `Bearer`).
           content:
             application/json:
+              examples:
+                clientCredentialsSuccess:
+                  value:
+                    accessToken: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdmMtYmlsbGluZyJ9.signature
+                    expiresIn: 86400
+                    tokenType: Bearer
               schema:
                 $ref: '#/components/schemas/ClientCredentialsResponse'
         '400':
-          description: Bad request - Invalid parameters
+          description: Returned when `clientId` or `clientSecret` is missing or blank in the request body.
           content:
             application/json:
+              examples:
+                missingCredentials:
+                  summary: clientId or clientSecret omitted or blank
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: BAD_REQUEST
+                      title: Bad Request
+                      detail: Client ID and client secret are required
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
-          description: Authentication failed - Invalid client credentials
+          description: Returned when Auth0 rejects the supplied client credentials as invalid.
           content:
             application/json:
+              examples:
+                invalidClientCredentials:
+                  summary: Auth0 rejected the client ID/secret pair
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Unauthorized
+                      detail: Invalid client credentials
               schema:
                 $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error
+          description: Returned when the call to Auth0's token endpoint fails unexpectedly rather than a credential validation failure.
           content:
             application/json:
+              examples:
+                authServiceError:
+                  summary: Unexpected failure calling Auth0
+                  value:
+                    errors:
+                    - httpStatus: 500
+                      reason: INTERNAL_SERVER_ERROR
+                      title: Internal Server Error
+                      detail: Authentication service error
               schema:
                 $ref: '#/components/schemas/ApiError'
       security: []
   /auth/login:
     post:
-      summary: User Login
-      description: Authenticates a user with email and password and returns a JWT token
+      summary: Authenticate a human user with email and password
+      description: 'Exchanges a user''s email address and password for a short-lived access token issued by Auth0''s Resource Owner Password grant. Use this endpoint when a human user can supply interactive credentials directly; for non-interactive service accounts, use `POST /auth/client-credentials` instead. No prior authentication is required to call this endpoint. Both `email` and `password` must be present (non-null) in the request body — the server returns 400 if either is missing; Auth0 itself rejects blank or incorrect values with a 401. On success, returns a JSON object containing `accessToken` (a bearer token) and `expiresIn` (lifetime in seconds). Pass the token as `Authorization: Bearer ` on subsequent requests.'
       operationId: authenticateUser
       tags:
       - Auth
       parameters:
-      - description: use "default" as tenant-id
+      - description: Not required and not used by this endpoint. This operation is marked tenant-agnostic, so the tenant-id presence check is skipped for it and the header value, if supplied, is not read by the handler.
         required: false
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
-        description: User credentials
+        description: User email and password credentials for the Resource Owner Password grant.
         content:
           application/json:
+            examples:
+              login:
+                summary: Human user login credentials
+                value:
+                  email: jane.doe@example.com
+                  password: correct-horse-battery-staple
             schema:
               $ref: '#/components/schemas/LoginRequest'
         required: true
       responses:
         '200':
-          description: Authentication successful
+          description: A JSON object containing a bearer access token (`accessToken`) and its lifetime in seconds (`expiresIn`).
           content:
             application/json:
+              examples:
+                loginSuccess:
+                  value:
+                    accessToken: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhdXRoMHw2NGZlMTIzNCJ9.signature
+                    expiresIn: 86400
               schema:
                 $ref: '#/components/schemas/LoginResponse'
         '400':
-          description: Bad request - Email and password are required
+          description: Returned when `email` or `password` is missing from the request body; no call is made to Auth0.
           content:
             application/json:
+              examples:
+                missingCredentials:
+                  summary: email or password omitted
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: BAD_REQUEST
+                      title: Bad Request
+                      detail: Email and password are required
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
-          description: Authentication failed - Invalid credentials
+          description: Returned when Auth0 rejects the supplied credentials — the email/password combination is invalid or the user does not exist.
           content:
             application/json:
+              examples:
+                invalidCredentials:
+                  summary: Auth0 rejected the email/password combination
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: UNAUTHORIZED
+                      title: Unauthorized
+                      detail: Invalid credentials
               schema:
                 $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error
+          description: Returned when the call to Auth0's token endpoint fails unexpectedly (network error, unexpected upstream response) rather than a credential validation failure.
           content:
             application/json:
+              examples:
+                authServiceError:
+                  summary: Unexpected failure calling Auth0
+                  value:
+                    errors:
+                    - httpStatus: 500
+                      reason: INTERNAL_SERVER_ERROR
+                      title: Internal Server Error
+                      detail: Authentication service error
               schema:
                 $ref: '#/components/schemas/ApiError'
       security: []
 components:
   schemas:
     LoginRequest:
-      description: Request body for user authentication
       type: object
       required:
       - email
       - password
+      description: Request body for user authentication
       properties:
         email:
           type: string
-          description: User email address
           examples:
           - user@example.com
+          description: User email address
         password:
           type: string
-          description: User password
           examples:
           - password
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    ClientCredentialsRequest:
-      description: Request body for client credentials authentication
-      type: object
-      properties:
-        clientId:
-          type: string
-          description: Auth0 client ID. If not provided, uses configured client ID
-          examples:
-          - your-client-id
-        clientSecret:
-          type: string
-          description: Auth0 client secret. If not provided, uses configured client secret
-          examples:
-          - your-client-secret
-    LoginResponse:
-      description: Response containing authentication tokens after successful login
+          description: User password
+    ClientCredentialsResponse:
       type: object
       required:
       - accessToken
       - expiresIn
+      - tokenType
+      description: Response containing access token after successful client credentials exchange
       properties:
         accessToken:
           type: string
-          description: JWT access token
           examples:
           - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT access token
         expiresIn:
           type: integer
           format: int64
-          description: Token expiration time in seconds
           examples:
           - 86400
+          description: Token expiration time in seconds
+        tokenType:
+          type: string
+          examples:
+          - Bearer
+          description: Token type
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -181,48 +241,71 @@ components:
         httpStatus:
           type: integer
           format: int32
-          description: HTTP status code for this error
           examples:
           - 400
+          description: HTTP status code for this error
         reason:
           type: string
-          description: Error reason/code
           examples:
           - VALIDATION_ERROR
+          description: Error reason/code
         title:
           type: string
-          description: Error title/summary
           examples:
           - 'Validation failed for field: eventTypes'
+          description: Error title/summary
         detail:
           type: string
-          description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    ClientCredentialsResponse:
-      description: Response containing access token after successful client credentials exchange
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    ClientCredentialsRequest:
+      type: object
+      required:
+      - clientId
+      - clientSecret
+      description: Request body for client credentials authentication
+      properties:
+        clientId:
+          type: string
+          examples:
+          - your-client-id
+          description: Auth0 client ID (required)
+        clientSecret:
+          type: string
+          examples:
+          - your-client-secret
+          description: Auth0 client secret (required)
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    LoginResponse:
       type: object
       required:
       - accessToken
       - expiresIn
-      - tokenType
+      description: Response containing authentication tokens after successful login
       properties:
         accessToken:
           type: string
-          description: JWT access token
           examples:
           - eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT access token
         expiresIn:
           type: integer
           format: int64
-          description: Token expiration time in seconds
           examples:
           - 86400
-        tokenType:
-          type: string
-          description: Token type
-          examples:
-          - Bearer
+          description: Token expiration time in seconds
   securitySchemes:
     jwt:
       type: http

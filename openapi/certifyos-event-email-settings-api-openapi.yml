@@ -22,19 +22,19 @@ tags:
 paths:
   /organizations/{organizationId}/event-email-settings:
     get:
-      summary: Get all event email settings
-      description: Retrieves all event email settings for all context and mode combinations
+      summary: List all event email settings for an organization
+      description: Returns the complete event email settings envelope for the organization, covering every context (practitioner, facility) and mode (credentialing, recredentialing) combination that has been configured. The response wraps three top-level sub-objects (practitioner, facility, global); any sub-object whose settings have never been saved is returned as null rather than a 404. Use this endpoint to retrieve a full snapshot before editing individual settings, or to detect which context/mode combinations still need configuration. For a single context+mode pair, use GET /{context}/{mode} instead. The global sub-object is deprecated and always null — no write path has ever existed for it; read practitioner and facility instead. Requires TENANT_SETTINGS_EVENT_EMAIL_READ permission.
       operationId: getAllEventEmailSettings
       tags:
       - Event Email Settings
       parameters:
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -42,23 +42,74 @@ paths:
           type: string
       responses:
         '200':
-          description: Event email settings retrieved successfully
+          description: The organization's event email settings envelope (practitioner/facility/global), with unconfigured sub-objects returned as null.
           content:
             application/json:
+              examples:
+                settingsEnvelope:
+                  value:
+                    practitioner:
+                      ccEmail: credentialing-notices@example-health.org
+                      logoUrl: https://cdn.example-health.org/branding/logo.png
+                      logoWidth: 50%
+                      mmoOutcomeFilter:
+                      - Positive
+                      credentialing:
+                        recipientPreferences:
+                          primaryEmail: true
+                          caqhPrimaryEmail: false
+                          credentialingPrimaryContact: true
+                          credentialingOfficeManager: false
+                        typeSettings:
+                        - type: initiated
+                          enabled: true
+                          template:
+                            subject: Your credentialing application has started
+                            bodyHtml: <p>Welcome, Dr. Smith. Your application is now in progress.</p>
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsConfigResponse'
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
   /organizations/{organizationId}/event-email-settings/{context}/cc-email:
     post:
-      summary: Update context-level CC email
-      description: Updates the context-level CC email for event emails
+      summary: Set the CC email address for an event email context
+      description: 'Updates the CC email address applied to all event emails sent for the given context (practitioner or facility). This is a context-level setting: the address applies across both modes (credentialing and recredentialing) for this context. Sending a blank or null value clears the CC address and removes it from any nested mode-level records as well. Returns the full EventEmailSettingsContextResponse for the context, including both mode summaries — not just the updated CC field. A 400 is returned when the submitted value is not a valid email address format. Use this endpoint to change the CC address independently of the full mode settings; to set it as part of a full settings save, include it in the POST /{context}/{mode} body instead. Note: unlike the {context}/{mode} routes, this path does not constrain context to practitioner|facility at the routing layer or validate it in the service — other string values are silently accepted and stored as-is.'
       operationId: updateEventEmailCcEmail
       tags:
       - Event Email Settings
@@ -71,13 +122,13 @@ paths:
           - facility
         name: context
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -86,30 +137,101 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              setCcEmail:
+                summary: Set the context-level CC email
+                value:
+                  ccEmail: credentialing-notices@example-health.org
+              clearCcEmail:
+                summary: Clear the context-level CC email
+                value:
+                  ccEmail: ''
             schema:
               $ref: '#/components/schemas/EventEmailSettingsCcEmailRequest'
         required: true
       responses:
         '200':
-          description: Event email CC updated successfully
+          description: The full context settings record with the updated CC email, including both mode summaries.
           content:
             application/json:
+              examples:
+                contextSettings:
+                  value:
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    mmoOutcomeFilter:
+                    - Positive
+                    credentialing:
+                      recipientPreferences:
+                        primaryEmail: true
+                        caqhPrimaryEmail: false
+                        credentialingPrimaryContact: true
+                        credentialingOfficeManager: false
+                      typeSettings:
+                      - type: initiated
+                        enabled: true
+                        template:
+                          subject: Your credentialing application has started
+                          bodyHtml: <p>Welcome, Dr. Smith. Your application is now in progress.</p>
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsContextResponse'
         '400':
-          description: Invalid request data
+          description: ccEmail is not a valid email address format.
+          content:
+            application/json:
+              examples:
+                validationError:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: ccEmail'
+                      detail: CC email must be a valid email address
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
   /organizations/{organizationId}/event-email-settings/{context}/logo-settings:
     post:
-      summary: Update context-level logo settings
-      description: Updates the context-level logo settings for event emails
+      summary: Set logo URL and width for an event email context
+      description: 'Updates both the logo image URL and logo display width for event emails sent in the given context (practitioner or facility). Both fields are optional in the request body; omitting or nulling a field clears that value and removes it from nested mode-level records independently. Use this endpoint when you need to set both URL and width together; use POST /{context}/logo-url to update the URL alone. Returns the full EventEmailSettingsContextResponse for the context. logoWidth is a percentage string (e.g. "50%"); the DTO has no format constraint, so this convention is not enforced server-side. Note: this path does not constrain or validate context — other string values are silently accepted.'
       operationId: updateEventEmailLogoSettings
       tags:
       - Event Email Settings
@@ -122,13 +244,13 @@ paths:
           - facility
         name: context
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -137,30 +259,87 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              logoSettings:
+                value:
+                  logoUrl: https://cdn.example-health.org/branding/logo.png
+                  logoWidth: 50%
             schema:
               $ref: '#/components/schemas/EventEmailSettingsLogoSettingsRequest'
         required: true
       responses:
         '200':
-          description: Event email logo settings updated successfully
+          description: The full context settings record with the updated logo URL and width, including both mode summaries.
           content:
             application/json:
+              examples:
+                contextSettings:
+                  value:
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    mmoOutcomeFilter:
+                    - Positive
+                    credentialing:
+                      recipientPreferences:
+                        primaryEmail: true
+                        caqhPrimaryEmail: false
+                        credentialingPrimaryContact: true
+                        credentialingOfficeManager: false
+                      typeSettings: []
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsContextResponse'
         '400':
-          description: Invalid request data
+          description: Reserved for future request validation; no validation currently triggers this on this endpoint.
+          content:
+            application/json:
+              examples:
+                validationError:
+                  summary: Illustrative shape for a future logoWidth validation rule; not currently reachable
+                  value:
+                    error: logoWidth must be a percentage string
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
   /organizations/{organizationId}/event-email-settings/{context}/logo-url:
     post:
-      summary: Update context-level logo URL
-      description: Updates the context-level logo URL for event emails
+      summary: Set the logo URL for an event email context
+      description: 'Updates the logo image URL applied to event emails for the given context (practitioner or facility). This is a context-level setting that propagates to all modes in the context. Sending a blank or null value clears the logo URL and removes it from nested mode-level records. Returns the full EventEmailSettingsContextResponse for the context. To set both the logo URL and logo width in a single call, use POST /{context}/logo-settings instead. logoUrl has no format validation in the request DTO, so no 400 is currently returned for a malformed URL. Note: this path does not constrain or validate context — other string values are silently accepted.'
       operationId: updateEventEmailLogoUrl
       tags:
       - Event Email Settings
@@ -173,13 +352,13 @@ paths:
           - facility
         name: context
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -188,30 +367,91 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              setLogoUrl:
+                summary: Set the context-level logo URL
+                value:
+                  logoUrl: https://cdn.example-health.org/branding/logo.png
+              clearLogoUrl:
+                summary: Clear the context-level logo URL
+                value:
+                  logoUrl: ''
             schema:
               $ref: '#/components/schemas/EventEmailSettingsLogoUrlRequest'
         required: true
       responses:
         '200':
-          description: Event email logo URL updated successfully
+          description: The full context settings record with the updated logo URL, including both mode summaries.
           content:
             application/json:
+              examples:
+                contextSettings:
+                  value:
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    mmoOutcomeFilter:
+                    - Positive
+                    credentialing:
+                      recipientPreferences:
+                        primaryEmail: true
+                        caqhPrimaryEmail: false
+                        credentialingPrimaryContact: true
+                        credentialingOfficeManager: false
+                      typeSettings: []
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsContextResponse'
         '400':
-          description: Invalid request data
+          description: Reserved for future request validation; no validation currently triggers this on this endpoint.
+          content:
+            application/json:
+              examples:
+                validationError:
+                  summary: Illustrative shape for a future logoUrl validation rule; not currently reachable
+                  value:
+                    error: logoUrl must be a valid URL
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
   /organizations/{organizationId}/event-email-settings/{context}/mmo-outcome-filter:
     put:
-      summary: Update MMO outcome filter
-      description: Selects primary MMO outcome(s) to send. When both approved and denied plan UDF outcomes are present for the same workflow event, both emails are sent to preserve dual-outcome delivery behavior. Omit or empty = both.
+      summary: Set the MMO outcome filter for an event email context
+      description: Configures which Managed Medical Outcomes (MMO) result types trigger event emails for the given context (practitioner or facility). "Plan UDF" refers to the tenant's UDF (User-Defined Field) schema properties recorded per insurance plan (e.g. udf_MMO_Commercial, udf_Paramount_DecisionDate), which PlanEventEmailEvaluator reads to bucket plans into approved vs. denied groups. Accepted values in the filter array are "Positive" (approved outcomes) and "Negative" (denied outcomes); other values are rejected with 400. Submitting an empty array or omitting the field clears the filter so emails are sent for both outcome types. When both outcome types are present in the same workflow event and neither is filtered out, both emails are still sent to preserve dual-outcome delivery. Returns the full EventEmailSettingsContextResponse for the context.
       operationId: updateMmoOutcomeFilter
       tags:
       - Event Email Settings
@@ -224,13 +464,13 @@ paths:
           - facility
         name: context
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -239,30 +479,97 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              positiveOnly:
+                summary: Only send emails for approved (Positive) plan outcomes
+                value:
+                  mmoOutcomeFilter:
+                  - Positive
+              clearFilter:
+                summary: Clear the filter so both outcome types are sent
+                value:
+                  mmoOutcomeFilter: []
             schema:
               $ref: '#/components/schemas/EventEmailSettingsMmoOutcomeFilterRequest'
         required: true
       responses:
         '200':
-          description: MMO outcome filter updated successfully
+          description: The full context settings record with the updated MMO outcome filter, including both mode summaries.
           content:
             application/json:
+              examples:
+                contextSettings:
+                  value:
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    mmoOutcomeFilter:
+                    - Positive
+                    credentialing:
+                      recipientPreferences:
+                        primaryEmail: true
+                        caqhPrimaryEmail: false
+                        credentialingPrimaryContact: true
+                        credentialingOfficeManager: false
+                      typeSettings: []
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsContextResponse'
         '400':
-          description: Invalid request data
+          description: A filter array entry is not exactly "Positive" or "Negative".
+          content:
+            application/json:
+              examples:
+                validationError:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: mmoOutcomeFilter[0]'
+                      detail: must match "Positive|Negative"
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
   /organizations/{organizationId}/event-email-settings/{context}/recipient-preferences:
     post:
-      summary: Update context-level recipient preferences
-      description: Updates the context-level recipient preferences for event emails
+      summary: Set recipient preferences for an event email context
+      description: 'Updates the recipient preference flags for all event emails in the given context (practitioner or facility). Preferences are stored at context scope and apply to both the credentialing and recredentialing modes — changing them here overrides any mode-level preference values. The request body contains four boolean flags: primaryEmail, caqhPrimaryEmail, credentialingPrimaryContact, and credentialingOfficeManager; each controls whether that recipient type receives event emails. Returns the full EventEmailSettingsContextResponse for the context. These same preferences can also be set as part of a full mode save via POST /{context}/{mode}. Note: this path does not constrain or validate context beyond requiring the recipientPreferences object in the body — other string context values are silently accepted.'
       operationId: updateEventEmailRecipientPreferences
       tags:
       - Event Email Settings
@@ -275,13 +582,13 @@ paths:
           - facility
         name: context
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -290,30 +597,100 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              recipientPreferences:
+                value:
+                  recipientPreferences:
+                    primaryEmail: true
+                    caqhPrimaryEmail: false
+                    credentialingPrimaryContact: true
+                    credentialingOfficeManager: false
             schema:
               $ref: '#/components/schemas/EventEmailRecipientPreferencesRequest'
         required: true
       responses:
         '200':
-          description: Event email recipient preferences updated successfully
+          description: The full context settings record with the updated recipient preferences, including both mode summaries.
           content:
             application/json:
+              examples:
+                contextSettings:
+                  value:
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    mmoOutcomeFilter:
+                    - Positive
+                    credentialing:
+                      recipientPreferences:
+                        primaryEmail: true
+                        caqhPrimaryEmail: false
+                        credentialingPrimaryContact: true
+                        credentialingOfficeManager: false
+                      typeSettings:
+                      - type: initiated
+                        enabled: true
+                        template:
+                          subject: Your credentialing application has started
+                          bodyHtml: <p>Welcome, Dr. Smith. Your application is now in progress.</p>
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsContextResponse'
         '400':
-          description: Invalid request data
+          description: The recipientPreferences object is missing from the request body; it is required.
+          content:
+            application/json:
+              examples:
+                validationError:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: recipientPreferences'
+                      detail: must not be null
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
   /organizations/{organizationId}/event-email-settings/{context}/{mode}:
     put:
-      summary: Update event email settings
-      description: Updates event email settings for a specific context and mode (alias for POST)
+      summary: Save event email settings for one context and mode
+      description: 'Creates or replaces event email settings for the given context and mode, using the same upsert logic as POST /{context}/{mode} — both routes invoke the identical service operation. Both context and mode are matched against a case-sensitive route pattern — other casings return 404 at the routing layer before this operation executes. The same request body constraints apply: typeSettings should cover all six event types (not enforced by the server); enabled types require non-blank template.subject and template.bodyHtml. recipientPreferences are stored at context scope and affect both modes. Prefer POST for first-time creation; use this method when a PUT is semantically more appropriate for your client. Returns the full updated settings record.'
       operationId: updateEventEmailSettings
       tags:
       - Event Email Settings
@@ -334,13 +711,13 @@ paths:
           - recredentialing
         name: mode
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -349,29 +726,109 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              settingsRequest:
+                summary: Full context+mode settings save, including the optional mode-level ccEmail
+                value:
+                  recipientPreferences:
+                    primaryEmail: true
+                    caqhPrimaryEmail: false
+                    credentialingPrimaryContact: true
+                    credentialingOfficeManager: false
+                  ccEmail: credentialing-notices@example-health.org
+                  typeSettings:
+                  - type: psvReady
+                    enabled: true
+                    template:
+                      subject: Primary source verification complete
+                      bodyHtml: <p>PSV is complete for your credentialing application.</p>
             schema:
               $ref: '#/components/schemas/EventEmailSettingsRequest'
         required: true
       responses:
         '200':
-          description: Event email settings updated successfully
+          description: The full event email settings record after the create/replace, including resolved recipient preferences, ccEmail, logoUrl, logoWidth, and per-type template settings.
           content:
             application/json:
+              examples:
+                settings:
+                  value:
+                    context: facility
+                    mode: recredentialing
+                    recipientPreferences:
+                      primaryEmail: true
+                      caqhPrimaryEmail: false
+                      credentialingPrimaryContact: true
+                      credentialingOfficeManager: false
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    typeSettings:
+                    - type: psvReady
+                      enabled: true
+                      template:
+                        subject: Primary source verification complete
+                        bodyHtml: <p>PSV is complete for your credentialing application.</p>
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsResponse'
         '400':
-          description: Invalid request data
+          description: 'A typeSettings entry has enabled: true but is missing template.subject or template.bodyHtml.'
+          content:
+            application/json:
+              examples:
+                missingTemplate:
+                  summary: An enabled typeSettings entry has no template
+                  value:
+                    error: Cannot enable event email type 'psvReady' without a template.
+                validationError:
+                  summary: A required field failed bean validation, e.g. a malformed ccEmail or a missing recipientPreferences/typeSettings
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: ccEmail'
+                      detail: CC email must be a valid email address
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
     get:
-      summary: Get event email settings for specific context and mode
-      description: Retrieves event email settings for a specific context (practitioner/facility) and mode (credentialing/recredentialing)
+      summary: Retrieve event email settings for one context and mode
+      description: Returns the saved event email settings for the specified context and mode. The response includes the type-level settings list, recipient preferences, and the context-level ccEmail/logoUrl/logoWidth values resolved for this context. Returns 404 when no settings record exists for this context+mode combination; call POST /{context}/{mode} to create one. Both context and mode are matched against a case-sensitive route pattern — values other than the two documented lowercase options will not match this route and return 404 at the routing layer, before this operation executes. This operation has no side effects.
       operationId: getEventEmailSettings
       tags:
       - Event Email Settings
@@ -392,13 +849,13 @@ paths:
           - recredentialing
         name: mode
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -406,24 +863,79 @@ paths:
           type: string
       responses:
         '200':
-          description: Event email settings retrieved successfully
+          description: The event email settings for the requested context and mode, including resolved recipient preferences, ccEmail, logoUrl, logoWidth, and per-type template settings.
           content:
             application/json:
+              examples:
+                settings:
+                  value:
+                    context: practitioner
+                    mode: credentialing
+                    recipientPreferences:
+                      primaryEmail: true
+                      caqhPrimaryEmail: false
+                      credentialingPrimaryContact: true
+                      credentialingOfficeManager: false
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    typeSettings:
+                    - type: initiated
+                      enabled: true
+                      template:
+                        subject: Your credentialing application has started
+                        bodyHtml: <p>Welcome, Dr. Smith. Your application is now in progress.</p>
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsResponse'
+        '404':
+          description: No settings record exists for this context+mode combination yet. Create one with POST /{context}/{mode}.
+          content:
+            application/json:
+              examples:
+                notFound:
+                  value:
+                    error: 'Settings not found for context: facility, mode: recredentialing'
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
-        '404':
-          description: Settings not found for this context/mode
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
     delete:
-      summary: Delete event email settings
-      description: Deletes event email settings for a specific context and mode
+      summary: Remove event email settings for one context and mode
+      description: 'Permanently removes the event email settings record for the specified context and mode. Both context and mode are matched against a case-sensitive route pattern — other casings return 404 at the routing layer before this operation executes. If the deleted mode was the only configured mode for its context, the parent context block is also removed. This operation is idempotent — it returns 204 whether or not a matching record existed before the call. To disable event emails without deleting configuration, set the relevant type entries to enabled: false via POST /{context}/{mode} instead. This operation has no request body and returns no response body.'
       operationId: deleteEventEmailSettings
       tags:
       - Event Email Settings
@@ -444,13 +956,13 @@ paths:
           - recredentialing
         name: mode
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -458,18 +970,48 @@ paths:
           type: string
       responses:
         '204':
-          description: Event email settings deleted successfully
+          description: The settings record was removed, or no record existed for this context+mode — both cases return 204.
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
     post:
-      summary: Create or update event email settings
-      description: Creates or updates event email settings for a specific context and mode
+      summary: Save event email settings for one context and mode
+      description: 'Creates or replaces event email settings for the given context and mode (upsert — if no record exists it is created, if one exists it is fully replaced). Both context and mode are matched against a case-sensitive route pattern — other casings return 404 at the routing layer before this operation executes. The request body should include a typeSettings array covering all six event-type values (initiated, approved, denied, cancelled, psvReady, inProgress), though this is not enforced by the server; any type with enabled: true must supply a non-blank template.subject and template.bodyHtml, otherwise the server returns 400. recipientPreferences is persisted at the context level and is shared across both modes for that context — changing it here also affects the other mode. Returns the full updated settings record. For updates only, PUT /{context}/{mode} is available and invokes this same upsert logic.'
       operationId: createOrUpdateEventEmailSettings
       tags:
       - Event Email Settings
@@ -490,13 +1032,13 @@ paths:
           - recredentialing
         name: mode
         in: path
-      - description: Organization ID
+      - description: Organization identifier that scopes this request to a specific organization's event email settings. Path segment; opaque string, no enforced format.
         required: true
         name: organizationId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Tenant identifier of the requesting caller. Required on every request; opaque string, no enforced format.
         required: true
         name: tenant-id
         in: header
@@ -505,248 +1047,369 @@ paths:
       requestBody:
         content:
           application/json:
+            examples:
+              settingsRequest:
+                summary: Full context+mode settings save, including the optional mode-level ccEmail
+                value:
+                  recipientPreferences:
+                    primaryEmail: true
+                    caqhPrimaryEmail: false
+                    credentialingPrimaryContact: true
+                    credentialingOfficeManager: false
+                  ccEmail: credentialing-notices@example-health.org
+                  typeSettings:
+                  - type: initiated
+                    enabled: true
+                    template:
+                      subject: Your credentialing application has started
+                      bodyHtml: <p>Welcome, Dr. Smith. Your application is now in progress.</p>
             schema:
               $ref: '#/components/schemas/EventEmailSettingsRequest'
         required: true
       responses:
         '200':
-          description: Event email settings created/updated successfully
+          description: The full event email settings record after the create/replace, including resolved recipient preferences, ccEmail, logoUrl, logoWidth, and per-type template settings.
           content:
             application/json:
+              examples:
+                settings:
+                  value:
+                    context: practitioner
+                    mode: credentialing
+                    recipientPreferences:
+                      primaryEmail: true
+                      caqhPrimaryEmail: false
+                      credentialingPrimaryContact: true
+                      credentialingOfficeManager: false
+                    ccEmail: credentialing-notices@example-health.org
+                    logoUrl: https://cdn.example-health.org/branding/logo.png
+                    logoWidth: 50%
+                    typeSettings:
+                    - type: initiated
+                      enabled: true
+                      template:
+                        subject: Your credentialing application has started
+                        bodyHtml: <p>Welcome, Dr. Smith. Your application is now in progress.</p>
               schema:
                 $ref: '#/components/schemas/EventEmailSettingsResponse'
         '400':
-          description: Invalid request data
+          description: 'A typeSettings entry has enabled: true but is missing template.subject or template.bodyHtml.'
+          content:
+            application/json:
+              examples:
+                missingTemplate:
+                  summary: An enabled typeSettings entry has no template
+                  value:
+                    error: Cannot enable event email type 'initiated' without a template.
+                validationError:
+                  summary: A required field failed bean validation, e.g. a malformed ccEmail or a missing recipientPreferences/typeSettings
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: ccEmail'
+                      detail: CC email must be a valid email address
         '401':
           description: Unauthorized - Authentication required
+          content:
+            application/json:
+              examples:
+                unauthorized:
+                  value:
+                    errors:
+                    - httpStatus: 401
+                      reason: Unauthorized
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '403':
           description: Forbidden - User does not have required permissions
+          content:
+            application/json:
+              examples:
+                forbidden:
+                  value:
+                    errors:
+                    - httpStatus: 403
+                      reason: Forbidden
+                      title: Request Failed
+                      detail: An error occurred processing your request
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal Server Error
+          content:
+            application/json:
+              examples:
+                internalError:
+                  value:
+                    error: Internal server error
       security:
       - jwt: []
 components:
   schemas:
-    EventEmailSettingsMmoOutcomeFilterRequest:
-      description: Request to update MMO outcome filter. Filter values define primary outcomes. If both approved and denied plan outcomes are present for a workflow event, both emails are still sent. Omit or empty = both.
+    EventEmailSettingsContextResponse:
       type: object
+      description: Event email settings for one context (practitioner or facility), covering both the context-level fields (ccEmail, logoUrl, logoWidth, mmoOutcomeFilter) and both modes' settings. Returned by the context-level update endpoints (cc-email, logo-url, logo-settings, recipient-preferences, mmo-outcome-filter).
       properties:
+        ccEmail:
+          type: string
+          description: 'Resolved CC email for this context: the context-level value if set, otherwise falling back to the credentialing mode''s value, then the recredentialing mode''s value. Null if none is set.'
+        logoUrl:
+          type: string
+          description: Resolved logo image URL for this context, using the same context-then-credentialing-then-recredentialing fallback as ccEmail. Null if none is set.
+        logoWidth:
+          type: string
+          description: Resolved logo display width for this context, using the same fallback as ccEmail/logoUrl, as a percentage string (e.g. "50%"); no format is enforced server-side. Null if none is set.
+        credentialing:
+          $ref: '#/components/schemas/EventEmailSettingsModeResponse'
+          type: object
+          description: Credentialing-mode settings for this context, or null if never configured.
+        recredentialing:
+          $ref: '#/components/schemas/EventEmailSettingsModeResponse'
+          type: object
+          description: Recredentialing-mode settings for this context, or null if never configured.
         mmoOutcomeFilter:
           type: array
           items:
             type: string
-          description: 'Primary outcome(s): "Positive" and/or "Negative". Null or empty = both.'
-    EventEmailSettingsLogoSettingsRequest:
-      description: Request to update context-level logo settings for event emails
+          description: 'Primary MMO (Managed Medical Outcomes) result types to send emails for. Allowed values: "Positive" (approved plan outcomes), "Negative" (denied plan outcomes). When the workflow has both approved and denied plan UDFs for the same event, the complementary outcome email is still sent regardless of this filter (e.g. filter ["Positive"] still sends the denied-plans email if present, and vice versa) — this filter narrows the primary outcome, it does not suppress the paired one. Null or empty = no restriction (both sent).'
+    EventEmailGlobalSettingsResponse:
       type: object
-      properties:
-        logoUrl:
-          type: string
-          description: Logo URL for this context
-        logoWidth:
-          type: string
-          description: Logo width for this context
-    EventEmailTypeSettingsDto:
-      type: object
-      description: Settings for a specific event email type
-      required:
-      - type
-      - template
-      - enabled
-      properties:
-        type:
-          type: string
-          description: Event email type
-          enum:
-          - initiated
-          - approved
-          - denied
-          - cancelled
-          - psvReady
-          pattern: \S
-        template:
-          description: Email template for this event type
-          type: object
-          $ref: '#/components/schemas/EventEmailTemplateDto'
-        enabled:
-          type: boolean
-          description: Whether this event email type is enabled
-    EventEmailTemplateDto:
-      type: object
-      description: Event email template with subject and body
-      required:
-      - subject
-      - bodyHtml
-      properties:
-        subject:
-          type: string
-          description: Email subject line
-        bodyHtml:
-          type: string
-          description: Email body HTML content
-    EventEmailRecipientPreferencesRequest:
-      description: Request to update context-level recipient preferences for event emails.
-      type: object
-      required:
-      - recipientPreferences
-      properties:
-        recipientPreferences:
-          description: Recipient preferences for event emails
-          type: object
-          $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
-    EventEmailSettingsLogoUrlRequest:
-      description: Request to update context-level logo URL for event emails
-      type: object
-      properties:
-        logoUrl:
-          type: string
-          description: Logo URL for this context
-    EventEmailSettingsCcEmailRequest:
-      description: Request to update context-level CC email for event emails
-      type: object
+      deprecated: true
+      description: Deprecated — always null. Cross-context (global) event email settings, nested under the "global" key of EventEmailSettingsConfigResponse. No endpoint writes this object and nothing consumes it, so it has been null for every organization since it was introduced. Use the practitioner and facility sub-objects instead; do not build against this one.
       properties:
         ccEmail:
           type: string
-          description: CC email for this context
+          deprecated: true
+          description: Deprecated — always null. Would hold a CC email address applied across all contexts and modes, but no write path exists to populate it.
     EventEmailSettingsResponse:
-      description: Event email settings response
       type: object
       required:
       - context
       - mode
       - recipientPreferences
       - typeSettings
+      description: Event email settings for a single context+mode, as returned by GET, POST, or PUT /organizations/{organizationId}/event-email-settings/{context}/{mode}.
       properties:
         context:
           type: string
-          description: Context (practitioner or facility)
           enum:
           - practitioner
           - facility
+          description: The context these settings apply to. "practitioner" covers practitioner-facing event emails; "facility" covers facility-facing ones.
         mode:
           type: string
-          description: Mode (credentialing or recredentialing)
           enum:
           - credentialing
           - recredentialing
+          description: The workflow mode these settings apply to. "credentialing" is the initial verification cycle; "recredentialing" is the periodic renewal cycle.
         recipientPreferences:
-          description: Recipient preferences
-          type: object
           $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+          type: object
+          description: Resolved recipient preference flags for this context (context-level; shared across both modes).
         ccEmail:
           type: string
-          description: Global CC email applied to all event emails for this context and mode
+          description: 'Resolved CC email for this context+mode: the context-level ccEmail if set, otherwise falling back to a mode-level value (credentialing checked before recredentialing, regardless of the mode requested). Null if neither is set.'
         logoUrl:
           type: string
-          description: Logo URL applied to all event emails for this context and mode
+          description: Resolved logo image URL for this context+mode, using the same context-then-credentialing-then-recredentialing fallback as ccEmail. Null if none is set.
         logoWidth:
           type: string
-          description: Logo width applied to all event emails for this context and mode
+          description: Resolved logo display width for this context+mode, using the same fallback as ccEmail/logoUrl, as a percentage string (e.g. "50%"); no format is enforced server-side. Null if none is set.
         typeSettings:
           type: array
           items:
             $ref: '#/components/schemas/EventEmailTypeSettingsDto'
-          description: Settings for each event type
-    EventEmailSettingsModeResponse:
+          description: One entry per configured event email type for this mode (initiated, approved, denied, cancelled, psvReady, inProgress).
+    EventEmailSettingsRequest:
       type: object
-      description: Event email settings for a specific context/mode
       required:
       - recipientPreferences
       - typeSettings
+      description: Request body for POST or PUT /organizations/{organizationId}/event-email-settings/{context}/{mode}. Context and mode are specified in the URL path, not in this body. Submitting this creates the settings record for that context+mode if none exists, or fully replaces it if one does.
       properties:
         recipientPreferences:
-          description: Recipient preferences
-          type: object
           $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+          type: object
+          description: 'Recipient preference flags for this context. Persisted at the context level (not per-mode): saving this value here also changes it for the sibling mode of the same context.'
+        ccEmail:
+          type: string
+          description: CC email address applied to event emails for this context+mode. Stored at the mode level here — distinct from the context-level ccEmail settable via POST /{context}/cc-email, which takes priority on read when both are set. Must be a valid email address format (enforced by validation); omit to leave unset.
         typeSettings:
           type: array
           items:
             $ref: '#/components/schemas/EventEmailTypeSettingsDto'
-          description: Settings for each event type
-    EventEmailSettingsContextResponse:
+          description: 'One entry per event email type; should cover all six type values (initiated, approved, denied, cancelled, psvReady, inProgress), though this is not enforced by the server. Any entry with enabled: true must supply a non-blank template.subject and template.bodyHtml, or the request is rejected with 400.'
+    EventEmailSettingsLogoUrlRequest:
       type: object
-      description: Event email settings grouped by mode for a context
+      description: Request body for POST /organizations/{organizationId}/event-email-settings/{context}/logo-url. context is specified in the URL path, not in this body.
       properties:
-        ccEmail:
-          type: string
-          description: Global CC email for this context
         logoUrl:
           type: string
-          description: Logo URL for this context
+          description: Logo image URL to apply to this context (both modes). No format validation is applied. Blank or null clears the context-level logo URL (and any nested mode-level values).
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    EventEmailSettingsConfigResponse:
+      type: object
+      description: Full event email settings envelope for an organization, as returned by GET /organizations/{organizationId}/event-email-settings.
+      properties:
+        practitioner:
+          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+          type: object
+          description: Practitioner-context settings (both modes), or null if never configured.
+        facility:
+          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
+          type: object
+          description: Facility-context settings (both modes), or null if never configured.
+        global:
+          $ref: '#/components/schemas/EventEmailGlobalSettingsResponse'
+          type: object
+          deprecated: true
+          description: Deprecated — always null. No endpoint writes this sub-object and nothing consumes it. Use the practitioner and facility sub-objects instead.
+    EventEmailTemplateDto:
+      type: object
+      required:
+      - subject
+      - bodyHtml
+      description: Subject and body content for one event email type's template.
+      properties:
+        subject:
+          type: string
+          description: 'Email subject line. Required and must be non-blank when the parent typeSettings entry has enabled: true.'
+        bodyHtml:
+          type: string
+          description: 'Email body as HTML markup. Required and must be non-blank when the parent typeSettings entry has enabled: true.'
+    EventEmailRecipientPreferencesRequest:
+      type: object
+      required:
+      - recipientPreferences
+      description: Request body for POST /organizations/{organizationId}/event-email-settings/{context}/recipient-preferences. context is specified in the URL path, not in this body.
+      properties:
+        recipientPreferences:
+          $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
+          type: object
+          description: Recipient preference flags to apply to this context (both modes). Required — a missing or null value is rejected with 400.
+    EventEmailTypeSettingsDto:
+      type: object
+      required:
+      - type
+      - template
+      - enabled
+      description: Template and enablement settings for one event email type within a mode.
+      properties:
+        type:
+          type: string
+          enum:
+          - initiated
+          - approved
+          - denied
+          - cancelled
+          - psvReady
+          - inProgress
+          pattern: \S
+          description: 'Which workflow event this entry configures: "initiated" (workflow started), "approved" (credentialing/recredentialing approved), "denied" (application denied), "cancelled" (workflow cancelled), "psvReady" (primary source verification complete), "inProgress" (workflow in progress).'
+        template:
+          $ref: '#/components/schemas/EventEmailTemplateDto'
+          type: object
+          description: Email subject/body template for this event type. Required (non-blank subject and bodyHtml) when enabled is true; the server rejects the save with 400 otherwise.
+        enabled:
+          type: boolean
+          description: Whether an email is sent for this event type. When true, template.subject and template.bodyHtml must be non-blank.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    EventEmailSettingsLogoSettingsRequest:
+      type: object
+      description: Request body for POST /organizations/{organizationId}/event-email-settings/{context}/logo-settings. context is specified in the URL path, not in this body.
+      properties:
+        logoUrl:
+          type: string
+          description: Logo image URL to apply to this context (both modes). Optional; omitting or nulling clears the context-level logo URL (and any nested mode-level values) independently of logoWidth. No format validation is applied.
         logoWidth:
           type: string
-          description: Logo width for this context
-        credentialing:
-          description: Credentialing event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailSettingsModeResponse'
-        recredentialing:
-          description: Recredentialing event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailSettingsModeResponse'
+          description: Logo display width to apply to this context (both modes), as a percentage string (e.g. "50%"). Optional; omitting or nulling clears the context-level logo width (and any nested mode-level values) independently of logoUrl. No format validation is enforced server-side despite this expected convention.
+    EventEmailRecipientPreferencesDto:
+      type: object
+      description: Boolean flags controlling which recipient types receive event emails for a context.
+      properties:
+        primaryEmail:
+          type: boolean
+          description: true to send event emails to the practitioner's or facility's primary email on file; false or null to skip this recipient.
+        caqhPrimaryEmail:
+          type: boolean
+          description: true to send event emails to the CAQH-sourced primary email on file; false or null to skip this recipient.
+        credentialingPrimaryContact:
+          type: boolean
+          description: true to send event emails to the credentialing workflow's primary contact; false or null to skip this recipient.
+        credentialingOfficeManager:
+          type: boolean
+          description: true to send event emails to the office manager on the credentialing workflow; false or null to skip this recipient.
+    EventEmailSettingsMmoOutcomeFilterRequest:
+      type: object
+      description: Request body for PUT /organizations/{organizationId}/event-email-settings/{context}/mmo-outcome-filter. context is specified in the URL path, not in this body. Sets which primary MMO (Managed Medical Outcomes) plan outcomes trigger event emails for the context; if both approved and denied plan UDF outcomes are present for the same workflow event, both emails are still sent regardless of this filter.
+      properties:
         mmoOutcomeFilter:
           type: array
           items:
             type: string
-          description: 'MMO outcome filter: primary outcomes to send for. When the workflow has both approved and denied plan UDFs, the complementary outcome email is also sent (e.g. filter Positive still sends denied plans email if present, and filter Negative still sends approved plans email if present). Null or empty = no restriction.'
-    EventEmailRecipientPreferencesDto:
-      description: Recipient preferences for event emails
-      type: object
-      properties:
-        primaryEmail:
-          type: boolean
-          description: Send to primary email
-        caqhPrimaryEmail:
-          type: boolean
-          description: Send to CAQH primary email
-        credentialingPrimaryContact:
-          type: boolean
-          description: Send to credentialing primary contact
-        credentialingOfficeManager:
-          type: boolean
-          description: Send to credentialing office manager
-    EventEmailSettingsConfigResponse:
-      description: Event email settings configuration grouped by context and global settings
-      type: object
-      properties:
-        practitioner:
-          description: Practitioner event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
-        facility:
-          description: Facility event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailSettingsContextResponse'
-        global:
-          description: Global event email settings
-          type: object
-          $ref: '#/components/schemas/EventEmailGlobalSettingsResponse'
-    EventEmailSettingsRequest:
-      description: Request to create or update event email settings. Context and mode are specified in the URL path.
+          description: 'Primary outcome(s) to allow: "Positive" (approved plan outcomes) and/or "Negative" (denied plan outcomes). Any other value is rejected with 400. Null or empty array clears the filter (both outcome types allowed).'
+    EventEmailSettingsModeResponse:
       type: object
       required:
       - recipientPreferences
       - typeSettings
+      description: One mode's (credentialing or recredentialing) event email settings, nested inside EventEmailSettingsContextResponse. Does not repeat the context-level ccEmail/logoUrl/logoWidth fields, which live on the parent context object.
       properties:
         recipientPreferences:
-          description: Recipient preferences for event emails
-          type: object
           $ref: '#/components/schemas/EventEmailRecipientPreferencesDto'
-        ccEmail:
-          type: string
-          description: Global CC email applied to all event emails for this context and mode
+          type: object
+          description: Resolved recipient preference flags for the parent context (context-level value if set, otherwise this mode's own stored value).
         typeSettings:
           type: array
           items:
             $ref: '#/components/schemas/EventEmailTypeSettingsDto'
-          description: Settings for each event type (should include all 5 types)
-    EventEmailGlobalSettingsResponse:
-      description: Global event email settings applied across contexts
+          description: One entry per configured event email type for this mode (initiated, approved, denied, cancelled, psvReady, inProgress).
+    EventEmailSettingsCcEmailRequest:
       type: object
+      description: Request body for POST /organizations/{organizationId}/event-email-settings/{context}/cc-email. context is specified in the URL path, not in this body.
       properties:
         ccEmail:
           type: string
-          description: Global CC email applied to all event emails
+          description: CC email address to apply to this context (both modes). Must be a valid email address format (enforced by validation), or blank/null to clear the context-level CC address (and any nested mode-level values).
   securitySchemes:
     jwt:
       type: http

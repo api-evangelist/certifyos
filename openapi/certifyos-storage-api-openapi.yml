@@ -22,19 +22,31 @@ tags:
 paths:
   /storage/download:
     get:
-      summary: Download file from GCS with custom filename
-      description: Downloads a file from Google Cloud Storage and sets a custom filename for the download
+      summary: Stream a GCS file directly to the caller
+      description: 'Downloads a file from Google Cloud Storage and streams it as a binary response with a Content-Disposition: attachment header.
+
+
+        When to use: Use this endpoint when the caller can present API credentials and wants to receive file bytes in the HTTP response body. When the consumer cannot authenticate against this API (e.g. browser redirects, third-party delivery), use GET /storage/presigned-url instead, which returns a URL requiring no further authentication.
+
+
+        Preconditions: Requires a valid JWT. The filePath parameter must be a plain relative path (e.g. documents/report.pdf); the full GCS URI form (gs://bucket-name/...) is NOT accepted by this endpoint, unlike /storage/presigned-url. Paths are sanitized: values containing ../, leading slashes, backslashes, repeated slashes (//), or the characters <>:"|?* are rejected with 400. Multi-segment paths are also rejected with 400 when the first path segment contains a dot or is exactly "file" (e.g. reports.q1/data.csv, file/report.pdf).
+
+
+        The optional fileName parameter sets the filename in the Content-Disposition header. When omitted, the filename defaults to the last segment of filePath. The Content-Type header is inferred from the file extension; when the resolved name has no extension, a .csv extension is appended.
+
+
+        Response: A streaming binary body. Response headers include Content-Disposition: attachment; filename="" and a Content-Type inferred from the file extension. No files are modified; this operation has no side effects.'
       operationId: downloadFileFromGCS
       tags:
       - Storage
       parameters:
-      - description: Optional custom filename for the download
+      - description: Optional filename applied to the Content-Disposition attachment header. When omitted, defaults to the last path segment of filePath; if the resolved name has no extension, a .csv extension is appended.
         example: my-document.pdf
         name: fileName
         in: query
         schema:
           type: string
-      - description: GCS object path
+      - description: GCS object path of the file to download, as a plain relative path (e.g. documents/report.pdf). The full GCS URI form (gs://...) is not accepted here. Path-traversal sequences, leading slashes, backslashes, repeated slashes (//), and the characters <>:"|?* are rejected. Multi-segment paths are also rejected when the first segment contains a dot or is exactly "file" (e.g. reports.q1/data.csv, file/report.pdf). Required; no default.
         example: supporting-documents/doc.pdf
         required: true
         name: filePath
@@ -50,27 +62,57 @@ paths:
           type: string
       responses:
         '200':
-          description: File downloaded successfully
+          description: The requested file streamed as a binary attachment. Content-Disposition carries the resolved download filename and Content-Type is inferred from the file extension.
           content: {}
         '400':
-          description: Bad Request - Invalid file path
+          description: The filePath was missing, malformed, or rejected by path sanitization (path traversal, leading slash, or illegal characters). Correct the path and retry.
+          content:
+            application/json:
+              examples:
+                invalidPath:
+                  value:
+                    error: 'Invalid file path: contains illegal characters or path traversal attempts'
+                    timestamp: 1698412800000
         '401':
-          description: Unauthorized - Authentication required
+          description: The request lacked a valid JWT. Authenticate and retry.
         '404':
-          description: File not found
+          description: No object exists at the resolved bucket and path. Verify the file was uploaded and the path is correct.
+          content:
+            application/json:
+              examples:
+                notFound:
+                  value:
+                    error: 'File not found: documents/report.pdf'
+                    timestamp: 1698412800000
         '500':
-          description: Internal Server Error
+          description: The file download failed unexpectedly (e.g. a GCS read error). Retry; if the problem persists, contact support.
+          content:
+            application/json:
+              examples:
+                serverError:
+                  value:
+                    error: Failed to download file
+                    timestamp: 1698412800000
       security:
       - jwt: []
   /storage/presigned-url:
     get:
-      summary: Generate presigned URL for file download
-      description: Creates a time-limited presigned URL (1 hour expiry) for direct file download from GCS
+      summary: Generate a time-limited presigned GCS download URL
+      description: 'Returns a presigned URL that grants direct, unauthenticated read access to a single GCS object for up to 1 hour.
+
+
+        When to use: Choose this endpoint when the file consumer cannot present API credentials at download time — for example, a browser-side redirect or a third-party client. For server-to-server transfers where credentials are available, use GET /storage/download instead.
+
+
+        Preconditions: Requires the STORAGE_READ permission in addition to a valid JWT. The filePath parameter accepts either a plain relative path (e.g. documents/report.pdf) or a full GCS URI (gs://bucket-name/documents/report.pdf); both forms are supported here. Paths undergo sanitization: values containing path-traversal sequences (../), leading slashes, backslashes, repeated slashes (//), or the characters <>:"|?* are rejected with 400. Multi-segment paths are also rejected with 400 when the first path segment contains a dot or is exactly "file" (e.g. reports.q1/data.csv, file/report.pdf).
+
+
+        Response: On success, returns a presigned URL and an expiresAtTimestamp indicating when the URL expires. The URL requires no further API authentication — share it directly with the consumer. No files are modified; this operation has no side effects.'
       operationId: generatePresignedUrl
       tags:
       - Storage
       parameters:
-      - description: GCS object path
+      - description: GCS object path of the file to sign. Accepts a plain relative path (e.g. documents/report.pdf) or a full GCS URI (gs://bucket-name/documents/report.pdf). Path-traversal sequences, leading slashes, backslashes, repeated slashes (//), and the characters <>:"|?* are rejected. Multi-segment paths are also rejected when the first segment contains a dot or is exactly "file" (e.g. reports.q1/data.csv, file/report.pdf). Required; no default.
         example: supporting-documents/doc.pdf
         required: true
         name: filePath
@@ -86,19 +128,48 @@ paths:
           type: string
       responses:
         '200':
-          description: Presigned URL generated successfully
+          description: Presigned download URL and its expiry timestamp. The URL grants direct GCS read access with no further API authentication required.
           content:
             application/json:
+              examples:
+                presignedUrl:
+                  value:
+                    presignedUrl: https://storage.googleapis.com/certify-tenant-bucket/documents/report.pdf?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Expires=3600&X-Goog-Signature=abcdef0123456789
+                    expiresInHours: 1
+                    expiresAtTimestamp: 1698412800000
               schema:
                 $ref: '#/components/schemas/PresignedUrlResponse'
         '400':
-          description: Bad Request - Invalid file path
+          description: The filePath was missing, malformed, or rejected by path sanitization (path traversal, leading slash, or illegal characters). Correct the path and retry.
+          content:
+            application/json:
+              examples:
+                invalidPath:
+                  value:
+                    error: 'Invalid file path: contains illegal characters or path traversal attempts'
+                    timestamp: 1698412800000
         '401':
-          description: Unauthorized - Authentication required
+          description: The request lacked a valid JWT. Authenticate and retry.
+        '403':
+          description: The authenticated caller lacks the STORAGE_READ permission required for this operation.
         '404':
-          description: File not found
+          description: No object exists at the resolved bucket and path. Verify the file was uploaded and the path is correct.
+          content:
+            application/json:
+              examples:
+                notFound:
+                  value:
+                    error: 'File not found: documents/report.pdf'
+                    timestamp: 1698412800000
         '500':
-          description: Internal Server Error
+          description: Presigned URL generation failed unexpectedly (e.g. a GCS signing error). Retry; if the problem persists, contact support.
+          content:
+            application/json:
+              examples:
+                serverError:
+                  value:
+                    error: Failed to generate presigned URL
+                    timestamp: 1698412800000
       security:
       - jwt: []
 components:
@@ -108,21 +179,21 @@ components:
       properties:
         presignedUrl:
           type: string
-          description: Presigned URL for downloading the file
           examples:
           - https://storage.googleapis.com/bucket/file.pdf?X-Goog-Signature=...
+          description: Presigned URL for downloading the file
         expiresInHours:
           type: integer
           format: int32
-          description: Number of hours until the URL expires
           examples:
           - 1
+          description: Number of hours until the URL expires
         expiresAtTimestamp:
           type: integer
           format: int64
-          description: Unix timestamp when the URL expires
           examples:
           - 1698412800000
+          description: Unix timestamp when the URL expires
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,395 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Anchor Group Outreach Settings API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: AnchorGroupOutreachSettings
+  description: An anchor group's shared-credentialing outreach settings
+paths:
+  /api/v1/anchor-groups/{anchorGroupId}/outreach-settings/{type}:
+    put:
+      summary: Save an anchor group's outreach settings for one cycle
+      description: 'Replaces the group''s recipients (shared by both cycles) and the requested cycle''s Smart Outreach, reasons and template; the other cycle is kept. A null part keeps what is stored. Send the version last read, or null to create the group''s first settings. Needs anchor-group outreach-settings:update in every member tenant of the group. If the stored settings are unreadable (GET returned isDefault true with a version), this save replaces them: parts left null take the defaults, not the unreadable values.'
+      operationId: anchorGroupOutreachSettingsSave
+      tags:
+      - AnchorGroupOutreachSettings
+      parameters:
+      - name: anchorGroupId
+        in: path
+        required: true
+        schema:
+          type: string
+      - description: Only PRACTITIONER_CREDENTIALING
+        name: type
+        in: path
+        required: true
+        schema:
+          type: string
+      - description: INITIAL or RECREDENTIALING
+        name: credentialingCycle
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnchorGroupOutreachSettingsRequest'
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorGroupOutreachSettingsResponse'
+        '400':
+          description: A rule is broken (VALIDATION_ERROR, one error per field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: The permission is missing in one or more member tenants, named in the error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: No such anchor group, or a group with no member tenants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Stale version, or a create when settings already exist (NSCP_WRITE_CONFLICT)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Switched off (NSCP_ANCHOR_GROUP_OUTREACH_SETTINGS_DISABLED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+    get:
+      summary: Read an anchor group's outreach settings for one cycle
+      description: The group's recipients (shared by both cycles) plus the requested cycle's own Smart Outreach, reasons and template. A group with nothing saved returns the defaults with isDefault true and a null version.
+      operationId: anchorGroupOutreachSettingsGet
+      tags:
+      - AnchorGroupOutreachSettings
+      parameters:
+      - name: anchorGroupId
+        in: path
+        required: true
+        schema:
+          type: string
+      - description: Only PRACTITIONER_CREDENTIALING
+        name: type
+        in: path
+        required: true
+        schema:
+          type: string
+      - description: INITIAL or RECREDENTIALING
+        name: credentialingCycle
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorGroupOutreachSettingsResponse'
+        '400':
+          description: Unsupported type, or missing or unknown credentialingCycle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: No such anchor group, or the caller cannot read every one of its tenants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Switched off (NSCP_ANCHOR_GROUP_OUTREACH_SETTINGS_DISABLED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+components:
+  schemas:
+    Reason:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Server-assigned; omit for a new reason
+        reason:
+          type: string
+        instruction:
+          type: string
+    Template:
+      type: object
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+        subject:
+          type: string
+        body:
+          type: string
+        logo:
+          $ref: '#/components/schemas/Logo'
+    SmartOutreach1:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        businessDaysBetweenAttempts:
+          type: integer
+          format: int32
+        maxAttemptsPerReason:
+          type: integer
+          format: int32
+        recredCadenceDays:
+          type: integer
+          format: int32
+        dryRunEnabled:
+          type: boolean
+        useCalendarDays:
+          type: boolean
+        caqhValidStatuses:
+          type: array
+          items:
+            type: string
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    Template1:
+      type: object
+      properties:
+        ccEmails:
+          type: array
+          items:
+            type: string
+        subject:
+          type: string
+        body:
+          type: string
+        logo:
+          $ref: '#/components/schemas/Logo1'
+    Logo1:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        url:
+          type: string
+        width:
+          type: string
+    Reason1:
+      type: object
+      properties:
+        id:
+          type: string
+        reason:
+          type: string
+        instruction:
+          type: string
+        isCaqhResolvable:
+          type: boolean
+        submitFormText:
+          type: string
+    AnchorGroupOutreachSettingsRequest:
+      type: object
+      description: Save one cycle of an anchor group's outreach settings
+      properties:
+        version:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: The version last read; null to create the group's first settings
+        emailRecipientPreferences:
+          $ref: '#/components/schemas/Recipients'
+          type: object
+          description: 'The To: which practitioner addresses outreach goes to (both cycles)'
+        template:
+          $ref: '#/components/schemas/Template'
+          type: object
+          description: This cycle's template; null keeps the stored one
+        outreachReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reason'
+          description: This cycle's reasons; new ones omit id
+        smartOutreach:
+          $ref: '#/components/schemas/SmartOutreach'
+          type: object
+          description: This cycle's Smart Outreach
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    SmartOutreach:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        businessDaysBetweenAttempts:
+          type: integer
+          format: int32
+          minimum: 1
+        maxAttemptsPerReason:
+          type: integer
+          format: int32
+          minimum: 1
+    Recipients:
+      type: object
+      properties:
+        primaryEmail:
+          type: boolean
+        caqhPrimaryEmail:
+          type: boolean
+        credentialingPrimaryContact:
+          type: boolean
+        credentialingOfficeManager:
+          type: boolean
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    AnchorGroupOutreachSettingsResponse:
+      type: object
+      description: One cycle's view of an anchor group's outreach settings
+      properties:
+        anchorGroupId:
+          type: string
+        type:
+          type: string
+          enum:
+          - PRACTITIONER_CREDENTIALING
+        credentialingCycle:
+          type: string
+          enum:
+          - INITIAL
+          - RECREDENTIALING
+        emailRecipientPreferences:
+          $ref: '#/components/schemas/Recipients1'
+        template:
+          $ref: '#/components/schemas/Template1'
+          type: object
+          description: This cycle's template; null until first saved
+        outreachReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reason1'
+        smartOutreach:
+          $ref: '#/components/schemas/SmartOutreach1'
+        providerPortalEnabled:
+          type: boolean
+          description: 'Always false: not an anchor-group setting'
+        stateSpecificPlan:
+          description: 'Always null: not an anchor-group setting'
+        version:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Send back on the next save; null when nothing is saved
+        isDefault:
+          type: boolean
+          description: True when these are the defaults, not saved settings
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+        updatedBy:
+          type: string
+    Logo:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        url:
+          type: string
+        width:
+          type: string
+    Recipients1:
+      type: object
+      properties:
+        primaryEmail:
+          type: boolean
+        caqhPrimaryEmail:
+          type: boolean
+        credentialingPrimaryContact:
+          type: boolean
+        credentialingOfficeManager:
+          type: boolean
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

@@ -22,13 +22,26 @@ tags:
 paths:
   /tenant-configurations:
     get:
-      summary: Get All Tenant Configurations
-      description: Returns all tenant configurations for the specified tenant. This endpoint fetches all configuration types associated with the tenant.
+      summary: List all configuration entries for a tenant
+      description: 'Returns every stored configuration record for the tenant identified by the required `tenant-id` header. The response is a `TenantConfigurationListResponseDto` envelope containing a `data` array of `TenantConfigurationItemDto` objects and a `totalCount` field.
+
+
+        Use this endpoint when you need all configuration types at once. To retrieve a single type, use `GET /tenant-configurations/by-configuration-type/{configurationTypeId}` instead; that sibling path serves results from a server-side cache, whereas this endpoint does not read from or populate that cache.
+
+
+        This endpoint returns only persisted records. Unlike the by-type endpoint, it does not synthesize a default `tenant-timezone-config` (America/New_York) when none is stored, so tenants without a persisted timezone record will not have one in the returned list.
+
+
+        Preconditions: the `tenant-id` header must be present; omitting it returns 400.
+
+
+        This is a read-only operation with no side effects.'
       operationId: getAllTenantConfigurations
       tags:
       - Tenant Configuration
       parameters:
-      - description: Tenant ID
+      - description: Identifier of the tenant whose configuration records are returned. Required; the request is rejected with 400 when it is missing or blank. No default is applied.
+        example: tenant-abc-123
         required: true
         name: tenant-id
         in: header
@@ -36,76 +49,245 @@ paths:
           type: string
       responses:
         '200':
-          description: Tenant configurations retrieved successfully
+          description: Envelope containing every stored configuration record for the tenant and the total count.
           content:
             application/json:
+              examples:
+                tenantConfigurationList:
+                  value:
+                    data:
+                    - id: 9c1e2b7a-4f2d-4a1e-8b3c-2f6d9a0e1c34
+                      tenantId: tenant-abc-123
+                      namespace: tenant-config
+                      configurationTypeId: tenant-timezone-config
+                      configuration:
+                        timezone: America/New_York
+                        timezoneAbbreviation: EST
+                      updatedAt: '2026-06-15T14:32:00Z'
+                      createdAt: '2026-05-01T09:10:00Z'
+                    totalCount: 1
               schema:
                 $ref: '#/components/schemas/TenantConfigurationListResponseDto'
         '400':
-          description: Bad request - Invalid request parameters or missing required headers
+          description: Request rejected because the required `tenant-id` header is missing or blank. Supply a non-empty `tenant-id` header and retry.
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '401':
-          description: Authentication required - Valid authentication token is missing or invalid
+          description: Authentication token is missing, expired, or invalid. Obtain a valid JWT and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'An unexpected error occurred while reading configurations from the data store. The response body is a bare `{"error": "..."}` object, not the structured `ApiError` shape used elsewhere in this API. The request was not fulfilled; retry after a short delay and escalate if it persists.'
+          content:
+            application/json:
+              examples:
+                unexpectedError:
+                  value:
+                    error: An unexpected error occurred
+              schema: {}
+        '502':
+          description: The downstream data store (DAL) returned a server error (5xx) while reading configurations. Retry after a short delay and escalate if it persists.
+          content:
+            application/json:
+              examples:
+                downstreamServiceError:
+                  value:
+                    errors:
+                    - httpStatus: 502
+                      reason: DOWNSTREAM_SERVICE_ERROR
+                      title: Downstream service unavailable
+                      detail: Downstream service encountered an error
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Unable to connect to the downstream data store (network/connectivity failure). Retry after a short delay.
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    errors:
+                    - httpStatus: 503
+                      reason: SERVICE_UNAVAILABLE
+                      title: Service temporarily unavailable
+                      detail: Unable to connect to downstream service. Please try again later.
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
   /tenant-configurations/by-configuration-type/{configurationTypeId}:
     post:
-      summary: Update Tenant Configuration by Type
-      description: Creates or updates a tenant configuration based on configurationTypeId path parameter.
+      summary: Create or replace a tenant configuration entry by type
+      description: 'Creates or replaces (upserts) the configuration record for the given `configurationTypeId` and the tenant identified by the required `tenant-id` header.
+
+
+        Currently accepted type: only `tenant-timezone-config` is supported. Any other `configurationTypeId` value returns 400.
+
+
+        Request body — a JSON object with a single required field: `timezone` (string) must be a valid IANA time-zone identifier (e.g. `"America/New_York"`). An unrecognized zone ID returns 400.
+
+
+        Behavior: if no record exists for this tenant and type it is created; if one already exists it is fully replaced. Calling this endpoint twice with the same `timezone` value is safe and produces the same result (idempotent with respect to state).
+
+
+        Response — on success returns a flat `TenantTimezoneResponse` with fields `tenantId`, `configurationTypeId`, `timezone`, and `timezoneAbbreviation`. This shape differs from the `TenantConfigurationItemDto` envelope returned by the GET endpoints on this tag.
+
+
+        400 causes (three distinct triggers): (a) missing `tenant-id` header; (b) unsupported `configurationTypeId`; (c) missing or invalid `timezone` in the request body.
+
+
+        Side effects: persists the record to the data store. There is no automatic retry on write failures; a 500 indicates a persistent data-store error — consider a manual retry after a delay. The write is served by a different path than the cached GET-by-type read, so a successful write may not be immediately reflected by that read.'
       operationId: updateTenantConfigurationByType
       tags:
       - Tenant Configuration
       parameters:
-      - description: Configuration type ID
+      - description: Identifier of the configuration type to upsert. Only `tenant-timezone-config` is currently supported; any other value returns 400. Required; no default is applied.
         example: tenant-timezone-config
         required: true
         name: configurationTypeId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Identifier of the tenant whose configuration is written. Required; the request is rejected with 400 when it is missing or blank. No default is applied.
+        example: tenant-abc-123
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Timezone configuration to persist. Requires a single `timezone` field holding a valid IANA time-zone identifier.
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/JsonNode'
+            examples:
+              setTimezone:
+                value:
+                  timezone: America/New_York
+            schema: {}
         required: true
       responses:
         '200':
-          description: Tenant configuration updated successfully
+          description: The persisted timezone configuration as a flat `TenantTimezoneResponse`, including the resolved timezone abbreviation for the current date.
           content:
             application/json:
+              examples:
+                timezoneUpserted:
+                  value:
+                    tenantId: tenant-abc-123
+                    configurationTypeId: tenant-timezone-config
+                    timezone: America/New_York
+                    timezoneAbbreviation: EST
               schema:
                 $ref: '#/components/schemas/TenantTimezoneResponse'
         '400':
-          description: Bad request - Invalid request parameters or missing required headers
+          description: 'Request rejected for one of: missing `tenant-id` header (returns the nested `ApiError` shape via the header-validation filter); unsupported `configurationTypeId`; or a missing or invalid `timezone` in the body (the latter two are raised directly by this endpoint and return the flat `BadRequestErrorResponse` shape — a list of error strings, not the structured `ApiError` object). Correct the offending value and retry.'
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+                unsupportedConfigurationType:
+                  value:
+                    errors:
+                    - 'Unsupported configurationTypeId: invalid-config-type'
+                invalidTimezone:
+                  value:
+                    errors:
+                    - Invalid timezone. Provide a valid IANA timezone ID (e.g. America/New_York, Europe/London, UTC).
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ApiError'
+                - $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
-          description: Authentication required - Valid authentication token is missing or invalid
+          description: Authentication token is missing, expired, or invalid. Obtain a valid JWT and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'An unexpected error prevented the write; the configuration was not saved. The response body is a bare `{"error": "..."}` object, not the structured `ApiError` shape used elsewhere in this API. No automatic retry is performed — retry manually after a short delay and escalate if it persists.'
+          content:
+            application/json:
+              examples:
+                unexpectedError:
+                  value:
+                    error: An unexpected error occurred
+              schema: {}
+        '502':
+          description: The downstream data store (DAL) returned a server error (5xx) while persisting the configuration; the write was not saved. Retry after a short delay and escalate if it persists.
+          content:
+            application/json:
+              examples:
+                downstreamServiceError:
+                  value:
+                    errors:
+                    - httpStatus: 502
+                      reason: DOWNSTREAM_SERVICE_ERROR
+                      title: Downstream service unavailable
+                      detail: Downstream service encountered an error
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Unable to connect to the downstream data store (network/connectivity failure); the write was not saved. Retry after a short delay.
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    errors:
+                    - httpStatus: 503
+                      reason: SERVICE_UNAVAILABLE
+                      title: Service temporarily unavailable
+                      detail: Unable to connect to downstream service. Please try again later.
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
     get:
-      summary: Get Tenant Configuration by Type
-      description: Returns the tenant configuration for the given configurationTypeId. For tenant-timezone-config, returns default timezone (America/New_York) when none is stored.
+      summary: Retrieve a tenant's configuration for a specific type
+      description: 'Returns the stored configuration record for the given `configurationTypeId` and the tenant identified by the required `tenant-id` header.
+
+
+        Special behavior for `tenant-timezone-config`: if no record has been persisted for this tenant, the endpoint synthesizes and returns a default record using timezone `America/New_York`. In this synthetic default case the `id`, `namespace`, `updatedAt`, and `createdAt` fields of the returned `TenantConfigurationItemDto` are `null`.
+
+
+        The response is a `TenantConfigurationItemDto`. This shape differs from the flat `TenantTimezoneResponse` returned by the POST endpoint on the same path.
+
+
+        Use this endpoint to read a single configuration type. To read all types in one call, use `GET /tenant-configurations`. Results from this path are served from a server-side cache keyed by tenant and configuration type, so a write via the POST endpoint may not be immediately visible here.
+
+
+        Preconditions: the `tenant-id` header must be present; omitting it returns 400. Supplying a `configurationTypeId` for which no record exists (and which is not `tenant-timezone-config`) returns 404.'
       operationId: getTenantConfigurationByTypeId
       tags:
       - Tenant Configuration
       parameters:
-      - description: Configuration type ID
+      - description: Identifier of the configuration type to retrieve. `tenant-timezone-config` is the type known to be supported and returns a synthesized America/New_York default when nothing is persisted; any other value returns 404 when no record exists. Required; no default is applied.
         example: tenant-timezone-config
         required: true
         name: configurationTypeId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Identifier of the tenant whose configuration is returned. Required; the request is rejected with 400 when it is missing or blank. No default is applied.
+        example: tenant-abc-123
         required: true
         name: tenant-id
         in: header
@@ -113,108 +295,132 @@ paths:
           type: string
       responses:
         '200':
-          description: Tenant configuration retrieved successfully
+          description: The stored configuration record for the requested type, or — for `tenant-timezone-config` with nothing persisted — a synthesized default record with `null` id/namespace/timestamps.
           content:
             application/json:
+              examples:
+                persistedTimezone:
+                  value:
+                    id: 9c1e2b7a-4f2d-4a1e-8b3c-2f6d9a0e1c34
+                    tenantId: tenant-abc-123
+                    namespace: tenant-config
+                    configurationTypeId: tenant-timezone-config
+                    configuration:
+                      timezone: America/New_York
+                      timezoneAbbreviation: EST
+                    updatedAt: '2026-06-15T14:32:00Z'
+                    createdAt: '2026-05-01T09:10:00Z'
               schema:
                 $ref: '#/components/schemas/TenantConfigurationItemDto'
         '400':
-          description: Bad request - Invalid request parameters or missing required headers
-        '401':
-          description: Authentication required - Valid authentication token is missing or invalid
+          description: Request rejected because the required `tenant-id` header (or the `configurationTypeId` path parameter) is missing or blank. Supply both and retry.
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: tenant-id header missing.
+                      title: Missing Headers
+                      detail: tenant-id header missing.
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
-          description: No configuration found for the given type (non-timezone types only)
+          description: No configuration record exists for the given `configurationTypeId` (applies to types other than `tenant-timezone-config`, which always returns a synthesized default). The response body is empty.
+          content:
+            application/json: {}
+        '401':
+          description: Authentication token is missing, expired, or invalid. Obtain a valid JWT and retry.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
-          description: Internal server error - An unexpected error occurred while processing the request
+          description: 'An unexpected error occurred while reading the configuration from the data store, or the record could not be serialized. The response body is a bare `{"error": "..."}` object, not the structured `ApiError` shape used elsewhere in this API. The request was not fulfilled; retry after a short delay.'
+          content:
+            application/json:
+              examples:
+                unexpectedError:
+                  value:
+                    error: An unexpected error occurred
+              schema: {}
+        '502':
+          description: The downstream data store (DAL) returned a server error (5xx) while reading the configuration. Retry after a short delay and escalate if it persists.
+          content:
+            application/json:
+              examples:
+                downstreamServiceError:
+                  value:
+                    errors:
+                    - httpStatus: 502
+                      reason: DOWNSTREAM_SERVICE_ERROR
+                      title: Downstream service unavailable
+                      detail: Downstream service encountered an error
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Unable to connect to the downstream data store (network/connectivity failure). Retry after a short delay.
+          content:
+            application/json:
+              examples:
+                serviceUnavailable:
+                  value:
+                    errors:
+                    - httpStatus: 503
+                      reason: SERVICE_UNAVAILABLE
+                      title: Service temporarily unavailable
+                      detail: Unable to connect to downstream service. Please try again later.
+              schema:
+                $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
 components:
   schemas:
-    TenantTimezoneResponse:
-      description: Tenant timezone configuration response
+    ErrorObject:
       type: object
+      description: Individual error object containing details about a specific validation or processing error
       properties:
-        tenantId:
-          type: string
-          description: Tenant ID this configuration belongs to
-        configurationTypeId:
-          type: string
-          description: Configuration type ID
-        timezone:
-          type: string
-          description: IANA timezone ID
-        timezoneAbbreviation:
-          type: string
-          description: Timezone abbreviation for the current date
+        httpStatus:
+          type: integer
+          format: int32
           examples:
-          - EST
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    JsonNode:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    TenantConfigurationListResponseDto:
       type: object
+      description: List of all tenant configurations for a tenant
       properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantConfigurationItemDto'
+          description: List of tenant configurations
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of tenant configurations
     TenantConfigurationItemDto:
-      description: A tenant configuration item
       type: object
+      description: A tenant configuration item
       properties:
         id:
           type: string
@@ -229,30 +435,62 @@ components:
           type: string
           description: Type identifier for the configuration
         configuration:
-          description: Configuration data as JSON
-          type: object
-          $ref: '#/components/schemas/JsonNode'
+          description: Configuration data as JSON. The structure is flexible and depends on `configurationTypeId`.
         updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
           description: Timestamp when the configuration was last updated
-          type: string
-          $ref: '#/components/schemas/Instant'
         createdAt:
-          description: Timestamp when the configuration was created
-          type: string
           $ref: '#/components/schemas/Instant'
-    TenantConfigurationListResponseDto:
-      description: List of all tenant configurations for a tenant
+          type: string
+          description: Timestamp when the configuration was created
+    TenantTimezoneResponse:
       type: object
+      description: Tenant timezone configuration response
       properties:
-        data:
+        tenantId:
+          type: string
+          description: Tenant ID this configuration belongs to
+        configurationTypeId:
+          type: string
+          description: Configuration type ID
+        timezone:
+          type: string
+          description: IANA timezone ID
+        timezoneAbbreviation:
+          type: string
+          examples:
+          - EST
+          description: Timezone abbreviation for the current date
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/TenantConfigurationItemDto'
-          description: List of tenant configurations
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of tenant configurations
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,152 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Provider Outreach Portal Resource API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Provider Outreach Portal Resource
+paths:
+  /outreach/portal/submissions:
+    post:
+      summary: Submit provider outreach portal responses
+      description: Captures provider response text for every reason on the signed outreach token, plus optional supporting documents (PDF/JPG/PNG). Files are scanned and stored before the submission is recorded.
+      operationId: submitProviderOutreachPortalResponses
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                responses:
+                  type: string
+                email:
+                  type: string
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+        required: true
+      responses:
+        '201':
+          description: Responses submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderOutreachPortalSubmitResponse'
+        '400':
+          description: Invalid response payload or unsupported file
+        '410':
+          description: Token is invalid, expired, or no longer actionable
+        '413':
+          description: Request body exceeds the maximum total request size
+        '422':
+          description: Uploaded file failed the malware scan
+        '429':
+          description: Rate limit exceeded for this client or outreach token
+      tags:
+      - Provider Outreach Portal Resource
+      parameters:
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+  /outreach/portal/workflow-details:
+    get:
+      summary: Get provider outreach portal details
+      description: Returns outreach reasons and resolution steps for a signed, time-limited outreach token.
+      operationId: getProviderOutreachPortalDetails
+      parameters:
+      - name: token
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Portal details returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderOutreachPortalDetailsResponse'
+        '410':
+          description: Token is invalid, expired, or no longer actionable
+        '429':
+          description: Rate limit exceeded for this client or outreach token
+      tags:
+      - Provider Outreach Portal Resource
+components:
+  schemas:
+    Tenant:
+      type: object
+      description: Tenant the outreach workflow belongs to, with optional email-settings logo branding
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+    ProviderOutreachPortalSubmitResponse:
+      type: object
+      description: Provider portal outreach submission result
+      properties:
+        submissionId:
+          type: string
+    Reason2:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        resolutionSteps:
+          type: string
+        isCaqhResolvable:
+          type: boolean
+    ProviderOutreachPortalDetailsResponse:
+      type: object
+      description: Provider portal outreach details for a signed outreach token
+      properties:
+        workflowId:
+          type: string
+        outreachId:
+          type: string
+        providerName:
+          type: string
+        npi:
+          type: string
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reason2'
+        tenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tenant'
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

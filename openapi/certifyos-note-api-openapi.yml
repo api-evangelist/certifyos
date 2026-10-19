@@ -22,8 +22,20 @@ tags:
 paths:
   /credentialing-workflows/{workflowId}/notes:
     get:
-      summary: Get notes for a credentialing workflow
-      description: Retrieves a paginated list of notes for the specified credentialing workflow
+      summary: List notes on a credentialing workflow
+      description: 'Returns all free-text notes attached to the specified credentialing workflow. Use this to display or audit annotations on a practitioner credentialing workflow; for facility workflow notes use the Facility Note endpoints.
+
+
+        Preconditions: workflowId must identify an existing workflow visible to the tenant.
+
+
+        Important — query parameters with no current effect: filter, page, size, startAfterId, endAtId, and order are accepted for compatibility but are not applied by api-layer (not forwarded to the data layer). Results are returned in the order provided by the data layer (typically createdAt descending).
+
+
+        **Error behavior:** If the data layer returns a 5xx error, that status code is forwarded directly to the caller. Mutating operations (POST, PUT, DELETE) normalize 5xx to 502.
+
+
+        Returns a GetNotesResponse with totalCount, data, and links.'
       operationId: getNotes
       tags:
       - Note
@@ -34,36 +46,36 @@ paths:
         name: workflowId
         schema:
           type: string
-      - description: End at this note ID
+      - description: Accepted for compatibility but not applied by api-layer
         name: endAtId
         in: query
         schema:
           type: string
-      - description: Optional filter for notes
+      - description: Accepted for compatibility but not applied by api-layer
         name: filter
         in: query
         schema:
           type: string
-      - description: Sort order as JSON (e.g., '{"orderBy":"createdAt","orderByDirection":"DESC"}'). If not provided, defaults to sorting by createdAt DESC (newest first).
+      - description: Accepted for compatibility but not applied by api-layer. Results are returned in the order provided by the data layer (typically createdAt descending).
         name: order
         in: query
         schema:
           type: string
-      - description: Page number (1-based)
+      - description: Accepted for compatibility but not applied by api-layer (default 1)
         name: page
         in: query
         schema:
           type: integer
           format: int32
           default: '1'
-      - description: Page size
+      - description: Accepted for compatibility but not applied by api-layer (default 50)
         name: size
         in: query
         schema:
           type: integer
           format: int32
           default: '50'
-      - description: Start after this note ID
+      - description: Accepted for compatibility but not applied by api-layer
         name: startAfterId
         in: query
         schema:
@@ -75,29 +87,37 @@ paths:
         schema:
           type: string
       responses:
-        '200':
-          description: Successfully retrieved notes
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetNotesResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+        '502':
+          description: Data-layer 5xx forwarded directly (not normalized to 502 as mutating ops are)
+        '200':
+          description: Note list for the workflow (newest first); list query params are not applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetNotesResponse'
         '404':
           description: Credentialing workflow not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal Server Error - An unexpected error occurred
       security:
       - jwt: []
     post:
-      summary: Create a note for a credentialing workflow
-      description: Creates a new note for the specified credentialing workflow
+      summary: Add a note to a credentialing workflow
+      description: 'Creates a new free-text note on the specified credentialing workflow. Use this to record annotations during the credentialing lifecycle; for facility workflows use the Facility Note create endpoint.
+
+
+        Preconditions: request body must contain a non-blank message field; no other fields are accepted. createdBy is set from the caller JWT.
+
+
+        Returns 201 with the created note. Not idempotent — each call creates a distinct note.'
       operationId: createNote
       tags:
       - Note
@@ -115,43 +135,71 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Note data
+        description: Note payload — only message is accepted
         content:
           application/json:
+            examples:
+              createNote:
+                value:
+                  message: PSV packet reviewed; ready for committee.
             schema:
               $ref: '#/components/schemas/CreateNoteRequest'
         required: true
       responses:
-        '201':
-          description: Successfully created the note
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NoteResponse'
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+        '502':
+          description: Downstream DAL failure (5xx ApiException). Mutating ops normalize to 502; GET ops forward the raw DAL status code.
+        '201':
+          description: Created note, including server-assigned id and audit fields
+          content:
+            application/json:
+              examples:
+                note:
+                  value:
+                    id: 44444444-4444-4444-8444-444444444444
+                    workflowId: 22222222-2222-4222-8222-222222222222
+                    data:
+                      message: PSV packet reviewed; ready for committee.
+                    createdBy: 55555555-5555-4555-8555-555555555555
+                    createdByName: Example Analyst
+                    updatedBy: 55555555-5555-4555-8555-555555555555
+                    updatedByName: Example Analyst
+                    createdAt: '2024-01-01T00:00:00Z'
+                    updatedAt: '2024-01-01T00:00:00Z'
+              schema:
+                $ref: '#/components/schemas/NoteResponse'
+        '400':
+          description: 'Invalid request — blank or null message: validation failures return an `ApiError` (errors array); ownership mismatches and null-body errors return a `BadRequestErrorResponse` (errors string array)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
         '404':
-          description: Credentialing workflow not found
+          description: Workflow not found (if returned by downstream services)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal Server Error - An unexpected error occurred
       security:
       - jwt: []
   /credentialing-workflows/{workflowId}/notes/{noteId}:
     put:
-      summary: Update a note
-      description: Updates an existing note for the specified credentialing workflow
+      summary: Update the message on a credentialing workflow note
+      description: 'Updates the message field of an existing note on the specified credentialing workflow. Use this to correct or amend an annotation after it has been created.
+
+
+        Despite using HTTP PUT, this is a partial update: the service merges only the message into the existing note data; other note fields are preserved. Only message can be changed.
+
+
+        Preconditions: noteId must identify an existing note that belongs to the specified workflowId. Returns 400 for null/blank message or when the note belongs to a different workflow. Returns 404 when the note is not found.
+
+
+        updatedBy is set from the caller JWT. Not idempotent — each call refreshes updatedAt.'
       operationId: updateNote
       tags:
       - Note
@@ -175,42 +223,70 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Updated note data
+        description: Partial update payload — only message is merged
         content:
           application/json:
+            examples:
+              updateNote:
+                value:
+                  message: 'Updated: waiting on missing license document.'
             schema:
               $ref: '#/components/schemas/UpdateNoteRequest'
         required: true
       responses:
-        '200':
-          description: Successfully updated the note
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NoteResponse'
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BadRequestErrorResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+        '502':
+          description: Downstream DAL failure (5xx ApiException). Mutating ops normalize to 502; GET ops forward the raw DAL status code.
+        '200':
+          description: Updated note after message merge
+          content:
+            application/json:
+              examples:
+                note:
+                  value:
+                    id: 44444444-4444-4444-8444-444444444444
+                    workflowId: 22222222-2222-4222-8222-222222222222
+                    data:
+                      message: 'Updated: waiting on missing license document.'
+                    createdBy: 55555555-5555-4555-8555-555555555555
+                    createdByName: Example Analyst
+                    updatedBy: 55555555-5555-4555-8555-555555555555
+                    updatedByName: Example Analyst
+                    createdAt: '2024-01-01T00:00:00Z'
+                    updatedAt: '2024-01-01T00:00:00Z'
+              schema:
+                $ref: '#/components/schemas/NoteResponse'
+        '400':
+          description: 'Invalid request — blank or null message, or note belongs to a different workflow: validation failures return an `ApiError` (errors array); ownership mismatches and null-body errors return a `BadRequestErrorResponse` (errors string array)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
         '404':
-          description: Note or credentialing workflow not found
+          description: Note not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal Server Error - An unexpected error occurred
       security:
       - jwt: []
     get:
-      summary: Get a note by ID
-      description: Retrieves a specific note by its ID for the specified credentialing workflow
+      summary: Fetch a single credentialing workflow note
+      description: 'Retrieves a single note by its ID from the specified credentialing workflow. Use this when you already have the noteId (for example from the list endpoint).
+
+
+        Preconditions: noteId must identify an existing note, and the note must belong to the specified workflowId.
+
+
+        Returns 200 with the note. Returns 404 when the note record is not found. Returns 400 when the note exists but belongs to a different workflow.
+
+
+        **Error behavior:** If the data layer returns a 5xx error, that status code is forwarded directly to the caller. Mutating operations (POST, PUT, DELETE) normalize 5xx to 502. Returns 404 when the note record is not found. Downstream data-layer errors (ApiException) are forwarded with their original status code and are not described here.'
       operationId: getNoteById
       tags:
       - Note
@@ -234,29 +310,43 @@ paths:
         schema:
           type: string
       responses:
-        '200':
-          description: Successfully retrieved note
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NoteResponse'
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+        '502':
+          description: Data-layer 5xx forwarded directly (not normalized to 502 as mutating ops are)
+        '200':
+          description: Note detail for the specified workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NoteResponse'
+        '400':
+          description: Note exists but belongs to a different workflow — verify workflowId and noteId pairing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
         '404':
-          description: Note or credentialing workflow not found
+          description: Note not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal Server Error - An unexpected error occurred
       security:
       - jwt: []
     delete:
-      summary: Delete a note
-      description: Deletes an existing note for the specified credentialing workflow
+      summary: Remove a credentialing workflow note
+      description: 'Deletes the specified note from the credentialing workflow. Use this to remove an annotation that was created in error or is no longer relevant.
+
+
+        Preconditions: noteId must identify an existing note that belongs to the specified workflowId.
+
+
+        Returns 204 with an empty body on success. Returns 404 when the note is not found. Returns 400 when the note exists but belongs to a different workflow.'
       operationId: deleteNote
       tags:
       - Note
@@ -280,24 +370,91 @@ paths:
         schema:
           type: string
       responses:
-        '204':
-          description: Successfully deleted the note
         '401':
           description: Unauthorized - Authentication required
         '403':
           description: Forbidden - User does not have required permissions
+        '500':
+          description: Internal Server Error - An unexpected error occurred
+        '502':
+          description: Downstream DAL failure (5xx ApiException). Mutating ops normalize to 502; GET ops forward the raw DAL status code.
+        '204':
+          description: Note deleted; empty body
+        '400':
+          description: Note exists but belongs to a different workflow — verify workflowId and noteId pairing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequestErrorResponse'
         '404':
-          description: Note or credentialing workflow not found
+          description: Note not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
-        '500':
-          description: Internal Server Error - An unexpected error occurred
       security:
       - jwt: []
 components:
   schemas:
+    NoteResponse:
+      type: object
+      description: Response containing note information
+      properties:
+        id:
+          type: string
+          examples:
+          - 44444444-4444-4444-8444-444444444444
+          description: Unique identifier for the note
+        workflowId:
+          type: string
+          examples:
+          - 22222222-2222-4222-8222-222222222222
+          description: ID of the associated credentialing workflow
+        data:
+          $ref: '#/components/schemas/NoteData'
+          type: object
+          description: Note data containing message
+        createdBy:
+          type: string
+          examples:
+          - 55555555-5555-4555-8555-555555555555
+          description: ID of the user who created the note
+        createdByName:
+          type: string
+          examples:
+          - Example Analyst
+          description: Full name of the user who created the note
+        updatedBy:
+          type: string
+          examples:
+          - 55555555-5555-4555-8555-555555555555
+          description: ID of the user who last updated the note
+        updatedByName:
+          type: string
+          examples:
+          - Example Analyst
+          description: Full name of the user who last updated the note
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          description: Timestamp when the note was created
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          description: Timestamp when the note was last updated
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
     ErrorObject1:
       type: object
       properties:
@@ -310,22 +467,20 @@ components:
           format: int32
         title:
           type: string
-    NoteData:
-      type: object
-      description: Note data containing message content
-      required:
-      - message
-      properties:
-        message:
+        workflowId:
           type: string
-          description: The message content of the note
-          examples:
-          - This is a note message
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
+        section:
+          type: string
+        opIndex:
+          type: integer
+          format: int32
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
     UpdateNoteRequest:
       type: object
       required:
@@ -334,100 +489,56 @@ components:
         message:
           type: string
           pattern: \S
-    GetNotesResponse:
-      description: Response containing a paginated list of notes
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    NoteData:
       type: object
+      required:
+      - message
+      description: Note data containing message content
+      properties:
+        message:
+          type: string
+          examples:
+          - This is a note message
+          description: The message content of the note
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    GetNotesResponse:
+      type: object
+      description: Response containing a list of notes
       properties:
         totalCount:
           type: integer
           format: int64
-          description: Total count of notes matching the filter criteria
           examples:
           - 100
+          description: Total count of notes returned for the workflow
         data:
           type: array
           items:
             $ref: '#/components/schemas/NoteResponse'
           description: Array of note records
         links:
-          description: Pagination links for navigation
+          $ref: '#/components/schemas/PageLinks1'
           type: object
-          $ref: '#/components/schemas/PageLinks'
-    BadRequestErrorResponse:
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            type: string
-          description: List of error messages
-          examples:
-          - - Validation failed
-            - Required field missing
-        errorDetails:
-          description: Detailed error information with specific validation failures
-          type: array
-          $ref: '#/components/schemas/JsonNode'
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+          description: Optional links envelope retained for compatibility; list query params are not applied
     CreateNoteRequest:
       type: object
       required:
@@ -436,72 +547,6 @@ components:
         message:
           type: string
           pattern: \S
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    PageLinks:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    NoteResponse:
-      type: object
-      description: Response containing note information
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the note
-          examples:
-          - note_123456
-        workflowId:
-          type: string
-          description: ID of the associated credentialing workflow
-          examples:
-          - cw_123456
-        data:
-          description: Note data containing message
-          type: object
-          $ref: '#/components/schemas/NoteData'
-        createdBy:
-          type: string
-          description: ID of the user who created the note
-          examples:
-          - user_123456
-        createdByName:
-          type: string
-          description: Full name of the user who created the note
-          examples:
-          - John Doe
-        updatedBy:
-          type: string
-          description: ID of the user who last updated the note
-          examples:
-          - user_123456
-        updatedByName:
-          type: string
-          description: Full name of the user who last updated the note
-          examples:
-          - Jane Smith
-        createdAt:
-          description: Timestamp when the note was created
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
-        updatedAt:
-          description: Timestamp when the note was last updated
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
   securitySchemes:
     jwt:
       type: http

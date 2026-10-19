@@ -22,13 +22,20 @@ tags:
 paths:
   /locations:
     get:
-      summary: Find Location by filter criteria with pagination
-      description: Returns a paginated list of all Location. Supports offset based (page, size) pagination.
+      summary: List tenant locations with pagination
+      description: 'Returns a paginated list of location records scoped to the tenant identified by the required `tenant-id` header.
+
+
+        **When to use:** Use this operation to browse or enumerate locations for a tenant. For a single known location use `GET /locations/{id}` instead.
+
+
+        **Preconditions:** The `tenant-id` header is required; omitting it will result in a 400. Pagination is offset-based: supply `page` (0-based, defaults to 0) and `size` (items per page, defaults to 2 — this default is applied consistently across every OperationalValue list endpoint on the platform). No filter query parameters are currently exposed beyond page/size.'
       operationId: locationFindMany
       tags:
       - Locations
       parameters:
       - description: Page number for offset based pagination (0-based index). Defaults to 0 if not specified.
+        example: 0
         name: page
         in: query
         schema:
@@ -36,6 +43,7 @@ paths:
           format: int32
           default: '0'
       - description: Number of items per page in offset based pagination. Defaults to 2 if not specified.
+        example: 20
         name: size
         in: query
         schema:
@@ -48,18 +56,44 @@ paths:
           type: string
       responses:
         '200':
-          description: List of Location
+          description: A paginated envelope (PagedResponse) containing a `data` array of location objects and a `totalCount` field. The array may be empty if no locations exist for the tenant.
           content:
             application/json:
+              examples:
+                findManyLocations:
+                  value:
+                    data:
+                    - id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      crosswalkId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                      entityAddressId: b2c3d4e5-f6a7-8901-bcde-f21345678901
+                      generalInfo:
+                        locationName: Main Street Clinic
+                        acceptsNewPatients: true
+                    - id: c3d4e5f6-a7b8-9012-cdef-321456789012
+                      crosswalkId: c3d4e5f6-a7b8-9012-cdef-321456789012
+                      entityAddressId: d4e5f6a7-b8c9-0123-defa-432156789013
+                      generalInfo:
+                        locationName: Riverside Family Practice
+                        acceptsNewPatients: false
+                    totalCount: 2
               schema:
                 $ref: '#/components/schemas/PagedResponse'
         '400':
-          description: Invalid input parameters
+          description: Invalid input parameters, or missing `tenant-id` header.
       security:
       - jwt: []
     post:
-      summary: Create a location
-      description: Creates a new tenant location record.
+      summary: Create a new tenant location record
+      description: 'Creates a composite location record comprising a core location, a group location, and a tenant-group-location entry, all scoped to the tenant identified by the required `tenant-id` header.
+
+
+        **When to use:** Use when adding a new physical or service location for a tenant. To update an existing location''s fields and sub-entities use `PUT /locations/{id}` (single record) or `PUT /locations/update` (batch update with specialty management).
+
+
+        **Preconditions:** The `tenant-id` header is required. The request body must include a `groupId`; the request will fail with 400 if `groupId` is absent. Each of the three nested sub-documents (`locationData`, `groupLocationData`, `tenantGroupLocationData`) is independently validated against a JSON schema — validation failures return 400.
+
+
+        **Idempotency:** A core location with the same name and address may match an existing record via a crosswalk hash and be reused rather than duplicated; a new `TenantGroupLocation` entry is still created in this case. Every upsert — including this hash-matched reuse — publishes an MDM change event and an audit event, so this is not a side-effect-free operation even when no new CoreLocation row is created.'
       operationId: locationCreate
       tags:
       - Locations
@@ -69,36 +103,141 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Location create payload
         content:
           application/json:
+            examples:
+              createLocation:
+                value:
+                  groupId: 11223344-5566-7788-99aa-bbccddeeff00
+                  locationData:
+                    locationName: Main Street Clinic
+                    tags:
+                    - outpatient
+                    - primary-care
+                  groupLocationData:
+                    active: true
+                  tenantGroupLocationData:
+                    effectiveDate: '2026-01-15'
+                    suppressSiteFromDirectory: false
             schema:
               $ref: '#/components/schemas/LocationRequest'
         required: true
       responses:
         '201':
-          description: Location successfully created
+          description: 'A LocationResponse object containing the newly created location''s `id` (= crosswalkId), `crosswalkId`, `tenantId`, billing/effective/termination dates, and a partial `generalInfo` (`locationName`, `suppressSiteFromDirectory`). Note: `entityAddressId` and `tenantGroupLocationId` are not populated on this response — use `GET /locations/{id}` after creation if those fields are needed.'
           content:
             application/json:
+              examples:
+                createLocationResponse:
+                  value:
+                    id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    crosswalkId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    tenantId: fa6cb2a4-d265-4b3f-b03f-893f2219589a
+                    generalInfo:
+                      locationName: Main Street Clinic
+                      suppressSiteFromDirectory: false
+                    effectiveDate: '2026-01-15T00:00:00Z'
               schema:
                 $ref: '#/components/schemas/LocationResponse'
         '400':
-          description: Invalid request body (e.g., schema validation failed), or unsupported source type
+          description: Invalid request body. Returned when a nested sub-document (`locationData`/`groupLocationData`/`tenantGroupLocationData`) fails JSON-schema validation, when `groupId` is missing, or when no CoreSource is provisioned for this tenant's source type (a tenant-provisioning precondition, not a caller-supplied value — the source type is always derived server-side from the tenant ID).
           content:
             application/json:
+              examples:
+                createLocationValidationError:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Validation failed
+                      detail: groupId is required
               schema:
                 $ref: '#/components/schemas/ApiError1'
         '500':
-          description: Internal server error during request processing (e.g., network timeout, etc.)
+          description: Internal server error during request processing (e.g., network timeout). The write across CoreLocation, GroupLocation, and TenantGroupLocation is not fully transactional; a 500 mid-sequence may leave partial state. Inspect the error and verify which records were committed before retrying.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
+  /locations/search:
+    get:
+      summary: Search locations by name
+      description: Returns a paginated list of locations whose name matches the supplied query term. Results are suitable for autocomplete dropdowns on the Groups list page. Requires the READ_LOCATION permission. Returns an empty result set (200) when the location-search feature is disabled for this environment.
+      operationId: locationSearch
+      tags:
+      - Locations
+      parameters:
+      - description: Page number (0-based)
+        example: 0
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '0'
+      - description: Search term matched against location name (substring, case-insensitive). Min 2 chars, max 128 chars.
+        example: Main Street
+        required: true
+        name: q
+        in: query
+        schema:
+          type: string
+      - description: Page size (max 50)
+        example: 20
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: '20'
+      - description: Tenant ID for the requesting organization.
+        example: fa6cb2a4-d265-4b3f-b03f-893f2219589a
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Paginated list of matching locations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationSearchPagedResponse'
+        '400':
+          description: 'Invalid request. Validation failures (q length / pagination) and missing `tenant-id` both return `{"errors":[{"httpStatus", "reason", "title", "detail"}]}`. Examples: q too short → reason=VALIDATION_ERROR; missing tenant-id → title=Missing Headers.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized — missing or invalid bearer token. Body is not a structured ApiError (Quarkus/OIDC challenge; typically empty).
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden — caller lacks the READ_LOCATION permission. Body is ApiError (AuthorizationFilter ForbiddenException → GlobalExceptionMapper), e.g. `{"errors":[{"httpStatus":403,"reason":"Forbidden","title":"Request Failed","detail":"An error occurred processing your request"}]}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
   /locations/update:
     put:
-      summary: Update multiple related resources from flattened payload
-      description: Updates CoreLocation, CoreEntityAddress, TenantGroupLocation and TenantGroupLocationNetwork using the provided IDs and fields.
+      summary: Batch-update a location and its sub-entities
+      description: 'Updates a location and its associated address, network membership, and specialty records in a single batch operation, using the IDs and fields provided in the request body.
+
+
+        **When to use:** Use this operation when you need to update multiple aspects of a location in one call — for example, changing address fields, toggling network participation, or managing specialties. To update only the core location fields for a single record use `PUT /locations/{id}` instead.
+
+
+        **Preconditions:** The `tenant-id` header is required. The request body must include `locationId` and `tenantGroupLocationId` (both required); all other fields are optional and are preserved if omitted. The `networkSelection` field controls network update behavior: `"all"` enrolls the location in all available networks; `"selected"` updates only the networks listed. If `locationSpecialities` is provided, specialty records are upserted (not deleted-and-replaced). If `locationSpecialities` contains a `newTenantSpecialtyId` (a specialty foreign-key swap), the caller must have the `group:correct:specialty` permission — otherwise the request returns 403. The `userDefinedFields` map (persisted to TenantGroupLocation) and `groupLocationUserDefinedFields` map (persisted to GroupLocation, CP-31476) are each deep-merged into the existing data: omitting the field preserves the existing value, a key omitted from the map is retained, and a key sent as `null` is ignored (its prior value survives). Only keys present with non-null values are overwritten.
+
+
+        **Idempotency:** Repeating the same request with the same IDs and field values produces the same state; the operation is safe to retry on transient failures provided `locationSpecialities` does not include FK swaps that require permission checks.'
       operationId: locationBatchRebase
       tags:
       - Locations
@@ -108,32 +247,89 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Location batch-update payload
         content:
           application/json:
+            examples:
+              batchUpdateLocation:
+                value:
+                  locationId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                  entityAddressId: b2c3d4e5-f6a7-8901-bcde-f21345678901
+                  groupLocationId: c3d4e5f6-a7b8-9012-cdef-321456789012
+                  tenantGroupLocationId: d4e5f6a7-b8c9-0123-defa-432156789013
+                  networkId: e5f6a7b8-c9d0-1234-efab-543216789014
+                  networkSelection: selected
+                  effectiveDate: '2026-01-15'
+                  name: Main Street Clinic
+                  serviceAddress:
+                    addressLine1: 123 Main St
+                    city: Springfield
+                    state: IL
+                    zip: '62704'
+                    country: US
+                  locationSpecialities:
+                  - specialtyId: f6a7b8c9-d0e1-2345-fabc-654321789015
+                    effectiveDate: '2026-01-15'
+                    isPrimary: true
             schema:
               $ref: '#/components/schemas/LocationUpdateRequest'
         required: true
       responses:
         '200':
-          description: Batch executed successfully
+          description: Batch executed successfully. Returns a result object with a `message`, the resolved `locationId`/`certifyLocationId`/`entityAddressId`/`locationEntityAddressId`/`groupLocationId`/`tenantGroupLocationId` identifiers, a `batchResponse` summary, and a `locationSpecialties` array of the upserted specialty rows ({id, tenantSpecialtyId, effectiveDate, isPrimary}).
           content:
             application/json:
+              examples:
+                batchUpdateLocationResponse:
+                  value:
+                    message: Location details updated successfully
+                    locationId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    certifyLocationId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    entityAddressId: b2c3d4e5-f6a7-8901-bcde-f21345678901
+                    locationEntityAddressId: 12345678-9abc-def0-1234-56789abcdef0
+                    groupLocationId: c3d4e5f6-a7b8-9012-cdef-321456789012
+                    tenantGroupLocationId: d4e5f6a7-b8c9-0123-defa-432156789013
+                    batchResponse: 5 operations executed
+                    locationSpecialties:
+                    - id: 23456789-abcd-ef01-2345-6789abcdef01
+                      tenantSpecialtyId: f6a7b8c9-d0e1-2345-fabc-654321789015
+                      effectiveDate: '2026-01-15'
+                      isPrimary: true
               schema:
                 type: object
         '400':
-          description: Bad Request
+          description: Invalid request. JSON-schema validation failure, missing required IDs (`locationId`/`tenantGroupLocationId`), or contact list validation errors. Inspect the error body for the specific field that failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
+        '403':
+          description: Forbidden — `locationSpecialities` contains a `newTenantSpecialtyId` (a specialty foreign-key swap) and the caller lacks the `group:correct:specialty` permission. Obtain the required permission before retrying.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
   /locations/{id}:
     put:
-      summary: Update a location
-      description: Updates an existing location based on the ID.
+      summary: Update an existing location record by ID
+      description: 'Updates the core location, group location, and tenant-group-location sub-records for the location identified by `{id}`, scoped to the tenant identified by the required `tenant-id` header.
+
+
+        **When to use:** Use when you need to update a single location''s fields using its ID. To update address, network, and specialty sub-entities together in one batch call, use `PUT /locations/update` instead, which accepts `locationId` and `tenantGroupLocationId` and handles specialty management.
+
+
+        **Preconditions:** The `tenant-id` header is required. The `{id}` path parameter is the location''s `crosswalkId` (unlike `GET /locations/{id}`, this endpoint does not fall back to a `certifyLocationId` lookup). The underlying write is an upsert: if `{id}` does not match an existing crosswalk, a new CoreLocation row is created rather than returning 404 — but the subsequent group-location lookup for that new record will then fail, surfacing as a 500 (see the 500 response below). Each of the three nested sub-documents (`locationData`, `groupLocationData`, `tenantGroupLocationData`) is independently validated against a JSON schema — validation failures return 400.
+
+
+        **Idempotency:** Submitting the same payload for the same `{id}` produces the same state. The three DAL writes are executed sequentially and are not wrapped in a single transaction; a 500 mid-sequence may leave partial updates committed. Inspect the error and verify record state before retrying.'
       operationId: locationUpdate
       tags:
       - Locations
       parameters:
-      - description: Location ID
-        example: '1234567890'
+      - description: The location's crosswalkId.
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         required: true
         name: id
         in: path
@@ -144,26 +340,49 @@ paths:
         schema:
           type: string
       requestBody:
+        description: Location update payload
         content:
           application/json:
+            examples:
+              updateLocation:
+                value:
+                  groupId: 11223344-5566-7788-99aa-bbccddeeff00
+                  locationData:
+                    locationName: Main Street Clinic
+                    tags:
+                    - outpatient
+                    - primary-care
+                  groupLocationData:
+                    active: true
+                  tenantGroupLocationData:
+                    suppressSiteFromDirectory: false
             schema:
               $ref: '#/components/schemas/LocationRequest'
         required: true
       responses:
         '200':
-          description: Location successfully updated
+          description: 'A LocationResponse object containing the updated location''s `id` (= crosswalkId), `crosswalkId`, `tenantId`, billing/effective/termination dates, and a partial `generalInfo` (`locationName`, `suppressSiteFromDirectory`). Note: this is a sparser shape than `GET /locations/{id}` — `entityAddressId` and `tenantGroupLocationId` are not populated on this response.'
           content:
             application/json:
+              examples:
+                updateLocationResponse:
+                  value:
+                    id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    crosswalkId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    tenantId: fa6cb2a4-d265-4b3f-b03f-893f2219589a
+                    generalInfo:
+                      locationName: Main Street Clinic
+                      suppressSiteFromDirectory: false
               schema:
                 $ref: '#/components/schemas/LocationResponse'
         '400':
-          description: Invalid request body (e.g., schema validation failed), or unsupported source type
+          description: Invalid request body. Returned when a nested sub-document (`locationData`/`groupLocationData`/`tenantGroupLocationData`) fails JSON-schema validation, or when no CoreSource is provisioned for this tenant's source type (a tenant-provisioning precondition, not a caller-supplied value).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError1'
         '500':
-          description: Internal server error during request processing (e.g., network timeout, etc.)
+          description: 'Internal server error during request processing. Also returned — instead of 404 — when `{id}` does not match an existing location: the CoreLocation upsert silently creates a new row for the unrecognized crosswalkId, then the group-location lookup for that new record fails and is not translated to a 4xx.'
           content:
             application/json:
               schema:
@@ -171,14 +390,20 @@ paths:
       security:
       - jwt: []
     get:
-      summary: Get a location value by their ID
-      description: Returns a single location by their ID
+      summary: Retrieve a single location by ID
+      description: 'Returns a single location record identified by `{id}`, scoped to the tenant identified by the required `tenant-id` header.
+
+
+        **When to use:** Use when you already know the location''s ID and need its full detail. To list all locations for a tenant use `GET /locations`.
+
+
+        **Preconditions:** The `tenant-id` header is required. The `{id}` path parameter accepts either the location''s `certifyLocationId` or its `crosswalkId` — it is looked up by certifyLocationId first, falling back to crosswalkId if no match is found.'
       operationId: locationGet
       tags:
       - Locations
       parameters:
-      - description: Location ID
-        example: '1234567890'
+      - description: The location's certifyLocationId or crosswalkId.
+        example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         required: true
         name: id
         in: path
@@ -190,53 +415,235 @@ paths:
           type: string
       responses:
         '200':
-          description: Practitioner successfully retrieved
+          description: A LocationResponse object containing the location's identifiers and detail fields (contacts, service address attributes, accessibility, office hours, practice limitations sourced from the location's operational value).
           content:
             application/json:
+              examples:
+                getLocation:
+                  value:
+                    id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    crosswalkId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                    entityAddressId: b2c3d4e5-f6a7-8901-bcde-f21345678901
+                    generalInfo:
+                      locationName: Main Street Clinic
+                      acceptsNewPatients: true
+                      locationType: Outpatient
+                    contacts:
+                    - type: office
+                      name: Front Desk
+                      mainPhoneNumber: 217-555-0100
+                    accessibilityOptions:
+                    - type: wheelchairAccessible
+                      value: true
+                    hoursOfOperation:
+                    - day: Monday
+                      open: 08:00
+                      close: '17:00'
               schema:
                 $ref: '#/components/schemas/LocationResponse'
         '404':
-          description: Location not found with the given ID for tenant
+          description: Location not found with the given ID for tenant. Verify that `{id}` is correct and that the `tenant-id` header matches the tenant that owns the location.
           content:
             application/json:
+              examples:
+                locationNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Location Not Found
+                      detail: Location not found with the given ID for tenant
               schema:
                 $ref: '#/components/schemas/ApiError1'
       security:
       - jwt: []
 components:
   schemas:
-    TenantGroupLocation.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/TenantGroupLocation.schema.json
-      title: TenantGroupLocation
-      description: Represents the association of a tenant with a group location.
+    HospitalAdmittingPrivilege:
       type: object
       properties:
-        suppressSiteFromDirectory:
-          description: Indicates if the site should be suppressed from the directory.
-          type: boolean
-        active:
-          description: Indicates if the record is currently active.
-          type: boolean
-        terminationDate:
-          description: The date when the association was terminated.
+        privilege:
           type: string
-          format: date
-        billingEffectiveDate:
-          description: The effective date for billing purposes.
+        status:
           type: string
-          format: date
-        billingTerminationDate:
-          description: The termination date for billing purposes.
-          type: string
-          format: date
         effectiveDate:
-          description: The date when this record becomes effective.
           type: string
-          format: date
-        npdbEnrollmentEnabled:
-          description: Indicates if NPDB (National Practitioner Data Bank) enrollment is enabled.
+        terminationDate:
+          type: string
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    LocationUpdateRequest:
+      type: object
+      required:
+      - locationId
+      - tenantGroupLocationId
+      properties:
+        locationId:
+          type: string
+        crosswalkId:
+          type: string
+        entityAddressId:
+          type: string
+        groupLocationId:
+          type: string
+        tenantGroupLocationId:
+          type: string
+        networkId:
+          type: string
+        networkEffectiveDate:
+          type: string
+        effectiveDate:
+          type: string
+        name:
+          type: string
+        locationType:
+          type: string
+        acceptNewPatients:
+          type: string
+        suppressSiteFromDirectory:
           type: boolean
+        contacts:
+          type: array
+          items: {}
+        serviceAddress:
+          type: object
+        officeHours:
+          type: array
+          items: {}
+        practiceLimitations:
+          type: array
+          items: {}
+        accessibility:
+          type: array
+          items: {}
+        networkSelection:
+          type: string
+        networks:
+          type: array
+          items: {}
+        locationSpecialities:
+          type: array
+          items: {}
+        userDefinedFields:
+          type: object
+        groupLocationUserDefinedFields:
+          type: object
+          description: Free-form key/value map persisted to GroupLocation.data.userDefinedFields (CP-31476). Deep-merged into existing data; omitted/null keys preserve their prior value.
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+        workflowId:
+          type: string
+        section:
+          type: string
+        opIndex:
+          type: integer
+          format: int32
+    LocationGeneralInfo:
+      type: object
+      properties:
+        locationName:
+          type: string
+        mainPhoneNumber:
+          type: string
+        afterHoursPhoneNumber:
+          type: string
+        fax:
+          type: string
+        serviceCategory:
+          type: string
+        specialtyCode:
+          type: string
+        specialtyDescription:
+          type: string
+        contactName:
+          type: string
+        contactType:
+          type: string
+        bedCounts:
+          type: integer
+          format: int32
+        tags:
+          type: array
+          items:
+            type: string
+        acceptsNewPatients:
+          type: boolean
+        type:
+          type: string
+        suppressSiteFromDirectory:
+          type: boolean
+        locationType:
+          type: string
+        department:
+          type: string
+        isPrimaryLocation:
+          type: boolean
+        hasAdmittingPrivileges:
+          type: boolean
+        includeLocationForPrivileges:
+          type: boolean
+        tty:
+          type: string
+    LocationContact2:
+      type: object
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        mainPhoneNumber:
+          type: string
+        afterHoursPhoneNumber:
+          type: string
+        email:
+          type: string
+        fax:
+          type: string
+        tty:
+          type: string
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
     LocationResponse:
       type: object
       properties:
@@ -330,431 +737,37 @@ components:
           $ref: '#/components/schemas/Instant'
         terminationDate:
           $ref: '#/components/schemas/Instant'
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    ApiError1:
+    ApiError:
       type: object
+      description: Standard API error response containing a list of error objects
       properties:
         errors:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorObject1'
-    LocationContact2:
-      type: object
-      properties:
-        type:
-          type: string
-        name:
-          type: string
-        mainPhoneNumber:
-          type: string
-        afterHoursPhoneNumber:
-          type: string
-        email:
-          type: string
-        fax:
-          type: string
-        tty:
-          type: string
-    AdaCompliance:
-      type: object
-      description: Americans with Disabilities Act compliance details
-      properties:
-        handicapAccessible:
-          type: boolean
-          description: Indicates if the location is accessible to people with disabilities
-        handicapParking:
-          type: boolean
-          description: Indicates if designated handicap parking spaces are available
-        handicapRestroom:
-          type: boolean
-          description: Indicates if ADA-compliant restroom facilities are available
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     Instant:
       type: string
       format: date-time
       examples:
       - '2022-03-10T16:15:50Z'
-    GroupLocationTypes.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/GroupLocationTypes.schema.json
-      title: Group Location Types Enum
-      description: Defines the various types of healthcare facilities and services that can be associated with a group.
-      type: string
-      enum:
-      - primaryCare
-      - specialtyCare
-      - behavioralHealth
-      - urgentCare
-      - surgicalServices
-      - rehabilitationServices
-      - laboratoryServices
-      - imagingServices
-      - longTermCare
-      - hospiceOrPalliativeCare
-      - homeHealthServices
-      - others
-    HospitalAdmittingPrivilege:
+    LocationSearchResult:
       type: object
+      required:
+      - id
+      - name
+      description: A single location match for autocomplete dropdowns.
       properties:
-        privilege:
+        id:
           type: string
-        status:
-          type: string
-        effectiveDate:
-          type: string
-        terminationDate:
-          type: string
-    Location.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/Location.schema.json
-      title: Location
-      description: Defines a location with details about addresses, accessibility, contacts, operating hours, and specialties.
-      type: object
-      properties:
-        active:
-          type: boolean
-          description: Indicates if the location is currently active and operational
-        locationName:
-          deprecated: true
-          type: string
-          description: (DEPRECATED - use `name` instead) Official name of the location
+          examples:
+          - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          description: certifyLocationId — the stored reference for a selected location.
         name:
           type: string
-          description: Name of the location
-        locationType:
-          $ref: '#/components/schemas/GroupLocationTypes.schema'
-          description: Specifies the primary type of healthcare services provided at this location
-        hasAdmittingPrivileges:
-          type: boolean
-          description: Indicates whether healthcare providers at this location have the authority to admit patients to affiliated hospitals
-        acceptsNewPatients:
-          type: boolean
-          description: Indicates whether the location is currently accepting new patient appointments or registrations
-        isPrimaryLocation:
-          type: boolean
-          description: Indicates whether this is the main practice location for the healthcare provider or group
-        suppressSiteFromDirectory:
-          type: boolean
-          description: Controls whether this location should be hidden from public directories and provider listings
-        adaCompliance:
-          $ref: '#/components/schemas/AdaCompliance'
-          description: Americans with Disabilities Act compliance information for the location
-        officeHours:
-          type: array
-          description: Operating hours for each day of the week
-          items:
-            $ref: '#/components/schemas/OfficeHour'
-        locationHsdSpecialty:
-          type:
-          - string
-          - 'null'
-          description: Healthcare service delivery specialty designation for this location
-        locationPrimarySpecialty:
-          type:
-          - string
-          - 'null'
-          description: Primary medical specialty or focus area of the location
-        limitationsForMembers:
-          type: array
-          description: List of any restrictions or limitations that apply to members at this location
-          items:
-            type: string
-        tags:
-          type: array
-          description: Custom labels or categories associated with this location
-          items:
-            type: string
-        createdBy:
-          type: string
-          description: Identifier of the user who created this location record
-        createdByName:
-          type: string
-          description: Name of the user who created this location record
-        updatedBy:
-          type: string
-          description: Identifier of the user who last updated this location record
-        updatedByName:
-          type: string
-          description: Name of the user who last updated this location record
-      $defs:
-        AdaCompliance:
-          type: object
-          description: Americans with Disabilities Act compliance details
-          properties:
-            handicapAccessible:
-              type: boolean
-              description: Indicates if the location is accessible to people with disabilities
-            handicapParking:
-              type: boolean
-              description: Indicates if designated handicap parking spaces are available
-            handicapRestroom:
-              type: boolean
-              description: Indicates if ADA-compliant restroom facilities are available
-        OfficeHour:
-          type: object
-          description: Operating hours for a specific day of the week
-          properties:
-            day:
-              $ref: '#/components/schemas/DaysOfTheWeek.schema'
-              description: Day of the week (three-letter abbreviation)
-            openTime:
-              type: string
-              format: time
-              description: Time when the location opens on this day
-            closeTime:
-              type: string
-              format: time
-              description: Time when the location closes on this day
-            closed:
-              type: boolean
-              description: Indicates if the location is closed on this day
-      unevaluatedProperties: false
-    LocationUpdateRequest:
-      type: object
-      required:
-      - locationId
-      - tenantGroupLocationId
-      properties:
-        locationId:
-          type: string
-        crosswalkId:
-          type: string
-        entityAddressId:
-          type: string
-        groupLocationId:
-          type: string
-        tenantGroupLocationId:
-          type: string
-        networkId:
-          type: string
-        networkEffectiveDate:
-          type: string
-        effectiveDate:
-          type: string
-        name:
-          type: string
-        locationType:
-          type: string
-        acceptNewPatients:
-          type: string
-        suppressSiteFromDirectory:
-          type: boolean
-        contacts:
-          $ref: '#/components/schemas/JsonNode'
-        serviceAddress:
-          $ref: '#/components/schemas/JsonNode'
-        officeHours:
-          $ref: '#/components/schemas/JsonNode'
-        practiceLimitations:
-          $ref: '#/components/schemas/JsonNode'
-        accessibility:
-          $ref: '#/components/schemas/JsonNode'
-        networkSelection:
-          type: string
-        networks:
-          $ref: '#/components/schemas/JsonNode'
-        locationSpecialities:
-          $ref: '#/components/schemas/JsonNode'
-        userDefinedFields:
-          $ref: '#/components/schemas/JsonNode'
-    DaysOfTheWeek.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/enums/DaysOfTheWeek.schema.json
-      title: Days Of The Week Enum
-      type: string
-      description: A reusable enum schema defining the standard three-letter abbreviations for days of the week.
-      enum:
-      - Mon
-      - Tue
-      - Wed
-      - Thu
-      - Fri
-      - Sat
-      - Sun
-    PagedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-        totalCount:
-          type: integer
-          format: int64
-        identifiersSearched:
-          type: integer
-          format: int64
-        matchedCount:
-          type: integer
-          format: int64
-        notFoundCount:
-          type: integer
-          format: int64
-        unmatchedIdentifiers:
-          type: array
-          items:
-            type: string
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    LocationRequest:
-      type: object
-      required:
-      - groupId
-      properties:
-        groupId:
-          type: string
-        locationData:
-          $ref: '#/components/schemas/Location.schema'
-          type: object
-        groupLocationData:
-          $ref: '#/components/schemas/GroupRegistryLocation.schema'
-          type: object
-        tenantGroupLocationData:
-          $ref: '#/components/schemas/TenantGroupLocation.schema'
-          type: object
-    GroupRegistryLocation.schema:
-      $schema: https://json-schema.org/draft/2020-12/schema
-      $id: https://schemas.certifyos.com/entities/GroupRegistryLocation.schema.json
-      title: GroupRegistryLocation
-      description: Represents the registry location information for a healthcare provider group.
-      type: object
-      properties:
-        active:
-          description: Indicates if the registry location is active.
-          type: boolean
-      required:
-      - active
-      additionalProperties: false
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    LocationGeneralInfo:
-      type: object
-      properties:
-        locationName:
-          type: string
-        mainPhoneNumber:
-          type: string
-        afterHoursPhoneNumber:
-          type: string
-        fax:
-          type: string
-        serviceCategory:
-          type: string
-        specialtyCode:
-          type: string
-        specialtyDescription:
-          type: string
-        contactName:
-          type: string
-        contactType:
-          type: string
-        bedCounts:
-          type: integer
-          format: int32
-        tags:
-          type: array
-          items:
-            type: string
-        acceptsNewPatients:
-          type: boolean
-        type:
-          type: string
-        suppressSiteFromDirectory:
-          type: boolean
-        locationType:
-          type: string
-        department:
-          type: string
-        isPrimaryLocation:
-          type: boolean
-        hasAdmittingPrivileges:
-          type: boolean
-        includeLocationForPrivileges:
-          type: boolean
-        tty:
-          type: string
-    OfficeHour:
-      type: object
-      description: Operating hours for a specific day of the week
-      properties:
-        day:
-          $ref: '#/components/schemas/DaysOfTheWeek.schema'
-          description: Day of the week (three-letter abbreviation)
-        openTime:
-          type: string
-          format: time
-          description: Time when the location opens on this day
-        closeTime:
-          type: string
-          format: time
-          description: Time when the location closes on this day
-        closed:
-          type: boolean
-          description: Indicates if the location is closed on this day
+          examples:
+          - Main Street Clinic
+          description: Location display name.
     LocationAddress2:
       type: object
       properties:
@@ -784,6 +797,75 @@ components:
           type: string
         type:
           type: string
+    LocationSearchPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated list of location search results.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationSearchResult'
+          description: Locations matching the search term.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of matching locations across all pages.
+    LocationRequest:
+      type: object
+      required:
+      - groupId
+      properties:
+        groupId:
+          type: string
+        locationData:
+          $ref: https://schemas.certifyos.com/entities/Location.schema.json
+          type: object
+        groupLocationData:
+          $ref: https://schemas.certifyos.com/entities/GroupRegistryLocation.schema.json
+          type: object
+        tenantGroupLocationData:
+          $ref: https://schemas.certifyos.com/entities/TenantGroupLocation.schema.json
+          type: object
+    PagedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+          description: The page of results for this request.
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Total number of records matching the request, across all pages.
+        identifiersSearched:
+          type: integer
+          format: int64
+          examples:
+          - 2
+          description: Count of identifiers submitted for a bulk-identifier search (e.g. bulk NPI search). Omitted/null for standard (non-bulk) list requests.
+        matchedCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Count of submitted identifiers that matched a record. Omitted/null for standard (non-bulk) list requests.
+        notFoundCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Count of submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
+        unmatchedIdentifiers:
+          type: array
+          examples:
+          - - '9999999999'
+          items:
+            type: string
+          description: Submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
   securitySchemes:
     jwt:
       type: http

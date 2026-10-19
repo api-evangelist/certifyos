@@ -22,141 +22,53 @@ tags:
 paths:
   /roster-records:
     get:
-      summary: Get all roster records
-      description: Returns a list of all roster records for the tenant
+      summary: List roster records with bounded cursor pagination
+      description: 'Returns a page of roster records belonging to the tenant named in the `tenant-id` header.
+
+
+        **When to use:** call this to page through roster records when you need an upper bound on the range; use `GET /roster-records/find-many` when you only need to move forward. Both endpoints read the same underlying records and differ only in the cursors they accept.
+
+
+        **Preconditions:** supply the `tenant-id` header. Pagination is controlled either by `page` and `size` (offset-based) or by the `startAfterId` / `endAtId` cursors; omit all four to receive the first default-sized page.
+
+
+        **Filtering:** the optional `filter` parameter takes a JSON object encoded as a string, for example `{"data.status":{"eq":"COMPLETED"}}`, and is applied before pagination. Supported comparison operators are `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`, and `contains`. Do not include `tenantId` in the filter - it is injected automatically from the header and any value you supply is overridden.
+
+
+        **What you get back:** an envelope carrying the matching roster records in `data`, navigation `links`, and `totalCount` when the underlying store reports one. Read-only; no state is mutated. Note: when the upstream data layer fails (including an unparseable `filter`), this endpoint currently returns 200 with an empty body rather than an error status - treat an empty (non-envelope) body as a retryable failure, not as an empty result set.'
       operationId: getAllRosterRecords
       tags:
       - RosterRecord
       parameters:
-      - name: endAtId
+      - description: 'Upper-bound cursor: stop at the roster record with this identifier. Use an id taken from a previous response. Omit for an unbounded page.'
+        name: endAtId
         in: query
         schema:
           type: string
-      - name: filter
+      - description: Server-side filter as a JSON object string, applied before pagination. Supported operators are eq, neq, gt, gte, lt, lte, in, nin, and contains. tenantId is injected automatically and must not be supplied. Omit to return unfiltered records.
+        example: '{"data.status":{"eq":"COMPLETED"}}'
+        name: filter
         in: query
         schema:
           type: string
-      - name: page
+      - description: Zero-based page number for offset pagination. Defaults to the first page when omitted.
+        name: page
         in: query
         schema:
           type: integer
           format: int32
-      - name: size
-        in: query
-        schema:
-          type: integer
-          format: int32
-      - name: startAfterId
-        in: query
-        schema:
-          type: string
-      - description: Tenant ID for source type generation
-        required: true
-        name: tenant-id
-        in: header
-        schema:
-          type: string
-      responses:
-        '200':
-          description: List of roster records
-          content:
-            application/json: {}
-        '400':
-          description: Invalid input
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
-        '404':
-          description: RosterRecords not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError1'
-      security:
-      - jwt: []
-  /roster-records/find-many:
-    get:
-      summary: Find many roster records
-      description: Returns a list of roster records for the tenant
-      operationId: findManyRosterRecord
-      tags:
-      - RosterRecord
-      parameters:
-      - name: filter
-        in: query
-        schema:
-          type: string
-      - name: page
-        in: query
-        schema:
-          type: integer
-          format: int32
-      - name: size
-        in: query
-        schema:
-          type: integer
-          format: int32
-      - name: startAfterId
-        in: query
-        schema:
-          type: string
-      - description: Tenant ID
-        required: true
-        name: tenant-id
-        in: header
-        schema:
-          type: string
-      responses:
-        '200':
-          description: List of roster records
-          content:
-            application/json: {}
-        '400':
-          description: Invalid input
-        '401':
-          description: Unauthorized - Authentication required
-        '403':
-          description: Forbidden - Insufficient permissions
-        '404':
-          description: RosterRecords not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError1'
-      security:
-      - jwt: []
-  /roster-records/{rosterId}:
-    get:
-      summary: Get paginated roster rows from Spanner
-      description: Returns a cursor-based paginated list of roster rows. Use the nextCursor value from the response as the cursor parameter for the next page.
-      operationId: getRosterRows
-      tags:
-      - RosterRecord
-      parameters:
-      - description: Roster ID to fetch rows for
-        required: true
-        name: rosterId
-        in: path
-        schema:
-          type: string
-      - description: Cursor (row_id) from previous page's nextCursor
-        name: cursor
-        in: query
-        schema:
-          type: string
-      - description: Number of rows per page (default 50, max 1000)
+      - description: Number of records per page. Defaults to the server page size when omitted.
         name: size
         in: query
         schema:
           type: integer
           format: int32
-      - description: Comma-separated status filter (e.g. FAILED,COMPLETED)
-        name: statuses
+      - description: 'Forward cursor: return records positioned after this identifier. Use the last id from the previous page to continue iterating.'
+        name: startAfterId
         in: query
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
         required: true
         name: tenant-id
         in: header
@@ -164,94 +76,334 @@ paths:
           type: string
       responses:
         '200':
-          description: Paginated roster rows
+          description: A page of roster records for the tenant, with pagination links and a total count when available.
           content:
             application/json:
+              examples:
+                rosterRecordsPage:
+                  value:
+                    totalCount: 2
+                    data:
+                    - id: 4c1f9b7e-8d23-4a90-b0c6-1e5a7d3f9042
+                      tenantId: 0e58d0b2-fb06-44c7-b89b-0bea8e71e227
+                      data:
+                        status: COMPLETED
+                        filename: practitioners-2026-07.csv
+                    links:
+                      self: /roster-records?page=0&size=50
               schema:
-                $ref: '#/components/schemas/RosterRowsPage'
-        '400':
-          description: Invalid input
+                $ref: '#/components/schemas/PagedResponse1'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
       security:
       - jwt: []
-  /roster-records/{rosterId}/draft:
-    patch:
-      summary: Bulk save edits to failed roster rows
-      description: Updates Spanner roster_rows in place for rows in VALIDATION_FAILED status. Each entry's rowData is merged into the stored row (partial patch of top-level keys); the same partial payload is appended to draftRows history. Marks the row as isDrafted and keeps status as VALIDATION_FAILED; recordKey must be the existing row_id.
-      operationId: saveRosterRowsDraft
+  /roster-records/find-many:
+    get:
+      summary: List roster records with forward cursor pagination
+      description: 'Returns a page of roster records for the tenant named in the `tenant-id` header, walking forward through the set.
+
+
+        **When to use:** call this for straightforward forward-only paging; use `GET /roster-records` instead when you also need to stop at an upper-bound cursor (`endAtId`), which this endpoint does not accept. Both endpoints read the same underlying records.
+
+
+        **Preconditions:** supply the `tenant-id` header. Use `page` and `size` for offset paging, or pass the `startAfterId` returned by the previous page to continue from where you left off; omit all three to receive the first default-sized page.
+
+
+        **Filtering:** the optional `filter` parameter takes a JSON object encoded as a string, for example `{"data.status":{"eq":"COMPLETED"}}`, and is applied before pagination. Supported comparison operators are `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `nin`, and `contains`. Do not include `tenantId` in the filter - it is injected automatically from the header.
+
+
+        **What you get back:** an envelope carrying the matching roster records in `data`, navigation `links`, and `totalCount` when the underlying store reports one. Read-only; no state is mutated. Note: when the upstream data layer fails (including an unparseable `filter`), this endpoint currently returns 200 with an empty body rather than an error status - treat an empty (non-envelope) body as a retryable failure, not as an empty result set.'
+      operationId: findManyRosterRecord
       tags:
       - RosterRecord
       parameters:
-      - description: Roster ID
+      - description: Server-side filter as a JSON object string, applied before pagination. Supported operators are eq, neq, gt, gte, lt, lte, in, nin, and contains. tenantId is injected automatically and must not be supplied. Omit to return unfiltered records.
+        example: '{"data.status":{"eq":"COMPLETED"}}'
+        name: filter
+        in: query
+        schema:
+          type: string
+      - description: Zero-based page number for offset pagination. Defaults to the first page when omitted.
+        name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Number of records per page. Defaults to the server page size when omitted.
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: 'Forward cursor: return records positioned after this identifier. Use the last id from the previous page to continue iterating.'
+        name: startAfterId
+        in: query
+        schema:
+          type: string
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: A page of roster records for the tenant, with pagination links and a total count when available.
+          content:
+            application/json:
+              examples:
+                rosterRecordsPage:
+                  value:
+                    totalCount: 1
+                    data:
+                    - id: 4c1f9b7e-8d23-4a90-b0c6-1e5a7d3f9042
+                      tenantId: 0e58d0b2-fb06-44c7-b89b-0bea8e71e227
+                      data:
+                        status: VALIDATED
+                        filename: facilities-2026-07.xlsx
+                    links:
+                      next: ?startAfterId=4c1f9b7e-8d23-4a90-b0c6-1e5a7d3f9042
+              schema:
+                $ref: '#/components/schemas/PagedResponse1'
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '403':
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
+      security:
+      - jwt: []
+  /roster-records/{rosterId}:
+    get:
+      summary: List roster rows with cursor pagination
+      description: 'Returns a page of individual data rows belonging to one roster job.
+
+
+        **When to use:** call this to stream through a large roster without needing to know how many rows there are; use `GET /roster-records/{rosterId}/paged` instead when you need `totalCount` and `totalPages`, for example to render a numbered page selector.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `rosterId` of an existing roster job. Leave `cursor` unset on the first call, then pass the `nextCursor` from each response to retrieve the following page; `nextCursor` is absent once the last page has been reached. `size` controls how many rows come back and defaults to 50, with values above 1000 capped at 1000.
+
+
+        **Filtering:** pass `statuses` to restrict the page to particular row states, as a comma-separated list drawn from `PENDING`, `IN_PROGRESS`, `VALIDATION_IN_PROGRESS`, `PRE_PROCESSING`, `VALIDATION_FAILED`, `VALIDATED`, `VALIDATED_WITH_WARNINGS`, `COMPLETED`, `FAILED`, and `CANCELLED`; omit it to receive rows in every state.
+
+
+        **What you get back:** the rows for this page in `data`, the `nextCursor` to pass on the following call, the effective `pageSize`, and `hasMore`. Each row carries its `rowId` - the identifier used as `recordKey` when saving draft edits. Read-only; no state is mutated.'
+      operationId: getRosterRows
+      tags:
+      - RosterRecord
+      parameters:
+      - description: Identifier of the roster job to operate on, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Position to resume from, taken from the nextCursor value of the previous response. Omit on the first call.
+        name: cursor
+        in: query
+        schema:
+          type: string
+      - description: Maximum number of rows to return. Defaults to 50; values above 1000 are capped at 1000.
+        example: 50
+        name: size
+        in: query
+        schema:
+          type: integer
+          format: int32
+      - description: Comma-separated list of row states to include. Meaningful values are PENDING, IN_PROGRESS, VALIDATION_IN_PROGRESS, PRE_PROCESSING, VALIDATION_FAILED, VALIDATED, VALIDATED_WITH_WARNINGS, COMPLETED, FAILED, and CANCELLED. Values are not validated - an unknown value is not rejected, it simply matches no rows. Omit to include rows in every state.
+        example: VALIDATION_FAILED,FAILED
+        name: statuses
+        in: query
+        schema:
+          type: string
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
+        required: true
+        name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: One page of roster rows, with the cursor needed to request the next page.
+          content:
+            application/json:
+              examples:
+                rowsPage:
+                  value:
+                    data:
+                    - rowId: a1b2c3d4e5f60718
+                      status: VALIDATION_FAILED
+                      data:
+                        NPI: '1234567893'
+                        First Name: Ana
+                      createdAt: '2026-07-14T09:12:33Z'
+                      updatedAt: '2026-07-14T09:18:02Z'
+                    nextCursor: a1b2c3d4e5f60718
+                    pageSize: 50
+                    hasMore: true
+              schema:
+                $ref: '#/components/schemas/RosterRowsPage'
+        '401':
+          description: Returned when the request carries no valid authentication.
+        '403':
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
+        '500':
+          description: Returned when the rows cannot be read from the underlying store. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                fetchFailed:
+                  value:
+                    error: 'Failed to fetch roster rows: upstream timeout'
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+      security:
+      - jwt: []
+  /roster-records/{rosterId}/draft:
+    patch:
+      summary: Save draft edits to validation-failed roster rows
+      description: 'Applies corrections to a batch of roster rows and stores them as an in-progress draft.
+
+
+        **When to use:** call this after reviewing validation errors, to record proposed fixes before asking for the roster to be checked again; follow it with `POST /roster-records/{rosterId}/revalidate` when the corrections are ready to be re-run.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `rosterId` of an existing roster job. Only rows currently in `VALIDATION_FAILED` or `VALIDATED_WITH_WARNINGS` state can be drafted; every entry in `rows` must set `recordKey` to the `rowId` of a row in that roster, obtained from the roster row listing endpoints. Each entry''s `rowData` is merged into the stored row one level deep - top-level keys you supply replace their stored counterparts, keys you omit are left untouched, and nested objects are replaced wholesale rather than merged. The batch is limited to 100 entries by default; a larger batch is rejected with 400 and should be split.
+
+
+        **Partial success:** entries are processed individually, so one bad entry does not discard the rest. An entry is reported as a failure - and the others still saved - when its `recordKey` matches no row in the roster, when its `rowData` is not a JSON object, or when the target row is not in `VALIDATION_FAILED` or `VALIDATED_WITH_WARNINGS` state. Always read `failures` in the response rather than relying on the HTTP status alone. **What you get back:** `succeeded`, the number of rows saved, and `failures`, one entry per rejected row with the `recordKey` and the reason.
+
+
+        **Side effects:** each saved row is marked as drafted and its payload is appended to that row''s draft history, so this operation is not idempotent - submitting identical edits twice appends two history entries. Row status is set to `VALIDATION_FAILED` for every drafted row, including one that was `VALIDATED_WITH_WARNINGS`: an edited row has not been validated, so it is held out of the import until you call the revalidate endpoint.'
+      operationId: saveRosterRowsDraft
+      tags:
+      - RosterRecord
+      parameters:
+      - description: Identifier of the roster job to operate on, as returned by the roster listing endpoints.
+        required: true
+        name: rosterId
+        in: path
+        schema:
+          type: string
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
         required: true
         name: tenant-id
         in: header
         schema:
           type: string
       requestBody:
+        description: Rows to draft. Each entry names an existing row by its rowId and carries the top-level fields to merge into that row.
         content:
           application/json:
+            examples:
+              draftEdits:
+                value:
+                  rows:
+                  - recordKey: a1b2c3d4e5f60718
+                    rowData:
+                      Date of Birth: '1979-07-14'
+                      NPI: '1234567893'
             schema:
               $ref: '#/components/schemas/RosterRowsDraftBulkRequest'
         required: true
       responses:
         '200':
-          description: Draft save result with per-row failures if any
+          description: 'The outcome of the batch: how many rows were saved, and one entry per row that was rejected. A non-empty `failures` list can accompany a successful response.'
           content:
             application/json:
+              examples:
+                allSaved:
+                  summary: Every row in the batch was saved
+                  value:
+                    succeeded: 2
+                    failures: []
+                partialSuccess:
+                  summary: One row was rejected, the rest were saved
+                  value:
+                    succeeded: 1
+                    failures:
+                    - recordKey: f9e8d7c6b5a40312
+                      message: Row not found
               schema:
                 $ref: '#/components/schemas/RosterRowsDraftBulkResponse'
         '400':
-          description: Invalid input or batch too large
+          description: Returned when the batch exceeds the maximum number of entries, or the request body fails validation - for example an empty `rows` list or an entry with a blank `recordKey`. Split the batch or correct the payload and retry.
+          content:
+            application/json:
+              examples:
+                batchTooLarge:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: Batch too large
+                      detail: Batch exceeds max size of 100 rows; split the request.
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the UPDATE_ROSTER permission for this tenant.
         '404':
-          description: Roster job not found
+          description: Returned when no roster job with the supplied `rosterId` exists for the tenant.
+          content:
+            application/json:
+              examples:
+                rosterNotFound:
+                  value:
+                    error: Roster not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster-records/{rosterId}/paged:
     get:
-      summary: Get offset-paginated roster rows from Spanner
-      description: Returns an offset-based paginated list of roster rows with totalCount and totalPages.
+      summary: List roster rows with offset pagination and totals
+      description: 'Returns a page of individual data rows belonging to one roster job, together with the total number of matching rows.
+
+
+        **When to use:** call this when the caller needs to show how many rows exist or jump directly to an arbitrary page, such as a numbered page selector in a table; use the cursor-based `GET /roster-records/{rosterId}` instead when streaming through a large roster, since computing totals costs more.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `rosterId` of an existing roster job. `page` is zero-based and defaults to 0; `size` controls rows per page, defaults to 50, and values above 1000 are capped at 1000.
+
+
+        **Filtering:** pass `statuses` to restrict the page to particular row states, as a comma-separated list drawn from `PENDING`, `IN_PROGRESS`, `VALIDATION_IN_PROGRESS`, `PRE_PROCESSING`, `VALIDATION_FAILED`, `VALIDATED`, `VALIDATED_WITH_WARNINGS`, `COMPLETED`, `FAILED`, and `CANCELLED`; omit it to receive rows in every state. The totals reflect the filter.
+
+
+        **What you get back:** the rows for this page in `data`, the echoed `page` and `size`, `totalCount` and `totalPages` across the filtered set, and `hasMore`. Read-only; no state is mutated.'
       operationId: getRosterRowsPaged
       tags:
       - RosterRecord
       parameters:
-      - description: Roster ID to fetch rows for
+      - description: Identifier of the roster job to operate on, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: Zero-based page number (default 0)
+      - description: Zero-based page number. Defaults to 0.
+        example: 0
         name: page
         in: query
         schema:
           type: integer
           format: int32
-      - description: Number of rows per page (default 50, max 1000)
+      - description: Maximum number of rows to return. Defaults to 50; values above 1000 are capped at 1000.
+        example: 50
         name: size
         in: query
         schema:
           type: integer
           format: int32
-      - description: Comma-separated status filter (e.g. FAILED,COMPLETED)
+      - description: Comma-separated list of row states to include. Meaningful values are PENDING, IN_PROGRESS, VALIDATION_IN_PROGRESS, PRE_PROCESSING, VALIDATION_FAILED, VALIDATED, VALIDATED_WITH_WARNINGS, COMPLETED, FAILED, and CANCELLED. Values are not validated - an unknown value is not rejected, it simply matches no rows. Omit to include rows in every state.
+        example: VALIDATION_FAILED,FAILED
         name: statuses
         in: query
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
         required: true
         name: tenant-id
         in: header
@@ -259,34 +411,70 @@ paths:
           type: string
       responses:
         '200':
-          description: Paginated roster rows (offset-based)
+          description: One page of roster rows, with the total row and page counts for the filtered set.
           content:
             application/json:
+              examples:
+                rowsOffsetPage:
+                  value:
+                    data:
+                    - rowId: a1b2c3d4e5f60718
+                      status: VALIDATION_FAILED
+                      data:
+                        NPI: '1234567893'
+                        First Name: Ana
+                      createdAt: '2026-07-14T09:12:33Z'
+                      updatedAt: '2026-07-14T09:18:02Z'
+                    page: 0
+                    size: 50
+                    totalCount: 128
+                    totalPages: 3
+                    hasMore: true
               schema:
                 $ref: '#/components/schemas/RosterRowsOffsetPage'
-        '400':
-          description: Invalid input
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the READ_ROSTER permission for this tenant.
+        '500':
+          description: Returned when the rows cannot be read from the underlying store. Retry; if the failure persists, contact support.
+          content:
+            application/json:
+              examples:
+                fetchFailed:
+                  value:
+                    error: 'Failed to fetch roster rows: upstream timeout'
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster-records/{rosterId}/revalidate:
     post:
-      summary: Request revalidation of draft roster rows (dispatch or pre-processing queue)
-      description: If the user is an internal provider data admin, sets roster status to REVALIDATE and dispatches validation asynchronously (Pub/Sub or Cloud Run Job) so FAILED rows are re-run. Otherwise sets status to PRE_PROCESSING without validation dispatch. Disabled when roster.rows.draft-revalidation.enabled=false.
+      summary: Submit drafted roster rows for revalidation
+      description: 'Moves the roster into revalidation and re-runs validation over its rows in the background.
+
+
+        **When to use:** call this after saving draft corrections with `PATCH /roster-records/{rosterId}/draft`, once the edits are ready to be checked again.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `rosterId` of an existing roster job. The roster must not already be undergoing processing - a roster in `REVALIDATE`, `VALIDATION_IN_PROGRESS`, `IN_PROGRESS`, or `PRE_PROCESSING` state is rejected with 409, and the response names the state that blocked the request. Wait for that work to finish, then retry.
+
+
+        **What you get back:** 202 as soon as the request is accepted, with the roster''s new status set to `REVALIDATE`. The counts in the body are placeholders at this point: validation runs asynchronously, so poll the roster or its rows to observe progress and final results rather than reading totals from this response.
+
+
+        **Side effects:** the roster status is updated and a validation run is queued. Revalidation can be turned off for the platform, in which case this endpoint returns 503 until it is re-enabled.'
       operationId: revalidateRosterDraftRows
       tags:
       - RosterRecord
       parameters:
-      - description: Roster ID
+      - description: Identifier of the roster job to operate on, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
         required: true
         name: tenant-id
         in: header
@@ -294,40 +482,95 @@ paths:
           type: string
       responses:
         '202':
-          description: Request accepted; response `status` is REVALIDATE (admin) or PRE_PROCESSING (non-admin)
+          description: The revalidation request was accepted and the roster moved to `REVALIDATE`. Validation runs in the background; the numeric counts are placeholders until it completes.
           content:
             application/json:
+              examples:
+                accepted:
+                  value:
+                    processed: 0
+                    validated: 0
+                    validationFailed: 0
+                    status: REVALIDATE
               schema:
                 $ref: '#/components/schemas/RosterRowsRevalidateResponse'
         '400':
-          description: Invalid request
+          description: Returned when the request is malformed - for example a missing `tenant-id` header or a blank `rosterId`.
+          content:
+            application/json:
+              examples:
+                missingTenantId:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: VALIDATION_ERROR
+                      title: 'Validation failed for field: tenantId'
+                      detail: must not be null
+              schema:
+                $ref: '#/components/schemas/ApiError1'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the UPDATE_ROSTER permission for this tenant.
         '404':
-          description: Roster job not found
+          description: Returned when no roster job with the supplied `rosterId` exists for the tenant.
+          content:
+            application/json:
+              examples:
+                rosterNotFound:
+                  value:
+                    error: Roster not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '409':
-          description: Roster is already being revalidated or processed
+          description: Returned when the roster is already being processed. Wait for the reported state to clear, then retry.
+          content:
+            application/json:
+              examples:
+                alreadyProcessing:
+                  value:
+                    error: Roster is already in status VALIDATION_IN_PROGRESS
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '503':
-          description: Feature disabled via roster.rows.draft-revalidation.enabled
+          description: Returned when revalidation is currently turned off for the platform. This is a temporary operational state - contact support if it persists.
+          content:
+            application/json:
+              examples:
+                featureDisabled:
+                  value:
+                    error: Roster row revalidation is currently disabled
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
   /roster-records/{rosterId}/smartfix:
     post:
-      summary: Trigger AI-powered Smart Fix for validation errors
-      description: Fetches all VALIDATION_FAILED rows (max 2000), extracts eligible validation errors, and calls the Smart Fix service to suggest corrections. Returns suggestions for the frontend to review and apply. Disabled when roster.smart-fix.enabled=false.
+      summary: Request AI-suggested corrections for failed rows
+      description: 'Sends the roster''s validation failures to an AI correction service and returns suggested values for the cells it can repair.
+
+
+        **When to use:** call this once validation has run and rows are sitting in `VALIDATION_FAILED` state. Saving drafts first is not required - Smart Fix reads the failed rows directly. Review what comes back, then apply the suggestions you accept with `PATCH /roster-records/{rosterId}/draft` and re-run validation.
+
+
+        **Preconditions:** supply the `tenant-id` header and the `rosterId` of an existing roster job. The roster must hold at least one `VALIDATION_FAILED` row carrying an error type eligible for correction - incorrect data type, invalid date, email, or format, a value outside the allowed set, an invalid NPI, or a missing required field. Rosters with more than 2000 failed rows are rejected with 400; resolve some rows and call again. Whether practitioner or facility rules are applied is derived from the roster''s own job type and is not a caller-supplied parameter.
+
+
+        **Cost:** the failures are sent to the correction service in batches, so this call takes noticeably longer than a typical request on a large roster.
+
+
+        **What you get back:** one suggestion per correctable cell, each naming the source column, the original value, the system attribute it maps to, the suggested replacement, a confidence rating, and a status of `auto_fixed`, `llm_suggested`, or `requires_human_review`. Every suggestion carries the `rowIndex`, which is the row''s `rowId`, so it can be matched back to the row it came from. The response also reports how many errors were submitted, fixed, and skipped, whether every batch succeeded, and any batch-level error messages. **No rows are modified by this call** - it reads and suggests, and nothing is stored until you save drafts. Calling it again on the same rows simply returns a fresh set of suggestions. Smart Fix can be turned off for the platform, in which case this endpoint returns 503 until it is re-enabled.'
       operationId: triggerSmartFix
       tags:
       - RosterRecord
       parameters:
-      - description: Roster ID
+      - description: Identifier of the roster job to operate on, as returned by the roster listing endpoints.
         required: true
         name: rosterId
         in: path
         schema:
           type: string
-      - description: Tenant ID
+      - description: Unique identifier of the tenant whose roster data is being accessed. Obtained from your account configuration; it also scopes every filter applied to the request.
         required: true
         name: tenant-id
         in: header
@@ -335,25 +578,259 @@ paths:
           type: string
       responses:
         '200':
-          description: Smart Fix suggestions
+          description: Suggested corrections for the roster's failed cells, with per-suggestion confidence and the totals for the run. No roster data has been changed.
           content:
             application/json:
+              examples:
+                suggestions:
+                  value:
+                    suggestions:
+                    - fieldName: Date of Birth
+                      currentValue: 14/07/1979
+                      mappedAttribute: dateOfBirth
+                      errorCategory: invalid_date
+                      suggestedValue: '1979-07-14'
+                      confidence: high
+                      confidenceScore: 0.96
+                      reasoning: Reformatted from DD/MM/YYYY to ISO-8601.
+                      status: auto_fixed
+                      rowIndex: a1b2c3d4e5f60718
+                    totalErrors: 3
+                    totalFixed: 1
+                    totalSkipped: 2
+                    totalRowsProcessed: 2
+                    success: true
+                    batchErrors: []
               schema:
                 $ref: '#/components/schemas/SmartFixTriggerResponse'
         '400':
-          description: Too many failed rows or no eligible errors
+          description: Returned when the roster holds more failed rows than Smart Fix accepts, or none of its failures are of a correctable type. Reduce the number of failed rows, or fix the remaining errors manually.
+          content:
+            application/json:
+              examples:
+                tooManyFailedRows:
+                  value:
+                    error: Roster has 2450 VALIDATION_FAILED rows, exceeding the limit of 2000
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
-          description: Unauthorized - Authentication required
+          description: Returned when the request carries no valid authentication.
         '403':
-          description: Forbidden - Insufficient permissions
+          description: Returned when the caller lacks the UPDATE_ROSTER permission for this tenant.
         '404':
-          description: Roster not found
+          description: Returned when no roster job with the supplied `rosterId` exists for the tenant.
+          content:
+            application/json:
+              examples:
+                rosterNotFound:
+                  value:
+                    error: Roster not found
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '503':
-          description: Smart Fix feature is disabled
+          description: Returned when Smart Fix is currently turned off for the platform. This is a temporary operational state - contact support if it persists.
+          content:
+            application/json:
+              examples:
+                featureDisabled:
+                  value:
+                    error: Smart Fix is currently disabled
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
       security:
       - jwt: []
 components:
   schemas:
+    RosterRowsRevalidateResponse:
+      type: object
+      description: Summary after confirm revalidation of VALIDATION_FAILED rows
+      properties:
+        processed:
+          type: integer
+          format: int32
+          description: Total VALIDATION_FAILED rows examined
+        validated:
+          type: integer
+          format: int32
+          description: Rows that passed validation
+        validationFailed:
+          type: integer
+          format: int32
+          description: Rows that failed validation
+        status:
+          type: string
+          description: Roster revalidation status (e.g. REVALIDATE when async dispatch accepted)
+    RosterRowsPage:
+      type: object
+      description: One page of roster rows, navigated with a forward cursor.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterRowItem'
+          description: The roster rows in this page, in cursor order.
+        nextCursor:
+          type:
+          - string
+          - 'null'
+          examples:
+          - a1b2c3d4e5f60718
+          description: Cursor to pass as the cursor parameter to fetch the next page. Null (serialized explicitly, not omitted) once the last page has been reached - check `hasMore` or a null `nextCursor` to stop paging.
+        pageSize:
+          type: integer
+          format: int32
+          examples:
+          - 50
+          description: The requested page size this page was fetched with - not the number of rows actually returned, which can be smaller on the last page (count `data` for that). Defaults to 50 and is capped at 1000.
+        hasMore:
+          type: boolean
+          description: True when more rows remain after this page.
+    DraftRowSaveFailure:
+      type: object
+      description: Per-row failure from a bulk draft save
+      properties:
+        recordKey:
+          type: string
+          description: recordKey / row_id that failed
+        message:
+          type: string
+          description: Reason the row was not updated
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    RosterRowItem:
+      type: object
+      description: A single data row within a roster job, as read from the roster's stored rows.
+      properties:
+        rowId:
+          type: string
+          examples:
+          - a1b2c3d4e5f60718
+          description: Stable identifier of this row within the roster. Pass it as recordKey when saving draft edits, and use it to correlate Smart Fix suggestions back to the row they belong to.
+        status:
+          type: string
+          examples:
+          - VALIDATION_FAILED
+          description: Processing state of this row. One of PENDING, IN_PROGRESS, VALIDATION_IN_PROGRESS, PRE_PROCESSING, VALIDATION_FAILED, VALIDATED, VALIDATED_WITH_WARNINGS, COMPLETED, CRED_STARTED, FAILED, or CANCELLED. CRED_STARTED means the row imported and its post-import credentialing workflow was created (pdmTransactionType=START). Only rows in VALIDATION_FAILED accept draft edits.
+        data:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: The row's field values, keyed by the column headers of the uploaded file. Free-form because the columns differ per roster template; consult the roster's effective schema for the fields it is validated against.
+        createdAt:
+          type: string
+          examples:
+          - '2026-07-14T09:12:33Z'
+          description: When the row was first stored, as an ISO-8601 timestamp in UTC.
+        updatedAt:
+          type: string
+          examples:
+          - '2026-07-14T09:18:02Z'
+          description: When the row was last changed, as an ISO-8601 timestamp in UTC. Updated when draft edits are saved or validation re-runs.
+    SmartFixTriggerResponse:
+      type: object
+      description: Aggregated Smart Fix response returned to the frontend
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnrichedSuggestion'
+          description: Per-error fix suggestions enriched with rowId
+        totalErrors:
+          type: integer
+          format: int32
+          description: Total validation errors sent to Smart Fix
+        totalFixed:
+          type: integer
+          format: int32
+          description: Errors for which a suggested_value was returned
+        totalSkipped:
+          type: integer
+          format: int32
+          description: Errors where no fix could be suggested
+        totalRowsProcessed:
+          type: integer
+          format: int32
+          description: Number of VALIDATION_FAILED rows processed
+        success:
+          type: boolean
+          description: True if all Smart Fix batches succeeded
+        batchErrors:
+          type: array
+          items:
+            type: string
+          description: Error messages from any failed batches
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+        workflowId:
+          type: string
+        section:
+          type: string
+        opIndex:
+          type: integer
+          format: int32
+    RosterRowDraftEntry:
+      type: object
+      required:
+      - recordKey
+      - rowData
+      description: Draft save payload for a single roster row
+      properties:
+        recordKey:
+          type: string
+          pattern: \S
+          description: Stable row id from roster row list APIs (Spanner row_id)
+        rowData:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: 'Partial rowData object: top-level fields to merge into the existing stored rowData'
+    RosterRowsDraftBulkRequest:
+      type: object
+      required:
+      - rows
+      description: Bulk draft save request
+      properties:
+        rows:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RosterRowDraftEntry'
+          description: Rows with edited data to persist
+    RosterRowsDraftBulkResponse:
+      type: object
+      description: Result of a bulk draft save
+      properties:
+        succeeded:
+          type: integer
+          format: int32
+          description: Number of rows whose edits were successfully saved
+        failures:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftRowSaveFailure'
+          description: Per-row failures (other rows may still have succeeded)
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
     EnrichedSuggestion:
       type: object
       description: A Smart Fix suggestion with row_id for frontend correlation
@@ -389,168 +866,60 @@ components:
         rowIndex:
           type: string
           description: Spanner row_id (recordKey) for correlating back to RosterRowItem
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-    RosterRowsRevalidateResponse:
-      description: Summary after confirm revalidation of VALIDATION_FAILED rows
-      type: object
-      properties:
-        processed:
-          type: integer
-          format: int32
-          description: Total VALIDATION_FAILED rows examined
-        validated:
-          type: integer
-          format: int32
-          description: Rows that passed validation
-        validationFailed:
-          type: integer
-          format: int32
-          description: Rows that failed validation
-        status:
-          type: string
-          description: Roster revalidation status (e.g. REVALIDATE when async dispatch accepted)
-    RosterRowDraftEntry:
-      description: Draft save payload for a single roster row
-      type: object
-      required:
-      - recordKey
-      - rowData
-      properties:
-        recordKey:
-          type: string
-          description: Stable row id from roster row list APIs (Spanner row_id)
-          pattern: \S
-        rowData:
-          description: 'Partial rowData object: top-level fields to merge into the existing stored rowData'
-          type: object
-          $ref: '#/components/schemas/JsonNode'
-    RosterRowItem:
-      type: object
-      properties:
-        rowId:
-          type: string
-        status:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-    DraftRowSaveFailure:
-      description: Per-row failure from a bulk draft save
-      type: object
-      properties:
-        recordKey:
-          type: string
-          description: recordKey / row_id that failed
-        message:
-          type: string
-          description: Reason the row was not updated
     RosterRowsOffsetPage:
       type: object
+      description: One page of roster rows, navigated by page number, with totals for the filtered set.
       properties:
         data:
           type: array
           items:
             $ref: '#/components/schemas/RosterRowItem'
+          description: The roster rows in this page.
         page:
           type: integer
           format: int32
+          examples:
+          - 0
+          description: Zero-based number of the page returned.
         size:
           type: integer
           format: int32
+          examples:
+          - 50
+          description: Number of rows requested per page. Defaults to 50 and is capped at 1000.
         totalCount:
           type: integer
           format: int64
+          examples:
+          - 128
+          description: Total rows matching the request across every page, after any status filter is applied.
         totalPages:
           type: integer
           format: int32
+          examples:
+          - 3
+          description: Total number of pages available at the current page size.
         hasMore:
           type: boolean
-    RosterRowsPage:
+          description: True when more pages remain after this one.
+    ErrorMessage:
+      type: object
+      description: Single-message error body returned by the roster endpoints' error paths.
+      properties:
+        error:
+          type: string
+          description: Human-readable message describing why the request failed.
+    PagedResponse1:
       type: object
       properties:
         data:
           type: array
-          items:
-            $ref: '#/components/schemas/RosterRowItem'
-        nextCursor:
-          type: string
-        pageSize:
+          items: {}
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+        totalCount:
           type: integer
-          format: int32
-        hasMore:
-          type: boolean
-    RosterRowsDraftBulkResponse:
-      description: Result of a bulk draft save
-      type: object
-      properties:
-        succeeded:
-          type: integer
-          format: int32
-          description: Number of rows whose edits were successfully saved
-        failures:
-          type: array
-          items:
-            $ref: '#/components/schemas/DraftRowSaveFailure'
-          description: Per-row failures (other rows may still have succeeded)
-    SmartFixTriggerResponse:
-      description: Aggregated Smart Fix response returned to the frontend
-      type: object
-      properties:
-        suggestions:
-          type: array
-          items:
-            $ref: '#/components/schemas/EnrichedSuggestion'
-          description: Per-error fix suggestions enriched with rowId
-        totalErrors:
-          type: integer
-          format: int32
-          description: Total validation errors sent to Smart Fix
-        totalFixed:
-          type: integer
-          format: int32
-          description: Errors for which a suggested_value was returned
-        totalSkipped:
-          type: integer
-          format: int32
-          description: Errors where no fix could be suggested
-        totalRowsProcessed:
-          type: integer
-          format: int32
-          description: Number of VALIDATION_FAILED rows processed
-        success:
-          type: boolean
-          description: True if all Smart Fix batches succeeded
-        batchErrors:
-          type: array
-          items:
-            type: string
-          description: Error messages from any failed batches
-    RosterRowsDraftBulkRequest:
-      description: Bulk draft save request
-      type: object
-      required:
-      - rows
-      properties:
-        rows:
-          type: array
-          items:
-            $ref: '#/components/schemas/RosterRowDraftEntry'
-          description: Rows with edited data to persist
-          minItems: 1
+          format: int64
     JsonNode:
       type: object
       properties:
@@ -610,13 +979,6 @@ components:
       - OBJECT
       - POJO
       - STRING
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
   securitySchemes:
     jwt:
       type: http

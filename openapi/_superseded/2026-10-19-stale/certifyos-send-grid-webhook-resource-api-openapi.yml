@@ -1,0 +1,109 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Send Grid Webhook Resource API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: Send Grid Webhook Resource
+paths:
+  /outreach/sendgrid/webhook/email-status:
+    post:
+      summary: Handle email delivery status events from SendGrid Event Webhook
+      description: Receives email delivery status events (delivered, bounced, opened, clicked, etc.) from SendGrid's Event Webhook. This is a public endpoint that does not require authentication.
+      operationId: handleSendGridEmailStatus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        required: true
+      responses:
+        '200':
+          description: Webhook event processed successfully
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request - Invalid payload format
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error - Webhook processing failed
+          content:
+            application/json: {}
+      tags:
+      - Send Grid Webhook Resource
+      parameters:
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+  /outreach/sendgrid/webhook/incoming-parse:
+    post:
+      summary: Handle incoming email from SendGrid Inbound Parse Webhook
+      description: Receives and processes incoming emails forwarded by SendGrid's Inbound Parse Webhook. This is a public endpoint that does not require authentication.
+      operationId: parseSendgridIncomingEmail
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                to:
+                  type: string
+                from:
+                  type: string
+                subject:
+                  type: string
+                text:
+                  type: string
+                html:
+                  type: string
+                headers:
+                  type: string
+                emailId:
+                  type: string
+                outreachId:
+                  type: string
+                tenantId:
+                  type: string
+                workflowId:
+                  type: string
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request
+      tags:
+      - Send Grid Webhook Resource
+      parameters:
+      - name: tenant-id
+        in: header
+        required: true
+        description: Tenant ID
+        schema:
+          type: string
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

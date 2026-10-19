@@ -1,0 +1,81 @@
+openapi: 3.2.0
+info:
+  description: API for Certify application
+  title: Certify API Layer Document Worker API
+  version: 1.0.0
+servers:
+- url: http://localhost:9000
+  description: Local Development Server
+- url: https://api-service.staging.certifyos.com
+  description: Staging Server
+- url: https://api-service.internal.certifyos.com
+  description: Internal Server
+- url: https://api-service.test.certifyos.com
+  description: Test Server
+- url: https://api-service.demo.certifyos.com
+  description: Demo Server
+- url: https://api-service.certifyos.com
+  description: Production Server
+tags:
+- name: DocumentWorker
+  description: Document Service worker transport (CP-37676).
+paths:
+  /documents/pubsub/ov-generated:
+    post:
+      summary: Pub/Sub push target for mdm.slice.ov_generated (worker only)
+      description: 'The drop-filter chain: every delivery is classified, counted, and acked. No render task is minted here — the OV-to-workflow sync is the sole enqueuer. Malformed envelopes are counted, logged without payload, and acked.'
+      operationId: documentWorkerOvGeneratedPush
+      tags:
+      - DocumentWorker
+      parameters:
+      - description: Not sent by Pub/Sub push; the endpoint is tenant-agnostic
+        in: header
+        name: tenant-id
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '204':
+          description: Acked (classified and counted, or counted-malformed)
+        '404':
+          description: Handler flag off on this deployable
+  /documents/tasks/render:
+    post:
+      summary: Cloud Tasks render target (worker only)
+      description: Accepts {tenantId, certifyId, docType, recipeVersion, tenantPractitionerId?, expectedDigest?, regenerate?} — identifiers only, no report data. Returns 2xx only once a durable outcome exists for the task's digest; anything else is retryable so the queue redelivers. Dark kill switch returns a retryable 503 (success would consume the task); malformed payloads are a 400 whose retry exhaustion is the designed failure record.
+      operationId: documentWorkerRenderTask
+      tags:
+      - DocumentWorker
+      parameters:
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        '204':
+          description: Durable outcome exists (rendered, failed, or deliberate ack)
+        '400':
+          description: Malformed payload (missing identifiers)
+        '404':
+          description: Handler flag off on this deployable
+        '503':
+          description: No durable outcome yet or kill switch dark; the queue retries
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      description: JWT Authentication - Provide only the raw token without Bearer prefix
+      scheme: bearer
+      bearerFormat: JWT

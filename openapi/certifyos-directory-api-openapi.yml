@@ -20,29 +20,358 @@ tags:
 - name: Directory
   description: APIs for directory operations
 paths:
+  /directory/exports:
+    get:
+      summary: List export jobs for the Activity Center
+      description: 'Retrieves a paginated list of asynchronous directory export jobs for a tenant, for the
+
+        Activity Center feature. Results can be filtered by export type (practitioner, facility,
+
+        or group), job status, job type (MANUAL or SCHEDULED) and export kind
+
+        (FULL_ROSTER_EXPORT or CHANGE_FILE, CP-41063).'
+      operationId: listExportJobs
+      tags:
+      - Directory
+      parameters:
+      - description: 'Export kind filter: FULL_ROSTER_EXPORT or CHANGE_FILE. When omitted, both kinds are returned.'
+        example: CHANGE_FILE
+        name: export_type
+        in: query
+        schema:
+          type: string
+      - description: Exact initiator filter
+        name: initiated_by
+        in: query
+        schema:
+          type: string
+      - description: Job type filter (MANUAL or SCHEDULED)
+        name: job_type
+        in: query
+        schema:
+          type: string
+      - description: Page offset
+        example: 0
+        name: page_offset
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Page size
+        example: 20
+        name: page_size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - description: Free-text search over Job ID, initiator and template name
+        name: search
+        in: query
+        schema:
+          type: string
+      - description: Status filter
+        name: status
+        in: query
+        schema:
+          type: string
+      - description: Comma-separated list of statuses to exclude
+        name: status_not_in
+        in: query
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant_id
+        in: query
+        schema:
+          type: string
+      - description: Export type filter (practitioner, facility, group)
+        name: type
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Export jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressJobListResponse'
+        '400':
+          description: Bad Request - tenant_id is required, or page_size/page_offset is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions or tenant_id does not match the authorized tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Egress service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /directory/exports/initiators:
+    get:
+      summary: List distinct export initiators for the Activity Center
+      description: 'Lists the distinct initiators of a tenant''s asynchronous directory export jobs, used to
+
+        populate the Activity Center "Triggered by" filter dropdown.'
+      operationId: listExportInitiators
+      tags:
+      - Directory
+      parameters:
+      - description: Tenant ID
+        required: true
+        name: tenant_id
+        in: query
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Initiators retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressInitiatorsResponse'
+        '400':
+          description: Bad Request - tenant_id is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions or tenant_id does not match the authorized tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service Unavailable - unable to connect to the egress service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /directory/exports/{type}/{tenant_id}/{correlation_id}:
+    get:
+      summary: Get export job detail for the Activity Center
+      description: 'Retrieves the full detail of a single asynchronous directory export job by type, tenant ID,
+
+        and correlation ID, for the Activity Center feature.'
+      operationId: getExportJobDetail
+      tags:
+      - Directory
+      parameters:
+      - description: Correlation ID
+        required: true
+        name: correlation_id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant_id
+        in: path
+        schema:
+          type: string
+      - description: Export type
+        example: practitioner
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Export job detail retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EgressJobDetailResponse'
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions or tenant_id does not match the authorized tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Export job not found with the given type, tenant ID, and correlation ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Egress service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
+  /directory/exports/{type}/{tenant_id}/{correlation_id}/cancel:
+    post:
+      summary: Request cancellation of an export job
+      description: 'Requests cooperative cancellation of an in-progress asynchronous directory export job.
+
+        Cancellation is cooperative: the request is accepted (202) and the job is marked for
+
+        cancellation, but in-flight work may not stop immediately. Returns 409 if the job is
+
+        already in a terminal state (completed, failed, or already cancelled), and 404 if no
+
+        matching job is found.'
+      operationId: cancelExportJob
+      tags:
+      - Directory
+      parameters:
+      - description: Correlation ID
+        required: true
+        name: correlation_id
+        in: path
+        schema:
+          type: string
+      - description: Tenant ID
+        required: true
+        name: tenant_id
+        in: path
+        schema:
+          type: string
+      - description: Export type
+        example: practitioner
+        required: true
+        name: type
+        in: path
+        schema:
+          type: string
+      - name: tenant-id
+        in: header
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Cancellation request accepted
+          content:
+            application/json: {}
+        '401':
+          description: Unauthorized - Authentication required
+          content:
+            application/json: {}
+        '403':
+          description: Forbidden - Insufficient permissions or tenant_id does not match the authorized tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Export job not found with the given type, tenant ID, and correlation ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Export job is already in a terminal state and cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Egress service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      security:
+      - jwt: []
   /directory/{entityType}/exports:
     post:
-      summary: Start a directory export job
-      description: 'Starts an asynchronous directory export job for the specified entity type (practitioners or facilities).
+      summary: Start an asynchronous directory export job
+      description: 'Enqueues an asynchronous export of provider directory data for the specified entity type and returns a job ID to track progress.
 
-        - The request body accepts an optional `responseFormat` field that determines the output format of the exported file.
 
-        - Supported formats are `ndjson` (Newline Delimited JSON) and `csv` (Comma Separated Values), the default is `ndjson`.
+        **When to use:** Call this endpoint to initiate a bulk export of practitioners, facilities, or groups for a tenant. Use the returned `exportJobId` with `GET /directory/{entityType}/exports/{exportJobId}` to poll for completion and retrieve the download URL. Do not re-call this endpoint to check status.
 
-        - Upon successful creation, the endpoint returns a job ID that can be used to check the status and retrieve the exported file.
 
-        - Export requests are deduplicated within a 1-hour time window. Subsequent requests with the same
+        **Preconditions:** The tenant must have existing practitioner or facility data; if none is found a 404 is returned. The caller must hold the `READ_DIRECTORY` permission.
 
-        parameters within the same window will return the same job ID.
 
-        - The export job is processed asynchronously and the status can be queried using the
+        **Deduplication:** Export requests for the same tenant, entity type, and filter parameters are deduplicated within a configurable window — 60 seconds by default. A duplicate request within the window returns the existing `exportJobId` instead of starting a new job.
 
-        `GET /directory/{entityType}/exports/{exportJobId}` endpoint.'
+
+        **Request body fields:**
+
+        - `responseFormat` — output file type: `ndjson` (default) or `csv`.
+
+        - `templateId` — optional egress template ID. When provided, the export uses the template''s column mappings instead of the legacy pipeline; the template must belong to the tenant and have `status=active`, or the request fails with 400. If `responseFormat` is also supplied, it must match the template''s configured output format or the request fails with 400.
+
+        - `filters` — optional NPI and/or TIN scoping; each list is capped at 100 entries by default and matched with OR logic when both are supplied. TIN-only filters are rejected for `practitioners` exports (400) since TIN is not a first-class practitioner identifier.
+
+        - `from` / `to` — UTC calendar dates (`yyyy-MM-dd`, inclusive) bounding the window of a Manual Change File template; both are required for such a template and rejected (400) for Scheduled Change File templates and full roster exports. `to` must not precede `from`.
+
+
+        **Returns:** A JSON object containing `exportJobId`, `tenantId`, `startedAt`, and `entityType`. Supply `exportJobId` to the GET status endpoint to poll for completion. This operation has no other side effects — no files are written until the export job itself completes.'
       operationId: startDirectoryJob
       tags:
       - Directory
       parameters:
-      - description: Entity type (practitioners or facilities)
+      - description: Entity type to export. One of `practitioners`, `facilities`, or `groups` (case-insensitive); any other value returns 400.
         example: practitioners
         required: true
         name: entityType
@@ -54,23 +383,45 @@ paths:
         schema:
           type: string
       requestBody:
-        description: Request body containing optional response format specification. The 'responseFormat' field accepts 'ndjson' (Newline Delimited JSON) or 'csv' (Comma Separated Values). If omitted, defaults to 'ndjson'. The format determines the output file type.
+        description: 'Optional export configuration: output format, an egress template to drive column mapping, and/or NPI/TIN filters to scope the export. All fields are optional; an empty or omitted body exports the full tenant in `ndjson` format.'
         content:
           application/json:
+            examples:
+              filteredCsvExport:
+                value:
+                  responseFormat: csv
+                  filters:
+                    npi:
+                    - '1234567890'
             schema:
               $ref: '#/components/schemas/DirectoryRequest'
         required: false
       responses:
         '200':
-          description: Directory export job successfully started
+          description: The directory export job was accepted and enqueued.
           content:
             application/json:
+              examples:
+                directoryJobStarted:
+                  value:
+                    exportJobId: p1a2b3c4d5e6f7ndjson
+                    tenantId: tenant-123456
+                    startedAt: '2026-07-29T18:32:00Z'
+                    entityType: practitioners
               schema:
                 $ref: '#/components/schemas/DirectoryResponse'
         '400':
-          description: Bad Request - Invalid entity type or request body
+          description: Bad Request - Invalid entity type, invalid request body, or an unresolvable templateId.
           content:
             application/json:
+              examples:
+                invalidEntityType:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: INVALID_ENTITY_TYPE
+                      title: Invalid entity type
+                      detail: Invalid entity type. Must be 'practitioners', 'facilities', or 'groups'
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
@@ -85,50 +436,64 @@ paths:
           description: Internal server error
           content:
             application/json:
+              examples:
+                internalError:
+                  value:
+                    errors:
+                    - httpStatus: 500
+                      reason: INTERNAL_SERVER_ERROR
+                      title: Internal server error
+                      detail: An unexpected error occurred while processing the directory request
               schema:
                 $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
   /directory/{entityType}/exports/{exportJobId}:
     get:
-      summary: Get directory job status by entity type and job ID
-      description: 'Retrieves the current status of a directory export job for the specified entity type and job ID.
-
-        The response includes the job status (`IN_PROGRESS`, `MAPPING`, `COMPLETED` or `FAILED`),
-
-        processing statistics (total rows, rows with data, failed rows) and a signed download URL
-
-        for the exported file. The signed URL is time-limited and provides secure access to the
-
-        file for 8 hours.
-
-        For CSV format exports, there is an additional mapping step to produce a flat file. The `fileUrl` is only present
-
-        when the job status is `COMPLETED` and the file is available for download.
+      summary: Poll status and download URL for an export job
+      description: 'Returns the current status and, when complete, a download URL for a directory export job previously started with `POST /directory/{entityType}/exports`.
 
 
-        Statuses:
+        **When to use:** Poll this endpoint after starting an export job. Continue polling while `status` is `IN_QUEUE`, `MAPPING`, `IN_PROGRESS`, `SEED_COMPLETED`, or `TEMPLATE_EXPORT_IN_PROGRESS`; stop once it is `COMPLETED` or `FAILED`.
 
-        - IN_PROGRESS: The job is in progress.
 
-        - MAPPING: The job is formatting the data.
+        **Returns:** A JSON object with:
 
-        - COMPLETED: The job is completed and the file is available for download.
+        - `status` — the job''s current state, serialized as the enum constant name (e.g. `"IN_PROGRESS"`):
 
-        - FAILED: The job failed.'
+        - `IN_QUEUE` — accepted by the egress service and queued for processing.
+
+        - `MAPPING` — reserved for a CSV post-processing/formatting step.
+
+        - `IN_PROGRESS` — actively seeding or exporting data.
+
+        - `SEED_COMPLETED` — initial data seeding finished; a template-driven export continues to the mapping phase.
+
+        - `TEMPLATE_EXPORT_IN_PROGRESS` — a template-driven export is generating the mapped output file.
+
+        - `COMPLETED` — finished successfully; `fileUrl` is populated.
+
+        - `FAILED` — the job failed; start a new export to retry.
+
+        - `stats` — processing counters: `completed` (rows with data), `total` (total rows), and `failed` (not currently populated by the egress service integration; always `0`).
+
+        - `fileUrl` — present once `status` is `COMPLETED`. A signed GCS download URL valid for 8 hours; if URL signing fails, this field falls back to the raw, unsigned `gs://` URI, so consumers should not assume `fileUrl` is always an `https` signed link. May be absent even when `status` is `COMPLETED` if the exported file is not yet visible to the signing check (a brief race condition) — retry the poll.
+
+
+        **Errors:** 404 is returned when the job ID is not found or does not belong to this tenant.'
       operationId: getDirectoryJobStatus
       tags:
       - Directory
       parameters:
-      - description: Entity type (practitioners or facilities)
+      - description: Entity type to look up. One of `practitioners`, `facilities`, or `groups` (case-insensitive); any other value returns 400.
         example: practitioners
         required: true
         name: entityType
         in: path
         schema:
           type: string
-      - description: Job ID
-        example: abc123def456
+      - description: The `exportJobId` returned by `POST /directory/{entityType}/exports` for this tenant.
+        example: p1a2b3c4d5e6f7ndjson
         required: true
         name: exportJobId
         in: path
@@ -140,15 +505,45 @@ paths:
           type: string
       responses:
         '200':
-          description: Directory job status successfully retrieved
+          description: The directory job's current status and, when completed, its download URL.
           content:
             application/json:
+              examples:
+                inProgress:
+                  value:
+                    exportJobId: p1a2b3c4d5e6f7ndjson
+                    tenantId: tenant-123456
+                    entityType: practitioners
+                    status: IN_PROGRESS
+                    stats:
+                      completed: 4200
+                      total: 9800
+                      failed: 0
+                completed:
+                  value:
+                    exportJobId: p1a2b3c4d5e6f7ndjson
+                    tenantId: tenant-123456
+                    entityType: practitioners
+                    status: COMPLETED
+                    stats:
+                      completed: 9800
+                      total: 9800
+                      failed: 0
+                    fileUrl: https://storage.googleapis.com/certifyos-directory-exports/tenant-123456/p1a2b3c4d5e6f7ndjson.ndjson?X-Goog-Signature=...
               schema:
                 $ref: '#/components/schemas/DirectoryJobStatusResponse'
         '400':
           description: Bad Request - Invalid entity type
           content:
             application/json:
+              examples:
+                invalidEntityType:
+                  value:
+                    errors:
+                    - httpStatus: 400
+                      reason: INVALID_ENTITY_TYPE
+                      title: Invalid entity type
+                      detail: Invalid entity type. Must be 'practitioners', 'facilities', or 'groups'
               schema:
                 $ref: '#/components/schemas/ApiError'
         '401':
@@ -163,110 +558,59 @@ paths:
           description: Directory job not found with the given entity type and job ID for tenant
           content:
             application/json:
+              examples:
+                jobNotFound:
+                  value:
+                    errors:
+                    - httpStatus: 404
+                      reason: NOT_FOUND
+                      title: Export job not found
+                      detail: No export job found with the given ID for this tenant. The job may not have started yet or the ID may be invalid.
               schema:
                 $ref: '#/components/schemas/ApiError'
         '500':
           description: Internal server error
           content:
             application/json:
+              examples:
+                internalError:
+                  value:
+                    errors:
+                    - httpStatus: 500
+                      reason: INTERNAL_SERVER_ERROR
+                      title: Internal server error
+                      detail: An unexpected error occurred while retrieving the directory job status
               schema:
                 $ref: '#/components/schemas/ApiError'
       security:
       - jwt: []
 components:
   schemas:
-    JobStatus:
-      type: string
-      enum:
-      - MAPPING
-      - IN_PROGRESS
-      - COMPLETED
-      - FAILED
-    JobStats:
-      type: object
-      description: Statistics for directory job processing
-      properties:
-        completed:
-          type: integer
-          format: int64
-          description: Number of completed items
-          examples:
-          - 100
-        total:
-          type: integer
-          format: int64
-          description: Total number of items to process
-          examples:
-          - 150
-        failed:
-          type: integer
-          format: int64
-          description: Number of failed items
-          examples:
-          - 5
-    DirectoryRequest:
-      description: Request body for starting a directory export job
-      type: object
-      properties:
-        responseFormat:
-          description: 'Output format for the exported file. Supported values: `ndjson` (Newline Delimited JSON) or `csv` (Comma Separated Values), the default is `ndjson`. If not specified, defaults to ''ndjson''.'
-          type: string
-          examples:
-          - ndjson
-          enum:
-          - ndjson
-          - csv
-          $ref: '#/components/schemas/DirectoryExportOutputFormat'
-        templateId:
-          type: string
-          description: Optional egress template ID for template-driven export. When provided, the export uses the template's column mappings instead of the legacy pipeline.
-        mappingsCsvUrl:
-          type: string
-          description: Optional GCS URL to column mappings CSV for template pipeline
-    ApiError:
-      description: Standard API error response containing a list of error objects
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
     DirectoryResponse:
-      description: Response containing directory job information
       type: object
+      description: Response containing directory job information
       properties:
         exportJobId:
           type: string
-          description: Unique identifier for the directory job
           examples:
           - job-123456
+          description: Unique identifier for the directory job
         tenantId:
           type: string
-          description: ID of the tenant
           examples:
           - tenant-123456
+          description: ID of the tenant
         startedAt:
-          description: Timestamp when the directory job was started
+          $ref: '#/components/schemas/Instant'
           type: string
           examples:
           - '2024-01-01T00:00:00Z'
-          $ref: '#/components/schemas/Instant'
+          description: Timestamp when the directory job was started
         entityType:
           type: string
-          description: Entity type (practitioners or facilities)
           examples:
           - practitioners
-    DirectoryExportOutputFormat:
-      type: string
-      enum:
-      - ndjson
-      - csv
+          description: Entity type (practitioners, facilities, or groups)
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -274,58 +618,406 @@ components:
         httpStatus:
           type: integer
           format: int32
-          description: HTTP status code for this error
           examples:
           - 400
+          description: HTTP status code for this error
         reason:
           type: string
-          description: Error reason/code
           examples:
           - VALIDATION_ERROR
+          description: Error reason/code
         title:
           type: string
-          description: Error title/summary
           examples:
           - 'Validation failed for field: eventTypes'
+          description: Error title/summary
         detail:
           type: string
-          description: Detailed error message
           examples:
           - eventTypes is required and cannot be empty or null
-    DirectoryJobStatusResponse:
-      description: Response containing directory job status information
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    EgressJobDetailResponse:
       type: object
+      description: Full detail view of an export job for the Activity Center
+      properties:
+        tableName:
+          type: string
+          description: Spanner table name
+        correlationId:
+          type: string
+          examples:
+          - 550e8400-e29b-41d4-a716-446655440000
+          description: Correlation ID for the export job
+        type:
+          type: string
+          examples:
+          - practitioner
+          description: Export type
+        tenantId:
+          type: string
+          examples:
+          - 5cfb18b0-e1b9-4be1-b8b4-a51d62ab67ba
+          description: Tenant ID
+        templateId:
+          type: string
+          description: Template ID used for the export, if any
+        jobType:
+          type: string
+          enum:
+          - MANUAL
+          - SCHEDULED
+          examples:
+          - MANUAL
+          description: Job type
+        status:
+          type: string
+          description: Current status of the export job
+        expectedRows:
+          type: integer
+          format: int64
+          examples:
+          - 1000
+          description: Expected number of rows for the export
+        successfulRows:
+          type: integer
+          format: int64
+          examples:
+          - 950
+          description: Number of rows successfully exported
+        unsuccessfulRows:
+          type: integer
+          format: int64
+          examples:
+          - 50
+          description: Number of rows that failed to export
+        initiatedByUserId:
+          type: string
+          description: User ID that initiated the export job
+        createdAt:
+          type: string
+          description: Timestamp the export job was created
+        updatedAt:
+          type: string
+          description: Timestamp the export job was last updated
+        cancelledAt:
+          type: string
+          description: Timestamp the export job was cancelled, if applicable
+        cancelledByUserId:
+          type: string
+          description: User ID that requested cancellation, if applicable
+        dataflowSeedJobId:
+          type: string
+          description: Dataflow job ID for the seed (Job A) step
+        dataflowExportJobId:
+          type: string
+          description: Dataflow job ID for the export (Job B) step
+        seedJobStatus:
+          type: string
+          description: Status of the Dataflow seed job
+        exportJobStatus:
+          type: string
+          description: Status of the Dataflow export job
+        gcsFilePath:
+          type: string
+          format: uri
+          description: GCS file path for the exported file, once available
+        exportType:
+          type: string
+          enum:
+          - FULL_ROSTER_EXPORT
+          - CHANGE_FILE
+          examples:
+          - CHANGE_FILE
+          description: 'Export kind of the template behind this job (CP-41063): FULL_ROSTER_EXPORT (default when the egress service omits it) or CHANGE_FILE'
+        changeFileWindowFrom:
+          type: string
+          description: 'Change File runs only: start of the change window (exclusive), ISO-8601'
+        changeFileWindowTo:
+          type: string
+          description: 'Change File runs only: end of the change window (inclusive), ISO-8601'
+        transactionsSelected:
+          type: integer
+          format: int64
+          description: 'Change File runs only: transactions selected from the change ledger for the window'
+        rowsWritten:
+          type: integer
+          format: int64
+          description: 'Change File runs only: rows written to the delivered file'
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    JobStatus:
+      type: string
+      enum:
+      - IN_QUEUE
+      - MAPPING
+      - IN_PROGRESS
+      - SEED_COMPLETED
+      - TEMPLATE_EXPORT_IN_PROGRESS
+      - COMPLETED
+      - FAILED
+    Filters1:
+      type: object
+      description: NPI and/or TIN filter criteria
+      properties:
+        npi:
+          type: array
+          examples:
+          - - '1234567890'
+          items:
+            type: string
+          description: List of NPIs to filter by (each must be exactly 10 digits). Capped at 100 entries by default; omit to export all NPIs.
+        tin:
+          type: array
+          examples:
+          - - '123456789'
+          items:
+            type: string
+          description: List of TINs to filter by (each must be exactly 9 digits). Capped at 100 entries by default; omit to export all TINs. Not supported for practitioners exports when npi is absent.
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    EgressJobListResponse:
+      type: object
+      description: Paginated list of export jobs for the Activity Center
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressJobSummaryDto'
+          description: Export job summaries for the current page
+        pageSize:
+          type: integer
+          format: int32
+          examples:
+          - 20
+          description: Page size used for this response
+        pageOffset:
+          type: integer
+          format: int32
+          examples:
+          - 0
+          description: Page offset used for this response
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 137
+          description: Total number of jobs matching the filters
+    DirectoryJobStatusResponse:
+      type: object
+      description: Response containing directory job status information
       properties:
         exportJobId:
           type: string
-          description: Unique identifier for the directory job
           examples:
           - job-123456
+          description: Unique identifier for the directory job
         tenantId:
           type: string
-          description: ID of the tenant
           examples:
           - tenant-123456
+          description: ID of the tenant
         entityType:
           type: string
-          description: Entity type (practitioners or facilities)
           examples:
           - practitioners
+          description: Entity type (practitioners, facilities, or groups)
         status:
-          description: Current status of the job
+          $ref: '#/components/schemas/JobStatus'
           type: string
           examples:
-          - in_progress
-          $ref: '#/components/schemas/JobStatus'
+          - IN_PROGRESS
+          description: 'Current status of the job: IN_QUEUE, MAPPING, IN_PROGRESS, SEED_COMPLETED, TEMPLATE_EXPORT_IN_PROGRESS, COMPLETED, or FAILED. Serialized as the enum constant name.'
         stats:
-          description: Job processing statistics
-          type: object
           $ref: '#/components/schemas/JobStats'
+          type: object
+          description: Job processing statistics
         fileUrl:
           type: string
-          description: URL to the exported file (only present when job is completed)
           examples:
-          - https://storage.com/path/to/file.json
+          - https://storage.googleapis.com/certifyos-directory-exports/tenant-123456/p1a2b3c4d5e6f7ndjson.ndjson?X-Goog-Signature=...
+          description: Download URL for the exported file, present only once status is COMPLETED. Normally a time-limited signed GCS URL (valid 8 hours); falls back to the raw, unsigned gs:// URI if signing fails.
+    DirectoryRequest:
+      type: object
+      description: Request body for starting a directory export job
+      properties:
+        responseFormat:
+          $ref: '#/components/schemas/DirectoryExportOutputFormat'
+          type: string
+          enum:
+          - ndjson
+          - csv
+          examples:
+          - ndjson
+          description: 'Output format for the exported file. Supported values: `ndjson` (Newline Delimited JSON) or `csv` (Comma Separated Values), the default is `ndjson`. If not specified, defaults to ''ndjson''.'
+        templateId:
+          type: string
+          description: Optional egress template ID for a template-driven export. When provided, the export uses the template's column mappings instead of the legacy pipeline. The template must belong to the tenant and have status=active, or the request fails with 400. If `responseFormat` is also supplied, it must match the template's configured output format or the request fails with 400.
+        mappingsCsvUrl:
+          type: string
+          description: Optional GCS URL to column mappings CSV for template pipeline
+        filters:
+          $ref: '#/components/schemas/Filters1'
+          type: object
+          description: Optional NPI and/or TIN filters. When provided, only matching entities are exported and both fields are combined with OR logic. TIN-only filters are rejected for practitioners exports (400).
+        from:
+          type: string
+          examples:
+          - '2026-09-01'
+          description: Start of the export window as a UTC calendar date (`yyyy-MM-dd`, inclusive). Required together with `to` when `templateId` is a Manual Change File template; rejected with 400 for Scheduled Change File templates and for full roster exports.
+        to:
+          type: string
+          examples:
+          - '2026-09-30'
+          description: End of the export window as a UTC calendar date (`yyyy-MM-dd`, inclusive); must not precede `from`. See `from`.
+    DirectoryExportOutputFormat:
+      type: string
+      enum:
+      - ndjson
+      - csv
+    JobStats:
+      type: object
+      description: Statistics for directory job processing
+      properties:
+        completed:
+          type: integer
+          format: int64
+          examples:
+          - 9800
+          description: Number of rows with data processed so far
+        total:
+          type: integer
+          format: int64
+          examples:
+          - 9800
+          description: Total number of rows to process
+        failed:
+          type: integer
+          format: int64
+          examples:
+          - 0
+          description: Number of failed rows. Not currently populated by the egress service integration; always 0.
+    EgressJobSummaryDto:
+      type: object
+      description: Summary view of an export job for the Activity Center
+      properties:
+        tableName:
+          type: string
+          description: Spanner table name
+        correlationId:
+          type: string
+          examples:
+          - 550e8400-e29b-41d4-a716-446655440000
+          description: Correlation ID for the export job
+        type:
+          type: string
+          examples:
+          - practitioner
+          description: Export type
+        tenantId:
+          type: string
+          examples:
+          - 5cfb18b0-e1b9-4be1-b8b4-a51d62ab67ba
+          description: Tenant ID
+        templateId:
+          type: string
+          description: Template ID used for the export, if any
+        templateName:
+          type: string
+          description: Template name used for the export, if any. Currently always null pending DAL support for including the template name in this endpoint's response (CP-35412 follow-up).
+        jobType:
+          type: string
+          enum:
+          - MANUAL
+          - SCHEDULED
+          examples:
+          - MANUAL
+          description: Job type
+        status:
+          type: string
+          description: Current status of the export job
+        expectedRows:
+          type: integer
+          format: int64
+          examples:
+          - 1000
+          description: Expected number of rows for the export
+        successfulRows:
+          type: integer
+          format: int64
+          examples:
+          - 950
+          description: Number of rows successfully exported
+        unsuccessfulRows:
+          type: integer
+          format: int64
+          examples:
+          - 50
+          description: Number of rows that failed to export
+        initiatedByUserId:
+          type: string
+          description: User ID that initiated the export job
+        createdAt:
+          type: string
+          description: Timestamp the export job was created
+        updatedAt:
+          type: string
+          description: Timestamp the export job was last updated
+        cancelledAt:
+          type: string
+          description: Timestamp the export job was cancelled, if applicable
+        cancelledByUserId:
+          type: string
+          description: User ID that requested cancellation, if applicable
+        exportType:
+          type: string
+          enum:
+          - FULL_ROSTER_EXPORT
+          - CHANGE_FILE
+          examples:
+          - CHANGE_FILE
+          description: 'Export kind of the template behind this job (CP-41063): FULL_ROSTER_EXPORT (default when the egress service omits it) or CHANGE_FILE'
+        changeFileWindowFrom:
+          type: string
+          description: 'Change File runs only: start of the change window (exclusive), ISO-8601'
+        changeFileWindowTo:
+          type: string
+          description: 'Change File runs only: end of the change window (inclusive), ISO-8601'
+        transactionsSelected:
+          type: integer
+          format: int64
+          description: 'Change File runs only: transactions selected from the change ledger for the window'
+        rowsWritten:
+          type: integer
+          format: int64
+          description: 'Change File runs only: rows written to the delivered file'
+        startedAt:
+          type: string
+          description: Timestamp the export job started. Derived alias for createdAt (the DAL does not track a distinct start time separate from job creation).
+        finishedAt:
+          type: string
+          description: Timestamp the export job finished (reached a terminal status). Derived alias for updatedAt once status is COMPLETED/FAILED/CANCELLED; null while still running, since the DAL overwrites updatedAt on every intermediate status change.
+    EgressInitiatorsResponse:
+      type: object
+      description: Distinct initiators of a tenant's export jobs
+      properties:
+        initiators:
+          type: array
+          items:
+            type: string
+          description: Distinct initiator identities (emails or the 'system' sentinel)
   securitySchemes:
     jwt:
       type: http
