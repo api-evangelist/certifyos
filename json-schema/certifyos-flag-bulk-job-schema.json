@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-flag-bulk-job-schema.json",
+  "title": "FlagBulkJob",
+  "description": "A bulk flag job; progress is processedCount / totalCount",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-flag-bulk-job-api-openapi.yml#/components/schemas/FlagBulkJob",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "description": "RUNNING, COMPLETED or FAILED"
+    },
+    "fromStatus": {
+      "type": "string"
+    },
+    "targetStatus": {
+      "type": "string"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Reason text, recorded on every moved flag's history"
+    },
+    "requestedCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "The match count the user saw when submitting"
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Ids snapshotted at submit: the oldest matches, at most 2,000"
+    },
+    "processedCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Snapshot ids already run (moved or skipped)"
+    },
+    "updatedCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Flags moved to targetStatus"
+    },
+    "skippedCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Snapshot ids not moved: status changed or flag deleted since the snapshot"
+    },
+    "skippedFlagIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The skipped ids; only on GET /flags/bulk-jobs/{id} once the job has finished"
+    },
+    "initiatedByEmail": {
+      "type": "string"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "finishedAt": {
+      "type": "string"
+    },
+    "errorCode": {
+      "type": "string",
+      "description": "STALLED (the run stopped heartbeating) or EXECUTE_ERROR (a chunk kept failing)"
+    }
+  }
+}

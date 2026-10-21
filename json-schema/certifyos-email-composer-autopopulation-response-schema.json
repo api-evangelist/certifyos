@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-email-composer-autopopulation-response-schema.json",
+  "title": "EmailComposerAutopopulationResponse",
+  "description": "Response containing all data needed to autopopulate the email composer for Practitioner Initial workflow",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-organization-outreach-settings-resource-api-openapi.yml#/components/schemas/EmailComposerAutopopulationResponse",
+  "type": "object",
+  "properties": {
+    "subject": {
+      "type": "string",
+      "description": "Email subject line from template (may be empty if not configured)"
+    },
+    "body": {
+      "type": "string",
+      "description": "Email body/template from settings (may be empty if not configured)"
+    },
+    "ccEmails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "CC email addresses (template-specific + global)"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/OutreachReasonValueDto"
+      },
+      "description": "Array of selected outreach reasons with title and instruction, sorted by selection order"
+    },
+    "emailConfiguration": {
+      "type": "object",
+      "description": "Email recipient preferences configuration. Null when no outreach settings are saved for this type/cycle (see the operation description).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EmailRecipientPreferencesDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dynamicFields": {
+      "type": "object",
+      "additionalProperties": {},
+      "description": "Map of dynamic field keys to their resolved values (can include strings, arrays, or objects)"
+    },
+    "toEmails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recipient email addresses to prefill on the composer's To field (CP-37576). Empty unless the org has enabled CAQH-extraction autopopulation for a single, eligible practitioner-credentialing workflow."
+    }
+  },
+  "$defs": {
+    "EmailRecipientPreferencesDto": {
+      "type": "object",
+      "description": "Email recipient preferences for outreach",
+      "properties": {
+        "primaryEmail": {
+          "type": "boolean",
+          "description": "Enable Primary Email recipient"
+        },
+        "caqhPrimaryEmail": {
+          "type": "boolean",
+          "description": "Enable CAQH Primary Email recipient"
+        },
+        "credentialingPrimaryContact": {
+          "type": "boolean",
+          "description": "Enable Credentialing Primary Contact recipient"
+        },
+        "credentialingOfficeManager": {
+          "type": "boolean",
+          "description": "Enable Credentialing Office Manager recipient"
+        }
+      }
+    },
+    "OutreachReasonValueDto": {
+      "type": "object",
+      "description": "Outreach reason value with title and instruction",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Reason title"
+        },
+        "instruction": {
+          "type": "string",
+          "description": "Reason instruction"
+        }
+      }
+    }
+  }
+}

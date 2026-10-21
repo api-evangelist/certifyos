@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-standardize-address-response-schema.json",
+  "title": "StandardizeAddressResponse",
+  "description": "Standardized address with confidence, validation status, and enrichment data",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-addressstandardization-api-openapi.yml#/components/schemas/StandardizeAddressResponse",
+  "type": "object",
+  "properties": {
+    "standardizedAddress": {
+      "$ref": "#/$defs/StandardizedAddress",
+      "type": "object",
+      "description": "Normalized address components"
+    },
+    "confidence": {
+      "$ref": "#/$defs/AddressConfidence",
+      "type": "string",
+      "description": "How much the caller should trust the standardized address"
+    },
+    "validationStatus": {
+      "$ref": "#/$defs/AddressValidationStatus",
+      "type": "string",
+      "description": "External validation status"
+    },
+    "enrichment": {
+      "$ref": "#/$defs/AddressEnrichment",
+      "type": "object",
+      "description": "Enrichment values derived from the standardized address"
+    }
+  },
+  "$defs": {
+    "AddressConfidence": {
+      "type": "string",
+      "enum": [
+        "HIGH",
+        "MEDIUM",
+        "LOW"
+      ]
+    },
+    "AddressEnrichment": {
+      "type": "object",
+      "description": "Enrichment values attached to the standardized address",
+      "properties": {
+        "zip4": {
+          "type": "string",
+          "description": "ZIP+4 extension, if available"
+        },
+        "county": {
+          "type": "string",
+          "description": "County name, if available"
+        },
+        "latitude": {
+          "type": "number",
+          "format": "double",
+          "description": "Latitude in decimal degrees, if available"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double",
+          "description": "Longitude in decimal degrees, if available"
+        },
+        "stateFips": {
+          "type": "string",
+          "description": "2-digit state FIPS code, if available"
+        },
+        "countyFips": {
+          "type": "string",
+          "description": "5-digit county FIPS code, if available"
+        },
+        "formattedAddress": {
+          "type": "string",
+          "description": "Pretty-printed single-line address, if available"
+        },
+        "timezone": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "IANA timezone ID, if available; always null until timezone enrichment ships"
+        }
+      }
+    },
+    "AddressValidationStatus": {
+      "type": "string",
+      "enum": [
+        "VALID",
+        "PARTIAL",
+        "INVALID"
+      ]
+    },
+    "StandardizedAddress": {
+      "type": "object",
+      "description": "Standardized address components",
+      "properties": {
+        "addressLine1": {
+          "type": "string",
+          "description": "Standardized primary street line"
+        },
+        "addressLine2": {
+          "type": "string",
+          "description": "Standardized secondary street line"
+        },
+        "city": {
+          "type": "string",
+          "description": "Standardized city"
+        },
+        "county": {
+          "type": "string",
+          "description": "Standardized county"
+        },
+        "state": {
+          "type": "string",
+          "description": "Standardized state code"
+        },
+        "zip": {
+          "type": "string",
+          "description": "Standardized ZIP / postal code"
+        },
+        "zip4": {
+          "type": "string",
+          "description": "ZIP+4 extension, if available"
+        },
+        "country": {
+          "type": "string",
+          "description": "Country code"
+        },
+        "formattedAddress": {
+          "type": "string",
+          "description": "Pretty-printed single-line address"
+        }
+      }
+    }
+  }
+}

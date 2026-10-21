@@ -65,6 +65,42 @@ paths:
       - jwt: []
 components:
   schemas:
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    AnchorGroupPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated list of Anchor Groups.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnchorGroup'
+          description: Anchor Groups on this page.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total Anchor Groups across all pages.
+    AnchorGroup:
+      type: object
+      required:
+      - id
+      description: An Anchor Group the caller can view.
+      properties:
+        id:
+          type: string
+          description: Anchor Group id.
+        name:
+          type: string
+          description: Anchor Group display name.
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -93,42 +129,6 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
-    AnchorGroup:
-      type: object
-      required:
-      - id
-      description: An Anchor Group the caller can view.
-      properties:
-        id:
-          type: string
-          description: Anchor Group id.
-        name:
-          type: string
-          description: Anchor Group display name.
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    AnchorGroupPagedResponse:
-      type: object
-      required:
-      - data
-      description: Paginated list of Anchor Groups.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnchorGroup'
-          description: Anchor Groups on this page.
-        totalCount:
-          type: integer
-          format: int64
-          description: Total Anchor Groups across all pages.
   securitySchemes:
     jwt:
       type: http

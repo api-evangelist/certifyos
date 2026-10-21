@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-bulk-flag-status-update-request-schema.json",
+  "title": "BulkFlagStatusUpdateRequest",
+  "description": "Request to update status of multiple flags",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-flag-api-openapi.yml#/components/schemas/BulkFlagStatusUpdateRequest",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "Selection type: \"ids\" (default) or \"filter\"."
+    },
+    "flagIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "\\S"
+      },
+      "description": "Flag IDs to update (used when type is \"ids\")."
+    },
+    "filter": {
+      "$ref": "#/$defs/JsonNode",
+      "type": "object",
+      "description": "Filter selecting all matching flags (required when type is \"filter\")."
+    },
+    "expectedCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Expected number of matching flags for the filter (required when type is \"filter\")."
+    },
+    "comment": {
+      "type": "string",
+      "description": "Optional comment for the status change; stored on each flag's history record."
+    }
+  },
+  "$defs": {
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    }
+  }
+}

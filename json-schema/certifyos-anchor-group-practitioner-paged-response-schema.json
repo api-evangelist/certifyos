@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-anchor-group-practitioner-paged-response-schema.json",
+  "title": "AnchorGroupPractitionerPagedResponse",
+  "description": "Paginated Anchor Ops inventory.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-anchorgrouppractitioner-api-openapi.yml#/components/schemas/AnchorGroupPractitionerPagedResponse",
+  "type": "object",
+  "required": [
+    "data"
+  ],
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AnchorGroupPractitionerRow"
+      },
+      "description": "Inventory rows on this page."
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total matching rows across all pages."
+    }
+  },
+  "$defs": {
+    "AnchorGroupPractitionerRow": {
+      "type": "object",
+      "required": [
+        "anchorGroupPractitionerId"
+      ],
+      "description": "One practitioner row of the Anchor Ops inventory.",
+      "properties": {
+        "anchorGroupPractitionerId": {
+          "type": "string",
+          "description": "Anchor group practitioner id."
+        },
+        "practitionerRegistryId": {
+          "type": "string",
+          "description": "Practitioner registry id."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "Practitioner first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Practitioner last name."
+        },
+        "npi": {
+          "type": "string",
+          "description": "Practitioner NPI."
+        },
+        "effectiveAnchorDate": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "description": "Effective anchor date (yyyy-MM-dd)."
+        },
+        "computedAnchorDate": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "description": "Platform-calculated anchor date (yyyy-MM-dd)."
+        },
+        "participatingTenants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ParticipatingTenant"
+          },
+          "description": "Tenants this anchor currently covers."
+        },
+        "operationalStatus": {
+          "type": "string",
+          "description": "Operational status."
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Last update to the row."
+        }
+      }
+    },
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "LocalDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "ParticipatingTenant": {
+      "type": "object",
+      "required": [
+        "tenantId"
+      ],
+      "description": "A tenant this practitioner's anchor currently covers.",
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant id."
+        },
+        "tenantName": {
+          "type": "string",
+          "description": "Tenant display name."
+        },
+        "withdrawable": {
+          "type": "boolean",
+          "description": "Withdraw preview only: whether this tenant has a member that can be withdrawn. Absent outside the preview."
+        }
+      }
+    }
+  }
+}

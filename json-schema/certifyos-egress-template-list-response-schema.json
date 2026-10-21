@@ -1,0 +1,294 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-egress-template-list-response-schema.json",
+  "title": "EgressTemplateListResponse",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-egresstemplate-api-openapi.yml#/components/schemas/EgressTemplateListResponse",
+  "type": "object",
+  "properties": {
+    "templates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EgressTemplateResponse"
+      },
+      "description": "Egress templates on this page, in DAL-returned order. Empty (not null) when no templates match the filters."
+    },
+    "total": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total number of templates matching the filters across all pages."
+    },
+    "page": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Zero-based page number returned, per the `page` query parameter."
+    },
+    "size": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of templates requested per page, per the `size` query parameter."
+    },
+    "hasMore": {
+      "type": "boolean",
+      "description": "Whether at least one further page is available after this one."
+    }
+  },
+  "$defs": {
+    "EgressTemplateResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Server-assigned unique identifier of the template."
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "ID of the tenant that owns this template."
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp the template was created, ISO-8601."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "ID of the user who created the template."
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp the template was last updated, ISO-8601."
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "ID of the user who last updated the template."
+        },
+        "templateName": {
+          "type": "string",
+          "description": "Human-readable template name."
+        },
+        "description": {
+          "type": "string",
+          "description": "Free-text description of the template's purpose."
+        },
+        "entityType": {
+          "type": "string",
+          "description": "Entity type this template maps: `practitioner`, `facility`, or `group`. Immutable after creation."
+        },
+        "outputFormat": {
+          "type": "string",
+          "description": "Output file format produced by exports run from this template, e.g. `csv`."
+        },
+        "separator": {
+          "type": "string",
+          "description": "Delimiter used in the output CSV."
+        },
+        "status": {
+          "type": "string",
+          "description": "Template lifecycle status: `draft`, `active`, or `inactive` (soft-deleted)."
+        },
+        "version": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Version number, incremented on each successful update. Not incremented by delete."
+        },
+        "mappingsCsvUrl": {
+          "type": "string",
+          "description": "GCS URL of the current mapping CSV for this template version."
+        },
+        "rowExpansionKeys": {
+          "$ref": "#/$defs/JsonNode",
+          "type": "object",
+          "description": "JSON array of field keys that trigger row expansion on export. Each key names an array-valued field of the entity; on export one output row is emitted per element of that array instead of collapsing the array into a single cell. Supported keys: `locations`, `networks`, `groups`, `specialties`, `licenses`, `contacts`, `accreditations`, `addressType2Npi`. Null or an empty array means no expansion (one row per entity). As supplied on create/update."
+        },
+        "extExportConfig": {
+          "$ref": "#/$defs/JsonNode",
+          "type": "object",
+          "description": "External export destination and sensitive-field configuration, as supplied on create/update. Recognized blocks: `bigquery` (`{\"enabled\": boolean, \"dataset\": string, \"tableName\": string}`) and `sensitive_fields` (per-field exposure mode, e.g. `{\"ssn\": \"masked\"}`; only `ssn` supported today, values `full` or `masked`)."
+        },
+        "scheduleEnabled": {
+          "type": "boolean",
+          "description": "Whether scheduled (unattended) exports are enabled for this template."
+        },
+        "scheduleFrequency": {
+          "type": "string",
+          "description": "Schedule cadence: `daily`, `weekly`, `monthly`, or `custom`. Null when no schedule is configured."
+        },
+        "scheduleTime": {
+          "type": "string",
+          "description": "Time of day the schedule runs, 24-hour `HH:mm`. Null when scheduleFrequency is `custom` or no schedule is configured."
+        },
+        "scheduleDayOfWeek": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Day of week the schedule runs: 1 = Sunday ... 7 = Saturday. Only set when scheduleFrequency=`weekly`."
+        },
+        "scheduleDayOfMonth": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Day of month (1-31) the schedule runs. Only set when scheduleFrequency=`monthly`."
+        },
+        "scheduleCron": {
+          "type": "string",
+          "description": "Quartz cron expression (6-7 fields, not standard 5-field Unix cron) defining the schedule. Only set when scheduleFrequency=`custom`."
+        },
+        "scheduleTimezone": {
+          "type": "string",
+          "description": "IANA timezone identifier the schedule runs in, e.g. `America/New_York`."
+        },
+        "scheduleDaysOfWeek": {
+          "type": "string",
+          "description": "Comma-separated days of week the schedule runs: 1 = Sunday ... 7 = Saturday. Only set when scheduleFrequency=`weekly`."
+        },
+        "scheduleInterval": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Interval in hours between runs (1, 2, 3, 4, 6, 8 or 12 — divisors of 24). Only set when scheduleFrequency=`hourly`."
+        },
+        "lastExportAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp of the most recent export run from this template, ISO-8601. Null if no export has run yet."
+        },
+        "nextExportAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp of the next scheduled export run, ISO-8601. Null when scheduling is disabled."
+        },
+        "metadata": {
+          "$ref": "#/$defs/JsonNode",
+          "type": "object",
+          "description": "Arbitrary caller-defined metadata stored with the template. Not interpreted by the service; persisted and returned as-is."
+        },
+        "jobType": {
+          "type": "string",
+          "description": "Derived export trigger type for the Activity Center UI: `SCHEDULED` when a schedule is enabled, `MANUAL` otherwise. Not persisted by the data store."
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Display name resolved from createdBy, when resolvable. Null if resolution failed or has not been attempted; callers should fall back to createdByEmail then createdBy in that case."
+        },
+        "createdByEmail": {
+          "type": "string",
+          "description": "Email resolved from createdBy, when resolvable. Null if resolution failed or has not been attempted; used as the display fallback between createdByName and the raw createdBy id."
+        },
+        "exportType": {
+          "type": "string",
+          "enum": [
+            "FULL_ROSTER_EXPORT",
+            "CHANGE_FILE"
+          ],
+          "description": "Export type (CP-41057): `FULL_ROSTER_EXPORT` (default; legacy rows read as this) or `CHANGE_FILE` (rows are the changes in a window)."
+        },
+        "triggerMode": {
+          "type": "string",
+          "enum": [
+            "SCHEDULED",
+            "MANUAL"
+          ],
+          "description": "Trigger mode of a Change File template (CP-41062): `SCHEDULED` (generates on its own schedule) or `MANUAL` (generates only through the trigger API with an explicit date range). Null for full roster exports."
+        },
+        "bqExportEnabled": {
+          "type": "boolean"
+        },
+        "bqTableName": {
+          "type": "string"
+        },
+        "bqDataset": {
+          "type": "string"
+        }
+      }
+    },
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    }
+  }
+}

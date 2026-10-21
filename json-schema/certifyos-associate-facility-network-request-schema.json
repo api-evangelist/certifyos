@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-associate-facility-network-request-schema.json",
+  "title": "AssociateFacilityNetworkRequest",
+  "description": "Request to associate a facility with one or more networks",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-facility-api-openapi.yml#/components/schemas/AssociateFacilityNetworkRequest",
+  "type": "object",
+  "required": [
+    "groupId"
+  ],
+  "properties": {
+    "groupId": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "ID of the group that the network belongs to"
+    },
+    "networkId": {
+      "type": "string",
+      "description": "Single network ID (legacy). Mutually exclusive with networkIds."
+    },
+    "networkIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Bulk network IDs (CP-32346). Mutually exclusive with networkId."
+    },
+    "includeAllActiveFacilityLocations": {
+      "type": "boolean",
+      "description": "When true, associate all active facility locations under the facility/group"
+    },
+    "facilityLocationIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Certify location IDs to associate (optional when includeAllActiveFacilityLocations is true)"
+    },
+    "networkEffectiveDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Effective date for facility and location network associations"
+    },
+    "groupEffectiveDate": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Effective date for the TenantGroupFacility relationship"
+    },
+    "networkAssociations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/NetworkAssociationEntry"
+      },
+      "description": "Grouped network associations (CP-32346): one entry per network, each with its own effective date. Allows associating multiple networks with different effective dates in a single request. Mutually exclusive with networkId/networkIds."
+    },
+    "legacySingleNetworkRequest": {
+      "type": "boolean"
+    },
+    "groupedNetworkRequest": {
+      "type": "boolean"
+    },
+    "bulkNetworkRequest": {
+      "type": "boolean"
+    },
+    "networkInputValid": {
+      "type": "boolean"
+    }
+  },
+  "$defs": {
+    "NetworkAssociationEntry": {
+      "type": "object",
+      "required": [
+        "networkId"
+      ],
+      "description": "A single network with its own effective date",
+      "properties": {
+        "networkId": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Network ID for this association"
+        },
+        "effectiveDate": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Effective date applied to this network"
+        }
+      }
+    }
+  }
+}

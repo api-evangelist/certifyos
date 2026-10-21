@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-practitioner-outreach-list-response-schema.json",
+  "title": "PractitionerOutreachListResponse",
+  "description": "Paginated envelope of outreach records for a practitioner or facility credentialing workflow",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-credentialing-outreach-resource-api-openapi.yml#/components/schemas/PractitionerOutreachListResponse",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PractitionerOutreachItem"
+      },
+      "description": "Outreach records for this workflow, ordered by creation date descending"
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total number of outreach records matching this workflow"
+    },
+    "page": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Current page index. Always 0 - pagination is not yet supported"
+    },
+    "size": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Page size. Always 100 - a hardcoded ceiling; records beyond this are not returned"
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "OutreachReasonWithLabel": {
+      "type": "object",
+      "description": "Outreach reason with ID and label",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the outreach reason"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label for the outreach reason"
+        }
+      }
+    },
+    "PractitionerOutreachItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Outreach record ID"
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant that owns this outreach record"
+        },
+        "workflowId": {
+          "type": "string",
+          "description": "Credentialing workflow (practitioner or facility) this outreach was sent for"
+        },
+        "outreachType": {
+          "type": "string",
+          "enum": [
+            "PRACTITIONER_CREDENTIALING",
+            "FACILITY_CREDENTIALING",
+            "PRACTITIONER_MONITORING"
+          ],
+          "description": "Outreach category this record was created for"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OutreachReasonWithLabel"
+          },
+          "description": "Outreach reasons with their display labels"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether this outreach is still open/awaiting a response"
+        },
+        "attemptsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of outreach emails sent for this record"
+        },
+        "lastAttemptedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp of the most recent outreach attempt"
+        },
+        "workflowStatus": {
+          "type": "string",
+          "description": "Status of the referenced credentialing workflow at the time of this response"
+        },
+        "outreachPage": {
+          "type": "string",
+          "description": "Signed provider-portal link where the provider submits a response to this outreach. Present only when the tenant has the provider portal enabled, the outreach is still awaiting a response, and an outreach email exists to thread the submission onto; otherwise null."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "User ID that created this outreach record"
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Display name of the user that created this outreach record"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this outreach record was created"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this outreach record was last updated"
+        },
+        "participatingTenants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tenant ids this outreach was sent for, captured at send time (shared credentialing sends). Omitted for single-tenant outreaches; use tenantId instead."
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject of the outreach's latest outbound email. Present only in the shared credentialing listing (includeAllParticipatingTenants=true)."
+        },
+        "toAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "To recipients of the outreach's latest outbound email. Present only in the shared credentialing listing (includeAllParticipatingTenants=true)."
+        },
+        "ccAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CC recipients of the outreach's latest outbound email. Present only in the shared credentialing listing (includeAllParticipatingTenants=true)."
+        }
+      }
+    }
+  }
+}

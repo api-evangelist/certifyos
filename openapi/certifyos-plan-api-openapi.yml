@@ -279,57 +279,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    CreatePlanRequest:
-      type: object
-      properties:
-        data:
-          $ref: https://schemas.certifyos.com/entities/Plan.schema.json
-          type: object
-          description: The plan's domain data. Must satisfy the Plan JSON schema; `payer` is required and is extracted server-side to populate the stored `payerId`.
-    GetPlanResponse:
-      type: object
-      description: A single plan record as it appears in a paginated plans listing.
-      properties:
-        id:
-          type: string
-          description: Server-assigned unique identifier for the plan.
-        tenantId:
-          type: string
-          description: Identifier of the tenant that owns this plan.
-        payerId:
-          type: string
-          description: Identifier of the payer this plan is associated with. Extracted server-side from `data.payer` at creation time.
-        data:
-          type: object
-          description: The plan's domain data, validated against the Plan JSON schema at creation/update time.
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
     ApiError:
       type: object
       description: Standard API error response containing a list of error objects
@@ -380,6 +329,57 @@ components:
         errorDetails:
           type: object
           description: Detailed error information with specific validation failures
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    CreatePlanRequest:
+      type: object
+      properties:
+        data:
+          $ref: https://schemas.certifyos.com/entities/Plan.schema.json
+          type: object
+          description: The plan's domain data. Must satisfy the Plan JSON schema; `payer` is required and is extracted server-side to populate the stored `payerId`.
+    GetPlanResponse:
+      type: object
+      description: A single plan record as it appears in a paginated plans listing.
+      properties:
+        id:
+          type: string
+          description: Server-assigned unique identifier for the plan.
+        tenantId:
+          type: string
+          description: Identifier of the tenant that owns this plan.
+        payerId:
+          type: string
+          description: Identifier of the payer this plan is associated with. Extracted server-side from `data.payer` at creation time.
+        data:
+          type: object
+          description: The plan's domain data, validated against the Plan JSON schema at creation/update time.
   securitySchemes:
     jwt:
       type: http

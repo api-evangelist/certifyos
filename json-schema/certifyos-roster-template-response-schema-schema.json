@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-roster-template-response-schema-schema.json",
+  "title": "RosterTemplateResponseSchema",
+  "description": "A roster template record.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-template-api-openapi.yml#/components/schemas/RosterTemplateResponseSchema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Server-generated unique identifier of the template."
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Tenant that owns the template."
+    },
+    "createdAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Timestamp at which the template record was created."
+    },
+    "createdBy": {
+      "type": "string",
+      "description": "ID of the user who created the template."
+    },
+    "createdByName": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Display name of the creator, resolved from `createdBy` in one batch lookup per page (CP-39764). `null` when the lookup timed out or the user could not be resolved; clients then fall back to `createdByEmail`, then `createdBy`."
+    },
+    "createdByEmail": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Email of the creator, resolved alongside `createdByName`. `null` when it could not be resolved."
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Timestamp of the most recent update to the template record."
+    },
+    "updatedBy": {
+      "type": "string",
+      "description": "ID of the user who last updated the template."
+    },
+    "data": {
+      "type": "object",
+      "description": "Template payload. Persisted keys: `templateName`, `description`, `status` (`in-progress` while awaiting mapping confirmation/approval, `success` once approved, `failure` when a re-approval's schema generation failed), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP`), plus - once approved - `template` and `schema` (GCS object paths of the template CSV and generated JSON schema). Responses additionally inject short-lived signed download URLs generated at request time and never stored: `mappingsUrl` on both list and detail reads, and `templateUrl`/`schemaUrl` on the detail read when the underlying objects exist. Signed URLs are V4-signed and valid for 7 days."
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

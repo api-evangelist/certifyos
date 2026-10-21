@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-facility-upsert-request-schema.json",
+  "title": "FacilityUpsertRequest",
+  "description": "Facility create/upsert payload. Top-level required: name only (matches facility-upsert.schema.json). npi and tin are required for default tenants; Pharmacy facilities use ncpdpId; external-id and address-hash modes follow FacilityValidationService rules. If initialCredentialingDate is provided, lastCredentialingDate is also required.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-facility-api-openapi.yml#/components/schemas/FacilityUpsertRequest",
+  "type": "object",
+  "required": [
+    "name"
+  ],
+  "properties": {
+    "facilityId": {
+      "type": "string",
+      "description": "Certify facility ID; only relevant for update flows"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Facility name"
+    },
+    "npi": {
+      "type": "string",
+      "pattern": "^\\d{10}$",
+      "description": "10-digit National Provider Identifier. Required for default tenants; optional for Pharmacy (ncpdpId) and some external-id / address-hash flows."
+    },
+    "tin": {
+      "type": "string",
+      "pattern": "^\\d{9}$",
+      "description": "9-digit Tax Identification Number. Required for default tenants; optional for Pharmacy (ncpdpId) and some external-id / address-hash flows."
+    },
+    "ncpdpId": {
+      "type": "string",
+      "description": "NCPDP identifier for Pharmacy facilities (CP-33224). Required when facilityType is Pharmacy."
+    },
+    "facilityType": {
+      "type": "string",
+      "description": "Facility type"
+    },
+    "facilityEffectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Effective date of the facility (YYYY-MM-DD)"
+    },
+    "externalId": {
+      "type": "string",
+      "description": "External identifier for the facility, used as crosswalk for some tenants"
+    },
+    "dba": {
+      "type": "string",
+      "description": "Doing-business-as name"
+    },
+    "attestationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Attestation date (YYYY-MM-DD)"
+    },
+    "effectiveDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Effective date (YYYY-MM-DD)"
+    },
+    "delegationStatus": {
+      "type": "string",
+      "enum": [
+        "Delegated",
+        "Direct"
+      ],
+      "description": "Delegation status of the facility"
+    },
+    "addresses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FacilityUpsertAddress"
+      },
+      "description": "Addresses associated with the facility"
+    },
+    "businessPurpose": {
+      "$ref": "#/$defs/FacilityUpsertBusinessPurpose",
+      "type": "object",
+      "description": "Facility business purpose flags"
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FacilityUpsertContact"
+      },
+      "description": "Contacts associated with the facility"
+    },
+    "serviceAddress": {
+      "$ref": "#/$defs/FacilityUpsertTypedAddress",
+      "type": "object",
+      "description": "Primary service address. When provided, addressLine1, city, state, and zip are required."
+    },
+    "officeAddress": {
+      "$ref": "#/$defs/FacilityUpsertTypedAddress",
+      "type": "object",
+      "description": "Office address"
+    },
+    "billingAddress": {
+      "$ref": "#/$defs/FacilityUpsertTypedAddress",
+      "type": "object",
+      "description": "Billing address"
+    },
+    "mailingAddress": {
+      "$ref": "#/$defs/FacilityUpsertTypedAddress",
+      "type": "object",
+      "description": "Mailing address"
+    },
+    "irsAddress": {
+      "$ref": "#/$defs/FacilityUpsertTypedAddress",
+      "type": "object",
+      "description": "IRS/W9 address"
+    },
+    "userDefinedFields": {
+      "type": "object",
+      "description": "Custom tenant-defined fields. Replaces the entire userDefinedFields object (PUT semantics)."
+    },
+    "lastCredentialingDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the last credentialing (YYYY-MM-DD). Required when initialCredentialingDate is provided."
+    },
+    "initialCredentialingDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the facility was initially credentialed (YYYY-MM-DD)"
+    },
+    "nextCredentialingDate": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Date of the next credentialing due (YYYY-MM-DD)"
+    },
+    "groupDetails": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FacilityUpsertGroupDetail"
+      },
+      "description": "Tenant group associations for the facility"
+    }
+  },
+  "$defs": {
+    "FacilityUpsertAddress": {
+      "type": "object",
+      "description": "A single facility address",
+      "properties": {
+        "address1": {
+          "type": "string",
+          "description": "Address line 1"
+        },
+        "address2": {
+          "type": "string",
+          "description": "Address line 2"
+        },
+        "city": {
+          "type": "string",
+          "description": "City"
+        },
+        "state": {
+          "type": "string",
+          "description": "State"
+        },
+        "country": {
+          "type": "string",
+          "description": "Country"
+        },
+        "zipcode": {
+          "type": "string",
+          "description": "Zip code"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of the address"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of address"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the record was created"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The user who created the record"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the record was last updated"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "The user who last updated the record"
+        },
+        "isPrimary": {
+          "type": "boolean",
+          "description": "States if the address is the primary address for the facility"
+        },
+        "zipExtension": {
+          "type": "string",
+          "description": "ZIP+4 extension returned by the address cleanser (CP-28784)"
+        },
+        "latitude": {
+          "type": "number",
+          "format": "double",
+          "description": "Latitude returned by the address cleanser (CP-28784)"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double",
+          "description": "Longitude returned by the address cleanser (CP-28784)"
+        },
+        "stateFips": {
+          "type": "string",
+          "description": "State FIPS code returned by the address cleanser (CP-28784)"
+        },
+        "countyFips": {
+          "type": "string",
+          "description": "County FIPS code returned by the address cleanser (CP-28784)"
+        },
+        "formattedAddress": {
+          "type": "string",
+          "description": "Fully formatted address returned by the address cleanser (CP-28784)"
+        }
+      }
+    },
+    "FacilityUpsertBusinessPurpose": {
+      "type": "object",
+      "description": "Facility business purpose flags",
+      "properties": {
+        "isForCredentialing": {
+          "$ref": "#/$defs/FacilityUpsertBusinessPurposeFlag",
+          "type": "object",
+          "description": "States if the facility is enabled for credentialing"
+        },
+        "isForMonitoring": {
+          "$ref": "#/$defs/FacilityUpsertBusinessPurposeFlag",
+          "type": "object",
+          "description": "States if the facility is enabled for monitoring"
+        }
+      }
+    },
+    "FacilityUpsertBusinessPurposeFlag": {
+      "type": "object",
+      "description": "A business purpose flag and its reason",
+      "properties": {
+        "value": {
+          "type": "boolean",
+          "description": "The flag value"
+        },
+        "reason": {
+          "type": "string",
+          "description": "The reason for the flag value"
+        }
+      }
+    },
+    "FacilityUpsertContact": {
+      "type": "object",
+      "required": [
+        "name",
+        "type",
+        "phone"
+      ],
+      "description": "A single facility contact",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Contact name"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Contact type"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 7,
+          "description": "Contact phone number"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email address"
+        },
+        "fax": {
+          "type": "string",
+          "description": "Contact fax number"
+        }
+      }
+    },
+    "FacilityUpsertGroupDetail": {
+      "type": "object",
+      "required": [
+        "tenantGroupId"
+      ],
+      "description": "A tenant group association for the facility",
+      "properties": {
+        "tenantGroupId": {
+          "type": "string",
+          "description": "Tenant group ID"
+        },
+        "effectiveDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Effective date of the group association (YYYY-MM-DD)"
+        },
+        "networkLinks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityUpsertNetworkLink"
+          },
+          "description": "Network associations for this group"
+        }
+      }
+    },
+    "FacilityUpsertNetworkLink": {
+      "type": "object",
+      "required": [
+        "networkId"
+      ],
+      "description": "A network association for a facility group",
+      "properties": {
+        "networkId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Network ID"
+        },
+        "effectiveDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Effective date of the network association (YYYY-MM-DD)"
+        }
+      }
+    },
+    "FacilityUpsertTypedAddress": {
+      "type": "object",
+      "description": "A single-purpose facility address",
+      "properties": {
+        "addressLine1": {
+          "type": "string",
+          "description": "Address line 1"
+        },
+        "addressLine2": {
+          "type": "string",
+          "description": "Address line 2"
+        },
+        "city": {
+          "type": "string",
+          "description": "City"
+        },
+        "state": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$",
+          "description": "Two-letter US state code"
+        },
+        "county": {
+          "type": "string",
+          "description": "County"
+        },
+        "country": {
+          "type": "string",
+          "description": "Country"
+        },
+        "zip": {
+          "type": "string",
+          "description": "Zip code"
+        },
+        "zipExtension": {
+          "type": "string",
+          "description": "ZIP+4 extension returned by the address cleanser (CP-28784)"
+        },
+        "latitude": {
+          "type": "number",
+          "format": "double",
+          "description": "Latitude returned by the address cleanser (CP-28784)"
+        },
+        "longitude": {
+          "type": "number",
+          "format": "double",
+          "description": "Longitude returned by the address cleanser (CP-28784)"
+        },
+        "stateFips": {
+          "type": "string",
+          "description": "State FIPS code returned by the address cleanser (CP-28784)"
+        },
+        "countyFips": {
+          "type": "string",
+          "description": "County FIPS code returned by the address cleanser (CP-28784)"
+        },
+        "formattedAddress": {
+          "type": "string",
+          "description": "Fully formatted address returned by the address cleanser (CP-28784)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-bulk-assign-monitoring-workflow-request-schema.json",
+  "title": "BulkAssignMonitoringWorkflowRequest",
+  "description": "Request to assign multiple monitoring workflows",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-monitoringworkflow-api-openapi.yml#/components/schemas/BulkAssignMonitoringWorkflowRequest",
+  "type": "object",
+  "required": [
+    "assignTo"
+  ],
+  "properties": {
+    "workflowIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of monitoring workflow IDs to assign. Either workflowIds or filter must be provided."
+    },
+    "assignTo": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "List of user IDs to assign workflows to. Workflows will be evenly distributed across these users"
+    },
+    "filter": {
+      "type": "string",
+      "description": "Filter criteria as JSON string (URL encoded). Used to fetch workflow IDs when workflowIds is not provided. See GET /monitoring-workflows endpoint documentation for filter format."
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-drain-dlq-response-schema.json",
+  "title": "DrainDlqResponse",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhooks-api-openapi.yml#/components/schemas/DrainDlqResponse",
+  "type": "object",
+  "properties": {
+    "totalPulled": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total messages pulled from the DLQ subscription in this drain."
+    },
+    "requeued": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Messages successfully re-enqueued to the target Cloud Tasks queue."
+    },
+    "filtered": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Messages skipped because they did not match the webhookId/tenantId filter."
+    },
+    "failed": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Messages that failed to re-enqueue; they remain in the DLQ and are retried on the next drain."
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DrainResult"
+      },
+      "description": "Per-message outcome details for the messages pulled in this drain."
+    }
+  },
+  "$defs": {
+    "DrainResult": {
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "string",
+          "description": "Pub/Sub message id of the DLQ message."
+        },
+        "webhookId": {
+          "type": "string",
+          "description": "Webhook id extracted from the failed event, when available."
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant id extracted from the failed event, when available."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "REQUEUED",
+            "FILTERED",
+            "DRY_RUN",
+            "FAILED"
+          ],
+          "description": "Outcome for this message. One of: REQUEUED (re-enqueued to the target queue), FILTERED (did not match the filter), DRY_RUN (matched but not re-enqueued because dryRun was true), FAILED (could not be re-enqueued or the payload was malformed)."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Human-readable detail for the outcome, such as the target queue or the failure reason."
+        }
+      }
+    }
+  }
+}

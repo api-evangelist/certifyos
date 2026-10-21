@@ -120,6 +120,24 @@ paths:
       - jwt: []
 components:
   schemas:
+    AnchorRecomputationRunResponse:
+      type: object
+      required:
+      - runId
+      description: A queued Anchor Date recomputation run.
+      properties:
+        runId:
+          type: string
+          description: Id of the recomputation run, for following its progress.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -148,24 +166,6 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    AnchorRecomputationRunResponse:
-      type: object
-      required:
-      - runId
-      description: A queued Anchor Date recomputation run.
-      properties:
-        runId:
-          type: string
-          description: Id of the recomputation run, for following its progress.
   securitySchemes:
     jwt:
       type: http

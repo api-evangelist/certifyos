@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-egress-job-detail-response-schema.json",
+  "title": "EgressJobDetailResponse",
+  "description": "Full detail view of an export job for the Activity Center",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-directory-api-openapi.yml#/components/schemas/EgressJobDetailResponse",
+  "type": "object",
+  "properties": {
+    "tableName": {
+      "type": "string",
+      "description": "Spanner table name"
+    },
+    "correlationId": {
+      "type": "string",
+      "description": "Correlation ID for the export job"
+    },
+    "type": {
+      "type": "string",
+      "description": "Export type"
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Tenant ID"
+    },
+    "templateId": {
+      "type": "string",
+      "description": "Template ID used for the export, if any"
+    },
+    "jobType": {
+      "type": "string",
+      "enum": [
+        "MANUAL",
+        "SCHEDULED"
+      ],
+      "description": "Job type"
+    },
+    "status": {
+      "type": "string",
+      "description": "Current status of the export job"
+    },
+    "expectedRows": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Expected number of rows for the export"
+    },
+    "successfulRows": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Number of rows successfully exported"
+    },
+    "unsuccessfulRows": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Number of rows that failed to export"
+    },
+    "initiatedByUserId": {
+      "type": "string",
+      "description": "User ID that initiated the export job"
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "Timestamp the export job was created"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Timestamp the export job was last updated"
+    },
+    "cancelledAt": {
+      "type": "string",
+      "description": "Timestamp the export job was cancelled, if applicable"
+    },
+    "cancelledByUserId": {
+      "type": "string",
+      "description": "User ID that requested cancellation, if applicable"
+    },
+    "dataflowSeedJobId": {
+      "type": "string",
+      "description": "Dataflow job ID for the seed (Job A) step"
+    },
+    "dataflowExportJobId": {
+      "type": "string",
+      "description": "Dataflow job ID for the export (Job B) step"
+    },
+    "seedJobStatus": {
+      "type": "string",
+      "description": "Status of the Dataflow seed job"
+    },
+    "exportJobStatus": {
+      "type": "string",
+      "description": "Status of the Dataflow export job"
+    },
+    "gcsFilePath": {
+      "type": "string",
+      "format": "uri",
+      "description": "GCS file path for the exported file, once available"
+    },
+    "exportType": {
+      "type": "string",
+      "enum": [
+        "FULL_ROSTER_EXPORT",
+        "CHANGE_FILE"
+      ],
+      "description": "Export kind of the template behind this job (CP-41063): FULL_ROSTER_EXPORT (default when the egress service omits it) or CHANGE_FILE"
+    },
+    "changeFileWindowFrom": {
+      "type": "string",
+      "description": "Change File runs only: start of the change window (exclusive), ISO-8601"
+    },
+    "changeFileWindowTo": {
+      "type": "string",
+      "description": "Change File runs only: end of the change window (inclusive), ISO-8601"
+    },
+    "transactionsSelected": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Change File runs only: transactions selected from the change ledger for the window"
+    },
+    "rowsWritten": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Change File runs only: rows written to the delivered file"
+    }
+  }
+}

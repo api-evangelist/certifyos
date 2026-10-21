@@ -284,6 +284,18 @@ paths:
       - jwt: []
 components:
   schemas:
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    Date:
+      type: string
+      format: date
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -312,6 +324,18 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     UdfSchemaResponse:
       type: object
       properties:
@@ -334,38 +358,6 @@ components:
           $ref: '#/components/schemas/Date'
         updatedBy:
           type: string
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    Date:
-      type: string
-      format: date
-    EntityType:
-      type: string
-      enum:
-      - practitioner
-      - facility
-      - location
-      - group
-      - group_location
-      - group_practitioner_location
-      - tenant_group
-      - tenant_group_practitioners
-      - tenant_facility_location
-      - tenant_group_facility
-      - tenant_group_facility_location
-      - tenant_group_practitioner_network
-      - tenant_group_location_practitioner_network
-      - tenant_group_location
-      - tenant_group_network
-      - tenant_group_facility_network
-      - tenant_group_location_facility_network
     JsonNode:
       type: object
       properties:
@@ -413,18 +405,26 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
+    EntityType:
       type: string
       enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
+      - practitioner
+      - facility
+      - location
+      - group
+      - group_location
+      - group_practitioner_location
+      - tenant_group
+      - tenant_group_practitioners
+      - tenant_facility_location
+      - tenant_group_facility
+      - tenant_group_facility_location
+      - tenant_group_practitioner_network
+      - tenant_group_location_practitioner_network
+      - tenant_group_location
+      - tenant_group_network
+      - tenant_group_facility_network
+      - tenant_group_location_facility_network
   securitySchemes:
     jwt:
       type: http

@@ -1,5 +1,6 @@
 ---
-name: Monitor a network and triage compliance flags
+name: certifyos-monitor-and-triage-flags
+title: "Monitor a network and triage compliance flags"
 description: >-
   Watch Certify's continuous monitoring workflows, search and triage the
   exclusion/sanction flags they raise, and mark providers reviewed.

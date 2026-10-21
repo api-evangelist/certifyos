@@ -193,23 +193,15 @@ paths:
       security: []
 components:
   schemas:
-    LoginRequest:
+    ApiError:
       type: object
-      required:
-      - email
-      - password
-      description: Request body for user authentication
+      description: Standard API error response containing a list of error objects
       properties:
-        email:
-          type: string
-          examples:
-          - user@example.com
-          description: User email address
-        password:
-          type: string
-          examples:
-          - password
-          description: User password
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     ClientCredentialsResponse:
       type: object
       required:
@@ -279,15 +271,6 @@ components:
           examples:
           - your-client-secret
           description: Auth0 client secret (required)
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     LoginResponse:
       type: object
       required:
@@ -306,6 +289,23 @@ components:
           examples:
           - 86400
           description: Token expiration time in seconds
+    LoginRequest:
+      type: object
+      required:
+      - email
+      - password
+      description: Request body for user authentication
+      properties:
+        email:
+          type: string
+          examples:
+          - user@example.com
+          description: User email address
+        password:
+          type: string
+          examples:
+          - password
+          description: User password
   securitySchemes:
     jwt:
       type: http

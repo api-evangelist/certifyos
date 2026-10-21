@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-smart-fix-trigger-response-schema.json",
+  "title": "SmartFixTriggerResponse",
+  "description": "Aggregated Smart Fix response returned to the frontend",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-rosterrecord-api-openapi.yml#/components/schemas/SmartFixTriggerResponse",
+  "type": "object",
+  "properties": {
+    "suggestions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EnrichedSuggestion"
+      },
+      "description": "Per-error fix suggestions enriched with rowId"
+    },
+    "totalErrors": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total validation errors sent to Smart Fix"
+    },
+    "totalFixed": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Errors for which a suggested_value was returned"
+    },
+    "totalSkipped": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Errors where no fix could be suggested"
+    },
+    "totalRowsProcessed": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of VALIDATION_FAILED rows processed"
+    },
+    "success": {
+      "type": "boolean",
+      "description": "True if all Smart Fix batches succeeded"
+    },
+    "batchErrors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Error messages from any failed batches"
+    }
+  },
+  "$defs": {
+    "EnrichedSuggestion": {
+      "type": "object",
+      "description": "A Smart Fix suggestion with row_id for frontend correlation",
+      "properties": {
+        "fieldName": {
+          "type": "string",
+          "description": "CSV column header"
+        },
+        "currentValue": {
+          "type": "string",
+          "description": "Original cell value"
+        },
+        "mappedAttribute": {
+          "type": "string",
+          "description": "System attribute name (e.g. dateOfBirth)"
+        },
+        "errorCategory": {
+          "type": "string",
+          "description": "Error category sent to Smart Fix"
+        },
+        "suggestedValue": {
+          "type": "string",
+          "description": "Corrected value, or null if unfixable"
+        },
+        "confidence": {
+          "type": "string",
+          "description": "high, medium, or low"
+        },
+        "confidenceScore": {
+          "type": "number",
+          "format": "double",
+          "description": "Numeric confidence 0.0-1.0"
+        },
+        "reasoning": {
+          "type": "string",
+          "description": "Explanation of the correction"
+        },
+        "status": {
+          "type": "string",
+          "description": "auto_fixed, llm_suggested, or requires_human_review"
+        },
+        "rowIndex": {
+          "type": "string",
+          "description": "Spanner row_id (recordKey) for correlating back to RosterRowItem"
+        }
+      }
+    }
+  }
+}

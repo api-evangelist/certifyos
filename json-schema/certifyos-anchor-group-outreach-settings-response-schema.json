@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-anchor-group-outreach-settings-response-schema.json",
+  "title": "AnchorGroupOutreachSettingsResponse",
+  "description": "One cycle's view of an anchor group's outreach settings",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-anchorgroupoutreachsettings-api-openapi.yml#/components/schemas/AnchorGroupOutreachSettingsResponse",
+  "type": "object",
+  "properties": {
+    "anchorGroupId": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "PRACTITIONER_CREDENTIALING"
+      ]
+    },
+    "credentialingCycle": {
+      "type": "string",
+      "enum": [
+        "INITIAL",
+        "RECREDENTIALING"
+      ]
+    },
+    "emailRecipientPreferences": {
+      "$ref": "#/$defs/Recipients1"
+    },
+    "template": {
+      "$ref": "#/$defs/Template1",
+      "type": "object",
+      "description": "This cycle's template; null until first saved"
+    },
+    "outreachReasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Reason1"
+      }
+    },
+    "smartOutreach": {
+      "$ref": "#/$defs/SmartOutreach1"
+    },
+    "providerPortalEnabled": {
+      "type": "boolean",
+      "description": "Always false: not an anchor-group setting"
+    },
+    "stateSpecificPlan": {
+      "description": "Always null: not an anchor-group setting"
+    },
+    "version": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Send back on the next save; null when nothing is saved"
+    },
+    "isDefault": {
+      "type": "boolean",
+      "description": "True when these are the defaults, not saved settings"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Instant"
+    },
+    "updatedBy": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Logo1": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "url": {
+          "type": "string"
+        },
+        "width": {
+          "type": "string"
+        }
+      }
+    },
+    "Reason1": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "instruction": {
+          "type": "string"
+        },
+        "isCaqhResolvable": {
+          "type": "boolean"
+        },
+        "submitFormText": {
+          "type": "string"
+        }
+      }
+    },
+    "Recipients1": {
+      "type": "object",
+      "properties": {
+        "primaryEmail": {
+          "type": "boolean"
+        },
+        "caqhPrimaryEmail": {
+          "type": "boolean"
+        },
+        "credentialingPrimaryContact": {
+          "type": "boolean"
+        },
+        "credentialingOfficeManager": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SmartOutreach1": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "businessDaysBetweenAttempts": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "maxAttemptsPerReason": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "recredCadenceDays": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "dryRunEnabled": {
+          "type": "boolean"
+        },
+        "useCalendarDays": {
+          "type": "boolean"
+        },
+        "caqhValidStatuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Template1": {
+      "type": "object",
+      "properties": {
+        "ccEmails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "logo": {
+          "$ref": "#/$defs/Logo1"
+        }
+      }
+    }
+  }
+}

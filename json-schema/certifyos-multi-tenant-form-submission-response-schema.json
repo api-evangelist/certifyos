@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-multi-tenant-form-submission-response-schema.json",
+  "title": "MultiTenantFormSubmissionResponse",
+  "description": "Response for a multi-tenant form submission",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-form-submissions-api-openapi.yml#/components/schemas/MultiTenantFormSubmissionResponse",
+  "type": "object",
+  "properties": {
+    "formSubmissionId": {
+      "type": "string",
+      "description": "Unique identifier of the canonical form submission record"
+    },
+    "status": {
+      "type": "string",
+      "description": "Aggregated status across all tenants: success, partial_success, or failed"
+    },
+    "tenantResults": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TenantSubmissionResult"
+      },
+      "description": "Per-tenant processing results"
+    },
+    "gcsUploadStarted": {
+      "type": "boolean",
+      "description": "Reserved for GCS document upload dispatch. Always false in this release; will reflect actual Cloud Task dispatch in a follow-up PR."
+    }
+  },
+  "$defs": {
+    "TenantSubmissionResult": {
+      "type": "object",
+      "description": "Result of processing a single tenant in a multi-tenant form submission",
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "description": "The tenant ID that was processed"
+        },
+        "status": {
+          "type": "string",
+          "description": "Processing status for this tenant: success or failed"
+        },
+        "certifyId": {
+          "type": "string",
+          "description": "Tenant crosswalk certify ID, populated when a tenant crosswalk was created. Empty string when only a portal crosswalk was created."
+        },
+        "errorCode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Error code when status is failed"
+        },
+        "errorMessage": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Human-readable error detail when status is failed"
+        }
+      }
+    }
+  }
+}

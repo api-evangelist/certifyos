@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-directory-request-schema.json",
+  "title": "DirectoryRequest",
+  "description": "Request body for starting a directory export job",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-directory-api-openapi.yml#/components/schemas/DirectoryRequest",
+  "type": "object",
+  "properties": {
+    "responseFormat": {
+      "$ref": "#/$defs/DirectoryExportOutputFormat",
+      "type": "string",
+      "enum": [
+        "ndjson",
+        "csv"
+      ],
+      "description": "Output format for the exported file. Supported values: `ndjson` (Newline Delimited JSON) or `csv` (Comma Separated Values), the default is `ndjson`. If not specified, defaults to 'ndjson'."
+    },
+    "templateId": {
+      "type": "string",
+      "description": "Optional egress template ID for a template-driven export. When provided, the export uses the template's column mappings instead of the legacy pipeline. The template must belong to the tenant and have status=active, or the request fails with 400. If `responseFormat` is also supplied, it must match the template's configured output format or the request fails with 400."
+    },
+    "mappingsCsvUrl": {
+      "type": "string",
+      "description": "Optional GCS URL to column mappings CSV for template pipeline"
+    },
+    "filters": {
+      "$ref": "#/$defs/Filters1",
+      "type": "object",
+      "description": "Optional NPI and/or TIN filters. When provided, only matching entities are exported and both fields are combined with OR logic. TIN-only filters are rejected for practitioners exports (400)."
+    },
+    "from": {
+      "type": "string",
+      "description": "Start of the export window as a UTC calendar date (`yyyy-MM-dd`, inclusive). Required together with `to` when `templateId` is a Manual Change File template; rejected with 400 for Scheduled Change File templates and for full roster exports."
+    },
+    "to": {
+      "type": "string",
+      "description": "End of the export window as a UTC calendar date (`yyyy-MM-dd`, inclusive); must not precede `from`. See `from`."
+    }
+  },
+  "$defs": {
+    "DirectoryExportOutputFormat": {
+      "type": "string",
+      "enum": [
+        "ndjson",
+        "csv"
+      ]
+    },
+    "Filters1": {
+      "type": "object",
+      "description": "NPI and/or TIN filter criteria",
+      "properties": {
+        "npi": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of NPIs to filter by (each must be exactly 10 digits). Capped at 100 entries by default; omit to export all NPIs."
+        },
+        "tin": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of TINs to filter by (each must be exactly 9 digits). Capped at 100 entries by default; omit to export all TINs. Not supported for practitioners exports when npi is absent."
+        }
+      }
+    }
+  }
+}

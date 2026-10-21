@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-outreach-recipients-response-schema.json",
+  "title": "SharedOutreachRecipientsResponse",
+  "description": "Every email address the participating member tenants hold for the practitioner, private ones included, to pre-fill the shared outreach composer. For sending only: not a data record, and nothing is stored when it is read.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedoutreachrecipients-api-openapi.yml#/components/schemas/SharedOutreachRecipientsResponse",
+  "type": "object",
+  "required": [
+    "recipients"
+  ],
+  "properties": {
+    "recipients": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SharedOutreachRecipient"
+      },
+      "description": "One entry per distinct address (case-insensitive); may be empty."
+    }
+  },
+  "$defs": {
+    "SharedOutreachRecipient": {
+      "type": "object",
+      "required": [
+        "email",
+        "tenantIds",
+        "sources"
+      ],
+      "description": "One address the composer may send to.",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "The address, trimmed, in the casing it was first found in."
+        },
+        "tenantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The member tenants holding this address, in tenant order."
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Where it was found, each one of: primaryEmail, caqhPrimaryEmail, secondaryEmail, emails (the practitioner email fields on a member workflow), or caqhExtracted (the email read from the member's CAQH application form)."
+        }
+      }
+    }
+  }
+}

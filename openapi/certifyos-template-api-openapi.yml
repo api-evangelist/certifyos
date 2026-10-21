@@ -1033,307 +1033,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    TemplateCreatorResponse:
-      type: object
-      description: A distinct egress-template creator
-      properties:
-        id:
-          type: string
-          description: Raw createdBy user ID (the value to filter the list endpoint by)
-        name:
-          type: string
-          description: Resolved display name, or null when unresolved
-        email:
-          type: string
-          description: Resolved email, or null when unresolved
-    RosterTemplateResponseSchema:
-      type: object
-      description: A roster template record.
-      properties:
-        id:
-          type: string
-          examples:
-          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
-          description: Server-generated unique identifier of the template.
-        tenantId:
-          type: string
-          examples:
-          - tenant_001
-          description: Tenant that owns the template.
-        createdAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          description: Timestamp at which the template record was created.
-        createdBy:
-          type: string
-          examples:
-          - auth0|64f1c2d3e4b5a6
-          description: ID of the user who created the template.
-        createdByName:
-          type:
-          - string
-          - 'null'
-          examples:
-          - Jordan Reyes
-          description: Display name of the creator, resolved from `createdBy` in one batch lookup per page (CP-39764). `null` when the lookup timed out or the user could not be resolved; clients then fall back to `createdByEmail`, then `createdBy`.
-        createdByEmail:
-          type:
-          - string
-          - 'null'
-          examples:
-          - jordan.reyes@example.com
-          description: Email of the creator, resolved alongside `createdByName`. `null` when it could not be resolved.
-        updatedAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          description: Timestamp of the most recent update to the template record.
-        updatedBy:
-          type: string
-          examples:
-          - auth0|64f1c2d3e4b5a6
-          description: ID of the user who last updated the template.
-        data:
-          type: object
-          description: 'Template payload. Persisted keys: `templateName`, `description`, `status` (`in-progress` while awaiting mapping confirmation/approval, `success` once approved, `failure` when a re-approval''s schema generation failed), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP`), plus - once approved - `template` and `schema` (GCS object paths of the template CSV and generated JSON schema). Responses additionally inject short-lived signed download URLs generated at request time and never stored: `mappingsUrl` on both list and detail reads, and `templateUrl`/`schemaUrl` on the detail read when the underlying objects exist. Signed URLs are V4-signed and valid for 7 days.'
-    RosterJobType:
-      type: string
-      enum:
-      - PRACTITIONER
-      - FACILITY
-      - GROUP
-    RequiredFieldPolicyResponse:
-      type: object
-      properties:
-        mandatoryKeys:
-          type: array
-          items:
-            type: string
-        oneOfGroups:
-          type: array
-          items:
-            type: array
-            items:
-              type: string
-        coRequisiteGroups:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoRequisiteFieldGroup'
-    TemplateData:
-      type: object
-      description: Suggestion payload for a newly created two-step template.
-      properties:
-        id:
-          type: string
-          examples:
-          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
-          description: Server-generated ID of the template record just created. Use it in the follow-up `PUT /templates/{id}` and `PUT /templates/{id}/approve` calls.
-        name:
-          type: string
-          examples:
-          - Q3 Practitioner Roster
-          description: Display name the template was created with.
-        entities:
-          type: array
-          items:
-            type: string
-          description: Entity-group hints for the template-builder UI, ordered for display. Group-roster templates expose Group-related entities only.
-        allFields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-          description: The full catalog of mappable Certify system fields for the template's roster type, so the consumer can offer alternatives beyond the auto-suggested matches.
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/FieldSuggestion'
-          description: Per-column mapping suggestions for the uploaded file, one entry per CSV header.
-    ScratchTemplateRequest:
-      type: object
-      properties:
-        templateName:
-          type: string
-        description:
-          type: string
-        type:
-          $ref: '#/components/schemas/RosterJobType'
-        columns:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-    PagedTemplateResponse:
-      type: object
-      description: A single page of roster templates.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/RosterTemplateResponseSchema'
-          description: Template records on this page, each with a request-time `mappingsUrl` signed download URL injected into its `data` object.
-        links:
-          $ref: '#/components/schemas/PageLinks1'
-          type: object
-          description: 'Always `null` on this endpoint: the navigation links produced by the data layer point at the internal DAL host, so they are stripped before the response is returned. Page through results with the `page` and `size` query parameters instead.'
-        totalCount:
-          type: integer
-          format: int64
-          examples:
-          - 12
-          description: Total number of templates matching the filters, across all pages.
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-        workflowId:
-          type: string
-        section:
-          type: string
-        opIndex:
-          type: integer
-          format: int32
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    SingleStepTemplateFlowResponse:
-      type: object
-      description: 'Result of a single-step template create or update: the resolved column mappings, final status, and the GCS object paths of the template artifacts.'
-      properties:
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-          description: The template's resolved column mappings. After a file upload these are the mappings extracted from the uploaded mappings CSV; after a metadata-only update they are the template's existing stored columns.
-        status:
-          type: string
-          examples:
-          - success
-          description: Final template status. `success` when the validation schema was generated and the template is ready for roster uploads; `failure` when schema generation failed with an I/O error. Metadata-only updates preserve and return the template's existing status.
-        templateId:
-          type: string
-          examples:
-          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
-          description: Server-generated ID of the created or updated template.
-        templateUrl:
-          type: string
-          examples:
-          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
-          description: GCS object path (not a signed URL) of the stored template CSV. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `templateUrl` in the record's `data`.
-        schemaUrl:
-          type: string
-          examples:
-          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
-          description: GCS object path (not a signed URL) of the generated JSON validation schema. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `schemaUrl` in the record's `data`.
-    TemplateCreatorsResponse:
-      type: object
-      description: Distinct egress-template creators, with a truncation signal for the bounded scan
-      properties:
-        creators:
-          type: array
-          items:
-            $ref: '#/components/schemas/TemplateCreatorResponse'
-          description: Distinct creators, in first-seen order
-        truncated:
-          type: boolean
-          description: True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned.
-    PageLinks1:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    CoRequisiteFieldGroup:
-      type: object
-      properties:
-        triggerKeys:
-          type: array
-          items:
-            type: string
-        requiredKeys:
-          type: array
-          items:
-            type: string
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    ApproveTemplateResponse:
-      type: object
-      description: 'Outcome of a template approval: the mappings the validation schema was generated from and the resulting status.'
-      properties:
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-          description: The column mappings the schema generation ran against - an echo of the request body's `fields`.
-        status:
-          type: string
-          examples:
-          - success
-          description: '`success` when the JSON schema was generated, uploaded to GCS, and the template record moved to `success`; `failure` when schema generation or upload failed with an I/O error, in which case the template record is left unchanged (it remains `in-progress`) and the call can be retried.'
-    TemplateUploadResponse:
-      type: object
-      description: 'Result of step 1 of the two-step template flow: the new template plus auto-suggested column mappings for review.'
-      properties:
-        status:
-          type: string
-          examples:
-          - in-progress
-          description: Processing status of the new template. Always `in-progress` at this point in the flow; it becomes `success` only after `PUT /templates/{id}/approve` completes.
-        data:
-          $ref: '#/components/schemas/TemplateData'
-          type: object
-          description: The new template's ID and the field-mapping suggestions to review before confirming mappings via `PUT /templates/{id}`.
-    TemplateColumnNoteRequest:
-      type: object
-      required:
-      - name
-      description: One template column's note, saved without changing anything else in the template.
-      properties:
-        name:
-          type: string
-          examples:
-          - NPI
-          pattern: \S
-          description: Saved name of the template column (its File Column Header), matched trimmed and case-insensitively.
-        notes:
-          type:
-          - string
-          - 'null'
-          examples:
-          - Strip leading zeros before mapping
-          description: The note. Blank or absent clears it. No length limit.
-    SuggestColumnMappingsRequest:
-      type: object
-      properties:
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-        columnNames:
-          type: array
-          maxItems: 500
-          items:
-            type: string
-        sampleValues:
-          type: array
-          maxItems: 500
-          items:
-            type: array
-            items:
-              type: string
     Field:
       type: object
       description: One roster column and the Certify system field it maps to.
@@ -1437,6 +1136,154 @@ components:
           type: boolean
         skipped:
           type: boolean
+    RosterTemplateResponseSchema:
+      type: object
+      description: A roster template record.
+      properties:
+        id:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated unique identifier of the template.
+        tenantId:
+          type: string
+          examples:
+          - tenant_001
+          description: Tenant that owns the template.
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp at which the template record was created.
+        createdBy:
+          type: string
+          examples:
+          - auth0|64f1c2d3e4b5a6
+          description: ID of the user who created the template.
+        createdByName:
+          type:
+          - string
+          - 'null'
+          examples:
+          - Jordan Reyes
+          description: Display name of the creator, resolved from `createdBy` in one batch lookup per page (CP-39764). `null` when the lookup timed out or the user could not be resolved; clients then fall back to `createdByEmail`, then `createdBy`.
+        createdByEmail:
+          type:
+          - string
+          - 'null'
+          examples:
+          - jordan.reyes@example.com
+          description: Email of the creator, resolved alongside `createdByName`. `null` when it could not be resolved.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp of the most recent update to the template record.
+        updatedBy:
+          type: string
+          examples:
+          - auth0|64f1c2d3e4b5a6
+          description: ID of the user who last updated the template.
+        data:
+          type: object
+          description: 'Template payload. Persisted keys: `templateName`, `description`, `status` (`in-progress` while awaiting mapping confirmation/approval, `success` once approved, `failure` when a re-approval''s schema generation failed), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP`), plus - once approved - `template` and `schema` (GCS object paths of the template CSV and generated JSON schema). Responses additionally inject short-lived signed download URLs generated at request time and never stored: `mappingsUrl` on both list and detail reads, and `templateUrl`/`schemaUrl` on the detail read when the underlying objects exist. Signed URLs are V4-signed and valid for 7 days.'
+    SingleStepTemplateFlowResponse:
+      type: object
+      description: 'Result of a single-step template create or update: the resolved column mappings, final status, and the GCS object paths of the template artifacts.'
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: The template's resolved column mappings. After a file upload these are the mappings extracted from the uploaded mappings CSV; after a metadata-only update they are the template's existing stored columns.
+        status:
+          type: string
+          examples:
+          - success
+          description: Final template status. `success` when the validation schema was generated and the template is ready for roster uploads; `failure` when schema generation failed with an I/O error. Metadata-only updates preserve and return the template's existing status.
+        templateId:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated ID of the created or updated template.
+        templateUrl:
+          type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+          description: GCS object path (not a signed URL) of the stored template CSV. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `templateUrl` in the record's `data`.
+        schemaUrl:
+          type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+          description: GCS object path (not a signed URL) of the generated JSON validation schema. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `schemaUrl` in the record's `data`.
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    ApproveTemplateResponse:
+      type: object
+      description: 'Outcome of a template approval: the mappings the validation schema was generated from and the resulting status.'
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: The column mappings the schema generation ran against - an echo of the request body's `fields`.
+        status:
+          type: string
+          examples:
+          - success
+          description: '`success` when the JSON schema was generated, uploaded to GCS, and the template record moved to `success`; `failure` when schema generation or upload failed with an I/O error, in which case the template record is left unchanged (it remains `in-progress`) and the call can be retried.'
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
+      - GROUP
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    SuggestColumnMappingsRequest:
+      type: object
+      properties:
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+        columnNames:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+        sampleValues:
+          type: array
+          maxItems: 500
+          items:
+            type: array
+            items:
+              type: string
+    RequiredFieldPolicyResponse:
+      type: object
+      properties:
+        mandatoryKeys:
+          type: array
+          items:
+            type: string
+        oneOfGroups:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        coRequisiteGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoRequisiteFieldGroup'
     TemplateUpdateRequest:
       type: object
       description: Confirmed column-to-field mappings for a template. Used as the request body of `PUT /templates/{id}` and `PUT /templates/{id}/approve`; `PUT /templates/{id}` also echoes this shape back as its response.
@@ -1450,6 +1297,72 @@ components:
           items:
             $ref: '#/components/schemas/Field'
           description: Column mappings to record. Must contain one entry for every header column of the template's stored `template.csv` (unmapped columns cause a 400); columns to ignore must be sent with the `[skipped]` sentinel as `mappedKey`. Each non-skipped entry's `mappedKey` must be a known system field unless `mappedEntity` is provided.
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    TemplateCreatorResponse:
+      type: object
+      description: A distinct egress-template creator
+      properties:
+        id:
+          type: string
+          description: Raw createdBy user ID (the value to filter the list endpoint by)
+        name:
+          type: string
+          description: Resolved display name, or null when unresolved
+        email:
+          type: string
+          description: Resolved email, or null when unresolved
+    TemplateColumnNoteRequest:
+      type: object
+      required:
+      - name
+      description: One template column's note, saved without changing anything else in the template.
+      properties:
+        name:
+          type: string
+          examples:
+          - NPI
+          pattern: \S
+          description: Saved name of the template column (its File Column Header), matched trimmed and case-insensitively.
+        notes:
+          type:
+          - string
+          - 'null'
+          examples:
+          - Strip leading zeros before mapping
+          description: The note. Blank or absent clears it. No length limit.
+    TemplateData:
+      type: object
+      description: Suggestion payload for a newly created two-step template.
+      properties:
+        id:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated ID of the template record just created. Use it in the follow-up `PUT /templates/{id}` and `PUT /templates/{id}/approve` calls.
+        name:
+          type: string
+          examples:
+          - Q3 Practitioner Roster
+          description: Display name the template was created with.
+        entities:
+          type: array
+          items:
+            type: string
+          description: Entity-group hints for the template-builder UI, ordered for display. Group-roster templates expose Group-related entities only.
+        allFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: The full catalog of mappable Certify system fields for the template's roster type, so the consumer can offer alternatives beyond the auto-suggested matches.
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldSuggestion'
+          description: Per-column mapping suggestions for the uploaded file, one entry per CSV header.
     FieldSuggestion:
       type: object
       description: Ranked system-field mapping suggestions for one CSV column.
@@ -1464,6 +1377,93 @@ components:
           items:
             $ref: '#/components/schemas/Field'
           description: Candidate system-field mappings for this column, best match first. A column with a previously confirmed mapping in the tenant's column-mapping cache returns that single high-confidence match; otherwise candidates come from fuzzy-matching the header against the system-field catalog. Empty when nothing scored above the match threshold.
+    PagedTemplateResponse:
+      type: object
+      description: A single page of roster templates.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterTemplateResponseSchema'
+          description: Template records on this page, each with a request-time `mappingsUrl` signed download URL injected into its `data` object.
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: 'Always `null` on this endpoint: the navigation links produced by the data layer point at the internal DAL host, so they are stripped before the response is returned. Page through results with the `page` and `size` query parameters instead.'
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 12
+          description: Total number of templates matching the filters, across all pages.
+    CoRequisiteFieldGroup:
+      type: object
+      properties:
+        triggerKeys:
+          type: array
+          items:
+            type: string
+        requiredKeys:
+          type: array
+          items:
+            type: string
+    ScratchTemplateRequest:
+      type: object
+      properties:
+        templateName:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/RosterJobType'
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+    TemplateUploadResponse:
+      type: object
+      description: 'Result of step 1 of the two-step template flow: the new template plus auto-suggested column mappings for review.'
+      properties:
+        status:
+          type: string
+          examples:
+          - in-progress
+          description: Processing status of the new template. Always `in-progress` at this point in the flow; it becomes `success` only after `PUT /templates/{id}/approve` completes.
+        data:
+          $ref: '#/components/schemas/TemplateData'
+          type: object
+          description: The new template's ID and the field-mapping suggestions to review before confirming mappings via `PUT /templates/{id}`.
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+        workflowId:
+          type: string
+        section:
+          type: string
+        opIndex:
+          type: integer
+          format: int32
+    TemplateCreatorsResponse:
+      type: object
+      description: Distinct egress-template creators, with a truncation signal for the bounded scan
+      properties:
+        creators:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateCreatorResponse'
+          description: Distinct creators, in first-seen order
+        truncated:
+          type: boolean
+          description: True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned.
   securitySchemes:
     jwt:
       type: http

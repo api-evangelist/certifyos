@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-sections-response-schema.json",
+  "title": "SharedSectionsResponse",
+  "description": "Every section of a shared credentialing workflow, aggregated across the member tenants the caller can read.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingsections-api-openapi.yml#/components/schemas/SharedSectionsResponse",
+  "type": "object",
+  "required": [
+    "sharedCredentialingWorkflowId",
+    "hiddenTenantCount",
+    "tenants",
+    "sections"
+  ],
+  "properties": {
+    "sharedCredentialingWorkflowId": {
+      "type": "string",
+      "description": "The shared credentialing workflow id."
+    },
+    "hiddenTenantCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Participating tenants the caller cannot read; counted, never named. A write response's hiddenTenantCount counts only the tenants that write reached or skipped.",
+      "minimum": 0
+    },
+    "tenants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SharedSectionsTenantDto"
+      },
+      "description": "One entry per readable, participating tenant."
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SharedSectionDto"
+      },
+      "description": "Every section, in catalog order."
+    }
+  },
+  "$defs": {
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    },
+    "ObjectNode": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/JsonNode"
+      }
+    },
+    "SharedAttachmentDto": {
+      "type": "object",
+      "required": [
+        "originalFileName",
+        "versions"
+      ],
+      "description": "One attachment file name and every URL it is held at.",
+      "properties": {
+        "originalFileName": {
+          "type": "string",
+          "description": "The file name, trimmed. Empty for an attachment stored without one, which is then an entry of its own for each URL."
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SharedFileVersionDto"
+          },
+          "description": "Each URL the file name is held at."
+        }
+      }
+    },
+    "SharedFileVersionDto": {
+      "type": "object",
+      "required": [
+        "fileUrl",
+        "tenantIds"
+      ],
+      "description": "One file URL and the readable tenants holding it.",
+      "properties": {
+        "fileUrl": {
+          "type": "string",
+          "description": "The file's storage key, exactly as stored: fetch it through a signed URL, never use it as a link."
+        },
+        "tenantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The readable tenants holding this URL."
+        }
+      }
+    },
+    "SharedRecordCoverageDto": {
+      "type": "object",
+      "required": [
+        "tenantIds"
+      ],
+      "description": "The readable tenants that hold a record.",
+      "properties": {
+        "tenantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "SharedSectionDto": {
+      "type": "object",
+      "required": [
+        "section",
+        "scope",
+        "status",
+        "records"
+      ],
+      "description": "One section of the shared workflow page.",
+      "properties": {
+        "section": {
+          "type": "string",
+          "description": "The section's kebab-case path name."
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "SHARED_PSV",
+            "TENANT_SCOPED",
+            "SUPPORTING",
+            "OUTREACH_DATA"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ISSUE",
+            "ALL_VERIFIED",
+            "POPULATED",
+            "EMPTY"
+          ]
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SharedSectionRecordDto"
+          }
+        }
+      }
+    },
+    "SharedSectionRecordDto": {
+      "type": "object",
+      "required": [
+        "credentialingDisplayGroupKey",
+        "deduplicationId",
+        "recordKind",
+        "provenance",
+        "privateData",
+        "coverage",
+        "capabilities",
+        "record",
+        "attachments"
+      ],
+      "description": "One aggregated record.",
+      "properties": {
+        "credentialingDisplayGroupKey": {
+          "type": "string",
+          "description": "The record's identity, the value the write routes take as {deduplicationId}. It changes whenever a visible field does, so use the latest one received."
+        },
+        "deduplicationId": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Deprecated: the same value as credentialingDisplayGroupKey, which replaces it. Read credentialingDisplayGroupKey; this field will be removed."
+        },
+        "recordKind": {
+          "type": "string",
+          "enum": [
+            "SHARED",
+            "TENANT"
+          ]
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "SYSTEM",
+            "MODIFIED",
+            "MANUAL"
+          ]
+        },
+        "privateData": {
+          "type": "boolean"
+        },
+        "coverage": {
+          "$ref": "#/$defs/SharedRecordCoverageDto"
+        },
+        "eligibleTenantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tenants a coverage change may add: readable, unlocked and not holding the record. Absent for NPDB, client preclusion and private PSV records, which are never shared; empty when no tenant remains."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What the caller may do to this record; each value is one of update, delete, share."
+        },
+        "record": {
+          "$ref": "#/$defs/ObjectNode",
+          "type": "array",
+          "description": "The fields the page shows. A record every copy of which is verified also carries verifiedBy (user id), verifiedDate and verifiedByName, as the tenant workflow GET does; any other record carries none of them (CP-42861)."
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SharedAttachmentDto"
+          },
+          "description": "The record's attachments: one entry per file name, each listing every URL the name is held at with the readable tenants holding it. Empty when there are none, and always empty for Supporting Documents (their files are versions) and the contact sections."
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SharedFileVersionDto"
+          },
+          "description": "Supporting Documents only: the document's file URLs, each with the readable tenants holding it; empty for a document stored without a URL. Absent in every other section."
+        },
+        "memberRecordIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The ids the member workflows store for the copies this record stands for (every readable copy merged into a shared record, the record's own for a tenant record), sorted and distinct. Match a rule result's targetItemId on them. Absent when no copy stores an id."
+        }
+      }
+    },
+    "SharedSectionsTenantDto": {
+      "type": "object",
+      "required": [
+        "id",
+        "locked",
+        "capabilities"
+      ],
+      "description": "A member tenant the caller can read.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What the caller may do in this tenant; each value is one of read, create, update, delete, share, attach, detach, upload, verify."
+        }
+      }
+    }
+  }
+}

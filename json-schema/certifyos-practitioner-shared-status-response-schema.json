@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-practitioner-shared-status-response-schema.json",
+  "title": "PractitionerSharedStatusResponse",
+  "description": "A practitioner's shared credentialing status across the plans the caller can see: each plan's eligibility verdict and current credentialing workflow, and each anchor group's current shared workflow.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingpractitionerstatus-api-openapi.yml#/components/schemas/PractitionerSharedStatusResponse",
+  "type": "object",
+  "required": [
+    "npi",
+    "tenants",
+    "sharedWorkflows"
+  ],
+  "properties": {
+    "npi": {
+      "type": "string",
+      "description": "The NPI that was looked up."
+    },
+    "tenants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PractitionerSharedStatusTenant"
+      },
+      "description": "One entry per plan that has an eligibility verdict for the practitioner, sorted by plan name. Empty when the NPI is unknown or nothing is visible."
+    },
+    "sharedWorkflows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PractitionerSharedStatusSharedWorkflow"
+      },
+      "description": "Each visible anchor group's current shared workflow: the active one, else the newest. Empty when none exists."
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "PractitionerSharedStatusCurrentWorkflow": {
+      "type": "object",
+      "required": [
+        "workflowId",
+        "status"
+      ],
+      "description": "A plan's current workflow.",
+      "properties": {
+        "workflowId": {
+          "type": "string",
+          "description": "The workflow id."
+        },
+        "status": {
+          "type": "string",
+          "description": "The latest status event name as stored, normally a TimelineStatus name; NOT_STARTED when there are no events."
+        },
+        "statusUpdatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "When the latest status event was written; null when there is none."
+        },
+        "sharedCredWorkflowId": {
+          "type": "string",
+          "description": "The shared workflow this workflow belongs to; null for the plan's own workflow."
+        }
+      }
+    },
+    "PractitionerSharedStatusEligibility": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "description": "A plan's stored eligibility verdict.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "ELIGIBLE or INELIGIBLE."
+        },
+        "reasonCode": {
+          "type": "string",
+          "description": "Exclusion reason code; null when none is stored."
+        },
+        "reasonDescription": {
+          "type": "string",
+          "description": "Exclusion reason wording; null when there is no reason code."
+        }
+      }
+    },
+    "PractitionerSharedStatusSharedWorkflow": {
+      "type": "object",
+      "required": [
+        "sharedCredWorkflowId",
+        "anchorGroupId",
+        "status",
+        "active",
+        "memberTenantIds"
+      ],
+      "description": "An anchor group's current shared workflow.",
+      "properties": {
+        "sharedCredWorkflowId": {
+          "type": "string",
+          "description": "The shared workflow id."
+        },
+        "anchorGroupId": {
+          "type": "string",
+          "description": "The anchor group it belongs to."
+        },
+        "status": {
+          "type": "string",
+          "description": "The stored shared workflow status."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the shared workflow still accepts new tenants."
+        },
+        "credentialingCycle": {
+          "type": "string",
+          "description": "INITIAL or RECREDENTIALING; null until derived."
+        },
+        "memberTenantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tenant ids with a member workflow in it, withdrawn members included, sorted ascending."
+        }
+      }
+    },
+    "PractitionerSharedStatusTenant": {
+      "type": "object",
+      "required": [
+        "tenantId",
+        "anchorGroupId",
+        "practitionerRegistryId",
+        "eligibility",
+        "participating"
+      ],
+      "description": "One plan's eligibility and current workflow.",
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "description": "The plan's tenant id."
+        },
+        "tenantName": {
+          "type": "string",
+          "description": "The plan's display name; null when it has none."
+        },
+        "anchorGroupId": {
+          "type": "string",
+          "description": "The anchor group the verdict sits in."
+        },
+        "practitionerRegistryId": {
+          "type": "string",
+          "description": "The registry practitioner behind the NPI."
+        },
+        "eligibility": {
+          "$ref": "#/$defs/PractitionerSharedStatusEligibility",
+          "type": "object",
+          "description": "The stored eligibility verdict."
+        },
+        "participating": {
+          "type": "boolean",
+          "description": "Whether the plan takes part in the shared workflow: the operator override when set, else true while the plan's current workflow is an unfinished member of a shared workflow, else whether it is eligible. True can also mean eligible to join, not yet a member."
+        },
+        "currentWorkflow": {
+          "$ref": "#/$defs/PractitionerSharedStatusCurrentWorkflow",
+          "type": "object",
+          "description": "The plan's current workflow; null when it has none."
+        }
+      }
+    }
+  }
+}

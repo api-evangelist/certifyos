@@ -621,118 +621,131 @@ paths:
       - jwt: []
 components:
   schemas:
-    GetFlagDetailsResponse:
+    BulkFlagStatusUpdateResponse:
       type: object
-      description: Full flag object plus its audit history trail
+      required:
+      - successful
+      - failed
+      - totalCount
+      - successCount
+      - failureCount
+      description: Response containing results of bulk flag status update operation
       properties:
-        id:
-          type: string
-          description: Flag identifier
-        recordType:
-          type: string
-          examples:
-          - state-licenses
-          description: Flag record type (tab discriminator)
-        flagType:
-          type: string
-          examples:
-          - expired
-          description: Flag type identifier (flag_type_id slug)
-        status:
-          type: string
-          examples:
-          - open
-          description: Flag lifecycle status
-        flaggedDate:
-          type: string
-          examples:
-          - '2026-06-15'
-          description: Date the source entity was flagged (ISO-8601)
-        updatedOn:
-          type: string
-          examples:
-          - '2026-06-28T04:12:00Z'
-          description: Display timestamp of the most recent monitoring source refresh (metaData.sourceUpdateDate, falling back to flags.updated_at)
-        updatedAt:
-          type: string
-          examples:
-          - '2026-06-28T04:12:00Z'
-          description: Raw flags.updated_at column — the change-detection signal for pollers; distinct from the display-oriented updatedOn
-        dataSource:
-          type: string
-          examples:
-          - certify-scraper
-          description: Data source identifier
-        practitioner:
-          $ref: '#/components/schemas/PractitionerInfo'
-          type: object
-          description: Denormalized practitioner identity fields
-        certifyPractitionerId:
-          type: string
-          examples:
-          - cp_123456
-          description: Certify practitioner id resolved from the flag's tenant practitioner; null when it cannot be resolved
-        createdAt:
-          type: string
-          examples:
-          - '2026-01-15T10:00:00Z'
-          description: Flag creation timestamp (ISO-8601)
-        markedSeenAt:
-          type: string
-          examples:
-          - '2026-02-01T00:00:00Z'
-          description: When the flag was last marked seen (ISO-8601), derived from history; null when never seen
-        markedSeenBy:
-          type: string
-          examples:
-          - Jane Doe
-          description: Who last marked the flag seen (display name; raw id when unresolvable); null when never seen
-        originMonitoringWorkflowId:
-          type: string
-          examples:
-          - wf-123
-          description: Origin monitoring workflow id
-        metaData:
-          type: object
-          description: Tab-specific metadata fields (allowlist-filtered)
-          anyOf:
-          - $ref: '#/components/schemas/StateLicensesFlagMetaData'
-          - $ref: '#/components/schemas/DeaDataFlagMetaData'
-          - $ref: '#/components/schemas/CdsDataFlagMetaData'
-          - $ref: '#/components/schemas/BoardCertificationsFlagMetaData'
-          - $ref: '#/components/schemas/MalpracticeInsurancesFlagMetaData'
-          - $ref: '#/components/schemas/NpdbDataFlagMetaData'
-          - $ref: '#/components/schemas/LicensureActionsFlagMetaData'
-          - $ref: '#/components/schemas/SanctionsFlagMetaData'
-          - $ref: '#/components/schemas/NppesFlagMetaData'
-          - $ref: '#/components/schemas/CompactLicenseFlagMetaData'
-          - $ref: '#/components/schemas/DeathMasterMatchesFlagMetaData'
-        history:
+        successful:
           type: array
           items:
-            $ref: '#/components/schemas/HistoryEntry'
-          description: Audit history trail, newest first
-        npdbPdf:
-          $ref: '#/components/schemas/NpdbPdfBlock'
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of successful status updates
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateResult'
+          description: List of failed status updates
+        totalCount:
+          type: integer
+          format: int32
+          examples:
+          - 5
+          description: Total number of flags processed
+        successCount:
+          type: integer
+          format: int32
+          examples:
+          - 4
+          description: Number of successful updates
+        failureCount:
+          type: integer
+          format: int32
+          examples:
+          - 1
+          description: Number of failed updates
+    BulkFlagStatusUpdateRequest:
+      type: object
+      description: Request to update status of multiple flags
+      properties:
+        type:
+          type: string
+          examples:
+          - ids
+          description: 'Selection type: "ids" (default) or "filter".'
+        flagIds:
+          type: array
+          examples:
+          - - flag-123
+            - flag-456
+            - flag-789
+          items:
+            type: string
+            pattern: \S
+          description: Flag IDs to update (used when type is "ids").
+        filter:
+          $ref: '#/components/schemas/JsonNode'
           type: object
-          description: Rendered NPDB report PDF for this flag's stamped data (CP-36183); present only on npdb-data flags
-    DeathMasterMatchesFlagMetaData:
-      title: DeathMasterMatchesFlagMetaData
-      description: 'metaData returned on death-master-matches flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+          description: Filter selecting all matching flags (required when type is "filter").
+        expectedCount:
+          type: integer
+          format: int32
+          description: Expected number of matching flags for the filter (required when type is "filter").
+        comment:
+          type: string
+          description: Optional comment for the status change; stored on each flag's history record.
+    FlagResult:
+      type: object
+      description: Flag move-to-seen outcome
+      properties:
+        attempted:
+          type: boolean
+          description: Whether the move was attempted
+        ok:
+          type: boolean
+          description: Whether the flag was moved
+        flagId:
+          type: string
+          description: The flag id
+        status:
+          type: string
+          description: The resulting status, when moved
+        noteRecorded:
+          type:
+          - boolean
+          - 'null'
+          description: 'Only when the status is not moved and a note was due (outreachInProgress; a Seen compact flag that added states): whether the note was stored on the flag history; null otherwise'
+    RegenerateNpdbPdfRequest:
+      type: object
+      required:
+      - idempotencyKey
+      description: Request to regenerate a flag's NPDB PDF
+      properties:
+        idempotencyKey:
+          type: string
+          examples:
+          - 9b2f6e0a-6f0f-4c33-9a51-7f0f2f4c9d1e
+          description: Client-minted idempotency key for this regenerate request; a retry of the same logical request must reuse the same key. At most 128 characters.
+    Date:
+      type: string
+      format: date
+    LicensureActionsFlagMetaData:
+      title: LicensureActionsFlagMetaData
+      description: 'metaData returned on licensure-actions flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
       type: object
       properties:
-        confidence: {}
-        dateOfBirth: {}
-        dateOfDeath: {}
+        actionType: {}
+        createdAt: {}
+        createdBy: {}
+        credWorkflowRecordOrigin: {}
+        details: {}
         flaggedDate: {}
-        isDeceased: {}
-        matchedAt: {}
-        matchedOn: {}
+        lastActionDate: {}
+        licenseNumber: {}
         message: {}
-        name: {}
-        reason: {}
+        reportDate: {}
         source: {}
         sourceUpdateDate: {}
+        state: {}
+        updatedAt: {}
+        updatedBy: {}
+        verifiedBy: {}
+        verifiedDate: {}
       additionalProperties: false
     NpdbDataFlagMetaData:
       title: NpdbDataFlagMetaData
@@ -773,27 +786,46 @@ components:
         transactionTypeCode: {}
         typeOfAction: {}
       additionalProperties: false
-    FlagResult:
+    AttachmentInfo:
       type: object
-      description: Flag move-to-seen outcome
+      description: Metadata for a flag history attachment (no signed URL, no storage path)
       properties:
-        attempted:
-          type: boolean
-          description: Whether the move was attempted
-        ok:
-          type: boolean
-          description: Whether the flag was moved
-        flagId:
+        id:
           type: string
-          description: The flag id
-        status:
+          description: Attachment identifier
+        fileName:
           type: string
-          description: The resulting status, when moved
-        noteRecorded:
-          type:
-          - boolean
-          - 'null'
-          description: 'Only when the status is not moved and a note was due (outreachInProgress; a Seen compact flag that added states): whether the note was stored on the flag history; null otherwise'
+          examples:
+          - license.pdf
+          description: Original uploaded file name
+        createdAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: Attachment creation timestamp (ISO-8601)
+        createdBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who uploaded the attachment (display name; raw id when unresolvable)
+    MalpracticeInsurancesFlagMetaData:
+      title: MalpracticeInsurancesFlagMetaData
+      description: 'metaData returned on malpractice-insurances flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        aggregateCoverageAmount: {}
+        carrierName: {}
+        effectiveDate: {}
+        expiryDate: {}
+        flaggedDate: {}
+        message: {}
+        occuranceCoverageAmount: {}
+        policyNumber: {}
+        source: {}
+        sourceUpdateDate: {}
+        status: {}
+        unlimitedCoverage: {}
+      additionalProperties: false
     BoardCertificationsFlagMetaData:
       title: BoardCertificationsFlagMetaData
       description: 'metaData returned on board-certifications flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
@@ -833,394 +865,15 @@ components:
         state: {}
         status: {}
       additionalProperties: false
-    StatusUpdateResult:
+    ApiError:
       type: object
-      description: Result of a single flag status update
+      description: Standard API error response containing a list of error objects
       properties:
-        flagId:
-          type: string
-          examples:
-          - flag-123
-          description: Flag ID that was processed
-        flagResponse:
-          type: object
-          description: The updated flag record; present only when this flag's transition succeeded, null when it failed. The internal tenantProviderId and hash columns are omitted.
-          properties:
-            id:
-              type: string
-            tenantProviderId:
-              type: string
-            flagTypeId:
-              type: string
-            data:
-              $ref: '#/components/schemas/JsonNode'
-            createdAt:
-              $ref: '#/components/schemas/Date'
-            createdBy:
-              type: string
-            updatedAt:
-              $ref: '#/components/schemas/Date'
-            updatedBy:
-              type: string
-            originMonitoringWorkflowId:
-              type: string
-            hash:
-              type: string
-            tenantId:
-              type: string
-            practitionerPrefix:
-              type: string
-            practitionerFirstName:
-              type: string
-            practitionerMiddleName:
-              type: string
-            practitionerLastName:
-              type: string
-            practitionerNpi:
-              type: string
-            statesToCredential:
-              type: array
-              items:
-                type: string
-            practitionerType:
-              type: array
-              items:
-                type: string
-            credentialingStatus:
-              type: string
-            dataSource:
-              type: string
-            practitionerDateOfBirth:
-              type: string
-            practitionerEmail:
-              type: string
-            lastCredentialedDate:
-              type: string
-            markedSeenAt:
-              $ref: '#/components/schemas/Date'
-            markedSeenBy:
-              type: string
-            certifyPractitionerId:
-              type: string
-            tenantPractitionerTenantId:
-              type: string
-            histories:
-              type: array
-              items:
-                $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
-            historiesTruncated:
-              type: boolean
-            npdbDocument:
-              $ref: '#/components/schemas/DocumentResponse'
-        errorMessage:
-          type: string
-          examples:
-          - 'Transition not allowed: closed -> closed'
-          description: Human-readable reason this flag's transition failed; null when it succeeded
-        errorCode:
-          type: string
-          examples:
-          - '409'
-          description: The stringified HTTP status code corresponding to why this flag's transition failed (e.g. "400", "403", "404", "409", "500"); null when it succeeded
-    GetFlagResponse:
-      type: object
-      description: A single flag row on the flags landing page
-      properties:
-        id:
-          type: string
-          description: Flag identifier
-        recordType:
-          type: string
-          examples:
-          - state-licenses
-          description: Flag record type (tab discriminator)
-        flagType:
-          type: string
-          examples:
-          - expired
-          description: Flag type identifier (flag_type_id slug)
-        status:
-          type: string
-          examples:
-          - open
-          description: Flag lifecycle status
-        flaggedDate:
-          type: string
-          examples:
-          - '2026-06-15'
-          description: Date the source entity was flagged (ISO-8601)
-        updatedOn:
-          type: string
-          examples:
-          - '2026-06-28T04:12:00Z'
-          description: Timestamp of the most recent monitoring source refresh
-        dataSource:
-          type: string
-          examples:
-          - certify-scraper
-          description: Data source identifier
-        practitioner:
-          $ref: '#/components/schemas/PractitionerInfo'
-          type: object
-          description: Denormalized practitioner identity fields
-        createdAt:
-          type: string
-          examples:
-          - '2026-01-15T10:00:00Z'
-          description: Flag creation timestamp (ISO-8601)
-        markedSeenAt:
-          type: string
-          examples:
-          - '2026-02-01T00:00:00Z'
-          description: When the flag was last marked seen (ISO-8601); null when never seen
-        markedSeenBy:
-          type: string
-          examples:
-          - Jane Doe
-          description: Who last marked the flag seen (display name; raw id when unresolvable)
-        originMonitoringWorkflowId:
-          type: string
-          examples:
-          - wf-123
-          description: Origin monitoring workflow id (drawer View All Flags link)
-        metaData:
-          type: object
-          description: Record-type-specific metadata fields, keyed by the row's recordType
-          anyOf:
-          - $ref: '#/components/schemas/StateLicensesFlagMetaData'
-          - $ref: '#/components/schemas/DeaDataFlagMetaData'
-          - $ref: '#/components/schemas/CdsDataFlagMetaData'
-          - $ref: '#/components/schemas/BoardCertificationsFlagMetaData'
-          - $ref: '#/components/schemas/MalpracticeInsurancesFlagMetaData'
-          - $ref: '#/components/schemas/NpdbDataFlagMetaData'
-          - $ref: '#/components/schemas/LicensureActionsFlagMetaData'
-          - $ref: '#/components/schemas/SanctionsFlagMetaData'
-          - $ref: '#/components/schemas/NppesFlagMetaData'
-          - $ref: '#/components/schemas/CompactLicenseFlagMetaData'
-          - $ref: '#/components/schemas/DeathMasterMatchesFlagMetaData'
-    AttachmentInfo:
-      type: object
-      description: Metadata for a flag history attachment (no signed URL, no storage path)
-      properties:
-        id:
-          type: string
-          description: Attachment identifier
-        fileName:
-          type: string
-          examples:
-          - license.pdf
-          description: Original uploaded file name
-        createdAt:
-          type: string
-          examples:
-          - '2026-02-01T00:00:00Z'
-          description: Attachment creation timestamp (ISO-8601)
-        createdBy:
-          type: string
-          examples:
-          - Jane Doe
-          description: Who uploaded the attachment (display name; raw id when unresolvable)
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
-    LicensureActionsFlagMetaData:
-      title: LicensureActionsFlagMetaData
-      description: 'metaData returned on licensure-actions flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
-      type: object
-      properties:
-        actionType: {}
-        createdAt: {}
-        createdBy: {}
-        credWorkflowRecordOrigin: {}
-        details: {}
-        flaggedDate: {}
-        lastActionDate: {}
-        licenseNumber: {}
-        message: {}
-        reportDate: {}
-        source: {}
-        sourceUpdateDate: {}
-        state: {}
-        updatedAt: {}
-        updatedBy: {}
-        verifiedBy: {}
-        verifiedDate: {}
-      additionalProperties: false
-    StatesResult:
-      type: object
-      description: Practitioner states-to-credential write outcome
-      properties:
-        attempted:
-          type: boolean
-          description: Whether the write was attempted
-        ok:
-          type: boolean
-          description: Whether the state is now on the practitioner
-        added:
+        errors:
           type: array
           items:
-            type: string
-          description: States actually appended
-        resulting:
-          type: array
-          items:
-            type: string
-          description: States to credential afterwards; empty, never null
-        slicesUpdated:
-          type: integer
-          format: int32
-          description: Contributing slices written (0 or 1)
-        alreadyPresent:
-          type: boolean
-          description: The state was already present; nothing written
-        detail:
-          type: string
-          description: Failure detail when ok is false
-    RegenerateNpdbPdfRequest:
-      type: object
-      required:
-      - idempotencyKey
-      description: Request to regenerate a flag's NPDB PDF
-      properties:
-        idempotencyKey:
-          type: string
-          examples:
-          - 9b2f6e0a-6f0f-4c33-9a51-7f0f2f4c9d1e
-          description: Client-minted idempotency key for this regenerate request; a retry of the same logical request must reuse the same key. At most 128 characters.
-    Date:
-      type: string
-      format: date
-    FlagHistoryWithAttachmentsResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        flagId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FlagHistoryAttachmentResponse'
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
-    NpdbPdfBlock:
-      type: object
-      description: Rendered NPDB report PDF for the flag's stamped data (no storage path)
-      properties:
-        status:
-          type: string
-          examples:
-          - READY
-          description: 'PDF availability: READY (url present), GENERATING (render in flight), FAILED (last render failed; errorMessage present), NOT_AVAILABLE (nothing rendered for the flag''s current data), PERMISSION_REQUIRED (caller lacks MONITORING_WORKFLOW_NPDB_PDF_READ; no url, whatever the PDF''s state)'
-        url:
-          type: string
-          description: Short-lived signed URL opening the PDF inline; READY only
-        expiresAt:
-          type: string
-          examples:
-          - '2026-08-19T11:00:00Z'
-          description: Signed URL expiry (ISO-8601); READY only
-        generatedAt:
-          type: string
-          examples:
-          - '2026-08-19T10:00:00Z'
-          description: When the PDF was produced (ISO-8601); READY only
-        errorMessage:
-          type: string
-          description: Sanitised failure reason; FAILED only
-    NppesFlagMetaData:
-      title: NppesFlagMetaData
-      description: 'metaData returned on nppes flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
-      type: object
-      properties:
-        active: {}
-        enumerationType: {}
-        firstName: {}
-        flaggedDate: {}
-        lastName: {}
-        message: {}
-        middleName: {}
-        npi: {}
-        organizationId: {}
-        sourceUpdateDate: {}
-        status: {}
-      additionalProperties: false
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     CdsDataFlagMetaData:
       title: CdsDataFlagMetaData
       description: 'metaData returned on cds-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
@@ -1235,204 +888,23 @@ components:
         state: {}
         status: {}
       additionalProperties: false
-    BulkFlagStatusUpdateResponse:
-      type: object
-      required:
-      - successful
-      - failed
-      - totalCount
-      - successCount
-      - failureCount
-      description: Response containing results of bulk flag status update operation
-      properties:
-        successful:
-          type: array
-          items:
-            $ref: '#/components/schemas/StatusUpdateResult'
-          description: List of successful status updates
-        failed:
-          type: array
-          items:
-            $ref: '#/components/schemas/StatusUpdateResult'
-          description: List of failed status updates
-        totalCount:
-          type: integer
-          format: int32
-          examples:
-          - 5
-          description: Total number of flags processed
-        successCount:
-          type: integer
-          format: int32
-          examples:
-          - 4
-          description: Number of successful updates
-        failureCount:
-          type: integer
-          format: int32
-          examples:
-          - 1
-          description: Number of failed updates
-    MalpracticeInsurancesFlagMetaData:
-      title: MalpracticeInsurancesFlagMetaData
-      description: 'metaData returned on malpractice-insurances flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+    DeathMasterMatchesFlagMetaData:
+      title: DeathMasterMatchesFlagMetaData
+      description: 'metaData returned on death-master-matches flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
       type: object
       properties:
-        aggregateCoverageAmount: {}
-        carrierName: {}
-        effectiveDate: {}
-        expiryDate: {}
+        confidence: {}
+        dateOfBirth: {}
+        dateOfDeath: {}
         flaggedDate: {}
+        isDeceased: {}
+        matchedAt: {}
+        matchedOn: {}
         message: {}
-        occuranceCoverageAmount: {}
-        policyNumber: {}
+        name: {}
+        reason: {}
         source: {}
         sourceUpdateDate: {}
-        status: {}
-        unlimitedCoverage: {}
-      additionalProperties: false
-    FlagResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tenantProviderId:
-          type: string
-        flagTypeId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        originMonitoringWorkflowId:
-          type: string
-        hash:
-          type: string
-        tenantId:
-          type: string
-        practitionerPrefix:
-          type: string
-        practitionerFirstName:
-          type: string
-        practitionerMiddleName:
-          type: string
-        practitionerLastName:
-          type: string
-        practitionerNpi:
-          type: string
-        statesToCredential:
-          type: array
-          items:
-            type: string
-        practitionerType:
-          type: array
-          items:
-            type: string
-        credentialingStatus:
-          type: string
-        dataSource:
-          type: string
-        practitionerDateOfBirth:
-          type: string
-        practitionerEmail:
-          type: string
-        lastCredentialedDate:
-          type: string
-        markedSeenAt:
-          $ref: '#/components/schemas/Date'
-        markedSeenBy:
-          type: string
-        certifyPractitionerId:
-          type: string
-        tenantPractitionerTenantId:
-          type: string
-        histories:
-          type: array
-          items:
-            $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
-        historiesTruncated:
-          type: boolean
-        npdbDocument:
-          $ref: '#/components/schemas/DocumentResponse'
-    AddStateToCredentialRequest:
-      type: object
-      required:
-      - note
-      description: Request to add the flag's state(s) to the practitioner's states to credential
-      properties:
-        note:
-          type: string
-          examples:
-          - Confirmed with the provider; they now practise in TX.
-          description: Reviewer note recorded on the flag's Seen history entry. Required, non-blank, at most 2000 characters.
-        states:
-          type: array
-          examples:
-          - - NY
-            - NJ
-          items:
-            type: string
-          description: 'Compact-license flags only: the reviewer''s selection from the delta between the flag''s coveredStates and the practitioner''s current states to credential. Must be absent/empty for state-licenses, DEA and CDS flags, which derive their single state from the flag itself.'
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    BulkSelectionCountMismatchResponse:
-      type: object
-      description: Returned (409) when a filter selection's expected count no longer matches the live count.
-      properties:
-        expectedCount:
-          type: integer
-          format: int32
-          examples:
-          - 42
-          description: The count of matching flags the client had cached when it submitted the filter selection (its stale snapshot)
-        currentCount:
-          type: integer
-          format: int64
-          examples:
-          - 47
-          description: The live count of flags currently matching the filter, re-evaluated by the server at request time. Retry the bulk request with this value as the new expectedCount.
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    StateLicensesFlagMetaData:
-      title: StateLicensesFlagMetaData
-      description: 'metaData returned on state-licenses flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
-      type: object
-      properties:
-        expiration: {}
-        flaggedDate: {}
-        issueDate: {}
-        licenseNumber: {}
-        licenseSource: {}
-        licenseStatus: {}
-        licenseType: {}
-        message: {}
-        practitionerType: {}
-        sourceUpdateDate: {}
-        state: {}
-        url: {}
       additionalProperties: false
     SanctionsFlagMetaData:
       title: SanctionsFlagMetaData
@@ -1557,6 +1029,137 @@ components:
         verifiedByName: {}
         verifiedDate: {}
       additionalProperties: false
+    NppesFlagMetaData:
+      title: NppesFlagMetaData
+      description: 'metaData returned on nppes flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        active: {}
+        enumerationType: {}
+        firstName: {}
+        flaggedDate: {}
+        lastName: {}
+        message: {}
+        middleName: {}
+        npi: {}
+        organizationId: {}
+        sourceUpdateDate: {}
+        status: {}
+      additionalProperties: false
+    AddStateToCredentialRequest:
+      type: object
+      required:
+      - note
+      description: Request to add the flag's state(s) to the practitioner's states to credential
+      properties:
+        note:
+          type: string
+          examples:
+          - Confirmed with the provider; they now practise in TX.
+          description: Reviewer note recorded on the flag's Seen history entry. Required, non-blank, at most 2000 characters.
+        states:
+          type: array
+          examples:
+          - - NY
+            - NJ
+          items:
+            type: string
+          description: 'Compact-license flags only: the reviewer''s selection from the delta between the flag''s coveredStates and the practitioner''s current states to credential. Must be absent/empty for state-licenses, DEA and CDS flags, which derive their single state from the flag itself.'
+    GetFlagDetailsResponse:
+      type: object
+      description: Full flag object plus its audit history trail
+      properties:
+        id:
+          type: string
+          description: Flag identifier
+        recordType:
+          type: string
+          examples:
+          - state-licenses
+          description: Flag record type (tab discriminator)
+        flagType:
+          type: string
+          examples:
+          - expired
+          description: Flag type identifier (flag_type_id slug)
+        status:
+          type: string
+          examples:
+          - open
+          description: Flag lifecycle status
+        flaggedDate:
+          type: string
+          examples:
+          - '2026-06-15'
+          description: Date the source entity was flagged (ISO-8601)
+        updatedOn:
+          type: string
+          examples:
+          - '2026-06-28T04:12:00Z'
+          description: Display timestamp of the most recent monitoring source refresh (metaData.sourceUpdateDate, falling back to flags.updated_at)
+        updatedAt:
+          type: string
+          examples:
+          - '2026-06-28T04:12:00Z'
+          description: Raw flags.updated_at column — the change-detection signal for pollers; distinct from the display-oriented updatedOn
+        dataSource:
+          type: string
+          examples:
+          - certify-scraper
+          description: Data source identifier
+        practitioner:
+          $ref: '#/components/schemas/PractitionerInfo'
+          type: object
+          description: Denormalized practitioner identity fields
+        certifyPractitionerId:
+          type: string
+          examples:
+          - cp_123456
+          description: Certify practitioner id resolved from the flag's tenant practitioner; null when it cannot be resolved
+        createdAt:
+          type: string
+          examples:
+          - '2026-01-15T10:00:00Z'
+          description: Flag creation timestamp (ISO-8601)
+        markedSeenAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: When the flag was last marked seen (ISO-8601), derived from history; null when never seen
+        markedSeenBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who last marked the flag seen (display name; raw id when unresolvable); null when never seen
+        originMonitoringWorkflowId:
+          type: string
+          examples:
+          - wf-123
+          description: Origin monitoring workflow id
+        metaData:
+          type: object
+          description: Tab-specific metadata fields (allowlist-filtered)
+          anyOf:
+          - $ref: '#/components/schemas/StateLicensesFlagMetaData'
+          - $ref: '#/components/schemas/DeaDataFlagMetaData'
+          - $ref: '#/components/schemas/CdsDataFlagMetaData'
+          - $ref: '#/components/schemas/BoardCertificationsFlagMetaData'
+          - $ref: '#/components/schemas/MalpracticeInsurancesFlagMetaData'
+          - $ref: '#/components/schemas/NpdbDataFlagMetaData'
+          - $ref: '#/components/schemas/LicensureActionsFlagMetaData'
+          - $ref: '#/components/schemas/SanctionsFlagMetaData'
+          - $ref: '#/components/schemas/NppesFlagMetaData'
+          - $ref: '#/components/schemas/CompactLicenseFlagMetaData'
+          - $ref: '#/components/schemas/DeathMasterMatchesFlagMetaData'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+          description: Audit history trail, newest first
+        npdbPdf:
+          $ref: '#/components/schemas/NpdbPdfBlock'
+          type: object
+          description: Rendered NPDB report PDF for this flag's stamped data (CP-36183); present only on npdb-data flags
     HistoryEntry:
       type: object
       description: A single flag history record
@@ -1587,6 +1190,121 @@ components:
           items:
             $ref: '#/components/schemas/AttachmentInfo'
           description: Attachments linked to this history record
+    BulkSelectionCountMismatchResponse:
+      type: object
+      description: Returned (409) when a filter selection's expected count no longer matches the live count.
+      properties:
+        expectedCount:
+          type: integer
+          format: int32
+          examples:
+          - 42
+          description: The count of matching flags the client had cached when it submitted the filter selection (its stale snapshot)
+        currentCount:
+          type: integer
+          format: int64
+          examples:
+          - 47
+          description: The live count of flags currently matching the filter, re-evaluated by the server at request time. Retry the bulk request with this value as the new expectedCount.
+    CompactLicenseFlagMetaData:
+      title: CompactLicenseFlagMetaData
+      description: 'metaData returned on compact-license flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        compactType: {}
+        coveredStates: {}
+        createdAt: {}
+        createdBy: {}
+        dataSource: {}
+        effectiveStatus: {}
+        expirationDate: {}
+        flaggedDate: {}
+        homeLicenseLinkSource: {}
+        homeLicenseNumber: {}
+        homeLicenseState: {}
+        homeLicenseType: {}
+        issueDate: {}
+        licenseNumber: {}
+        message: {}
+        sourceUpdateDate: {}
+        status: {}
+        updatedAt: {}
+        updatedBy: {}
+        verifiedBy: {}
+        verifiedByName: {}
+        verifiedDate: {}
+      additionalProperties: false
+    FlagHistoryAttachmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        flagHistoryId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+    NpdbPdfBlock:
+      type: object
+      description: Rendered NPDB report PDF for the flag's stamped data (no storage path)
+      properties:
+        status:
+          type: string
+          examples:
+          - READY
+          description: 'PDF availability: READY (url present), GENERATING (render in flight), FAILED (last render failed; errorMessage present), NOT_AVAILABLE (nothing rendered for the flag''s current data), PERMISSION_REQUIRED (caller lacks MONITORING_WORKFLOW_NPDB_PDF_READ; no url, whatever the PDF''s state)'
+        url:
+          type: string
+          description: Short-lived signed URL opening the PDF inline; READY only
+        expiresAt:
+          type: string
+          examples:
+          - '2026-08-19T11:00:00Z'
+          description: Signed URL expiry (ISO-8601); READY only
+        generatedAt:
+          type: string
+          examples:
+          - '2026-08-19T10:00:00Z'
+          description: When the PDF was produced (ISO-8601); READY only
+        errorMessage:
+          type: string
+          description: Sanitised failure reason; FAILED only
+    GetFlagsResponse:
+      type: object
+      description: Paginated list of flag rows for the flags landing page
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 137
+          description: Total number of flags matching the query
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetFlagResponse'
+          description: Flag rows for the current page
+    StateLicensesFlagMetaData:
+      title: StateLicensesFlagMetaData
+      description: 'metaData returned on state-licenses flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+      type: object
+      properties:
+        expiration: {}
+        flaggedDate: {}
+        issueDate: {}
+        licenseNumber: {}
+        licenseSource: {}
+        licenseStatus: {}
+        licenseType: {}
+        message: {}
+        practitionerType: {}
+        sourceUpdateDate: {}
+        state: {}
+        url: {}
+      additionalProperties: false
     DocumentResponse:
       type: object
       properties:
@@ -1620,34 +1338,115 @@ components:
           type: string
         updatedBy:
           type: string
-    CompactLicenseFlagMetaData:
-      title: CompactLicenseFlagMetaData
-      description: 'metaData returned on compact-license flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.'
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    FlagResponse:
       type: object
       properties:
-        compactType: {}
-        coveredStates: {}
-        createdAt: {}
-        createdBy: {}
-        dataSource: {}
-        effectiveStatus: {}
-        expirationDate: {}
-        flaggedDate: {}
-        homeLicenseLinkSource: {}
-        homeLicenseNumber: {}
-        homeLicenseState: {}
-        homeLicenseType: {}
-        issueDate: {}
-        licenseNumber: {}
-        message: {}
-        sourceUpdateDate: {}
-        status: {}
-        updatedAt: {}
-        updatedBy: {}
-        verifiedBy: {}
-        verifiedByName: {}
-        verifiedDate: {}
-      additionalProperties: false
+        id:
+          type: string
+        tenantProviderId:
+          type: string
+        flagTypeId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        originMonitoringWorkflowId:
+          type: string
+        hash:
+          type: string
+        tenantId:
+          type: string
+        practitionerPrefix:
+          type: string
+        practitionerFirstName:
+          type: string
+        practitionerMiddleName:
+          type: string
+        practitionerLastName:
+          type: string
+        practitionerNpi:
+          type: string
+        statesToCredential:
+          type: array
+          items:
+            type: string
+        practitionerType:
+          type: array
+          items:
+            type: string
+        credentialingStatus:
+          type: string
+        dataSource:
+          type: string
+        practitionerDateOfBirth:
+          type: string
+        practitionerEmail:
+          type: string
+        lastCredentialedDate:
+          type: string
+        markedSeenAt:
+          $ref: '#/components/schemas/Date'
+        markedSeenBy:
+          type: string
+        certifyPractitionerId:
+          type: string
+        tenantPractitionerTenantId:
+          type: string
+        histories:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
+        historiesTruncated:
+          type: boolean
+        npdbDocument:
+          $ref: '#/components/schemas/DocumentResponse'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     PractitionerInfo:
       type: object
       description: Practitioner identity fields denormalized onto the flag row
@@ -1712,19 +1511,53 @@ components:
           examples:
           - '2024-11-02'
           description: Last credentialed date (ISO date)
-    FlagHistoryAttachmentResponse:
+    JsonNode:
       type: object
       properties:
-        id:
-          type: string
-        flagHistoryId:
-          type: string
-        data:
-          $ref: '#/components/schemas/JsonNode'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
     AddStateToCredentialResponse:
       type: object
       description: Outcome of adding a flag's state to the practitioner's states to credential
@@ -1753,21 +1586,6 @@ components:
           $ref: '#/components/schemas/WorkflowResult'
           type: object
           description: Monitoring workflow update outcome; attempted=false when skipped
-    GetFlagsResponse:
-      type: object
-      description: Paginated list of flag rows for the flags landing page
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          examples:
-          - 137
-          description: Total number of flags matching the query
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/GetFlagResponse'
-          description: Flag rows for the current page
     WorkflowResult:
       type: object
       description: Monitoring workflow update outcome
@@ -1786,36 +1604,218 @@ components:
           items:
             type: string
           description: Flag sections recalculated
-    BulkFlagStatusUpdateRequest:
+    FlagHistoryWithAttachmentsResponse:
       type: object
-      description: Request to update status of multiple flags
       properties:
-        type:
+        id:
+          type: string
+        flagId:
+          type: string
+        data:
+          $ref: '#/components/schemas/JsonNode'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagHistoryAttachmentResponse'
+    StatusUpdateResult:
+      type: object
+      description: Result of a single flag status update
+      properties:
+        flagId:
           type: string
           examples:
-          - ids
-          description: 'Selection type: "ids" (default) or "filter".'
-        flagIds:
-          type: array
+          - flag-123
+          description: Flag ID that was processed
+        flagResponse:
+          type: object
+          description: The updated flag record; present only when this flag's transition succeeded, null when it failed. The internal tenantProviderId and hash columns are omitted.
+          properties:
+            id:
+              type: string
+            tenantProviderId:
+              type: string
+            flagTypeId:
+              type: string
+            data:
+              $ref: '#/components/schemas/JsonNode'
+            createdAt:
+              $ref: '#/components/schemas/Date'
+            createdBy:
+              type: string
+            updatedAt:
+              $ref: '#/components/schemas/Date'
+            updatedBy:
+              type: string
+            originMonitoringWorkflowId:
+              type: string
+            hash:
+              type: string
+            tenantId:
+              type: string
+            practitionerPrefix:
+              type: string
+            practitionerFirstName:
+              type: string
+            practitionerMiddleName:
+              type: string
+            practitionerLastName:
+              type: string
+            practitionerNpi:
+              type: string
+            statesToCredential:
+              type: array
+              items:
+                type: string
+            practitionerType:
+              type: array
+              items:
+                type: string
+            credentialingStatus:
+              type: string
+            dataSource:
+              type: string
+            practitionerDateOfBirth:
+              type: string
+            practitionerEmail:
+              type: string
+            lastCredentialedDate:
+              type: string
+            markedSeenAt:
+              $ref: '#/components/schemas/Date'
+            markedSeenBy:
+              type: string
+            certifyPractitionerId:
+              type: string
+            tenantPractitionerTenantId:
+              type: string
+            histories:
+              type: array
+              items:
+                $ref: '#/components/schemas/FlagHistoryWithAttachmentsResponse'
+            historiesTruncated:
+              type: boolean
+            npdbDocument:
+              $ref: '#/components/schemas/DocumentResponse'
+        errorMessage:
+          type: string
           examples:
-          - - flag-123
-            - flag-456
-            - flag-789
+          - 'Transition not allowed: closed -> closed'
+          description: Human-readable reason this flag's transition failed; null when it succeeded
+        errorCode:
+          type: string
+          examples:
+          - '409'
+          description: The stringified HTTP status code corresponding to why this flag's transition failed (e.g. "400", "403", "404", "409", "500"); null when it succeeded
+    StatesResult:
+      type: object
+      description: Practitioner states-to-credential write outcome
+      properties:
+        attempted:
+          type: boolean
+          description: Whether the write was attempted
+        ok:
+          type: boolean
+          description: Whether the state is now on the practitioner
+        added:
+          type: array
           items:
             type: string
-            pattern: \S
-          description: Flag IDs to update (used when type is "ids").
-        filter:
-          $ref: '#/components/schemas/JsonNode'
-          type: object
-          description: Filter selecting all matching flags (required when type is "filter").
-        expectedCount:
+          description: States actually appended
+        resulting:
+          type: array
+          items:
+            type: string
+          description: States to credential afterwards; empty, never null
+        slicesUpdated:
           type: integer
           format: int32
-          description: Expected number of matching flags for the filter (required when type is "filter").
-        comment:
+          description: Contributing slices written (0 or 1)
+        alreadyPresent:
+          type: boolean
+          description: The state was already present; nothing written
+        detail:
           type: string
-          description: Optional comment for the status change; stored on each flag's history record.
+          description: Failure detail when ok is false
+    GetFlagResponse:
+      type: object
+      description: A single flag row on the flags landing page
+      properties:
+        id:
+          type: string
+          description: Flag identifier
+        recordType:
+          type: string
+          examples:
+          - state-licenses
+          description: Flag record type (tab discriminator)
+        flagType:
+          type: string
+          examples:
+          - expired
+          description: Flag type identifier (flag_type_id slug)
+        status:
+          type: string
+          examples:
+          - open
+          description: Flag lifecycle status
+        flaggedDate:
+          type: string
+          examples:
+          - '2026-06-15'
+          description: Date the source entity was flagged (ISO-8601)
+        updatedOn:
+          type: string
+          examples:
+          - '2026-06-28T04:12:00Z'
+          description: Timestamp of the most recent monitoring source refresh
+        dataSource:
+          type: string
+          examples:
+          - certify-scraper
+          description: Data source identifier
+        practitioner:
+          $ref: '#/components/schemas/PractitionerInfo'
+          type: object
+          description: Denormalized practitioner identity fields
+        createdAt:
+          type: string
+          examples:
+          - '2026-01-15T10:00:00Z'
+          description: Flag creation timestamp (ISO-8601)
+        markedSeenAt:
+          type: string
+          examples:
+          - '2026-02-01T00:00:00Z'
+          description: When the flag was last marked seen (ISO-8601); null when never seen
+        markedSeenBy:
+          type: string
+          examples:
+          - Jane Doe
+          description: Who last marked the flag seen (display name; raw id when unresolvable)
+        originMonitoringWorkflowId:
+          type: string
+          examples:
+          - wf-123
+          description: Origin monitoring workflow id (drawer View All Flags link)
+        metaData:
+          type: object
+          description: Record-type-specific metadata fields, keyed by the row's recordType
+          anyOf:
+          - $ref: '#/components/schemas/StateLicensesFlagMetaData'
+          - $ref: '#/components/schemas/DeaDataFlagMetaData'
+          - $ref: '#/components/schemas/CdsDataFlagMetaData'
+          - $ref: '#/components/schemas/BoardCertificationsFlagMetaData'
+          - $ref: '#/components/schemas/MalpracticeInsurancesFlagMetaData'
+          - $ref: '#/components/schemas/NpdbDataFlagMetaData'
+          - $ref: '#/components/schemas/LicensureActionsFlagMetaData'
+          - $ref: '#/components/schemas/SanctionsFlagMetaData'
+          - $ref: '#/components/schemas/NppesFlagMetaData'
+          - $ref: '#/components/schemas/CompactLicenseFlagMetaData'
+          - $ref: '#/components/schemas/DeathMasterMatchesFlagMetaData'
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-roster-attempts-response-schema.json",
+  "title": "RosterAttemptsResponse",
+  "description": "Attempt history of a roster job, oldest attempt first.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-roster-api-openapi.yml#/components/schemas/RosterAttemptsResponse",
+  "type": "object",
+  "properties": {
+    "rosterId": {
+      "type": "string",
+      "description": "Identifier of the roster job the history belongs to."
+    },
+    "currentAttemptNumber": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "int32",
+      "description": "Attempt the job is currently on. Null when the job predates the attempt ledger, meaning no history was recorded for it."
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RosterAttemptEntry"
+      },
+      "description": "Finished attempts held in the ledger, oldest first."
+    },
+    "olderAttemptsAvailable": {
+      "type": "boolean",
+      "description": "True when attempts exist beyond the ones listed here, because the ledger evicted them."
+    },
+    "attemptsTruncated": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of attempts evicted from the ledger. Zero when none were."
+    }
+  },
+  "$defs": {
+    "RosterAttemptEntry": {
+      "type": "object",
+      "description": "One finished attempt of a roster job.",
+      "properties": {
+        "attemptNumber": {
+          "type": "integer",
+          "format": "int32",
+          "description": "1-based ordinal of the attempt."
+        },
+        "filename": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Name of the file uploaded for the attempt."
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Roster status the attempt finished in."
+        },
+        "totalRecords": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Rows the attempt contained."
+        },
+        "validRecords": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Rows that validated cleanly."
+        },
+        "invalidRecords": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Rows that failed validation."
+        },
+        "attemptEndedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "ISO-8601 instant the attempt finished at."
+        },
+        "captured": {
+          "type": "boolean",
+          "description": "Whether the attempt's rows were captured to long-term history."
+        }
+      }
+    }
+  }
+}

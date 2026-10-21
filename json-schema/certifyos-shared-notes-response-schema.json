@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-notes-response-schema.json",
+  "title": "SharedNotesResponse",
+  "description": "The Notes section of a shared credentialing workflow, shaped like one entry of the sections read, with each note grouped across the member tenants whose notes the caller can read.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingsections-api-openapi.yml#/components/schemas/SharedNotesResponse",
+  "type": "object",
+  "required": [
+    "section",
+    "scope",
+    "status",
+    "records"
+  ],
+  "properties": {
+    "section": {
+      "type": "string",
+      "description": "The section's name, always notes."
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "SHARED_PSV",
+        "TENANT_SCOPED",
+        "SUPPORTING",
+        "OUTREACH_DATA"
+      ],
+      "description": "The catalog group, always SUPPORTING for notes."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ISSUE",
+        "ALL_VERIFIED",
+        "POPULATED",
+        "EMPTY"
+      ],
+      "description": "The rolled-up status; a note carries no verification, so notes read POPULATED or EMPTY."
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SharedNoteRecordDto"
+      },
+      "description": "The grouped notes, oldest first."
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    },
+    "ObjectNode": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/JsonNode"
+      }
+    },
+    "SharedNoteCopyDto": {
+      "type": "object",
+      "required": [
+        "tenantId",
+        "memberWorkflowId",
+        "noteId"
+      ],
+      "description": "One tenant's note, with the ids the tenant note routes take.",
+      "properties": {
+        "tenantId": {
+          "type": "string"
+        },
+        "memberWorkflowId": {
+          "type": "string"
+        },
+        "noteId": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The user who wrote the note."
+        },
+        "createdByName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "That user's name, or the user id when no name resolves."
+        },
+        "createdAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When the note was written.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Instant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "updatedBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The user who last changed the note."
+        },
+        "updatedByName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "That user's name, or the user id when no name resolves."
+        },
+        "updatedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When the note last changed.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Instant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SharedNoteRecordDto": {
+      "type": "object",
+      "required": [
+        "credentialingDisplayGroupKey",
+        "deduplicationId",
+        "recordKind",
+        "provenance",
+        "privateData",
+        "coverage",
+        "record",
+        "copies"
+      ],
+      "description": "One note, grouped across the tenants that hold it.",
+      "properties": {
+        "credentialingDisplayGroupKey": {
+          "type": "string",
+          "description": "The note's identity: a hash of its trimmed message, so the same text is one note. It changes when the message does."
+        },
+        "deduplicationId": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Deprecated: the same value as credentialingDisplayGroupKey, which replaces it. Read credentialingDisplayGroupKey; this field will be removed."
+        },
+        "recordKind": {
+          "type": "string",
+          "enum": [
+            "SHARED",
+            "TENANT"
+          ]
+        },
+        "provenance": {
+          "type": "string",
+          "enum": [
+            "SYSTEM",
+            "MODIFIED",
+            "MANUAL"
+          ]
+        },
+        "privateData": {
+          "type": "boolean"
+        },
+        "coverage": {
+          "$ref": "#/$defs/SharedRecordCoverageDto"
+        },
+        "record": {
+          "$ref": "#/$defs/ObjectNode",
+          "type": "array",
+          "description": "The fields the page shows: message."
+        },
+        "copies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SharedNoteCopyDto"
+          },
+          "description": "Each tenant's note in the group, with the ids the tenant note routes take."
+        },
+        "updatedBy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The latest change across the copies: the user of the copy with the most recent updatedAt (else createdAt, and then its createdBy); the lowest tenant id on a tie."
+        },
+        "updatedByName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "That user's name, or the user id when no name resolves."
+        },
+        "updatedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "When that copy last changed: its updatedAt, else its createdAt.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Instant"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "SharedRecordCoverageDto": {
+      "type": "object",
+      "required": [
+        "tenantIds"
+      ],
+      "description": "The readable tenants that hold a record.",
+      "properties": {
+        "tenantIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

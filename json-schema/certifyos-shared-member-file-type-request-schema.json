@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-member-file-type-request-schema.json",
+  "title": "SharedMemberFileTypeRequest",
+  "description": "One member workflow's File Type and/or hidden findings, with the tenant that owns it.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingworkflow-api-openapi.yml#/components/schemas/SharedMemberFileTypeRequest",
+  "type": "object",
+  "required": [
+    "workflowId",
+    "tenantId"
+  ],
+  "properties": {
+    "workflowId": {
+      "type": "string",
+      "description": "The member credentialing workflow to write."
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "The tenant that owns the member workflow."
+    },
+    "fileType": {
+      "type": "string",
+      "enum": [
+        "CLEAN",
+        "NON_CLEAN"
+      ],
+      "description": "The file type to set; leave out for a hide-only save."
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Why the file type changed; at most 1000 characters. Required for NON_CLEAN; for CLEAN while a finding stays unhidden; and for either value when the member's verdict could not be evaluated or there is none. Not needed for a hide-only save."
+    },
+    "hiddenFindingRuleKeys": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string"
+      },
+      "description": "The full set of finding rule keys (findings[].ruleKey on the members read) to hide from the PSV packet. Leave out to keep the current hides; send [] to remove them all. At most 50 non-blank keys, each a current finding's rule key."
+    }
+  }
+}

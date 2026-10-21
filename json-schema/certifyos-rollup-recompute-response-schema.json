@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-rollup-recompute-response-schema.json",
+  "title": "RollupRecomputeResponse",
+  "description": "The result of recomputing one group's rollups.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingworkflow-api-openapi.yml#/components/schemas/RollupRecomputeResponse",
+  "type": "object",
+  "required": [
+    "sharedCredWorkflowId"
+  ],
+  "properties": {
+    "sharedCredWorkflowId": {
+      "type": "string",
+      "description": "The group that was recomputed."
+    },
+    "applied": {
+      "type": "boolean",
+      "description": "Whether anything was written."
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "Whether this was a report-only run."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Why nothing was applied: UNCHANGED, NO_MEMBERS or DRY_RUN."
+    },
+    "changed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fields whose derived value differs from the stored one."
+    },
+    "before": {
+      "type": "object",
+      "additionalProperties": {},
+      "description": "Previous values of the changed fields."
+    },
+    "after": {
+      "type": "object",
+      "additionalProperties": {},
+      "description": "Newly derived values of the changed fields. firstPsvCompleteAt is the first time the group's status reached PSV Complete, or the time of the call if its history cannot place it."
+    },
+    "closedToNewJoins": {
+      "type": "boolean",
+      "description": "Whether this call closed the group to new tenant joins. Permanent."
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-egress-job-list-response-schema.json",
+  "title": "EgressJobListResponse",
+  "description": "Paginated list of export jobs for the Activity Center",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-directory-api-openapi.yml#/components/schemas/EgressJobListResponse",
+  "type": "object",
+  "properties": {
+    "jobs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EgressJobSummaryDto"
+      },
+      "description": "Export job summaries for the current page"
+    },
+    "pageSize": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Page size used for this response"
+    },
+    "pageOffset": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Page offset used for this response"
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total number of jobs matching the filters"
+    }
+  },
+  "$defs": {
+    "EgressJobSummaryDto": {
+      "type": "object",
+      "description": "Summary view of an export job for the Activity Center",
+      "properties": {
+        "tableName": {
+          "type": "string",
+          "description": "Spanner table name"
+        },
+        "correlationId": {
+          "type": "string",
+          "description": "Correlation ID for the export job"
+        },
+        "type": {
+          "type": "string",
+          "description": "Export type"
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant ID"
+        },
+        "templateId": {
+          "type": "string",
+          "description": "Template ID used for the export, if any"
+        },
+        "templateName": {
+          "type": "string",
+          "description": "Template name used for the export, if any. Currently always null pending DAL support for including the template name in this endpoint's response (CP-35412 follow-up)."
+        },
+        "jobType": {
+          "type": "string",
+          "enum": [
+            "MANUAL",
+            "SCHEDULED"
+          ],
+          "description": "Job type"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the export job"
+        },
+        "expectedRows": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Expected number of rows for the export"
+        },
+        "successfulRows": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Number of rows successfully exported"
+        },
+        "unsuccessfulRows": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Number of rows that failed to export"
+        },
+        "initiatedByUserId": {
+          "type": "string",
+          "description": "User ID that initiated the export job"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp the export job was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp the export job was last updated"
+        },
+        "cancelledAt": {
+          "type": "string",
+          "description": "Timestamp the export job was cancelled, if applicable"
+        },
+        "cancelledByUserId": {
+          "type": "string",
+          "description": "User ID that requested cancellation, if applicable"
+        },
+        "exportType": {
+          "type": "string",
+          "enum": [
+            "FULL_ROSTER_EXPORT",
+            "CHANGE_FILE"
+          ],
+          "description": "Export kind of the template behind this job (CP-41063): FULL_ROSTER_EXPORT (default when the egress service omits it) or CHANGE_FILE"
+        },
+        "changeFileWindowFrom": {
+          "type": "string",
+          "description": "Change File runs only: start of the change window (exclusive), ISO-8601"
+        },
+        "changeFileWindowTo": {
+          "type": "string",
+          "description": "Change File runs only: end of the change window (inclusive), ISO-8601"
+        },
+        "transactionsSelected": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Change File runs only: transactions selected from the change ledger for the window"
+        },
+        "rowsWritten": {
+          "type": "integer",
+          "format": "int64",
+          "description": "Change File runs only: rows written to the delivered file"
+        },
+        "startedAt": {
+          "type": "string",
+          "description": "Timestamp the export job started. Derived alias for createdAt (the DAL does not track a distinct start time separate from job creation)."
+        },
+        "finishedAt": {
+          "type": "string",
+          "description": "Timestamp the export job finished (reached a terminal status). Derived alias for updatedAt once status is COMPLETED/FAILED/CANCELLED; null while still running, since the DAL overwrites updatedAt on every intermediate status change."
+        }
+      }
+    }
+  }
+}

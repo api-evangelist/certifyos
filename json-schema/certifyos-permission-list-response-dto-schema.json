@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-permission-list-response-dto-schema.json",
+  "title": "PermissionListResponseDto",
+  "description": "Paginated list of permissions",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-permission-api-openapi.yml#/components/schemas/PermissionListResponseDto",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PermissionResponseDto"
+      },
+      "description": "Permission records included on this page. May be null (rather than an empty array) when the underlying data service returns no records — e.g. a page beyond the last available record — so consumers should treat null and [] equivalently."
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total number of permission records across all pages for this tenant, not just the current page."
+    },
+    "page": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Currently always null — this endpoint does not populate a page number in the envelope."
+    },
+    "size": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Currently always null — this endpoint does not populate a page size in the envelope."
+    },
+    "hasNext": {
+      "type": "boolean",
+      "description": "Whether a subsequent page of results is available, based on the presence of a next-page link from the underlying data service."
+    },
+    "hasPrevious": {
+      "type": "boolean",
+      "description": "Whether a preceding page of results is available, based on the presence of a previous-page link from the underlying data service."
+    }
+  },
+  "$defs": {
+    "OffsetDateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "PermissionResponseDto": {
+      "type": "object",
+      "description": "Permission information response",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Server-assigned unique identifier for the permission."
+        },
+        "resource": {
+          "type": "string",
+          "description": "Name of the resource this permission governs (e.g. 'user', 'roster'). Mirrors the resource value supplied when the permission was created or last replaced."
+        },
+        "action": {
+          "type": "string",
+          "description": "Name of the action this permission grants on the resource (e.g. 'read', 'create'). Mirrors the action value supplied when the permission was created or last replaced."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable explanation of what the permission allows. Optional; may be null if it was not supplied at creation."
+        },
+        "createdAt": {
+          "$ref": "#/$defs/OffsetDateTime",
+          "type": "string",
+          "description": "Timestamp the permission was created, in ISO-8601 format."
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/OffsetDateTime",
+          "type": "string",
+          "description": "Timestamp the permission was last updated, in ISO-8601 format."
+        }
+      }
+    }
+  }
+}

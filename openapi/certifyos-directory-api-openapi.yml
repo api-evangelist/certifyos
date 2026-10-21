@@ -586,269 +586,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    DirectoryResponse:
-      type: object
-      description: Response containing directory job information
-      properties:
-        exportJobId:
-          type: string
-          examples:
-          - job-123456
-          description: Unique identifier for the directory job
-        tenantId:
-          type: string
-          examples:
-          - tenant-123456
-          description: ID of the tenant
-        startedAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          description: Timestamp when the directory job was started
-        entityType:
-          type: string
-          examples:
-          - practitioners
-          description: Entity type (practitioners, facilities, or groups)
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
-    EgressJobDetailResponse:
-      type: object
-      description: Full detail view of an export job for the Activity Center
-      properties:
-        tableName:
-          type: string
-          description: Spanner table name
-        correlationId:
-          type: string
-          examples:
-          - 550e8400-e29b-41d4-a716-446655440000
-          description: Correlation ID for the export job
-        type:
-          type: string
-          examples:
-          - practitioner
-          description: Export type
-        tenantId:
-          type: string
-          examples:
-          - 5cfb18b0-e1b9-4be1-b8b4-a51d62ab67ba
-          description: Tenant ID
-        templateId:
-          type: string
-          description: Template ID used for the export, if any
-        jobType:
-          type: string
-          enum:
-          - MANUAL
-          - SCHEDULED
-          examples:
-          - MANUAL
-          description: Job type
-        status:
-          type: string
-          description: Current status of the export job
-        expectedRows:
-          type: integer
-          format: int64
-          examples:
-          - 1000
-          description: Expected number of rows for the export
-        successfulRows:
-          type: integer
-          format: int64
-          examples:
-          - 950
-          description: Number of rows successfully exported
-        unsuccessfulRows:
-          type: integer
-          format: int64
-          examples:
-          - 50
-          description: Number of rows that failed to export
-        initiatedByUserId:
-          type: string
-          description: User ID that initiated the export job
-        createdAt:
-          type: string
-          description: Timestamp the export job was created
-        updatedAt:
-          type: string
-          description: Timestamp the export job was last updated
-        cancelledAt:
-          type: string
-          description: Timestamp the export job was cancelled, if applicable
-        cancelledByUserId:
-          type: string
-          description: User ID that requested cancellation, if applicable
-        dataflowSeedJobId:
-          type: string
-          description: Dataflow job ID for the seed (Job A) step
-        dataflowExportJobId:
-          type: string
-          description: Dataflow job ID for the export (Job B) step
-        seedJobStatus:
-          type: string
-          description: Status of the Dataflow seed job
-        exportJobStatus:
-          type: string
-          description: Status of the Dataflow export job
-        gcsFilePath:
-          type: string
-          format: uri
-          description: GCS file path for the exported file, once available
-        exportType:
-          type: string
-          enum:
-          - FULL_ROSTER_EXPORT
-          - CHANGE_FILE
-          examples:
-          - CHANGE_FILE
-          description: 'Export kind of the template behind this job (CP-41063): FULL_ROSTER_EXPORT (default when the egress service omits it) or CHANGE_FILE'
-        changeFileWindowFrom:
-          type: string
-          description: 'Change File runs only: start of the change window (exclusive), ISO-8601'
-        changeFileWindowTo:
-          type: string
-          description: 'Change File runs only: end of the change window (inclusive), ISO-8601'
-        transactionsSelected:
-          type: integer
-          format: int64
-          description: 'Change File runs only: transactions selected from the change ledger for the window'
-        rowsWritten:
-          type: integer
-          format: int64
-          description: 'Change File runs only: rows written to the delivered file'
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    JobStatus:
-      type: string
-      enum:
-      - IN_QUEUE
-      - MAPPING
-      - IN_PROGRESS
-      - SEED_COMPLETED
-      - TEMPLATE_EXPORT_IN_PROGRESS
-      - COMPLETED
-      - FAILED
-    Filters1:
-      type: object
-      description: NPI and/or TIN filter criteria
-      properties:
-        npi:
-          type: array
-          examples:
-          - - '1234567890'
-          items:
-            type: string
-          description: List of NPIs to filter by (each must be exactly 10 digits). Capped at 100 entries by default; omit to export all NPIs.
-        tin:
-          type: array
-          examples:
-          - - '123456789'
-          items:
-            type: string
-          description: List of TINs to filter by (each must be exactly 9 digits). Capped at 100 entries by default; omit to export all TINs. Not supported for practitioners exports when npi is absent.
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    EgressJobListResponse:
-      type: object
-      description: Paginated list of export jobs for the Activity Center
-      properties:
-        jobs:
-          type: array
-          items:
-            $ref: '#/components/schemas/EgressJobSummaryDto'
-          description: Export job summaries for the current page
-        pageSize:
-          type: integer
-          format: int32
-          examples:
-          - 20
-          description: Page size used for this response
-        pageOffset:
-          type: integer
-          format: int32
-          examples:
-          - 0
-          description: Page offset used for this response
-        totalCount:
-          type: integer
-          format: int64
-          examples:
-          - 137
-          description: Total number of jobs matching the filters
-    DirectoryJobStatusResponse:
-      type: object
-      description: Response containing directory job status information
-      properties:
-        exportJobId:
-          type: string
-          examples:
-          - job-123456
-          description: Unique identifier for the directory job
-        tenantId:
-          type: string
-          examples:
-          - tenant-123456
-          description: ID of the tenant
-        entityType:
-          type: string
-          examples:
-          - practitioners
-          description: Entity type (practitioners, facilities, or groups)
-        status:
-          $ref: '#/components/schemas/JobStatus'
-          type: string
-          examples:
-          - IN_PROGRESS
-          description: 'Current status of the job: IN_QUEUE, MAPPING, IN_PROGRESS, SEED_COMPLETED, TEMPLATE_EXPORT_IN_PROGRESS, COMPLETED, or FAILED. Serialized as the enum constant name.'
-        stats:
-          $ref: '#/components/schemas/JobStats'
-          type: object
-          description: Job processing statistics
-        fileUrl:
-          type: string
-          examples:
-          - https://storage.googleapis.com/certifyos-directory-exports/tenant-123456/p1a2b3c4d5e6f7ndjson.ndjson?X-Goog-Signature=...
-          description: Download URL for the exported file, present only once status is COMPLETED. Normally a time-limited signed GCS URL (valid 8 hours); falls back to the raw, unsigned gs:// URI if signing fails.
     DirectoryRequest:
       type: object
       description: Request body for starting a directory export job
@@ -882,11 +619,68 @@ components:
           examples:
           - '2026-09-30'
           description: End of the export window as a UTC calendar date (`yyyy-MM-dd`, inclusive); must not precede `from`. See `from`.
+    DirectoryResponse:
+      type: object
+      description: Response containing directory job information
+      properties:
+        exportJobId:
+          type: string
+          examples:
+          - job-123456
+          description: Unique identifier for the directory job
+        tenantId:
+          type: string
+          examples:
+          - tenant-123456
+          description: ID of the tenant
+        startedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          description: Timestamp when the directory job was started
+        entityType:
+          type: string
+          examples:
+          - practitioners
+          description: Entity type (practitioners, facilities, or groups)
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     DirectoryExportOutputFormat:
       type: string
       enum:
       - ndjson
       - csv
+    Filters1:
+      type: object
+      description: NPI and/or TIN filter criteria
+      properties:
+        npi:
+          type: array
+          examples:
+          - - '1234567890'
+          items:
+            type: string
+          description: List of NPIs to filter by (each must be exactly 10 digits). Capped at 100 entries by default; omit to export all NPIs.
+        tin:
+          type: array
+          examples:
+          - - '123456789'
+          items:
+            type: string
+          description: List of TINs to filter by (each must be exactly 9 digits). Capped at 100 entries by default; omit to export all TINs. Not supported for practitioners exports when npi is absent.
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
     JobStats:
       type: object
       description: Statistics for directory job processing
@@ -1009,6 +803,185 @@ components:
         finishedAt:
           type: string
           description: Timestamp the export job finished (reached a terminal status). Derived alias for updatedAt once status is COMPLETED/FAILED/CANCELLED; null while still running, since the DAL overwrites updatedAt on every intermediate status change.
+    EgressJobDetailResponse:
+      type: object
+      description: Full detail view of an export job for the Activity Center
+      properties:
+        tableName:
+          type: string
+          description: Spanner table name
+        correlationId:
+          type: string
+          examples:
+          - 550e8400-e29b-41d4-a716-446655440000
+          description: Correlation ID for the export job
+        type:
+          type: string
+          examples:
+          - practitioner
+          description: Export type
+        tenantId:
+          type: string
+          examples:
+          - 5cfb18b0-e1b9-4be1-b8b4-a51d62ab67ba
+          description: Tenant ID
+        templateId:
+          type: string
+          description: Template ID used for the export, if any
+        jobType:
+          type: string
+          enum:
+          - MANUAL
+          - SCHEDULED
+          examples:
+          - MANUAL
+          description: Job type
+        status:
+          type: string
+          description: Current status of the export job
+        expectedRows:
+          type: integer
+          format: int64
+          examples:
+          - 1000
+          description: Expected number of rows for the export
+        successfulRows:
+          type: integer
+          format: int64
+          examples:
+          - 950
+          description: Number of rows successfully exported
+        unsuccessfulRows:
+          type: integer
+          format: int64
+          examples:
+          - 50
+          description: Number of rows that failed to export
+        initiatedByUserId:
+          type: string
+          description: User ID that initiated the export job
+        createdAt:
+          type: string
+          description: Timestamp the export job was created
+        updatedAt:
+          type: string
+          description: Timestamp the export job was last updated
+        cancelledAt:
+          type: string
+          description: Timestamp the export job was cancelled, if applicable
+        cancelledByUserId:
+          type: string
+          description: User ID that requested cancellation, if applicable
+        dataflowSeedJobId:
+          type: string
+          description: Dataflow job ID for the seed (Job A) step
+        dataflowExportJobId:
+          type: string
+          description: Dataflow job ID for the export (Job B) step
+        seedJobStatus:
+          type: string
+          description: Status of the Dataflow seed job
+        exportJobStatus:
+          type: string
+          description: Status of the Dataflow export job
+        gcsFilePath:
+          type: string
+          format: uri
+          description: GCS file path for the exported file, once available
+        exportType:
+          type: string
+          enum:
+          - FULL_ROSTER_EXPORT
+          - CHANGE_FILE
+          examples:
+          - CHANGE_FILE
+          description: 'Export kind of the template behind this job (CP-41063): FULL_ROSTER_EXPORT (default when the egress service omits it) or CHANGE_FILE'
+        changeFileWindowFrom:
+          type: string
+          description: 'Change File runs only: start of the change window (exclusive), ISO-8601'
+        changeFileWindowTo:
+          type: string
+          description: 'Change File runs only: end of the change window (inclusive), ISO-8601'
+        transactionsSelected:
+          type: integer
+          format: int64
+          description: 'Change File runs only: transactions selected from the change ledger for the window'
+        rowsWritten:
+          type: integer
+          format: int64
+          description: 'Change File runs only: rows written to the delivered file'
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    JobStatus:
+      type: string
+      enum:
+      - IN_QUEUE
+      - MAPPING
+      - IN_PROGRESS
+      - SEED_COMPLETED
+      - TEMPLATE_EXPORT_IN_PROGRESS
+      - COMPLETED
+      - FAILED
+    DirectoryJobStatusResponse:
+      type: object
+      description: Response containing directory job status information
+      properties:
+        exportJobId:
+          type: string
+          examples:
+          - job-123456
+          description: Unique identifier for the directory job
+        tenantId:
+          type: string
+          examples:
+          - tenant-123456
+          description: ID of the tenant
+        entityType:
+          type: string
+          examples:
+          - practitioners
+          description: Entity type (practitioners, facilities, or groups)
+        status:
+          $ref: '#/components/schemas/JobStatus'
+          type: string
+          examples:
+          - IN_PROGRESS
+          description: 'Current status of the job: IN_QUEUE, MAPPING, IN_PROGRESS, SEED_COMPLETED, TEMPLATE_EXPORT_IN_PROGRESS, COMPLETED, or FAILED. Serialized as the enum constant name.'
+        stats:
+          $ref: '#/components/schemas/JobStats'
+          type: object
+          description: Job processing statistics
+        fileUrl:
+          type: string
+          examples:
+          - https://storage.googleapis.com/certifyos-directory-exports/tenant-123456/p1a2b3c4d5e6f7ndjson.ndjson?X-Goog-Signature=...
+          description: Download URL for the exported file, present only once status is COMPLETED. Normally a time-limited signed GCS URL (valid 8 hours); falls back to the raw, unsigned gs:// URI if signing fails.
     EgressInitiatorsResponse:
       type: object
       description: Distinct initiators of a tenant's export jobs
@@ -1018,6 +991,33 @@ components:
           items:
             type: string
           description: Distinct initiator identities (emails or the 'system' sentinel)
+    EgressJobListResponse:
+      type: object
+      description: Paginated list of export jobs for the Activity Center
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressJobSummaryDto'
+          description: Export job summaries for the current page
+        pageSize:
+          type: integer
+          format: int32
+          examples:
+          - 20
+          description: Page size used for this response
+        pageOffset:
+          type: integer
+          format: int32
+          examples:
+          - 0
+          description: Page offset used for this response
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 137
+          description: Total number of jobs matching the filters
   securitySchemes:
     jwt:
       type: http

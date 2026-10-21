@@ -478,6 +478,83 @@ paths:
       - jwt: []
 components:
   schemas:
+    UpdateGroupNetworkSpecialtyDatesRequest:
+      type: object
+      required:
+      - effectiveDate
+      properties:
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        terminationDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+        applyToAllAssociatedNetworksAndPlans:
+          type: boolean
+        applyToAllAssociatedLocations:
+          type: boolean
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    UpdateGroupPractitionerNetworkEffectiveDateRequest:
+      type: object
+      required:
+      - networkId
+      - tenantGroupPractitionerId
+      - effectiveDate
+      properties:
+        networkId:
+          type: string
+          pattern: \S
+        tenantGroupPractitionerId:
+          type: string
+          pattern: \S
+        effectiveDate:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+    GetAllNetworksResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkResponse'
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    NetworkResponse:
+      $ref: https://schemas.certifyos.com/api-contracts/response/NetworkResponse.schema.json
+      type: object
+      properties:
+        jsonNode:
+          $ref: '#/components/schemas/JsonNode'
+    CreateNetworkRequest:
+      type: object
+      properties:
+        data:
+          $ref: https://schemas.certifyos.com/entities/Network.schema.json
+          type: object
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -506,83 +583,18 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
-    NetworkResponse:
-      $ref: https://schemas.certifyos.com/api-contracts/response/NetworkResponse.schema.json
-      type: object
-      properties:
-        jsonNode:
-          $ref: '#/components/schemas/JsonNode'
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    UpdateGroupNetworkSpecialtyDatesRequest:
-      type: object
-      required:
-      - effectiveDate
-      properties:
-        effectiveDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        terminationDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-        applyToAllAssociatedNetworksAndPlans:
-          type: boolean
-        applyToAllAssociatedLocations:
-          type: boolean
-    UpdateGroupPractitionerNetworkEffectiveDateRequest:
-      type: object
-      required:
-      - networkId
-      - tenantGroupPractitionerId
-      - effectiveDate
-      properties:
-        networkId:
-          type: string
-          pattern: \S
-        tenantGroupPractitionerId:
-          type: string
-          pattern: \S
-        effectiveDate:
-          type: string
-          pattern: ^\d{4}-\d{2}-\d{2}$
-    BadRequestErrorResponse:
-      type: object
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      properties:
-        errors:
-          type: array
-          examples:
-          - - Validation failed
-            - Required field missing
-          items:
-            type: string
-          description: List of error messages
-        errorDetails:
-          type: object
-          description: Detailed error information with specific validation failures
-    CreateNetworkRequest:
-      type: object
-      properties:
-        data:
-          $ref: https://schemas.certifyos.com/entities/Network.schema.json
-          type: object
-    GetAllNetworksResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-        records:
-          type: array
-          items:
-            $ref: '#/components/schemas/NetworkResponse'
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     JsonNode:
       type: object
       properties:
@@ -630,18 +642,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-trigger-event-request-schema.json",
+  "title": "TriggerEventRequest",
+  "description": "Request to trigger a webhook event for all of a tenant's matching subscriptions",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhook-api-openapi.yml#/components/schemas/TriggerEventRequest",
+  "type": "object",
+  "required": [
+    "eventType",
+    "eventData"
+  ],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,3}$",
+      "description": "Event type to trigger. Any lowercase domain.entity.action value of 2-4 segments is accepted; webhooks registered for this exact value receive it."
+    },
+    "eventData": {
+      "type": "object",
+      "description": "Arbitrary JSON payload delivered verbatim as the 'data' member of the webhook envelope. Not schema-validated - any JSON object is accepted."
+    }
+  }
+}

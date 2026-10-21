@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-member-status-change-response-schema.json",
+  "title": "SharedMemberStatusChangeResponse",
+  "description": "Per-member outcomes plus the recomputed shared status.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingworkflow-api-openapi.yml#/components/schemas/SharedMemberStatusChangeResponse",
+  "type": "object",
+  "required": [
+    "successful",
+    "failed",
+    "totalCount",
+    "successCount",
+    "failureCount"
+  ],
+  "properties": {
+    "successful": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/StatusChangeResult"
+      },
+      "description": "Members whose status change was applied."
+    },
+    "failed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/StatusChangeResult"
+      },
+      "description": "Members whose status change was refused."
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Members processed."
+    },
+    "successCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Members changed."
+    },
+    "failureCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Members refused."
+    },
+    "sharedStatus": {
+      "type": "string",
+      "description": "The group's derived status after the recompute."
+    }
+  },
+  "$defs": {
+    "GatedRuleItem": {
+      "type": "object",
+      "required": [
+        "ruleKey"
+      ],
+      "description": "A PSV rule result: its key, the PSV type it belongs to and a description",
+      "properties": {
+        "ruleKey": {
+          "type": "string",
+          "description": "Key of the rule"
+        },
+        "psvType": {
+          "type": "string",
+          "description": "PSV type the rule belongs to, '-' when unknown"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human readable description of the rule result"
+        },
+        "coverKey": {
+          "type": "string",
+          "description": "Stable key of the open blocker, used to match covers and acknowledgements"
+        },
+        "hiddenFromPacket": {
+          "type": "boolean",
+          "description": "True when the analyst chose to hide this rule from the PSV packet (CP-40893)"
+        }
+      }
+    },
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "LocalDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "NextCredentialingDateChangeLogEntry": {
+      "type": "object",
+      "required": [
+        "changedFrom",
+        "changedTo",
+        "changeReason",
+        "createdBy",
+        "createdAt"
+      ],
+      "description": "Change log entry tracking changes to the next credentialing date",
+      "properties": {
+        "changedFrom": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Previous next credentialing date in YYYY-MM-DD format"
+        },
+        "changedTo": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "New next credentialing date in YYYY-MM-DD format"
+        },
+        "changeReason": {
+          "type": "string",
+          "description": "Reason for the change"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "User who made the change"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the change was made"
+        }
+      }
+    },
+    "StatusChangeResult": {
+      "type": "object",
+      "description": "Result of a single workflow status change",
+      "properties": {
+        "workflowId": {
+          "type": "string",
+          "description": "Workflow ID that was processed"
+        },
+        "timelineEvent": {
+          "$ref": "#/$defs/TimelineEventResponse",
+          "type": "object",
+          "description": "Timeline event response if successful"
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "Error message if the operation failed"
+        },
+        "errorCode": {
+          "type": "string",
+          "description": "Error code if the operation failed"
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GatedRuleItem"
+          },
+          "description": "CP-42729: the open PSV blockers when the PSV progression gate refused the move; absent otherwise"
+        }
+      }
+    },
+    "TimelineEventData": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "description": "Timeline event data containing event details. Field requirements vary by event name (see oneOf conditions in schema).",
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "NOT_STARTED",
+            "IN_PROGRESS",
+            "OUTREACH_IN_PROGRESS",
+            "DATA_MISSING",
+            "PSV_COMPLETED",
+            "PSV_READY",
+            "SENT_TO_COMMITTEE",
+            "TABLED",
+            "WITHDRAWN_CANCELLED",
+            "CRED_DENIED",
+            "CRED_APPROVED"
+          ],
+          "description": "Name of the timeline event. Must be one of the TimelineStatus enum values."
+        },
+        "changeReason": {
+          "type": "string",
+          "description": "Reason for the change or status update. REQUIRED for: DATA_MISSING, WITHDRAWN_CANCELLED. Optional for: CRED_APPROVED, CRED_DENIED, and other statuses. Note: Whether this field is required or optional varies based on the permissions assigned to the user performing the action."
+        },
+        "credentialingDecisionDate": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Date when the credentialing decision was made (YYYY-MM-DD format). REQUIRED for: CRED_APPROVED, CRED_DENIED. Not applicable for other statuses."
+        },
+        "nextCredentialingDate": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Date when the next credentialing is due (YYYY-MM-DD format). REQUIRED for: CRED_APPROVED. Not applicable for other statuses. Should reflect the latest value from nextCredentialingDateChangeLog if present."
+        },
+        "nextCredentialingDateSource": {
+          "type": "string",
+          "enum": [
+            "SYSTEM_CALCULATED",
+            "USER_INPUT"
+          ],
+          "description": "Indicates whether the next credentialing date was calculated by the system or entered by a user. Only applicable for CRED_APPROVED events."
+        },
+        "nextCredentialingDateChangeLog": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NextCredentialingDateChangeLogEntry"
+          },
+          "description": "Array to track changes to the next credentialing date. The nextCredentialingDate field should reflect the latest value from this array. Only applicable for CRED_APPROVED events."
+        },
+        "psvPdfPath": {
+          "type": "string",
+          "format": "uri-reference",
+          "description": "URI reference to the PSV (Provider Summary Verification) PDF document. "
+        },
+        "overrideReason": {
+          "type": "string",
+          "format": "string",
+          "description": "Indicates the reason for the override"
+        },
+        "isOverride": {
+          "type": "boolean",
+          "format": "boolean",
+          "description": "Indicates if the timeline event is an override bypassing the default validations"
+        }
+      }
+    },
+    "TimelineEventResponse": {
+      "type": "object",
+      "description": "Response containing timeline event information",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the timeline event"
+        },
+        "workflowId": {
+          "type": "string",
+          "description": "ID of the associated credentialing workflow"
+        },
+        "data": {
+          "$ref": "#/$defs/TimelineEventData",
+          "type": "object",
+          "description": "Timeline event data containing name, changeReason, and date fields"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "ID of the user who created the timeline event"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "ID of the user who last updated the timeline event"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp when the timeline event was created"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp when the timeline event was last updated"
+        }
+      }
+    }
+  }
+}

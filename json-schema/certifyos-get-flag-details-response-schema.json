@@ -1,0 +1,624 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-get-flag-details-response-schema.json",
+  "title": "GetFlagDetailsResponse",
+  "description": "Full flag object plus its audit history trail",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-flag-api-openapi.yml#/components/schemas/GetFlagDetailsResponse",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Flag identifier"
+    },
+    "recordType": {
+      "type": "string",
+      "description": "Flag record type (tab discriminator)"
+    },
+    "flagType": {
+      "type": "string",
+      "description": "Flag type identifier (flag_type_id slug)"
+    },
+    "status": {
+      "type": "string",
+      "description": "Flag lifecycle status"
+    },
+    "flaggedDate": {
+      "type": "string",
+      "description": "Date the source entity was flagged (ISO-8601)"
+    },
+    "updatedOn": {
+      "type": "string",
+      "description": "Display timestamp of the most recent monitoring source refresh (metaData.sourceUpdateDate, falling back to flags.updated_at)"
+    },
+    "updatedAt": {
+      "type": "string",
+      "description": "Raw flags.updated_at column — the change-detection signal for pollers; distinct from the display-oriented updatedOn"
+    },
+    "dataSource": {
+      "type": "string",
+      "description": "Data source identifier"
+    },
+    "practitioner": {
+      "$ref": "#/$defs/PractitionerInfo",
+      "type": "object",
+      "description": "Denormalized practitioner identity fields"
+    },
+    "certifyPractitionerId": {
+      "type": "string",
+      "description": "Certify practitioner id resolved from the flag's tenant practitioner; null when it cannot be resolved"
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "Flag creation timestamp (ISO-8601)"
+    },
+    "markedSeenAt": {
+      "type": "string",
+      "description": "When the flag was last marked seen (ISO-8601), derived from history; null when never seen"
+    },
+    "markedSeenBy": {
+      "type": "string",
+      "description": "Who last marked the flag seen (display name; raw id when unresolvable); null when never seen"
+    },
+    "originMonitoringWorkflowId": {
+      "type": "string",
+      "description": "Origin monitoring workflow id"
+    },
+    "metaData": {
+      "type": "object",
+      "description": "Tab-specific metadata fields (allowlist-filtered)",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StateLicensesFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/DeaDataFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/CdsDataFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/BoardCertificationsFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/MalpracticeInsurancesFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/NpdbDataFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/LicensureActionsFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/SanctionsFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/NppesFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/CompactLicenseFlagMetaData"
+        },
+        {
+          "$ref": "#/$defs/DeathMasterMatchesFlagMetaData"
+        }
+      ]
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/HistoryEntry"
+      },
+      "description": "Audit history trail, newest first"
+    },
+    "npdbPdf": {
+      "$ref": "#/$defs/NpdbPdfBlock",
+      "type": "object",
+      "description": "Rendered NPDB report PDF for this flag's stamped data (CP-36183); present only on npdb-data flags"
+    }
+  },
+  "$defs": {
+    "AttachmentInfo": {
+      "type": "object",
+      "description": "Metadata for a flag history attachment (no signed URL, no storage path)",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Attachment identifier"
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Original uploaded file name"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Attachment creation timestamp (ISO-8601)"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Who uploaded the attachment (display name; raw id when unresolvable)"
+        }
+      }
+    },
+    "BoardCertificationsFlagMetaData": {
+      "title": "BoardCertificationsFlagMetaData",
+      "description": "metaData returned on board-certifications flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "abmsId": {},
+        "certificateId": {},
+        "certificateType": {},
+        "city": {},
+        "country": {},
+        "durationType": {},
+        "expirationDate": {},
+        "flaggedDate": {},
+        "issueDate": {},
+        "message": {},
+        "moc": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "speciality": {},
+        "state": {},
+        "status": {},
+        "subspeciality": {},
+        "zipCode": {}
+      },
+      "additionalProperties": false
+    },
+    "CdsDataFlagMetaData": {
+      "title": "CdsDataFlagMetaData",
+      "description": "metaData returned on cds-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "expirationDate": {},
+        "flaggedDate": {},
+        "message": {},
+        "number": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "state": {},
+        "status": {}
+      },
+      "additionalProperties": false
+    },
+    "CompactLicenseFlagMetaData": {
+      "title": "CompactLicenseFlagMetaData",
+      "description": "metaData returned on compact-license flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "compactType": {},
+        "coveredStates": {},
+        "createdAt": {},
+        "createdBy": {},
+        "dataSource": {},
+        "effectiveStatus": {},
+        "expirationDate": {},
+        "flaggedDate": {},
+        "homeLicenseLinkSource": {},
+        "homeLicenseNumber": {},
+        "homeLicenseState": {},
+        "homeLicenseType": {},
+        "issueDate": {},
+        "licenseNumber": {},
+        "message": {},
+        "sourceUpdateDate": {},
+        "status": {},
+        "updatedAt": {},
+        "updatedBy": {},
+        "verifiedBy": {},
+        "verifiedByName": {},
+        "verifiedDate": {}
+      },
+      "additionalProperties": false
+    },
+    "DeaDataFlagMetaData": {
+      "title": "DeaDataFlagMetaData",
+      "description": "metaData returned on dea-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "expirationDate": {},
+        "flaggedDate": {},
+        "message": {},
+        "number": {},
+        "schedules": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "state": {},
+        "status": {}
+      },
+      "additionalProperties": false
+    },
+    "DeathMasterMatchesFlagMetaData": {
+      "title": "DeathMasterMatchesFlagMetaData",
+      "description": "metaData returned on death-master-matches flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "confidence": {},
+        "dateOfBirth": {},
+        "dateOfDeath": {},
+        "flaggedDate": {},
+        "isDeceased": {},
+        "matchedAt": {},
+        "matchedOn": {},
+        "message": {},
+        "name": {},
+        "reason": {},
+        "source": {},
+        "sourceUpdateDate": {}
+      },
+      "additionalProperties": false
+    },
+    "HistoryEntry": {
+      "type": "object",
+      "description": "A single flag history record",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "History record identifier"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status set by this transition"
+        },
+        "description": {
+          "type": "string",
+          "description": "Free-text comment attached to the transition"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "History record creation timestamp (ISO-8601)"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Who created the record (display name; raw id when unresolvable)"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AttachmentInfo"
+          },
+          "description": "Attachments linked to this history record"
+        }
+      }
+    },
+    "LicensureActionsFlagMetaData": {
+      "title": "LicensureActionsFlagMetaData",
+      "description": "metaData returned on licensure-actions flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "actionType": {},
+        "createdAt": {},
+        "createdBy": {},
+        "credWorkflowRecordOrigin": {},
+        "details": {},
+        "flaggedDate": {},
+        "lastActionDate": {},
+        "licenseNumber": {},
+        "message": {},
+        "reportDate": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "state": {},
+        "updatedAt": {},
+        "updatedBy": {},
+        "verifiedBy": {},
+        "verifiedDate": {}
+      },
+      "additionalProperties": false
+    },
+    "MalpracticeInsurancesFlagMetaData": {
+      "title": "MalpracticeInsurancesFlagMetaData",
+      "description": "metaData returned on malpractice-insurances flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "aggregateCoverageAmount": {},
+        "carrierName": {},
+        "effectiveDate": {},
+        "expiryDate": {},
+        "flaggedDate": {},
+        "message": {},
+        "occuranceCoverageAmount": {},
+        "policyNumber": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "status": {},
+        "unlimitedCoverage": {}
+      },
+      "additionalProperties": false
+    },
+    "NpdbDataFlagMetaData": {
+      "title": "NpdbDataFlagMetaData",
+      "description": "metaData returned on npdb-data flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "certification": {},
+        "data": {},
+        "databankSubjectId": {},
+        "dcn": {},
+        "deceased": {},
+        "enrollmentStatus": {},
+        "firstName": {},
+        "flaggedDate": {},
+        "gender": {},
+        "homeAddress": {},
+        "homeCity": {},
+        "homeState": {},
+        "homeZip": {},
+        "lastName": {},
+        "licensureField": {},
+        "maintainedUnder": {},
+        "message": {},
+        "notes": {},
+        "npi": {},
+        "otherName": {},
+        "previousDCN": {},
+        "previousTransaction": {},
+        "processDate": {},
+        "recentChangeDate": {},
+        "reportDCN": {},
+        "reportDate": {},
+        "reportType": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "submitter": {},
+        "transactionType": {},
+        "transactionTypeCode": {},
+        "typeOfAction": {}
+      },
+      "additionalProperties": false
+    },
+    "NpdbPdfBlock": {
+      "type": "object",
+      "description": "Rendered NPDB report PDF for the flag's stamped data (no storage path)",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "PDF availability: READY (url present), GENERATING (render in flight), FAILED (last render failed; errorMessage present), NOT_AVAILABLE (nothing rendered for the flag's current data), PERMISSION_REQUIRED (caller lacks MONITORING_WORKFLOW_NPDB_PDF_READ; no url, whatever the PDF's state)"
+        },
+        "url": {
+          "type": "string",
+          "description": "Short-lived signed URL opening the PDF inline; READY only"
+        },
+        "expiresAt": {
+          "type": "string",
+          "description": "Signed URL expiry (ISO-8601); READY only"
+        },
+        "generatedAt": {
+          "type": "string",
+          "description": "When the PDF was produced (ISO-8601); READY only"
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "Sanitised failure reason; FAILED only"
+        }
+      }
+    },
+    "NppesFlagMetaData": {
+      "title": "NppesFlagMetaData",
+      "description": "metaData returned on nppes flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "active": {},
+        "enumerationType": {},
+        "firstName": {},
+        "flaggedDate": {},
+        "lastName": {},
+        "message": {},
+        "middleName": {},
+        "npi": {},
+        "organizationId": {},
+        "sourceUpdateDate": {},
+        "status": {}
+      },
+      "additionalProperties": false
+    },
+    "PractitionerInfo": {
+      "type": "object",
+      "description": "Practitioner identity fields denormalized onto the flag row",
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "Name prefix, e.g. Dr."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name"
+        },
+        "middleName": {
+          "type": "string",
+          "description": "Middle name"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name"
+        },
+        "npi": {
+          "type": "string",
+          "description": "NPI (top-level practitioner NPI, not metaData)"
+        },
+        "providerType": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Provider/practitioner types (multi-value)"
+        },
+        "statesToCredential": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "States the practitioner is credentialed in"
+        },
+        "credentialingStatus": {
+          "type": "string",
+          "description": "Credentialing status"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth (ISO date)"
+        },
+        "email": {
+          "type": "string",
+          "description": "Primary email"
+        },
+        "lastCredentialedDate": {
+          "type": "string",
+          "description": "Last credentialed date (ISO date)"
+        }
+      }
+    },
+    "SanctionsFlagMetaData": {
+      "title": "SanctionsFlagMetaData",
+      "description": "metaData returned on sanctions flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "createdAt": {},
+              "createdBy": {},
+              "expirationDate": {},
+              "fileType": {},
+              "fileUrl": {},
+              "originalFileName": {}
+            },
+            "additionalProperties": false
+          }
+        },
+        "createdAt": {},
+        "createdBy": {},
+        "credWorkflowRecordOrigin": {},
+        "data": {},
+        "dateOfReport": {},
+        "flaggedDate": {},
+        "message": {},
+        "parsedData": {
+          "type": "object",
+          "properties": {
+            "OfacType": {},
+            "actionOrReason": {},
+            "activeDate": {},
+            "additionalComments": {},
+            "address1": {},
+            "address2": {},
+            "address3": {},
+            "address4": {},
+            "addresses": {},
+            "alternateDob": {},
+            "alternateName": {},
+            "alternateNumber": {},
+            "alternateRemarks": {},
+            "alternateType": {},
+            "blankDeprecated": {},
+            "businessName": {},
+            "cage": {},
+            "callSign": {},
+            "city": {},
+            "classification": {},
+            "clmRejectDate": {},
+            "comments": {},
+            "country": {},
+            "creationDate": {},
+            "crossReference": {},
+            "crosswalk_id": {},
+            "ctCode": {},
+            "dataAcquireDate": {},
+            "dataIssuingSource": {},
+            "dataSourceUrl": {},
+            "dob": {},
+            "effectiveDate": {},
+            "ein": {},
+            "eligibleToOrderAndRefer": {},
+            "entNumber": {},
+            "exclDate": {},
+            "excludingAgency": {},
+            "exclusionDate": {},
+            "exclusionInitiatedBy": {},
+            "exclusionProgram": {},
+            "exclusionType": {},
+            "firstName": {},
+            "fullName": {},
+            "general": {},
+            "grt": {},
+            "lastName": {},
+            "lastUpdated": {},
+            "licenseNumber": {},
+            "licenseType": {},
+            "middleName": {},
+            "npi": {},
+            "npi_attribution_source": {},
+            "openDataFlag": {},
+            "optoutEffectiveDate": {},
+            "optoutEndDate": {},
+            "orgId": {},
+            "orgName": {},
+            "preclusions_data": {},
+            "prefix": {},
+            "program": {},
+            "recordStatus": {},
+            "reinDate": {},
+            "reincarnationDate": {},
+            "remarks": {},
+            "samNumber": {},
+            "sanctionEndDate": {},
+            "sanctionType": {},
+            "sdnName": {},
+            "sdnType": {},
+            "sourceUpdateDate": {},
+            "specialty": {},
+            "state": {},
+            "suffix": {},
+            "terminationDate": {},
+            "title": {},
+            "tonnage": {},
+            "uniqueEntityId": {},
+            "upin": {},
+            "vesselFlag": {},
+            "vesselOwner": {},
+            "vesselType": {},
+            "waiverDate": {},
+            "waiverState": {},
+            "zipCode": {}
+          },
+          "additionalProperties": false
+        },
+        "sanctionStartDate": {},
+        "sanctionType": {},
+        "source": {},
+        "sourceUpdateDate": {},
+        "typeOfAction": {},
+        "updatedAt": {},
+        "updatedBy": {},
+        "verifiedBy": {},
+        "verifiedByName": {},
+        "verifiedDate": {}
+      },
+      "additionalProperties": false
+    },
+    "StateLicensesFlagMetaData": {
+      "title": "StateLicensesFlagMetaData",
+      "description": "metaData returned on state-licenses flag rows. Generated from the FlagResponseSerializer allowlist for this record type: every key not listed here is stripped from the response, hence additionalProperties: false. Property types are unconstrained because the allowlist declares names only.",
+      "type": "object",
+      "properties": {
+        "expiration": {},
+        "flaggedDate": {},
+        "issueDate": {},
+        "licenseNumber": {},
+        "licenseSource": {},
+        "licenseStatus": {},
+        "licenseType": {},
+        "message": {},
+        "practitionerType": {},
+        "sourceUpdateDate": {},
+        "state": {},
+        "url": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

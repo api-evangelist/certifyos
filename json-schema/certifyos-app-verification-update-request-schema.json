@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-app-verification-update-request-schema.json",
+  "title": "App Verification",
+  "description": "App verification data for PUT operations that replace the entire app verifications array",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-credentialingworkflow-api-openapi.yml#/components/schemas/AppVerificationUpdateRequest",
+  "type": "object",
+  "required": [
+    "verificationType",
+    "explanation",
+    "source"
+  ],
+  "properties": {
+    "createdAt": {
+      "$ref": "#/$defs/Date",
+      "type": "string",
+      "description": "The date the record was created"
+    },
+    "createdBy": {
+      "type": "string",
+      "description": "The user who created the record"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Date",
+      "type": "string",
+      "description": "The date the record was last updated"
+    },
+    "updatedBy": {
+      "type": "string",
+      "description": "The user who last updated the record"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CredentialingWorkflowAttachment"
+      },
+      "description": "Array of attachment metadata for this record"
+    },
+    "verifiedBy": {
+      "type": "string",
+      "description": "Person who verified this record"
+    },
+    "verifiedDate": {
+      "$ref": "#/$defs/Date",
+      "type": "string",
+      "description": "Date when this record was verified"
+    },
+    "verificationType": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "The type of verification"
+    },
+    "explanation": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "Explanation of the verification"
+    },
+    "source": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "The source of the verification"
+    },
+    "disclosureQuestions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DisclosureQuestionItem"
+      },
+      "description": "Array of disclosure questions (only populated for Disclosure Questions verification type)"
+    },
+    "favorableAnswerCounts": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Count of favorable disclosure answers (only for Disclosure Questions verification type)"
+    },
+    "unfavorableAnswerCounts": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Count of unfavorable disclosure answers (only for Disclosure Questions verification type)"
+    },
+    "deceasedCheckDetails": {
+      "$ref": "#/$defs/DeceasedCheckDetails",
+      "type": "object",
+      "description": "DMF check details for pop-up (only for Deceased Check verification type)"
+    },
+    "formType": {
+      "type": "string",
+      "enum": [
+        "application",
+        "application_release",
+        "state_release",
+        "state_authorization",
+        "disclosure",
+        "attestation",
+        "claims_history",
+        "acknowledgement"
+      ],
+      "pattern": "^(application|application_release|state_release|state_authorization|disclosure|attestation|claims_history|acknowledgement)$",
+      "description": "The category of form this verification is for; `state` carries which state's form. application: the CAQH application (ProviderHub label: Application). application_release: the CAQH standard authorization/attestation/release page (Application Release). state_release: a state release form (State Release). state_authorization: a state authorization form (State Authorization). disclosure: a state disclosure form, e.g. OR, WA (Disclosure). attestation: a state attestation-question form, e.g. OK Section 13, MS Section D (Section D - Attestation Questions). claims_history: a professional-liability claims information form, e.g. GA Schedule B (Schedule-B Professional Liability Claims Information Form for Georgia State). acknowledgement: a regulation acknowledgement form, e.g. GA Schedule C (Schedule C - Regulation Acknowledgement)."
+    },
+    "state": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2}$",
+      "description": "The 2-letter state this form is for"
+    },
+    "signaturePresent": {
+      "type": "boolean",
+      "description": "Whether the form shows a signature"
+    },
+    "signatureType": {
+      "type": "string",
+      "enum": [
+        "wet",
+        "electronic",
+        "unknown"
+      ],
+      "pattern": "^(wet|electronic|unknown)$",
+      "description": "wet (ink/scanned handwritten), electronic, or unknown when the signature's kind could not be determined"
+    },
+    "signatureDate": {
+      "$ref": "#/$defs/Date",
+      "type": "string",
+      "description": "The date the form was signed"
+    },
+    "attestationDate": {
+      "$ref": "#/$defs/Date",
+      "type": "string",
+      "description": "The date of the form's own attestation"
+    },
+    "clientReference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Caller-supplied idempotency key. When a create request for this section carries a clientReference equal to an existing record's, the create is deduped and the existing record is returned instead of appending a duplicate."
+    }
+  },
+  "$defs": {
+    "CredentialingWorkflowAttachment": {
+      "type": "object",
+      "required": [
+        "fileType",
+        "fileUrl",
+        "originalFileName"
+      ],
+      "description": "Attachment metadata for credentialing workflow row",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "fileType": {
+          "type": "string",
+          "description": "Document file type"
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "GCS file URL for file retrieval"
+        },
+        "originalFileName": {
+          "type": "string",
+          "description": "Original file name"
+        },
+        "expirationDate": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "Expiration date",
+          "default": "9999-12-31"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "User who created the record"
+        },
+        "artifactLinkId": {
+          "type": "string",
+          "description": "Shared identifier linking this attachment to its corresponding supportingDocuments entry"
+        }
+      }
+    },
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "DeceasedCheckDetails": {
+      "type": "object",
+      "required": [
+        "isDeceased"
+      ],
+      "description": "DMF check details for Deceased Check app verification pop-up",
+      "properties": {
+        "isDeceased": {
+          "type": "boolean",
+          "description": "Whether the person was found in DMF as deceased"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name from DMF"
+        },
+        "middleName": {
+          "type": "string",
+          "description": "Middle name from DMF"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name from DMF"
+        },
+        "nameSuffix": {
+          "type": "string",
+          "description": "Name suffix from DMF"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of birth from DMF (YYYY-MM-DD)"
+        },
+        "dateOfDeath": {
+          "type": "string",
+          "description": "Date of death from DMF (YYYY-MM-DD)"
+        },
+        "verifiedOrProofCode": {
+          "type": "string",
+          "description": "Verified or proof code from DMF"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date",
+          "type": "string",
+          "description": "When the DMF check was recorded"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date",
+          "type": "string",
+          "description": "When the DMF check record was last updated"
+        }
+      }
+    },
+    "DisclosureQuestionItem": {
+      "type": "object",
+      "description": "Individual disclosure question with answer details",
+      "properties": {
+        "question": {
+          "type": "string",
+          "description": "The disclosure question text"
+        },
+        "answer": {
+          "type": "string",
+          "description": "The answer for the question"
+        },
+        "answerFlag": {
+          "type": "string",
+          "description": "Flag indicating if the answer is unfavorable (true) or favorable (false)"
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Additional explanation for the question"
+        }
+      }
+    }
+  }
+}

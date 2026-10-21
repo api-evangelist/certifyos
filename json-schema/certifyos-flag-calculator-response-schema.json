@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-flag-calculator-response-schema.json",
+  "title": "FlagCalculatorResponse",
+  "description": "Result of a POST /flag-calculator call: how many flags were created, updated, and deactivated, plus the resulting total. All four counters are 0 when the workflow's status is REVIEWED_BY_CERTIFYOS, since flag evaluation is skipped for that status.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-flagcalculator-api-openapi.yml#/components/schemas/FlagCalculatorResponse",
+  "type": "object",
+  "properties": {
+    "flagsCreated": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of flags newly created during this evaluation. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path)."
+    },
+    "flagsUpdated": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of existing flags whose state changed during this evaluation. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path)."
+    },
+    "flagsDeactivated": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of previously active flags deactivated during this evaluation. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path)."
+    },
+    "totalFlags": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total number of active flags on the workflow after this evaluation completed. Non-negative integer; 0 when the workflow's status is REVIEWED_BY_CERTIFYOS (no-op path)."
+    },
+    "monitoringWorkflowId": {
+      "type": "string",
+      "description": "ID of the monitoring workflow this result belongs to; echoes the monitoringWorkflowId from the request."
+    }
+  }
+}

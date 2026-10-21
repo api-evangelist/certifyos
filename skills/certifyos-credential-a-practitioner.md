@@ -1,5 +1,6 @@
 ---
-name: Credential a practitioner end to end
+name: certifyos-credential-a-practitioner
+title: "Credential a practitioner end to end"
 description: >-
   Create or find a practitioner, open a credentialing workflow, watch its
   timeline and steps, and pull the PSV packet when it completes.

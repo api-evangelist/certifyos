@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-overview-update-request-schema.json",
+  "title": "OverviewUpdateRequest",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-practitioner-api-openapi.yml#/components/schemas/OverviewUpdateRequest",
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "description": "First name of the practitioner"
+    },
+    "lastName": {
+      "type": "string",
+      "description": "Last name of the practitioner"
+    },
+    "primaryEmail": {
+      "type": "string",
+      "description": "Primary email address of the practitioner"
+    },
+    "middleName": {
+      "type": "string",
+      "description": "Middle name of the practitioner"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Name prefix of the practitioner"
+    },
+    "suffix": {
+      "type": "string",
+      "description": "Name suffix of the practitioner"
+    },
+    "externalId": {
+      "type": "string",
+      "description": "External identifier for the practitioner"
+    },
+    "npi": {
+      "type": "string",
+      "description": "National Provider Identifier"
+    },
+    "caqhProviderId": {
+      "type": "string",
+      "description": "CAQH Provider ID"
+    },
+    "caqhAttestationDate": {
+      "type": "string",
+      "description": "CAQH attestation date"
+    },
+    "caqhPdqs": {
+      "type": "object",
+      "additionalProperties": {},
+      "description": "CAQH PDQS data object. Can be provided directly or via caqhAttestationDate field."
+    },
+    "userDefinedFields": {
+      "type": "object",
+      "additionalProperties": {},
+      "description": "Custom user-defined fields. Replaces the entire userDefinedFields object (PUT semantics)."
+    },
+    "providerType": {
+      "type": "array",
+      "deprecated": true,
+      "items": {
+        "type": "string"
+      },
+      "description": "Types of healthcare provider (e.g., MD, DO, NP)"
+    },
+    "practitionerType": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Types of healthcare practitioner (e.g., MD, DO, NP)"
+    },
+    "practitionerTypesToCredential": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Practitioner types to credential (e.g., MD, Physician)"
+    },
+    "practitionerSpecializedTraining": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Practitioner expertise / focus areas (free text). An empty array clears the field."
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Language"
+      },
+      "description": "Languages spoken by the practitioner"
+    },
+    "medicareId": {
+      "type": "string",
+      "description": "Medicare PTAN"
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "description": "Date of birth"
+    },
+    "gender": {
+      "type": "string",
+      "description": "Gender of the practitioner"
+    },
+    "ethnicity": {
+      "type": "string",
+      "description": "Ethnicity of the practitioner"
+    },
+    "race": {
+      "type": "string",
+      "description": "Race of the practitioner. Multiple selections stored as comma-separated values."
+    },
+    "delegationStatus": {
+      "$ref": "#/$defs/DelegationStatus",
+      "type": "string",
+      "enum": [
+        "Delegated",
+        "Direct",
+        "CredNotRequired",
+        "DeDelegated"
+      ],
+      "description": "Delegation status of the practitioner"
+    },
+    "initialCredentialingDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Date when the practitioner was first credentialed"
+    },
+    "lastCredentialingDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Date of the most recent credentialing"
+    },
+    "nextCredentialingDate": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Date the next credentialing is due"
+    },
+    "culturalCompetency": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether cultural competency training has been completed. Stored on the matching complianceTrainings entry."
+    }
+  },
+  "$defs": {
+    "DelegationStatus": {
+      "type": "string",
+      "enum": [
+        "Delegated",
+        "Direct",
+        "CredNotRequired",
+        "DeDelegated"
+      ],
+      "description": "Delegation status of the practitioner"
+    },
+    "Language": {
+      "type": "object",
+      "required": [
+        "language"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "description": "The language the practitioner is proficient in"
+        },
+        "isPrimary": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the language is the primary language of the practitioner"
+        }
+      }
+    }
+  }
+}

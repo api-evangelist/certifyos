@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-update-group-location-network-npi-par-date-response-schema.json",
+  "title": "UpdateGroupLocationNetworkNpiParDateResponse",
+  "description": "Response after updating group location-network NPI and participation date",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-group-api-openapi.yml#/components/schemas/UpdateGroupLocationNetworkNpiParDateResponse",
+  "type": "object",
+  "properties": {
+    "tenantGroupLocationId": {
+      "type": "string",
+      "description": "Tenant group location ID"
+    },
+    "networkId": {
+      "type": "string",
+      "description": "Network ID"
+    },
+    "tenantGroupLocationNetworkId": {
+      "type": "string",
+      "description": "Updated TenantGroupLocationNetwork ID"
+    },
+    "tenantGroupLocationPractitionerNetworkId": {
+      "type": "string",
+      "description": "Always null as of CP-36570 — TenantGroupLocationPractitionerNetwork rows are no longer written by this endpoint (NPI/par-date moved to the practitioner-agnostic TenantGroupLocationNetwork array). Retained on the response for backward compatibility; see the location.npi-par-date.tgln-array-write.enabled kill switch for the pre-CP-36570 rollback path."
+    },
+    "practitionerNetworkRowsUpdated": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Always 0 as of CP-36570, for the same reason as tenantGroupLocationPractitionerNetworkId above."
+    },
+    "tenantGroupLocationFacilityNetworkId": {
+      "type": "string",
+      "description": "Always null as of CP-39890 — TenantGroupLocationFacilityNetwork rows are no longer written by this endpoint (NPI/par-date is practitioner- and facility-agnostic on TenantGroupLocationNetwork; fanning writes out to every co-located facility was redundant with TGLN already being the source of truth, and could produce an oversized batch write for locations with many facilities). Retained on the response for backward compatibility; see the location.npi-par-date.tgln-array-write.enabled kill switch for the pre-CP-39890 rollback path. To update a specific facility's own NPI, use the facility-level endpoint instead."
+    },
+    "facilityNetworkRowsUpdated": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Always 0 as of CP-39890, for the same reason as tenantGroupLocationFacilityNetworkId above."
+    }
+  }
+}

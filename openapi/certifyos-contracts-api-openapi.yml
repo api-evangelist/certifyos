@@ -528,89 +528,13 @@ paths:
       - jwt: []
 components:
   schemas:
-    PagedContractResponse:
+    ApiError1:
       type: object
-      description: A single page of Contracts, matching either offset-based or cursor-based pagination.
       properties:
-        data:
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/Contract'
-          description: Contracts on this page, in the order determined by the pagination mode used.
-        links:
-          $ref: '#/components/schemas/PageLinks1'
-          type: object
-          description: Navigation URLs for this result set. `next`/`prev` are `null` when there is no further page in that direction.
-        totalCount:
-          type: integer
-          format: int64
-          examples:
-          - 137
-          description: Total number of contracts matching the request, across all pages.
-    PageLinks1:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    ContractClinicalAndQualityInfo:
-      type: object
-      description: Contract clinical and quality program terms. All fields are optional.
-      properties:
-        hasQualityProgram:
-          type: boolean
-          description: Whether this contract includes a quality incentive program.
-        qualityProgramInitiatives:
-          type: string
-          description: Free-text description of the quality program's initiatives.
-        averageStarsAndPmpmBonus:
-          type: string
-          examples:
-          - 4.5 stars / $10 PMPM
-          description: Free-text summary of the star rating and per-member-per-month (PMPM) bonus tied to it.
-        hasMlrTarget:
-          type: boolean
-          description: Whether this contract includes a medical loss ratio (MLR) target.
-        mlrTargetDescription:
-          type: string
-          description: Free-text description of the medical loss ratio (MLR) target, if any.
-        performanceReportingRequirements:
-          type: string
-          examples:
-          - Quarterly HEDIS and CAHPS reporting
-          description: Description of the performance reporting the provider must submit under this contract.
-        credentialingDelegation:
-          type: boolean
-          description: Whether credentialing responsibilities are delegated to the provider organization.
-        recredentialingInterval:
-          type: string
-          enum:
-          - 1 yr
-          - 2 yr
-          - 3 yr
-          examples:
-          - 3 yr
-          description: How often practitioners under this contract must be recredentialed.
-        referralRequirements:
-          type: boolean
-          description: Whether this contract imposes referral requirements (e.g. requires PCP referral).
-        priorAuthorizationRequired:
-          type: boolean
-          description: Whether prior authorization is required for services under this contract.
-        panelSizeLimits:
-          type: string
-          description: Free-text description of any panel size limits imposed on providers.
-        providerRosterUpdateFrequency:
-          type: string
-          enum:
-          - Monthly
-          - Quarterly
-          examples:
-          - Monthly
-          description: How often the provider roster must be updated under this contract.
+            $ref: '#/components/schemas/ErrorObject1'
     ErrorObject1:
       type: object
       properties:
@@ -682,13 +606,6 @@ components:
           examples:
           - 30
           description: Number of days within which the payer commits to paying a clean claim.
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
     Contract:
       type: object
       description: A contract between a healthcare provider and a payer.
@@ -743,6 +660,61 @@ components:
           $ref: '#/components/schemas/ContractClinicalAndQualityInfo'
           type: object
           description: Contract clinical and quality program terms. Optional.
+    ContractClinicalAndQualityInfo:
+      type: object
+      description: Contract clinical and quality program terms. All fields are optional.
+      properties:
+        hasQualityProgram:
+          type: boolean
+          description: Whether this contract includes a quality incentive program.
+        qualityProgramInitiatives:
+          type: string
+          description: Free-text description of the quality program's initiatives.
+        averageStarsAndPmpmBonus:
+          type: string
+          examples:
+          - 4.5 stars / $10 PMPM
+          description: Free-text summary of the star rating and per-member-per-month (PMPM) bonus tied to it.
+        hasMlrTarget:
+          type: boolean
+          description: Whether this contract includes a medical loss ratio (MLR) target.
+        mlrTargetDescription:
+          type: string
+          description: Free-text description of the medical loss ratio (MLR) target, if any.
+        performanceReportingRequirements:
+          type: string
+          examples:
+          - Quarterly HEDIS and CAHPS reporting
+          description: Description of the performance reporting the provider must submit under this contract.
+        credentialingDelegation:
+          type: boolean
+          description: Whether credentialing responsibilities are delegated to the provider organization.
+        recredentialingInterval:
+          type: string
+          enum:
+          - 1 yr
+          - 2 yr
+          - 3 yr
+          examples:
+          - 3 yr
+          description: How often practitioners under this contract must be recredentialed.
+        referralRequirements:
+          type: boolean
+          description: Whether this contract imposes referral requirements (e.g. requires PCP referral).
+        priorAuthorizationRequired:
+          type: boolean
+          description: Whether prior authorization is required for services under this contract.
+        panelSizeLimits:
+          type: string
+          description: Free-text description of any panel size limits imposed on providers.
+        providerRosterUpdateFrequency:
+          type: string
+          enum:
+          - Monthly
+          - Quarterly
+          examples:
+          - Monthly
+          description: How often the provider roster must be updated under this contract.
     ContractFinancialInfo:
       type: object
       description: Contract financial and payment terms. All fields are optional.
@@ -831,6 +803,15 @@ components:
         telehealthNoShow:
           type: string
           description: Description of the telehealth no-show policy for this contract.
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
     ContractGeneralInfo:
       type: object
       description: Core contract identity and classification fields.
@@ -910,6 +891,25 @@ components:
           examples:
           - plan_40921
           description: Identifier of the plan this contract belongs to, mirroring the top-level `Contract.planId`.
+    PagedContractResponse:
+      type: object
+      description: A single page of Contracts, matching either offset-based or cursor-based pagination.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contract'
+          description: Contracts on this page, in the order determined by the pagination mode used.
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: Navigation URLs for this result set. `next`/`prev` are `null` when there is no further page in that direction.
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 137
+          description: Total number of contracts matching the request, across all pages.
     ContractLifeCycleInfo:
       type: object
       description: Contract lifecycle dates. All fields are optional and use the ISO-8601 `date` format (YYYY-MM-DD, no time or offset).

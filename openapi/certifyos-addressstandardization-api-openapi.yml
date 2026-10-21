@@ -107,18 +107,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    AddressConfidence:
-      type: string
-      enum:
-      - HIGH
-      - MEDIUM
-      - LOW
-    AddressValidationStatus:
-      type: string
-      enum:
-      - VALID
-      - PARTIAL
-      - INVALID
     StandardizeAddressResponse:
       type: object
       description: Standardized address with confidence, validation status, and enrichment data
@@ -143,55 +131,12 @@ components:
           $ref: '#/components/schemas/AddressEnrichment'
           type: object
           description: Enrichment values derived from the standardized address
-    StandardizeAddressRequest:
-      type: object
-      required:
-      - addressLine1
-      description: Input address to be standardized and validated
-      properties:
-        addressLine1:
-          type: string
-          examples:
-          - 123 Main Street
-          pattern: \S
-          description: Primary street line
-        addressLine2:
-          type: string
-          examples:
-          - Suite 100
-          description: Secondary street line (apt, suite, unit, floor)
-        city:
-          type: string
-          examples:
-          - New York
-          description: City
-        county:
-          type: string
-          examples:
-          - New York County
-          description: County
-        state:
-          type: string
-          examples:
-          - NY
-          description: State / province code
-        zip:
-          type: string
-          examples:
-          - '10001'
-          pattern: \d{5}(?:-\d{4})?
-          description: ZIP / postal code (5 or 5+4, hyphen-separated)
-        country:
-          type: string
-          examples:
-          - US
-          description: ISO country code
-          default: US
-        addressType:
-          type: string
-          examples:
-          - billing
-          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
+    AddressValidationStatus:
+      type: string
+      enum:
+      - VALID
+      - PARTIAL
+      - INVALID
     AddressEnrichment:
       type: object
       description: Enrichment values attached to the standardized address
@@ -263,6 +208,61 @@ components:
         formattedAddress:
           type: string
           description: Pretty-printed single-line address
+    StandardizeAddressRequest:
+      type: object
+      required:
+      - addressLine1
+      description: Input address to be standardized and validated
+      properties:
+        addressLine1:
+          type: string
+          examples:
+          - 123 Main Street
+          pattern: \S
+          description: Primary street line
+        addressLine2:
+          type: string
+          examples:
+          - Suite 100
+          description: Secondary street line (apt, suite, unit, floor)
+        city:
+          type: string
+          examples:
+          - New York
+          description: City
+        county:
+          type: string
+          examples:
+          - New York County
+          description: County
+        state:
+          type: string
+          examples:
+          - NY
+          description: State / province code
+        zip:
+          type: string
+          examples:
+          - '10001'
+          pattern: \d{5}(?:-\d{4})?
+          description: ZIP / postal code (5 or 5+4, hyphen-separated)
+        country:
+          type: string
+          examples:
+          - US
+          description: ISO country code
+          default: US
+        addressType:
+          type: string
+          examples:
+          - billing
+          description: Optional address type hint (e.g. billing, mailing, office, remit_to, service, irs)
+    AddressConfidence:
+      type: string
+      enum:
+      - HIGH
+      - MEDIUM
+      - LOW
   securitySchemes:
     jwt:
       type: http

@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-atc-counts-schema.json",
+  "title": "AtcCounts",
+  "description": "Add / Change / Term / Delete counts for a tenant and date range.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-atc-api-openapi.yml#/components/schemas/AtcCounts",
+  "type": "object",
+  "properties": {
+    "range": {
+      "$ref": "#/$defs/Range"
+    },
+    "freshness": {
+      "$ref": "#/$defs/Freshness"
+    },
+    "filters": {
+      "$ref": "#/$defs/Filters"
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/Entity"
+      }
+    },
+    "totals": {
+      "$ref": "#/$defs/Totals"
+    }
+  },
+  "$defs": {
+    "Adds": {
+      "type": "object",
+      "properties": {
+        "net_new": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "to_network": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "to_group": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "to_location": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "Changes": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "Deleted": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "from_network": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "from_group": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "from_location": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "Entity": {
+      "type": "object",
+      "properties": {
+        "adds": {
+          "$ref": "#/$defs/Adds"
+        },
+        "changes": {
+          "$ref": "#/$defs/Changes"
+        },
+        "terms": {
+          "$ref": "#/$defs/Terms"
+        },
+        "deleted": {
+          "$ref": "#/$defs/Deleted"
+        }
+      }
+    },
+    "Filters": {
+      "type": "object",
+      "properties": {
+        "entity_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "include_cascaded": {
+          "type": "boolean"
+        },
+        "include_scripts": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Freshness": {
+      "type": "object",
+      "properties": {
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Watermark of the last successful refresh, null before the first"
+        },
+        "lag_minutes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64",
+          "description": "Minutes between the watermark and now"
+        },
+        "completeness": {
+          "type": "string",
+          "description": "best_effort: counts are a lower bound"
+        }
+      }
+    },
+    "Range": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "description": "Inclusive start, ISO-8601 with offset"
+        },
+        "end": {
+          "type": "string",
+          "description": "Exclusive end, ISO-8601 with offset"
+        },
+        "basis": {
+          "type": "string",
+          "description": "EVENT_TIME"
+        }
+      }
+    },
+    "Terms": {
+      "type": "object",
+      "properties": {
+        "global": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "from_network": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "from_group": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "from_location": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "Totals": {
+      "type": "object",
+      "properties": {
+        "adds": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "changes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "terms": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "deleted": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 ---
-name: Subscribe to Certify credentialing webhooks
+name: certifyos-subscribe-to-credentialing-events
+title: "Subscribe to Certify credentialing webhooks"
 description: >-
   Register a webhook on either Certify API surface, verify it with a test event,
   de-duplicate deliveries, and replay events that were missed.

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-create-flag-bulk-job-request-schema.json",
+  "title": "CreateFlagBulkJobRequest",
+  "description": "Request to move every flag matching a filter, up to 2,000, as a background job",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-flag-bulk-job-api-openapi.yml#/components/schemas/CreateFlagBulkJobRequest",
+  "type": "object",
+  "required": [
+    "filter",
+    "expectedCount",
+    "targetStatus",
+    "attested"
+  ],
+  "properties": {
+    "filter": {
+      "$ref": "#/$defs/JsonNode",
+      "type": "object",
+      "description": "Flags list filter; must contain exactly one source status as {\"data.status\": {\"eq\": \"<status>\"}}"
+    },
+    "expectedCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "The match count the user saw; the job acts on the oldest min(expectedCount, 2000) flags still matching at submit"
+    },
+    "targetStatus": {
+      "type": "string",
+      "description": "Status to move the flags to"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Optional reason, recorded on every moved flag's history"
+    },
+    "attested": {
+      "type": "boolean",
+      "description": "The policy attestation; must be true"
+    }
+  },
+  "$defs": {
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    }
+  }
+}

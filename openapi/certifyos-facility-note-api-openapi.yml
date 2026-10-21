@@ -396,6 +396,107 @@ paths:
       - jwt: []
 components:
   schemas:
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    NoteData:
+      type: object
+      required:
+      - message
+      description: Note data containing message content
+      properties:
+        message:
+          type: string
+          examples:
+          - This is a note message
+          description: The message content of the note
+    CreateNoteRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    UpdateNoteRequest:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+          pattern: \S
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    GetNotesResponse:
+      type: object
+      description: Response containing a list of notes
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 100
+          description: Total count of notes returned for the workflow
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoteResponse'
+          description: Array of note records
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: Optional links envelope retained for compatibility; list query params are not applied
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
+    PageLinks1:
+      type: object
+      properties:
+        self:
+          type: string
+        next:
+          type: string
+        prev:
+          type: string
+    ErrorObject1:
+      type: object
+      properties:
+        reason:
+          type: string
+        detail:
+          type: string
+        httpStatus:
+          type: integer
+          format: int32
+        title:
+          type: string
+        workflowId:
+          type: string
+        section:
+          type: string
+        opIndex:
+          type: integer
+          format: int32
     NoteResponse:
       type: object
       description: Response containing note information
@@ -446,107 +547,6 @@ components:
           examples:
           - '2024-01-01T00:00:00Z'
           description: Timestamp when the note was last updated
-    PageLinks1:
-      type: object
-      properties:
-        self:
-          type: string
-        next:
-          type: string
-        prev:
-          type: string
-    ErrorObject1:
-      type: object
-      properties:
-        reason:
-          type: string
-        detail:
-          type: string
-        httpStatus:
-          type: integer
-          format: int32
-        title:
-          type: string
-        workflowId:
-          type: string
-        section:
-          type: string
-        opIndex:
-          type: integer
-          format: int32
-    ApiError1:
-      type: object
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject1'
-    UpdateNoteRequest:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          pattern: \S
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    NoteData:
-      type: object
-      required:
-      - message
-      description: Note data containing message content
-      properties:
-        message:
-          type: string
-          examples:
-          - This is a note message
-          description: The message content of the note
-    BadRequestErrorResponse:
-      type: object
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      properties:
-        errors:
-          type: array
-          examples:
-          - - Validation failed
-            - Required field missing
-          items:
-            type: string
-          description: List of error messages
-        errorDetails:
-          type: object
-          description: Detailed error information with specific validation failures
-    GetNotesResponse:
-      type: object
-      description: Response containing a list of notes
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          examples:
-          - 100
-          description: Total count of notes returned for the workflow
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/NoteResponse'
-          description: Array of note records
-        links:
-          $ref: '#/components/schemas/PageLinks1'
-          type: object
-          description: Optional links envelope retained for compatibility; list query params are not applied
-    CreateNoteRequest:
-      type: object
-      required:
-      - message
-      properties:
-        message:
-          type: string
-          pattern: \S
   securitySchemes:
     jwt:
       type: http

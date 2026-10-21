@@ -831,15 +831,148 @@ paths:
       - jwt: []
 components:
   schemas:
-    PageLinks1:
+    RosterResponse:
       type: object
       properties:
-        self:
+        id:
           type: string
-        next:
+        tenantId:
           type: string
-        prev:
+        templateId:
           type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        data:
+          $ref: '#/components/schemas/RosterJobData'
+        invalidCount:
+          type: integer
+          format: int64
+        validCount:
+          type: integer
+          format: int64
+        completedCount:
+          type: integer
+          format: int64
+        failedCount:
+          type: integer
+          format: int64
+    RosterJobsPage:
+      type: object
+      description: One page of roster import jobs.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterResponse'
+          description: The roster jobs in this page.
+        links:
+          $ref: '#/components/schemas/PageLinks1'
+          type: object
+          description: HATEOAS-style navigation links (self, next, prev).
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roster jobs matching the request, when the underlying store reports one.
+    FileDownloadLink:
+      type: object
+      description: Wrapper carrying a time-limited signed download link. Follow `fileUrl` promptly to retrieve the file; the link expires.
+      properties:
+        fileUrl:
+          type: string
+          description: Time-limited signed URL to download the file from.
+    Date:
+      type: string
+      format: date
+    RosterAttemptSummary:
+      title: RosterAttemptSummary
+      type: object
+      description: One finished upload attempt of a roster job, as retained in the job's attempts ledger. Keys are abbreviated because the ledger is stored inline on the job record; the full row-level history for an attempt lives in the history store, not here.
+      properties:
+        n:
+          type: integer
+          description: Attempt number this entry describes; 1 is the first upload.
+        f:
+          type: string
+          description: Name of the file uploaded for this attempt.
+        s:
+          type: string
+          description: The status this attempt finished in, before the next upload superseded it.
+          enum:
+          - PENDING
+          - IN_PROGRESS
+          - VALIDATION_IN_PROGRESS
+          - VALIDATION_FAILED
+          - PRE_PROCESSING
+          - VALIDATED
+          - COMPLETED
+          - APPROVED
+          - PARTIAL_IMPORTED
+          - REVALIDATE
+          - FAILED
+          - CANCELLED
+        t:
+          type: integer
+          description: Rows found in that attempt's file.
+        v:
+          type: integer
+          description: Rows that passed validation on that attempt.
+        i:
+          type: integer
+          description: Rows that failed validation on that attempt.
+        at:
+          type: string
+          description: When the attempt finished, as an ISO-8601 instant.
+        c:
+          type: boolean
+          description: Whether that attempt's rows reached long-term history. False means the capture did not complete, so this summary is the only surviving record of the attempt.
+    ErrorMessage:
+      type: object
+      description: Single-message error body returned by the roster endpoints' error paths.
+      properties:
+        error:
+          type: string
+          description: Human-readable message describing why the request failed.
+    RepublishRosterEventResponse:
+      type: object
+      description: Confirmation that a validation or ingestion event was queued again for the roster job.
+      properties:
+        message:
+          type: string
+          description: Human-readable confirmation that the event was queued.
+        eventType:
+          type: string
+          description: The processing stage that was queued, echoing the request path value.
+    RosterAttemptsResponse:
+      type: object
+      description: Attempt history of a roster job, oldest attempt first.
+      properties:
+        rosterId:
+          type: string
+          description: Identifier of the roster job the history belongs to.
+        currentAttemptNumber:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Attempt the job is currently on. Null when the job predates the attempt ledger, meaning no history was recorded for it.
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterAttemptEntry'
+          description: Finished attempts held in the ledger, oldest first.
+        olderAttemptsAvailable:
+          type: boolean
+          description: True when attempts exist beyond the ones listed here, because the ledger evicted them.
+        attemptsTruncated:
+          type: integer
+          format: int32
+          description: Number of attempts evicted from the ledger. Zero when none were.
     RosterJobData:
       title: RosterJobData
       type: object
@@ -948,64 +1081,15 @@ components:
         roster-export-url:
           type: string
           description: Time-limited link to the failed-records export, present once one has been generated.
-    RosterJobsPage:
-      type: object
-      description: One page of roster import jobs.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/RosterResponse'
-          description: The roster jobs in this page.
-        links:
-          $ref: '#/components/schemas/PageLinks1'
-          type: object
-          description: HATEOAS-style navigation links (self, next, prev).
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of roster jobs matching the request, when the underlying store reports one.
-    RepublishRosterEventResponse:
-      type: object
-      description: Confirmation that a validation or ingestion event was queued again for the roster job.
-      properties:
-        message:
-          type: string
-          description: Human-readable confirmation that the event was queued.
-        eventType:
-          type: string
-          description: The processing stage that was queued, echoing the request path value.
-    RosterResponse:
+    PageLinks1:
       type: object
       properties:
-        id:
+        self:
           type: string
-        tenantId:
+        next:
           type: string
-        templateId:
+        prev:
           type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        data:
-          $ref: '#/components/schemas/RosterJobData'
-        invalidCount:
-          type: integer
-          format: int64
-        validCount:
-          type: integer
-          format: int64
-        completedCount:
-          type: integer
-          format: int64
-        failedCount:
-          type: integer
-          format: int64
     RosterAttemptEntry:
       type: object
       description: One finished attempt of a roster job.
@@ -1044,90 +1128,6 @@ components:
         captured:
           type: boolean
           description: Whether the attempt's rows were captured to long-term history.
-    RosterAttemptsResponse:
-      type: object
-      description: Attempt history of a roster job, oldest attempt first.
-      properties:
-        rosterId:
-          type: string
-          description: Identifier of the roster job the history belongs to.
-        currentAttemptNumber:
-          type:
-          - integer
-          - 'null'
-          format: int32
-          description: Attempt the job is currently on. Null when the job predates the attempt ledger, meaning no history was recorded for it.
-        attempts:
-          type: array
-          items:
-            $ref: '#/components/schemas/RosterAttemptEntry'
-          description: Finished attempts held in the ledger, oldest first.
-        olderAttemptsAvailable:
-          type: boolean
-          description: True when attempts exist beyond the ones listed here, because the ledger evicted them.
-        attemptsTruncated:
-          type: integer
-          format: int32
-          description: Number of attempts evicted from the ledger. Zero when none were.
-    ErrorMessage:
-      type: object
-      description: Single-message error body returned by the roster endpoints' error paths.
-      properties:
-        error:
-          type: string
-          description: Human-readable message describing why the request failed.
-    FileDownloadLink:
-      type: object
-      description: Wrapper carrying a time-limited signed download link. Follow `fileUrl` promptly to retrieve the file; the link expires.
-      properties:
-        fileUrl:
-          type: string
-          description: Time-limited signed URL to download the file from.
-    Date:
-      type: string
-      format: date
-    RosterAttemptSummary:
-      title: RosterAttemptSummary
-      type: object
-      description: One finished upload attempt of a roster job, as retained in the job's attempts ledger. Keys are abbreviated because the ledger is stored inline on the job record; the full row-level history for an attempt lives in the history store, not here.
-      properties:
-        n:
-          type: integer
-          description: Attempt number this entry describes; 1 is the first upload.
-        f:
-          type: string
-          description: Name of the file uploaded for this attempt.
-        s:
-          type: string
-          description: The status this attempt finished in, before the next upload superseded it.
-          enum:
-          - PENDING
-          - IN_PROGRESS
-          - VALIDATION_IN_PROGRESS
-          - VALIDATION_FAILED
-          - PRE_PROCESSING
-          - VALIDATED
-          - COMPLETED
-          - APPROVED
-          - PARTIAL_IMPORTED
-          - REVALIDATE
-          - FAILED
-          - CANCELLED
-        t:
-          type: integer
-          description: Rows found in that attempt's file.
-        v:
-          type: integer
-          description: Rows that passed validation on that attempt.
-        i:
-          type: integer
-          description: Rows that failed validation on that attempt.
-        at:
-          type: string
-          description: When the attempt finished, as an ISO-8601 instant.
-        c:
-          type: boolean
-          description: Whether that attempt's rows reached long-term history. False means the capture did not complete, so this summary is the only surviving record of the attempt.
   securitySchemes:
     jwt:
       type: http

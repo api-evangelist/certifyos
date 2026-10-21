@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-update-practitioner-location-network-request-schema.json",
+  "title": "UpdatePractitionerLocationNetworkRequest",
+  "description": "Request to update practitioner details at a location for a network",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-practitioner-api-openapi.yml#/components/schemas/UpdatePractitionerLocationNetworkRequest",
+  "type": "object",
+  "required": [
+    "groupId"
+  ],
+  "properties": {
+    "groupId": {
+      "type": "string",
+      "description": "Certify (core) group ID of the group to which the practitioner belongs. Same as certifyGroupId; not the internal tenant group id."
+    },
+    "data": {
+      "$ref": "#/$defs/JsonNode",
+      "type": "object",
+      "description": "Location-network specific data for the practitioner. Fields are stored in TenantGroupLocationPractitionerNetwork entity and GroupPractitionerLocation entity. Network-level fields (stored in TenantGroupLocationPractitionerNetwork) include: Dates: effectiveDate (maps to networkPractitionerEffectiveDate), terminationDate; Status: networkPractitionerStatus, panelStatus, networkPractitionerCredentialingStatus; Participation: participationType, contractId, terminationReason; Practitioner Info: practitionerRole (array of { \"role\": \"...\" } with optional effectiveDate, terminationDate), acceptingNewPatients (canonical enum: accepting_new_patients, closed, existing_patients_only; legacy boolean and Title Case aliases accepted; unrecognized values return HTTP 400); Contact: appointmentPhone, languageSpoken  (List of Language objects); Schedule: officeHours (List of OfficeHour objects with dayOfWeek, openTime, closeTime); Other: suppressSiteFromDirectory, hasDelegatedAuthority, panelCapacity. Location-level fields (stored in GroupPractitionerLocation) include: admittingPrivileges, telehealthSupport, effectiveDate, terminationDate. Specialties should be provided as an array in 'specialties' or 'specialtyIds' field and will be stored in TenantGroupLocationPractitionerNetworkSpecialty table. Each specialty can include specialtyId, effectiveDate, isPrimary, and other specialty-specific fields."
+    },
+    "applyToAllNetworks": {
+      "type": "boolean",
+      "description": "If true, applies the update to all networks the practitioner is linked to at this location. If false, only updates the specified network.",
+      "default": false
+    }
+  },
+  "$defs": {
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    }
+  }
+}

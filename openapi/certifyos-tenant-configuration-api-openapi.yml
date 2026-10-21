@@ -377,6 +377,61 @@ paths:
       - jwt: []
 components:
   schemas:
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    TenantConfigurationItemDto:
+      type: object
+      description: A tenant configuration item
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the configuration
+        tenantId:
+          type: string
+          description: Tenant ID this configuration belongs to
+        namespace:
+          type: string
+          description: Namespace for the configuration
+        configurationTypeId:
+          type: string
+          description: Type identifier for the configuration
+        configuration:
+          description: Configuration data as JSON. The structure is flexible and depends on `configurationTypeId`.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp when the configuration was last updated
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Timestamp when the configuration was created
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    BadRequestErrorResponse:
+      type: object
+      description: Standard error response structure for 400 Bad Request validation and client errors
+      properties:
+        errors:
+          type: array
+          examples:
+          - - Validation failed
+            - Required field missing
+          items:
+            type: string
+          description: List of error messages
+        errorDetails:
+          type: object
+          description: Detailed error information with specific validation failures
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -418,32 +473,6 @@ components:
           type: integer
           format: int64
           description: Total number of tenant configurations
-    TenantConfigurationItemDto:
-      type: object
-      description: A tenant configuration item
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the configuration
-        tenantId:
-          type: string
-          description: Tenant ID this configuration belongs to
-        namespace:
-          type: string
-          description: Namespace for the configuration
-        configurationTypeId:
-          type: string
-          description: Type identifier for the configuration
-        configuration:
-          description: Configuration data as JSON. The structure is flexible and depends on `configurationTypeId`.
-        updatedAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          description: Timestamp when the configuration was last updated
-        createdAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          description: Timestamp when the configuration was created
     TenantTimezoneResponse:
       type: object
       description: Tenant timezone configuration response
@@ -462,35 +491,6 @@ components:
           examples:
           - EST
           description: Timezone abbreviation for the current date
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    BadRequestErrorResponse:
-      type: object
-      description: Standard error response structure for 400 Bad Request validation and client errors
-      properties:
-        errors:
-          type: array
-          examples:
-          - - Validation failed
-            - Required field missing
-          items:
-            type: string
-          description: List of error messages
-        errorDetails:
-          type: object
-          description: Detailed error information with specific validation failures
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
   securitySchemes:
     jwt:
       type: http

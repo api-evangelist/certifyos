@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-paged-template-response-schema.json",
+  "title": "PagedTemplateResponse",
+  "description": "A single page of roster templates.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-template-api-openapi.yml#/components/schemas/PagedTemplateResponse",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RosterTemplateResponseSchema"
+      },
+      "description": "Template records on this page, each with a request-time `mappingsUrl` signed download URL injected into its `data` object."
+    },
+    "links": {
+      "$ref": "#/$defs/PageLinks1",
+      "type": "object",
+      "description": "Always `null` on this endpoint: the navigation links produced by the data layer point at the internal DAL host, so they are stripped before the response is returned. Page through results with the `page` and `size` query parameters instead."
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total number of templates matching the filters, across all pages."
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "PageLinks1": {
+      "type": "object",
+      "properties": {
+        "self": {
+          "type": "string"
+        },
+        "next": {
+          "type": "string"
+        },
+        "prev": {
+          "type": "string"
+        }
+      }
+    },
+    "RosterTemplateResponseSchema": {
+      "type": "object",
+      "description": "A roster template record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Server-generated unique identifier of the template."
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant that owns the template."
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp at which the template record was created."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "ID of the user who created the template."
+        },
+        "createdByName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Display name of the creator, resolved from `createdBy` in one batch lookup per page (CP-39764). `null` when the lookup timed out or the user could not be resolved; clients then fall back to `createdByEmail`, then `createdBy`."
+        },
+        "createdByEmail": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Email of the creator, resolved alongside `createdByName`. `null` when it could not be resolved."
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp of the most recent update to the template record."
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "ID of the user who last updated the template."
+        },
+        "data": {
+          "type": "object",
+          "description": "Template payload. Persisted keys: `templateName`, `description`, `status` (`in-progress` while awaiting mapping confirmation/approval, `success` once approved, `failure` when a re-approval's schema generation failed), `type` (`PRACTITIONER`, `FACILITY`, or `GROUP`), plus - once approved - `template` and `schema` (GCS object paths of the template CSV and generated JSON schema). Responses additionally inject short-lived signed download URLs generated at request time and never stored: `mappingsUrl` on both list and detail reads, and `templateUrl`/`schemaUrl` on the detail read when the underlying objects exist. Signed URLs are V4-signed and valid for 7 days."
+        }
+      }
+    }
+  }
+}

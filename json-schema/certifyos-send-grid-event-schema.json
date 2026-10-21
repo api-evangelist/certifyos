@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-send-grid-event-schema.json",
+  "title": "SendGridEvent",
+  "description": "A single SendGrid Event Webhook object describing one delivery-status occurrence (delivered, bounce, open, click, etc.) for one recipient of one send.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-send-grid-webhook-resource-api-openapi.yml#/components/schemas/SendGridEvent",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Recipient email address the event applies to."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Unix epoch seconds, as a string, at which SendGrid recorded the event; see getEventTime() to convert to an Instant."
+    },
+    "event": {
+      "type": "string",
+      "description": "SendGrid event type, e.g. delivered, open, click, bounce, dropped, deferred, spamreport, unsubscribe, group_unsubscribe, group_resubscribe."
+    },
+    "category": {
+      "type": "string",
+      "description": "Category tag attached to the originating send, if one was set."
+    },
+    "sgMessageId": {
+      "type": "string",
+      "description": "SendGrid's message identifier for the originating send, delivered on the wire as sg_message_id; used to correlate this event back to the outreach email that generated it."
+    },
+    "smtp-id": {
+      "type": "string",
+      "description": "The smtp-id header of the originating message, if present."
+    },
+    "response": {
+      "type": "string",
+      "description": "Raw SMTP response text from the receiving mail server; present on delivered, bounce, and deferred events."
+    },
+    "attempt": {
+      "type": "string",
+      "description": "Delivery attempt number, as a string; present on deferred events."
+    },
+    "status": {
+      "type": "string",
+      "description": "SMTP status/response code; present on bounce and deferred events."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Human-readable reason for the event; present on bounce, dropped, and deferred events."
+    },
+    "type": {
+      "type": "string",
+      "description": "Bounce classification, e.g. bounce vs blocked; present on bounce events."
+    },
+    "eventTime": {
+      "$ref": "#/$defs/Instant"
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

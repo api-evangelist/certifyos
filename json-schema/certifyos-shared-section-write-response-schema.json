@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-section-write-response-schema.json",
+  "title": "SharedSectionWriteResponse",
+  "description": "The result of a shared workflow record write.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingsections-api-openapi.yml#/components/schemas/SharedSectionWriteResponse",
+  "type": "object",
+  "required": [
+    "credentialingDisplayGroupKey",
+    "deduplicationId",
+    "outcomes",
+    "hiddenTenantCount"
+  ],
+  "properties": {
+    "credentialingDisplayGroupKey": {
+      "type": "string",
+      "description": "The record's identity after the write: the value the next write takes as {deduplicationId}."
+    },
+    "deduplicationId": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Deprecated: the same value as credentialingDisplayGroupKey, which replaces it. Read credentialingDisplayGroupKey; this field will be removed."
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SharedSectionWriteOutcome"
+      },
+      "description": "One entry per affected tenant the caller can read."
+    },
+    "hiddenTenantCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Tenants this write reached or skipped that the caller cannot read. Not the Sections GET's hiddenTenantCount, which counts every participating tenant the caller cannot read.",
+      "minimum": 0
+    },
+    "attachment": {
+      "$ref": "#/$defs/SharedSectionWriteAttachment",
+      "type": "object",
+      "description": "An attachment add only: the file it stored, once, for every copy it reached. Absent from every other write's response."
+    }
+  },
+  "$defs": {
+    "SharedSectionWriteAttachment": {
+      "type": "object",
+      "required": [
+        "originalFileName",
+        "fileUrl"
+      ],
+      "description": "The file an attachment add stored.",
+      "properties": {
+        "originalFileName": {
+          "type": "string",
+          "description": "The file's name as uploaded."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "The stored file's storage key, which every copy it reached holds and an attachment remove takes: fetch it through a signed URL, never use it as a link."
+        }
+      }
+    },
+    "SharedSectionWriteOutcome": {
+      "type": "object",
+      "required": [
+        "tenantId",
+        "status"
+      ],
+      "description": "One tenant's outcome.",
+      "properties": {
+        "tenantId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "APPLIED",
+            "SKIPPED_LOCKED"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

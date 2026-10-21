@@ -1,5 +1,6 @@
 ---
-name: Authenticate and page the Certify ProviderHub API
+name: certifyos-authenticate-and-page
+title: "Authenticate and page the Certify ProviderHub API"
 description: >-
   Mint a Certify bearer JWT, set the required tenant scope header, and walk a
   paginated list endpoint safely — the prerequisite for every other Certify

@@ -84,30 +84,41 @@ paths:
       - jwt: []
 components:
   schemas:
-    CorePractitionerdatabaseschemaHospitalAffiliationsInner:
+    EffectiveStatusEnum:
+      type: string
+      enum:
+      - PENDING_LINKAGE
+      - INELIGIBLE
+      - EXPIRED
+      - ACTIVE
+    CorePractitionerdatabaseschemaEducationTrainingInner:
       type: object
       properties:
-        name:
-          type: string
-        specialty:
-          type: string
-        state:
-          type: string
-        type:
-          type: string
-        isPrimary:
-          type: boolean
-        source:
-          type: string
         startDate:
           $ref: '#/components/schemas/Date'
         endDate:
           $ref: '#/components/schemas/Date'
+        type:
+          type: string
+        educationType:
+          $ref: '#/components/schemas/EducationTypeEnum'
+        degree:
+          type: string
+        speciality:
+          type: string
+        subspecialty:
+          type: string
+        institution:
+          type: string
+        licensingBoardReference:
+          type: string
         verifiedBy:
           type: string
         verifiedDate:
           $ref: '#/components/schemas/Date'
         status:
+          type: string
+        source:
           type: string
         createdAt:
           $ref: '#/components/schemas/Date'
@@ -129,57 +140,124 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerdatabaseschemaDisclosureQuestionsInner:
+    CoreFacilitydataschema:
       type: object
       properties:
-        explanation:
-          type: string
-        question:
-          type: string
-        answer:
-          type: string
-        answerFlag:
-          type: boolean
-        disclosureDate:
+        lastCredentialedDate:
+          $ref: '#/components/schemas/Date'
+        lastCredentialingDate:
+          $ref: '#/components/schemas/Date'
+        initialCredentialingDate:
+          $ref: '#/components/schemas/Date'
+        nextCredentialingDate:
           $ref: '#/components/schemas/Date'
         dataAcquireDate:
           $ref: '#/components/schemas/Date'
         sourceUpdateDate:
           $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
+        dba:
           type: string
-        credentialingDisplayGroupKey:
+        name:
           type: string
-    PractitionerBusinessPurpose:
-      type: object
-      properties:
-        isForCredentialing:
-          $ref: '#/components/schemas/PractitionerBusinessPurposeIsForCredentialing'
-        isForMonitoring:
-          $ref: '#/components/schemas/PractitionerBusinessPurposeIsForMonitoring'
-    CorePractitionerdatabaseschemaNppesInnerAddressesInner:
-      type: object
-      properties:
-        address1:
+        primaryEmail:
           type: string
-        addressPurpose:
+        npi:
           type: string
-        addressType:
+        tin:
           type: string
-        city:
+        externalId:
           type: string
-        countryCode:
+        ncpdpId:
           type: string
-        countryName:
+        facilityType:
           type: string
-        faxNumber:
+        deceasedDate:
+          $ref: '#/components/schemas/Date'
+        lineOfBusiness:
+          type: array
+          items:
+            type: string
+        attestationDate:
+          $ref: '#/components/schemas/Date'
+        effectiveDate:
+          $ref: '#/components/schemas/Date'
+        statesToCredential:
+          type: array
+          items:
+            type: string
+        userDefinedFields:
+          type: object
+          additionalProperties: {}
+        delegationStatus:
+          $ref: '#/components/schemas/DelegationStatusEnum1'
+        jurisdictionOfInterest:
           type: string
-        postalCode:
-          type: string
-        state:
-          type: string
-        telephoneNumber:
-          type: string
+        businessPurpose:
+          $ref: '#/components/schemas/FacilityBusinessPurpose'
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaEmailsInner'
+        phoneNumbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaPhoneNumbersInner'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityAddressesInner'
+        licenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaLicensesInner'
+        npdbReports:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaNpdbReportsInner'
+        nppes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInner'
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaCertificationsInner'
+        supportingDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityAttachment'
+        insurances:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaInsurancesInner'
+        sanctions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaSanctionsInner'
+        specialties:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaSpecialtiesInner'
+        accreditations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaAccreditationsInner'
+        siteVisits:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaSiteVisitsInner'
+        medicareStarRatings:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaMedicareStarRatingsInner'
+        appVerifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaAppVerificationsInner'
+        performanceIndicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaPerformanceIndicatorsInner'
     CorePractitionerdatabaseschemaNpdbReportsInnerOtherNameInner:
       type: object
       required:
@@ -190,30 +268,10 @@ components:
           type: string
         lastName:
           type: string
-    DelegationStatusEnum:
+    Date:
       type: string
-      enum:
-      - Delegated
-      - Direct
-      - CredNotRequired
-      - DeDelegated
-    CorePractitionerdatabaseschemaXRayLicensesInner:
-      type: object
-      properties:
-        licenseNumber:
-          type: string
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialtyOtherSpecialty:
-      type: object
-      properties:
-        listedUnderPPOFlag:
-          type: boolean
-    CorePractitionerdatabaseschemaAppVerificationsInner:
+      format: date
+    CoreFacilitydataschemaAppVerificationsInner:
       type: object
       properties:
         verificationType:
@@ -233,223 +291,23 @@ components:
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/Attachment1'
+            $ref: '#/components/schemas/FacilityAttachment'
         verifiedDate:
           $ref: '#/components/schemas/Date'
         verifiedBy:
           type: string
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CorePractitionerdatabaseschemaPracticeLocationsInner:
+    CoreFacilitydataschemaAccreditationsInner:
       type: object
       properties:
-        address1:
+        idNumber:
           type: string
-        address2:
-          type: string
-        address3:
-          type: string
-        address4:
-          type: string
-        city:
-          type: string
-        county:
-          type: string
-        country:
-          type: string
-        state:
-          type: string
-        zipcode:
-          type: string
-        healthcareServiceName:
-          type: string
-        faxNumber:
-          type: string
-        telephoneNumber:
-          type: string
-        tin:
-          type: string
-        npi:
-          type: string
-        startDate:
-          $ref: '#/components/schemas/Date'
-        phoneCoverage24x7:
-          type: boolean
-        totalLocationHours:
-          type: number
-        locationHours:
-          type: array
-          items:
-            $ref: '#/components/schemas/CorePractitionerdatabaseschemaPracticeLocationsInnerLocationHoursInner'
-        drawingBlood:
-          type: boolean
-        laboratoryServices:
-          type: boolean
-        cliaNumber:
-          type: string
-        cliaExpirationDate:
-          $ref: '#/components/schemas/Date'
-        source:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-        locationAccessibility:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaPracticeLocationsInnerLocationAccessibility'
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CoreFacilitydataschemaNppesInnerTaxonomiesInner:
-      type: object
-      required:
-      - code
-      - desc
-      properties:
-        code:
-          type: string
-        desc:
-          type: string
-        license:
-          type: string
-        primary:
-          type: boolean
-        state:
-          type: string
-        taxonomyGroup:
-          type: string
-    ConfidenceEnum:
-      type: string
-      enum:
-      - high
-      - low
-    CorePractitionerdatabaseschemaMalpracticeInsurancesInner:
-      type: object
-      properties:
-        carrierName:
-          type: string
-        expiryDate:
-          $ref: '#/components/schemas/Date'
-        effectiveDate:
-          $ref: '#/components/schemas/Date'
-        source:
+        accreditationBody:
           type: string
         status:
           type: string
-        policyNumber:
-          type: string
-        aggregateCoverageAmount:
-          type: string
-        occuranceCoverageAmount:
-          type: string
-        verifiedBy:
-          type: string
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        type:
-          type: string
-        unlimitedCoverage:
-          type: boolean
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    HomeLicenseLinkSourceEnum:
-      type: string
-      enum:
-      - INGESTED
-      - MANUAL
-      - UNLINKED
-    CorePractitionerdatabaseschemaSpecialtiesInner:
-      type: object
-      properties:
-        specialty:
-          type: string
-        subspecialty:
-          type: string
-        primarySpecialty:
-          type: boolean
-        source:
-          type: string
-        type:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-        taxonomyCode:
-          type: string
-        classificationSource:
-          $ref: '#/components/schemas/ClassificationSourceEnum'
-        boardName:
-          type: string
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
         effectiveDate:
           $ref: '#/components/schemas/Date'
-        terminationDate:
-          $ref: '#/components/schemas/Date'
-        tenantPractitionerSpecialtyId:
-          type: string
-    CoreFacilitydataschemaMedicareStarRatingsInner:
-      type: object
-      properties:
-        starRating:
-          type: string
-        reportDate:
+        expirationDate:
           $ref: '#/components/schemas/Date'
         source:
           type: string
@@ -469,15 +327,44 @@ components:
           $ref: '#/components/schemas/Date'
         verifiedBy:
           type: string
-    EducationTypeEnum:
+    CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalId:
+      type: object
+      properties:
+        practitionerEcfmg:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalIdPractitionerEcfmg'
+    ConfidenceEnum:
       type: string
       enum:
-      - medicalSchool
-      - alliedHealthEducation
-      - podiatricMedicine
-      - chiropracticSchool
-      - nursingSchool
-      - OTHER
+      - high
+      - low
+    CorePractitionerdatabaseschemaXRayLicensesInner:
+      type: object
+      properties:
+        licenseNumber:
+          type: string
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    ClassificationSourceEnum:
+      type: string
+      enum:
+      - NUCC
+      - CMS
+      - HSD
+      - NPPES
+      - Custom
+    CorePractitionerdatabaseschemaPracticeLocationsInnerLocationHoursInner:
+      type: object
+      properties:
+        dayOfWeek:
+          $ref: '#/components/schemas/DayOfWeekEnum'
+        startHours:
+          type: string
+        endHours:
+          type: string
     CoreFacilitydataschemaNpdbReportsInner:
       type: object
       properties:
@@ -560,218 +447,57 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FacilityAttachment'
-    MdmErrorDetail:
+    CorePractitionerdatabaseschemaPracticeLocationsInner:
       type: object
       properties:
-        code:
+        address1:
           type: string
-        message:
+        address2:
           type: string
-        failedStep:
+        address3:
           type: string
-    CorePractitionerdatabaseschemaNppesInnerTaxonomiesInner:
-      type: object
-      properties:
-        code:
+        address4:
           type: string
-        desc:
+        city:
           type: string
-        license:
+        county:
           type: string
-        primary:
-          type: boolean
+        country:
+          type: string
         state:
           type: string
-        taxonomyGroup:
+        zipcode:
           type: string
-    Attachment1:
-      type: object
-      properties:
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        fileType: {}
-        fileUrl:
+        healthcareServiceName:
           type: string
-        originalFileName:
+        faxNumber:
           type: string
-        state: {}
-        expirationDate: {}
-        source: {}
-        createdBy: {}
-        credWorkflowRecordOrigin:
+        telephoneNumber:
           type: string
-        credentialingDisplayGroupKey:
+        tin:
           type: string
-    CoreFacilitydataschemaNppesInner:
-      type: object
-      properties:
         npi:
           type: string
-        active:
+        startDate:
+          $ref: '#/components/schemas/Date'
+        phoneCoverage24x7:
           type: boolean
-        addresses:
+        totalLocationHours:
+          type: number
+        locationHours:
           type: array
           items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerAddressesInner'
-        certificationDate:
+            $ref: '#/components/schemas/CorePractitionerdatabaseschemaPracticeLocationsInnerLocationHoursInner'
+        drawingBlood:
+          type: boolean
+        laboratoryServices:
+          type: boolean
+        cliaNumber:
+          type: string
+        cliaExpirationDate:
           $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        createdByName:
-          type: string
-        credential:
-          type: string
-        enumerationDate:
-          $ref: '#/components/schemas/Date'
-        enumerationType:
-          type: string
-        firstName:
-          type: string
-        gender:
-          type: string
-        id:
-          type: string
-        identifiers:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerIdentifiersInner'
-        lastName:
-          type: string
-        lastUpdatedAt:
-          $ref: '#/components/schemas/Date'
-        middleName:
-          type: string
-        organizationId:
-          type: string
-        otherNames:
-          type: array
-          items:
-            type: string
-        prefix:
-          type: string
-        providerId:
-          type: string
-        status:
-          type: string
-        suffix:
-          type: string
-        taxonomies:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerTaxonomiesInner'
-    DayOfWeekEnum:
-      type: string
-      enum:
-      - Monday
-      - Tuesday
-      - Wednesday
-      - Thursday
-      - Friday
-      - Saturday
-      - Sunday
-    MdmProcessStatus:
-      type: string
-      enum:
-      - SUCCESS
-      - FAILED
-    CoreFacilitydataschemaCertificationsInner:
-      type: object
-      properties:
-        certificateId:
-          type: string
-        certificateType:
-          type: string
-        durationType:
-          type: string
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        issueDate:
-          $ref: '#/components/schemas/Date'
-        speciality:
-          type: string
-        subspeciality:
-          type: string
-        verifiedBy:
-          type: string
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        moc:
-          type: string
-        status:
-          type: string
-        occurrenceType:
-          type: string
-        recordType:
-          type: string
-        number:
-          type: string
         source:
           type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAttachment'
-    CorePractitionerdatabaseschemaNpdbReportsInnerSubmitter:
-      type: object
-      properties:
-        entityDBID:
-          type: string
-        agentDBID:
-          type: string
-        vendorID:
-          type: string
-    CorePractitionerdatabaseschemaNpdbReportsInnerCertification:
-      type: object
-      properties:
-        name:
-          type: string
-        title:
-          type: string
-        phone:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerCertificationPhone'
-        date:
-          $ref: '#/components/schemas/Date'
-    CorePractitionerdatabaseschemaLicensesInner:
-      type: object
-      properties:
-        expiration:
-          $ref: '#/components/schemas/Date'
-        issueDate:
-          $ref: '#/components/schemas/Date'
-        licenseNumber:
-          type: string
-        state:
-          type: string
-        licenseType:
-          type: string
-        practitionerType:
-          type: string
-        specialty:
-          type: string
-        licenseStatus:
-          type: string
-        licenseSource:
-          type: string
-        reportDate:
-          $ref: '#/components/schemas/Date'
-        licenseNumberVariations:
-          type: string
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        dataSource:
-          type: string
-        url:
-          type: string
-        boardActionFlag:
-          type: boolean
         createdAt:
           $ref: '#/components/schemas/Date'
         createdBy:
@@ -788,7 +514,191 @@ components:
           $ref: '#/components/schemas/Date'
         verifiedBy:
           type: string
-        scraperScreenshotUrl:
+        locationAccessibility:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaPracticeLocationsInnerLocationAccessibility'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaCmsSpecialtiesInner:
+      type: object
+      properties:
+        cmsTypeCode:
+          type: string
+        cmsTypeName:
+          type: string
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaComplianceTrainingsInner:
+      type: object
+      properties:
+        culturalCompetency:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaComplianceTrainingsInnerCulturalCompetency'
+        annualFWATraining:
+          type: boolean
+        modelOfCareTraining:
+          type: boolean
+        criticalIncidentTraining:
+          type: boolean
+    Address:
+      type: object
+      description: Address record within an NPPES entry
+      properties:
+        address1:
+          type: string
+          examples:
+          - 9239 KENNETH AVE
+        address2:
+          type: string
+          examples:
+          - ''
+        city:
+          type: string
+          examples:
+          - SKOKIE
+        state:
+          type: string
+          examples:
+          - IL
+        postalCode:
+          type: string
+          examples:
+          - '600761617'
+        addressPurpose:
+          type: string
+          examples:
+          - ''
+        countryCode:
+          type: string
+          examples:
+          - US
+        countryName:
+          type: string
+          examples:
+          - US
+        phone:
+          type: string
+          examples:
+          - 773-710-5375
+        faxNumber:
+          type: string
+          examples:
+          - 773-710-5375
+        addressType:
+          type: string
+          examples:
+          - mailing
+          description: mailing or practice
+        telephoneNumber:
+          type: string
+          examples:
+          - 773-710-5375
+    CorePractitionerdatabaseschemaCdsInner:
+      type: object
+      properties:
+        expireDate:
+          $ref: '#/components/schemas/Date'
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        number:
+          type: string
+        state:
+          type: string
+        providerType:
+          type: string
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        source:
+          type: string
+        status:
+          type: string
+        reportDate:
+          $ref: '#/components/schemas/Date'
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
+        url:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    MdmStepResult:
+      type: object
+      properties:
+        status:
+          type: string
+        retryCount:
+          type: integer
+          format: int32
+        matchedEntities:
+          type: array
+          items:
+            type: string
+        certifyId:
+          type: string
+        errorCode:
+          type: string
+        errorDetails:
+          type: string
+        message:
+          type: string
+        skipReason:
+          type: string
+        npi:
+          type: string
+    MdmProcessStatus:
+      type: string
+      enum:
+      - SUCCESS
+      - FAILED
+    CorePractitionerdatabaseschemaSiteVisitsInner:
+      type: object
+      properties:
+        date:
+          $ref: '#/components/schemas/Date'
+        grade:
+          type: string
+        source:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
           type: string
         dataAcquireDate:
           $ref: '#/components/schemas/Date'
@@ -798,9 +708,134 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-        diagnosticPrivilege:
+    CorePractitionerdatabaseschemaDisclosureQuestionsInner:
+      type: object
+      properties:
+        explanation:
+          type: string
+        question:
+          type: string
+        answer:
+          type: string
+        answerFlag:
           type: boolean
-    CoreFacilitydataschemaPerformanceIndicatorsInner:
+        disclosureDate:
+          $ref: '#/components/schemas/Date'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalIdPractitionerEcfmg:
+      type: object
+      properties:
+        ecfmgNumber:
+          type: string
+        ecfmgIssueDate:
+          $ref: '#/components/schemas/Date'
+    CorePractitionerdatabaseschemaNpdbReportsInnerCertificationPhone:
+      type: object
+      properties:
+        number:
+          type: string
+    TypeEnum:
+      type: string
+      enum:
+      - DEA
+      - CDS
+    FacilityBusinessPurposeIsForMonitoring:
+      type: object
+      properties:
+        value:
+          type: boolean
+        reason:
+          type: string
+    DelegationStatusEnum:
+      type: string
+      enum:
+      - Delegated
+      - Direct
+      - CredNotRequired
+      - DeDelegated
+    CoreFacilityResponse:
+      type: object
+      properties:
+        certifyFacilityId:
+          type: string
+        crosswalkId:
+          type: string
+        sourceId:
+          type: string
+        sourceUrl:
+          type: string
+        sourceType:
+          type: string
+        sourceName:
+          type: string
+        sourceDescription:
+          type: string
+        data:
+          $ref: '#/components/schemas/CoreFacilitydataschema'
+        rawSourceData:
+          $ref: '#/components/schemas/JsonNode'
+        survivorId:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        mdmProcessResult:
+          $ref: '#/components/schemas/MdmProcessResponse'
+      title: CoreFacilityResponse
+    CoreFacilitydataschemaNppesInnerIdentifiersInner:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        state:
+          type: string
+        issuer:
+          type: string
+    CorePractitionerdatabaseschemaNpdbReportsInnerCertification:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        phone:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerCertificationPhone'
+        date:
+          $ref: '#/components/schemas/Date'
+    CorePractitionerdatabaseschemaNppesInnerAddressesInner:
+      type: object
+      properties:
+        address1:
+          type: string
+        addressPurpose:
+          type: string
+        addressType:
+          type: string
+        city:
+          type: string
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        faxNumber:
+          type: string
+        postalCode:
+          type: string
+        state:
+          type: string
+        telephoneNumber:
+          type: string
+    CorePractitionerdatabaseschemaPerformanceIndicatorsInner:
       type: object
       properties:
         totalComplaints:
@@ -834,115 +869,35 @@ components:
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/FacilityAttachment'
+            $ref: '#/components/schemas/Attachment1'
         verifiedDate:
           $ref: '#/components/schemas/Date'
         verifiedBy:
-          type: string
-    CorePractitionerdatabaseschemaPhoneNumbersInner:
-      type: object
-      properties:
-        phoneNumber:
-          type: string
-        faxNumber:
-          type: string
-        type:
-          type: string
-        source:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
           type: string
         credWorkflowRecordOrigin:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CoreFacilitydataschemaNppesInnerIdentifiersInner:
+    NpiValidationErrorResponse:
       type: object
+      description: Error response for NPI validation
       properties:
-        id:
-          type: string
-        type:
-          type: string
-        state:
-          type: string
-        issuer:
-          type: string
-    Taxonomy:
-      type: object
-      description: Taxonomy classification for a GROUP NPI entry
-      properties:
-        code:
-          type: string
-          examples:
-          - 253Z00000X
-          description: NUCC taxonomy code
-        desc:
-          type: string
-          examples:
-          - ''
-          description: Human-readable taxonomy description
-        license:
-          type: string
-          examples:
-          - ''
-        primary:
-          type: boolean
-          examples:
-          - true
-          description: Whether this is the primary taxonomy
-        state:
-          type: string
-          examples:
-          - ''
-        taxonomyGroup:
-          type: string
-          examples:
-          - ''
-    CoreFacilitydataschemaInsurancesInner:
-      type: object
-      properties:
-        carrierName:
-          type: string
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        effectiveDate:
-          $ref: '#/components/schemas/Date'
-        source:
-          type: string
         status:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code
+        error:
           type: string
-        policyNumber:
+          examples:
+          - Bad Request
+          description: Error type
+        message:
           type: string
-        aggregateCoverageAmount:
-          type: string
-        occurrenceCoverageAmount:
-          type: string
-        verifiedBy:
-          type: string
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        type:
-          type: string
-        unlimitedCoverage:
-          type: boolean
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAttachment'
+          examples:
+          - Request body must be a valid JSON object with a non-null 'npi' field.
+          description: Detailed error message
     NppesEntry:
       type: object
       description: NPPES entry for a GROUP NPI lookup
@@ -1084,71 +1039,54 @@ components:
           type: array
           items: {}
           description: Alternate names on record
-    SanctionsLineageValue:
+    MdmProcessResponse:
       type: object
       properties:
-        dataAcquireDate:
+        requestId:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        status:
+          $ref: '#/components/schemas/MdmProcessStatus'
+        executionSummary:
+          $ref: '#/components/schemas/MdmExecutionSummary'
+        stepResults:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MdmStepResult'
+        error:
+          $ref: '#/components/schemas/MdmErrorDetail'
+    CorePractitionerdatabaseschemaMalpracticeInsuranceInner:
+      type: object
+      properties:
+        carrierName:
+          type: string
+        expiryDate:
           $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
+        effectiveDate:
           $ref: '#/components/schemas/Date'
-        fileUrl:
-          type: string
-        sourceType:
-          type: string
-        sanctionType:
-          type: string
-        typeOfAction:
-          type: string
-        sourceName:
-          type: string
-    FacilityBusinessPurpose:
-      type: object
-      properties:
-        isForCredentialing:
-          $ref: '#/components/schemas/FacilityBusinessPurposeIsForCredentialing'
-        isForMonitoring:
-          $ref: '#/components/schemas/FacilityBusinessPurposeIsForMonitoring'
-    CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalId:
-      type: object
-      properties:
-        practitionerEcfmg:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalIdPractitionerEcfmg'
-    CorePractitionerdatabaseschemaPracticeLocationsInnerLocationHoursInner:
-      type: object
-      properties:
-        dayOfWeek:
-          $ref: '#/components/schemas/DayOfWeekEnum'
-        startHours:
-          type: string
-        endHours:
-          type: string
-    CorePractitionerdatabaseschemaCdsInner:
-      type: object
-      properties:
-        expireDate:
-          $ref: '#/components/schemas/Date'
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        number:
-          type: string
-        state:
-          type: string
-        providerType:
-          type: string
-        verifiedBy:
-          type: string
-        verifiedDate:
+        flaggedDate:
           $ref: '#/components/schemas/Date'
         source:
           type: string
         status:
           type: string
-        reportDate:
-          $ref: '#/components/schemas/Date'
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        url:
+        policyNumber:
           type: string
+        aggregateCoverageAmount:
+          type: string
+        occuranceCoverageAmount:
+          type: string
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        type:
+          type: string
+        unlimitedCoverage:
+          type: boolean
         createdAt:
           $ref: '#/components/schemas/Date'
         createdBy:
@@ -1169,42 +1107,179 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    FacilityBusinessPurposeIsForCredentialing:
+    CoreFacilitydataschemaPhoneNumbersInner:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        type:
+          type: string
+        source:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+    PractitionerBusinessPurpose:
+      type: object
+      properties:
+        isForCredentialing:
+          $ref: '#/components/schemas/PractitionerBusinessPurposeIsForCredentialing'
+        isForMonitoring:
+          $ref: '#/components/schemas/PractitionerBusinessPurposeIsForMonitoring'
+    CoreFacilitydataschemaNppesInnerTaxonomiesInner:
+      type: object
+      required:
+      - code
+      - desc
+      properties:
+        code:
+          type: string
+        desc:
+          type: string
+        license:
+          type: string
+        primary:
+          type: boolean
+        state:
+          type: string
+        taxonomyGroup:
+          type: string
+    Taxonomy:
+      type: object
+      description: Taxonomy classification for a GROUP NPI entry
+      properties:
+        code:
+          type: string
+          examples:
+          - 253Z00000X
+          description: NUCC taxonomy code
+        desc:
+          type: string
+          examples:
+          - ''
+          description: Human-readable taxonomy description
+        license:
+          type: string
+          examples:
+          - ''
+        primary:
+          type: boolean
+          examples:
+          - true
+          description: Whether this is the primary taxonomy
+        state:
+          type: string
+          examples:
+          - ''
+        taxonomyGroup:
+          type: string
+          examples:
+          - ''
+    CorePractitionerdatabaseschemaEducationInner:
+      type: object
+      properties:
+        toDate:
+          $ref: '#/components/schemas/Date'
+        schoolName:
+          type: string
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CoreFacilitydataschemaSiteVisitsInner:
+      type: object
+      properties:
+        grade:
+          type: string
+        date:
+          $ref: '#/components/schemas/Date'
+        source:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityAttachment'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+    PractitionerBusinessPurposeIsForCredentialing:
       type: object
       properties:
         value:
           type: boolean
         reason:
           type: string
-    CorePractitionerdatabaseschemaEducationTrainingInner:
+    CoreFacilitydataschemaNppesInnerAddressesInner:
+      type: object
+      required:
+      - address1
+      - addressType
+      - city
+      - countryCode
+      - countryName
+      - state
+      properties:
+        address1:
+          type: string
+        addressPurpose:
+          type: string
+        addressType:
+          type: string
+        city:
+          type: string
+        countryCode:
+          type: string
+        countryName:
+          type: string
+        faxNumber:
+          type: string
+        postalCode:
+          type: string
+        state:
+          type: string
+        telephoneNumber:
+          type: string
+    CoreFacilitydataschemaInsurancesInner:
       type: object
       properties:
-        startDate:
+        carrierName:
+          type: string
+        expirationDate:
           $ref: '#/components/schemas/Date'
-        endDate:
+        effectiveDate:
           $ref: '#/components/schemas/Date'
-        type:
+        source:
           type: string
-        educationType:
-          $ref: '#/components/schemas/EducationTypeEnum'
-        degree:
+        status:
           type: string
-        speciality:
+        policyNumber:
           type: string
-        subspecialty:
+        aggregateCoverageAmount:
           type: string
-        institution:
-          type: string
-        licensingBoardReference:
+        occurrenceCoverageAmount:
           type: string
         verifiedBy:
           type: string
         verifiedDate:
           $ref: '#/components/schemas/Date'
-        status:
+        type:
           type: string
-        source:
-          type: string
+        unlimitedCoverage:
+          type: boolean
         createdAt:
           $ref: '#/components/schemas/Date'
         createdBy:
@@ -1216,15 +1291,55 @@ components:
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/Attachment1'
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
+            $ref: '#/components/schemas/FacilityAttachment'
+    FacilityAddressesInner:
+      type: object
+      properties:
+        address1:
           type: string
-        credentialingDisplayGroupKey:
+        address2:
           type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        zipcode:
+          type: string
+        source:
+          type: string
+        type:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        isPrimary:
+          type: boolean
+        county:
+          type: string
+        zipExtension:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        stateFips:
+          type: string
+        countyFips:
+          type: string
+        formattedAddress:
+          type: string
+    CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialty:
+      type: object
+      properties:
+        otherSpecialty:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialtyOtherSpecialty'
     FacilityAttachment:
       type: object
       properties:
@@ -1244,331 +1359,33 @@ components:
           type: string
         createdBy:
           type: string
-    CorePractitionerdatabaseschemaNppesInner:
-      type: object
-      properties:
-        npi:
-          type: string
-        active:
-          type: boolean
-        addresses:
-          type: array
-          items:
-            $ref: '#/components/schemas/CorePractitionerdatabaseschemaNppesInnerAddressesInner'
-        certificationDate:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        createdByName:
-          type: string
-        credential:
-          type: string
-        enumerationDate:
-          $ref: '#/components/schemas/Date'
-        enumerationType:
-          type: string
-        firstName:
-          type: string
-        gender:
-          type: string
-        id:
-          type: string
-        identifiers:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerIdentifiersInner'
-        lastName:
-          type: string
-        lastUpdatedAt:
-          $ref: '#/components/schemas/Date'
-        middleName:
-          type: string
-        organizationId:
-          type: string
-        otherNames:
-          type: array
-          items:
-            type: string
-        prefix:
-          type: string
-        providerId:
-          type: string
-        status:
-          type: string
-        suffix:
-          type: string
-        taxonomies:
-          type: array
-          items:
-            $ref: '#/components/schemas/CorePractitionerdatabaseschemaNppesInnerTaxonomiesInner'
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        verifiedAt:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CorePractitionerdatabaseschemaMedicareInner:
-      type: object
-      properties:
-        medicareNumber:
-          type: string
-        medicareState:
-          type: string
-        issueDate:
-          $ref: '#/components/schemas/Date'
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        source:
-          type: string
-        url:
-          type: string
-        reportDate:
-          $ref: '#/components/schemas/Date'
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CorePractitionerdatabaseschemaNpdbReportsInner:
-      type: object
-      properties:
-        ssn:
-          type: string
-        birthdate:
-          $ref: '#/components/schemas/Date'
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        licensureField:
-          type: string
-        reportDate:
-          $ref: '#/components/schemas/Date'
-        processDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-        data: {}
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        typeOfAction:
-          type: string
-        createdDate:
-          $ref: '#/components/schemas/Date'
-        deceased:
-          type: string
-        paymentAmount:
-          type: string
-        paymentDate:
-          $ref: '#/components/schemas/Date'
-        patientAge:
-          type: string
-        patientGender:
-          type: string
-        patientType:
-          type: string
-        medicalConditionDescription:
-          type: string
-        procedureDescription:
-          type: string
-        allegationsDescription:
-          type: string
-        allegationNature:
-          type: string
-        specificAllegation:
-          type: string
-        specificAllegationDate:
-          $ref: '#/components/schemas/Date'
-        outcome:
-          type: string
-        source:
-          type: string
-        reportType:
-          type: string
-        firstName:
-          type: string
-        lastName:
-          type: string
-        middleName:
-          type: string
-        gender:
-          type: string
-        npi:
-          type: string
-        homeAddress:
-          type: string
-        homeCity:
-          type: string
-        homeState:
-          type: string
-        homeZip:
-          type: string
-        dcn:
-          type: string
-        reportDCN:
-          type: string
-        notes:
-          type: array
-          items:
-            type: string
-        maintainedUnder:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerMaintainedUnder'
-        correctedFields:
-          type: array
-          items:
-            type: string
-        previousDCN:
-          type: string
-        previousTransaction:
-          type: string
-        databankSubjectId:
-          type: string
-          minLength: 1
-        otherName:
-          type: array
-          items:
-            $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerOtherNameInner'
-        certification:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerCertification'
-        submitter:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerSubmitter'
-        enrollmentStatus:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerEnrollmentStatus'
-        transactionTypeCode:
-          type: string
-        transactionType:
-          type: string
-        recentChangeDate:
-          $ref: '#/components/schemas/Date'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CoreFacilitydataschemaSpecialtiesInner:
-      type: object
-      properties:
-        type:
-          type: string
-        specialty:
-          type: string
-        subspecialty:
-          type: string
-        primarySpecialty:
-          type: boolean
-        source:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAttachment'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-    ClassificationSourceEnum:
+    JsonNodeType:
       type: string
       enum:
-      - NUCC
-      - CMS
-      - HSD
-      - NPPES
-      - Custom
-    MatchedOnEnum:
-      type: string
-      enum:
-      - ssn_dob
-      - ssn_only
-      - name_dob
-    CorePractitionerdatabaseschemaLicensureActionsInner:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
+    CorePractitionerdatabaseschemaWorkHistoryGapsInner:
       type: object
       properties:
-        licenseNumber:
+        explanation:
           type: string
-        details:
-          type: string
-        state:
-          type: string
-        lastActionDate:
+        gapStartDate:
           $ref: '#/components/schemas/Date'
-        reportDate:
+        gapEndDate:
           $ref: '#/components/schemas/Date'
-        source:
-          type: string
-        actionType:
-          type: string
-        verifiedBy:
-          type: string
         verifiedDate:
           $ref: '#/components/schemas/Date'
-        createdDate:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
         dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        flaggedDate:
           $ref: '#/components/schemas/Date'
         sourceUpdateDate:
           $ref: '#/components/schemas/Date'
-        url:
-          type: string
         credWorkflowRecordOrigin:
           type: string
         credentialingDisplayGroupKey:
@@ -1620,220 +1437,78 @@ components:
           type: boolean
         binary:
           type: boolean
-    PractitionerRolesMapValue:
+    CorePractitionerdatabaseschemaSpecialtiesInner:
       type: object
       properties:
-        effectiveDate:
-          $ref: '#/components/schemas/Date'
-        terminationDate:
-          $ref: '#/components/schemas/Date'
-        continuityOfCare:
+        specialty:
+          type: string
+        subspecialty:
+          type: string
+        primarySpecialty:
           type: boolean
-    CorePractitionerdatabaseschemaCmsSpecialtiesInner:
-      type: object
-      properties:
-        cmsTypeCode:
+        source:
           type: string
-        cmsTypeName:
+        type:
           type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+        taxonomyCode:
+          type: string
+        classificationSource:
+          $ref: '#/components/schemas/ClassificationSourceEnum'
+        boardName:
+          type: string
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
         credWorkflowRecordOrigin:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    NppesMappedProviderDetails:
-      type: object
-      examples:
-      - npi: '1023950565'
-        nppes:
-        - npi: '1023950565'
-          active: true
-          firstName: PAMELA
-          middleName: S
-          lastName: COKER
-          prefix: ''
-          suffix: ''
-          credential: ''
-          gender: ''
-          enumerationDate: '2026-04-06'
-          lastUpdatedAt: '2026-04-06'
-          certificationDate: '2026-04-06'
-          enumerationType: '2'
-          organizationId: ELEVATE ILLINOIS HOME CARE LLC
-          addresses:
-          - address1: 9239 KENNETH AVE
-            address2: ''
-            city: SKOKIE
-            state: IL
-            postalCode: '600761617'
-            addressPurpose: ''
-            countryCode: US
-            countryName: US
-            phone: 773-710-5375
-            faxNumber: 773-710-5375
-            addressType: mailing
-            telephoneNumber: 773-710-5375
-          - address1: 9239 KENNETH AVE
-            address2: ''
-            city: SKOKIE
-            state: IL
-            postalCode: '600761617'
-            addressPurpose: ''
-            countryCode: US
-            countryName: US
-            phone: 773-710-5375
-            faxNumber: 773-710-5375
-            addressType: practice
-            telephoneNumber: 773-710-5375
-          taxonomies:
-          - code: 253Z00000X
-            desc: ''
-            license: ''
-            primary: true
-            state: ''
-            taxonomyGroup: ''
-          identifiers: []
-          id: ''
-          providerId: ''
-          createdBy: ''
-          createdByName: ''
-          createdAt: ''
-          updatedBy: ''
-          updatedAt: ''
-          status: ''
-          verifiedAt: ''
-          verifiedBy: ''
-          verifiedDate: ''
-          verifiedByName: ''
-          source: ''
-          credWorkflowRecordOrigin: ''
-          otherNames: []
-        emails: []
-        phoneNumbers: []
-        addresses: []
-        licenses: []
-        npdbReports: []
-        certifications: []
-        supportingDocuments: []
-        insurances: []
-        sanctions: []
-        specialties: []
-        accreditations: []
-        siteVisits: []
-        medicareStarRatings: []
-        appVerifications: []
-        performanceIndicators: []
-        lineOfBusiness: []
-        statesToCredential: []
-      description: providerDetails shape for entityType=GROUP or when the upsert fails for practitioner or facility. GROUP bypasses the DAL and always queries the live NPPES registry; no crosswalk upsert is performed. The nppes[] array carries the NPPES-mapped entries with both practitioner-level fields (firstName, lastName, organizationId) and nested addresses/taxonomies.
-      properties:
-        npi:
+        effectiveDate:
+          $ref: '#/components/schemas/Date'
+        terminationDate:
+          $ref: '#/components/schemas/Date'
+        tenantPractitionerSpecialtyId:
           type: string
-          examples:
-          - '1023950565'
-          description: NPI number
-        nppes:
-          type: array
-          items:
-            $ref: '#/components/schemas/NppesEntry'
-          description: NPPES registry entries mapped for this GROUP NPI
-        emails:
-          type: array
-          items: {}
-          description: Email addresses on record
-        phoneNumbers:
-          type: array
-          items: {}
-          description: Phone numbers on record
-        addresses:
-          type: array
-          items: {}
-          description: Addresses on record (top-level; detailed addresses are inside nppes[])
-        licenses:
-          type: array
-          items: {}
-          description: Licenses on record
-        npdbReports:
-          type: array
-          items: {}
-          description: NPDB reports
-        certifications:
-          type: array
-          items: {}
-          description: Certifications
-        supportingDocuments:
-          type: array
-          items: {}
-          description: Supporting documents
-        insurances:
-          type: array
-          items: {}
-          description: Insurance records
-        sanctions:
-          type: array
-          items: {}
-          description: Sanction records
-        specialties:
-          type: array
-          items: {}
-          description: Specialties
-        accreditations:
-          type: array
-          items: {}
-          description: Accreditations
-        siteVisits:
-          type: array
-          items: {}
-          description: Site visits
-        medicareStarRatings:
-          type: array
-          items: {}
-          description: Medicare star ratings
-        appVerifications:
-          type: array
-          items: {}
-          description: Application verifications
-        performanceIndicators:
-          type: array
-          items: {}
-          description: Performance indicators
-        lineOfBusiness:
-          type: array
-          items: {}
-          description: Lines of business
-        statesToCredential:
-          type: array
-          items: {}
-          description: States to credential in
-      title: NppesMappedProviderDetails
-    CoreFacilitydataschemaLicensesInner:
+    CoreFacilitydataschemaPerformanceIndicatorsInner:
       type: object
       properties:
-        type:
-          type: string
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        issueDate:
-          $ref: '#/components/schemas/Date'
-        licenseNumber:
-          type: string
-        state:
-          type: string
-        licenseType:
-          type: string
-        licenseStatus:
-          type: string
-        licenseSource:
-          type: string
+        totalComplaints:
+          type: integer
+          format: int32
+        clinicalComplaints:
+          type: integer
+          format: int32
+        serviceComplaints:
+          type: integer
+          format: int32
+        benefitsComplaints:
+          type: integer
+          format: int32
+        claimComplaints:
+          type: integer
+          format: int32
+        accessIssueComplaints:
+          type: integer
+          format: int32
         reportDate:
           $ref: '#/components/schemas/Date'
-        licenseNumberVariations:
-          type: string
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        dataSource:
-          type: string
-        url:
-          type: string
         createdAt:
           $ref: '#/components/schemas/Date'
         createdBy:
@@ -1850,136 +1525,95 @@ components:
           $ref: '#/components/schemas/Date'
         verifiedBy:
           type: string
-    PractitionerAddressesInner:
+    CoreFacilitydataschemaNppesInner:
       type: object
       properties:
-        address1:
+        npi:
           type: string
-        address2:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        country:
-          type: string
-        zipcode:
-          type: string
-        source:
-          type: string
-        type:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    NpiValidationErrorResponse:
-      type: object
-      description: Error response for NPI validation
-      properties:
-        status:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code
-        error:
-          type: string
-          examples:
-          - Bad Request
-          description: Error type
-        message:
-          type: string
-          examples:
-          - Request body must be a valid JSON object with a non-null 'npi' field.
-          description: Detailed error message
-    CorePractitionerdatabaseschemaDeaInner:
-      type: object
-      properties:
-        expireDate:
-          $ref: '#/components/schemas/Date'
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        affiliation:
-          type: string
-        deaNumber:
-          type: string
-        number:
-          type: string
-        schedules:
-          type: string
-        cdsLicenseNumber:
-          type: string
-        state:
-          type: string
-        providerType:
-          type: string
-        verifiedBy:
-          type: string
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        source:
-          type: string
-        type:
-          $ref: '#/components/schemas/TypeEnum'
-        status:
-          type: string
-        reportDate:
-          $ref: '#/components/schemas/Date'
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        url:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
+        active:
+          type: boolean
+        addresses:
           type: array
           items:
-            $ref: '#/components/schemas/Attachment1'
-        dataAcquireDate:
+            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerAddressesInner'
+        certificationDate:
           $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        credential:
+          type: string
+        enumerationDate:
           $ref: '#/components/schemas/Date'
+        enumerationType:
+          type: string
+        firstName:
+          type: string
+        gender:
+          type: string
+        id:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerIdentifiersInner'
+        lastName:
+          type: string
+        lastUpdatedAt:
+          $ref: '#/components/schemas/Date'
+        middleName:
+          type: string
+        organizationId:
+          type: string
+        otherNames:
+          type: array
+          items:
+            type: string
+        prefix:
+          type: string
+        providerId:
+          type: string
+        status:
+          type: string
+        suffix:
+          type: string
+        taxonomies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerTaxonomiesInner'
+    CorePractitionerdatabaseschemaResidencyInner:
+      type: object
+      properties:
+        schoolName:
+          type: string
         credWorkflowRecordOrigin:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    PractitionerBusinessPurposeIsForMonitoring:
+    CorePractitionerdatabaseschemaPhoneNumbersInner:
       type: object
       properties:
-        value:
-          type: boolean
-        reason:
+        phoneNumber:
           type: string
-    CorePractitionerdatabaseschemaCaqhPdqs:
-      type: object
-      properties:
-        practitionerProfessionalId:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalId'
-        practitionerSpecialty:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialty'
-        attestationDate:
-          $ref: '#/components/schemas/Date'
-        caqhApiResponseId:
+        faxNumber:
           type: string
-        dataAcquireDate:
+        type:
+          type: string
+        source:
+          type: string
+        createdAt:
           $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
+        createdBy:
+          type: string
+        updatedAt:
           $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
     CorePractitionerdataschema:
       type: object
       properties:
@@ -2242,22 +1876,144 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CorePractitionerdatabaseschemaChangeDetailsInner'
-    PractitionerBusinessPurposeIsForCredentialing:
+    CorePractitionerdatabaseschemaLicensureActionsInner:
       type: object
       properties:
-        value:
-          type: boolean
-        reason:
+        licenseNumber:
           type: string
-    CoreFacilitydataschemaPhoneNumbersInner:
-      type: object
-      properties:
-        phoneNumber:
+        details:
           type: string
-        type:
+        state:
           type: string
+        lastActionDate:
+          $ref: '#/components/schemas/Date'
+        reportDate:
+          $ref: '#/components/schemas/Date'
         source:
           type: string
+        actionType:
+          type: string
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        createdDate:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        url:
+          type: string
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaNpdbReportsInnerEnrollmentStatus:
+      type: object
+      properties:
+        dataBank:
+          type: string
+        status:
+          type: string
+        statusCode:
+          type: string
+        section1128e:
+          type: boolean
+        section1921:
+          type: boolean
+        titleIV:
+          type: boolean
+        startDate:
+          $ref: '#/components/schemas/Date'
+        endDate:
+          $ref: '#/components/schemas/Date'
+    MatchedOnEnum:
+      type: string
+      enum:
+      - ssn_dob
+      - ssn_only
+      - name_dob
+    Attachment1:
+      type: object
+      properties:
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        fileType: {}
+        fileUrl:
+          type: string
+        originalFileName:
+          type: string
+        state: {}
+        expirationDate: {}
+        source: {}
+        createdBy: {}
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    SanctionsLineageValue:
+      type: object
+      properties:
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        fileUrl:
+          type: string
+        sourceType:
+          type: string
+        sanctionType:
+          type: string
+        typeOfAction:
+          type: string
+        sourceName:
+          type: string
+    CorePractitionerdatabaseschemaLicensesInner:
+      type: object
+      properties:
+        expiration:
+          $ref: '#/components/schemas/Date'
+        issueDate:
+          $ref: '#/components/schemas/Date'
+        licenseNumber:
+          type: string
+        state:
+          type: string
+        licenseType:
+          type: string
+        practitionerType:
+          type: string
+        specialty:
+          type: string
+        licenseStatus:
+          type: string
+        licenseSource:
+          type: string
+        reportDate:
+          $ref: '#/components/schemas/Date'
+        licenseNumberVariations:
+          type: string
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
+        dataSource:
+          type: string
+        url:
+          type: string
+        boardActionFlag:
+          type: boolean
         createdAt:
           $ref: '#/components/schemas/Date'
         createdBy:
@@ -2266,151 +2022,200 @@ components:
           $ref: '#/components/schemas/Date'
         updatedBy:
           type: string
-    FacilityBusinessPurposeIsForMonitoring:
-      type: object
-      properties:
-        value:
-          type: boolean
-        reason:
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
           type: string
-    CorePractitionerdatabaseschemaCliaCertificatesInner:
-      type: object
-      properties:
-        certificateNumber:
+        scraperScreenshotUrl:
           type: string
-        expirationDate:
-          $ref: '#/components/schemas/Date'
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CoreFacilitydataschema:
-      type: object
-      properties:
-        lastCredentialedDate:
-          $ref: '#/components/schemas/Date'
-        lastCredentialingDate:
-          $ref: '#/components/schemas/Date'
-        initialCredentialingDate:
-          $ref: '#/components/schemas/Date'
-        nextCredentialingDate:
-          $ref: '#/components/schemas/Date'
         dataAcquireDate:
           $ref: '#/components/schemas/Date'
         sourceUpdateDate:
           $ref: '#/components/schemas/Date'
-        dba:
-          type: string
-        name:
-          type: string
-        primaryEmail:
-          type: string
-        npi:
-          type: string
-        tin:
-          type: string
-        externalId:
-          type: string
-        ncpdpId:
-          type: string
-        facilityType:
-          type: string
-        deceasedDate:
-          $ref: '#/components/schemas/Date'
-        lineOfBusiness:
-          type: array
-          items:
-            type: string
-        attestationDate:
-          $ref: '#/components/schemas/Date'
-        effectiveDate:
-          $ref: '#/components/schemas/Date'
-        statesToCredential:
-          type: array
-          items:
-            type: string
-        userDefinedFields:
-          type: object
-          additionalProperties: {}
-        delegationStatus:
-          $ref: '#/components/schemas/DelegationStatusEnum1'
-        jurisdictionOfInterest:
-          type: string
-        businessPurpose:
-          $ref: '#/components/schemas/FacilityBusinessPurpose'
-        emails:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaEmailsInner'
-        phoneNumbers:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaPhoneNumbersInner'
-        addresses:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAddressesInner'
-        licenses:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaLicensesInner'
-        npdbReports:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaNpdbReportsInner'
-        nppes:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInner'
-        certifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaCertificationsInner'
-        supportingDocuments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAttachment'
-        insurances:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaInsurancesInner'
-        sanctions:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaSanctionsInner'
-        specialties:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaSpecialtiesInner'
-        accreditations:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaAccreditationsInner'
-        siteVisits:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaSiteVisitsInner'
-        medicareStarRatings:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaMedicareStarRatingsInner'
-        appVerifications:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaAppVerificationsInner'
-        performanceIndicators:
-          type: array
-          items:
-            $ref: '#/components/schemas/CoreFacilitydataschemaPerformanceIndicatorsInner'
-    CorePractitionerdatabaseschemaResidencyInner:
-      type: object
-      properties:
-        schoolName:
-          type: string
         credWorkflowRecordOrigin:
           type: string
         credentialingDisplayGroupKey:
           type: string
+        diagnosticPrivilege:
+          type: boolean
+    PractitionerRolesMapValue:
+      type: object
+      properties:
+        effectiveDate:
+          $ref: '#/components/schemas/Date'
+        terminationDate:
+          $ref: '#/components/schemas/Date'
+        continuityOfCare:
+          type: boolean
+    NppesMappedProviderDetails:
+      type: object
+      examples:
+      - npi: '1023950565'
+        nppes:
+        - npi: '1023950565'
+          active: true
+          firstName: PAMELA
+          middleName: S
+          lastName: COKER
+          prefix: ''
+          suffix: ''
+          credential: ''
+          gender: ''
+          enumerationDate: '2026-04-06'
+          lastUpdatedAt: '2026-04-06'
+          certificationDate: '2026-04-06'
+          enumerationType: '2'
+          organizationId: ELEVATE ILLINOIS HOME CARE LLC
+          addresses:
+          - address1: 9239 KENNETH AVE
+            address2: ''
+            city: SKOKIE
+            state: IL
+            postalCode: '600761617'
+            addressPurpose: ''
+            countryCode: US
+            countryName: US
+            phone: 773-710-5375
+            faxNumber: 773-710-5375
+            addressType: mailing
+            telephoneNumber: 773-710-5375
+          - address1: 9239 KENNETH AVE
+            address2: ''
+            city: SKOKIE
+            state: IL
+            postalCode: '600761617'
+            addressPurpose: ''
+            countryCode: US
+            countryName: US
+            phone: 773-710-5375
+            faxNumber: 773-710-5375
+            addressType: practice
+            telephoneNumber: 773-710-5375
+          taxonomies:
+          - code: 253Z00000X
+            desc: ''
+            license: ''
+            primary: true
+            state: ''
+            taxonomyGroup: ''
+          identifiers: []
+          id: ''
+          providerId: ''
+          createdBy: ''
+          createdByName: ''
+          createdAt: ''
+          updatedBy: ''
+          updatedAt: ''
+          status: ''
+          verifiedAt: ''
+          verifiedBy: ''
+          verifiedDate: ''
+          verifiedByName: ''
+          source: ''
+          credWorkflowRecordOrigin: ''
+          otherNames: []
+        emails: []
+        phoneNumbers: []
+        addresses: []
+        licenses: []
+        npdbReports: []
+        certifications: []
+        supportingDocuments: []
+        insurances: []
+        sanctions: []
+        specialties: []
+        accreditations: []
+        siteVisits: []
+        medicareStarRatings: []
+        appVerifications: []
+        performanceIndicators: []
+        lineOfBusiness: []
+        statesToCredential: []
+      description: providerDetails shape for entityType=GROUP or when the upsert fails for practitioner or facility. GROUP bypasses the DAL and always queries the live NPPES registry; no crosswalk upsert is performed. The nppes[] array carries the NPPES-mapped entries with both practitioner-level fields (firstName, lastName, organizationId) and nested addresses/taxonomies.
+      properties:
+        npi:
+          type: string
+          examples:
+          - '1023950565'
+          description: NPI number
+        nppes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NppesEntry'
+          description: NPPES registry entries mapped for this GROUP NPI
+        emails:
+          type: array
+          items: {}
+          description: Email addresses on record
+        phoneNumbers:
+          type: array
+          items: {}
+          description: Phone numbers on record
+        addresses:
+          type: array
+          items: {}
+          description: Addresses on record (top-level; detailed addresses are inside nppes[])
+        licenses:
+          type: array
+          items: {}
+          description: Licenses on record
+        npdbReports:
+          type: array
+          items: {}
+          description: NPDB reports
+        certifications:
+          type: array
+          items: {}
+          description: Certifications
+        supportingDocuments:
+          type: array
+          items: {}
+          description: Supporting documents
+        insurances:
+          type: array
+          items: {}
+          description: Insurance records
+        sanctions:
+          type: array
+          items: {}
+          description: Sanction records
+        specialties:
+          type: array
+          items: {}
+          description: Specialties
+        accreditations:
+          type: array
+          items: {}
+          description: Accreditations
+        siteVisits:
+          type: array
+          items: {}
+          description: Site visits
+        medicareStarRatings:
+          type: array
+          items: {}
+          description: Medicare star ratings
+        appVerifications:
+          type: array
+          items: {}
+          description: Application verifications
+        performanceIndicators:
+          type: array
+          items: {}
+          description: Performance indicators
+        lineOfBusiness:
+          type: array
+          items: {}
+          description: Lines of business
+        statesToCredential:
+          type: array
+          items: {}
+          description: States to credential in
+      title: NppesMappedProviderDetails
     CorePractitionerdatabaseschemaSanctionsInner:
       type: object
       properties:
@@ -2456,14 +2261,55 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CoreFacilitydataschemaSiteVisitsInner:
+    MdmExecutionSummary:
       type: object
       properties:
-        grade:
+        stepsExecuted:
+          type: array
+          items:
+            type: string
+        stepsSkipped:
+          type: array
+          items:
+            type: string
+        stepsFailed:
+          type: array
+          items:
+            type: string
+        totalDurationMs:
+          type: integer
+          format: int64
+    PractitionerBusinessPurposeIsForMonitoring:
+      type: object
+      properties:
+        value:
+          type: boolean
+        reason:
           type: string
-        date:
-          $ref: '#/components/schemas/Date'
+    CorePractitionerdatabaseschemaHospitalAffiliationsInner:
+      type: object
+      properties:
+        name:
+          type: string
+        specialty:
+          type: string
+        state:
+          type: string
+        type:
+          type: string
+        isPrimary:
+          type: boolean
         source:
+          type: string
+        startDate:
+          $ref: '#/components/schemas/Date'
+        endDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        status:
           type: string
         createdAt:
           $ref: '#/components/schemas/Date'
@@ -2476,60 +2322,7 @@ components:
         attachments:
           type: array
           items:
-            $ref: '#/components/schemas/FacilityAttachment'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-    CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialty:
-      type: object
-      properties:
-        otherSpecialty:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialtyOtherSpecialty'
-    TypeEnum:
-      type: string
-      enum:
-      - DEA
-      - CDS
-    Date:
-      type: string
-      format: date
-    CoreFacilitydataschemaAppVerificationsInner:
-      type: object
-      properties:
-        verificationType:
-          type: string
-        explanation:
-          type: string
-        source:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAttachment'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-    CorePractitionerdatabaseschemaWorkHistoryGapsInner:
-      type: object
-      properties:
-        explanation:
-          type: string
-        gapStartDate:
-          $ref: '#/components/schemas/Date'
-        gapEndDate:
-          $ref: '#/components/schemas/Date'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
+            $ref: '#/components/schemas/Attachment1'
         dataAcquireDate:
           $ref: '#/components/schemas/Date'
         sourceUpdateDate:
@@ -2538,43 +2331,116 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalIdPractitionerEcfmg:
+    CorePractitionerdatabaseschemaComplianceTrainingsInnerCulturalCompetency:
+      type: object
+    CorePractitionerdatabaseschemaMalpracticeInsurancesInner:
       type: object
       properties:
-        ecfmgNumber:
+        carrierName:
           type: string
-        ecfmgIssueDate:
+        expiryDate:
           $ref: '#/components/schemas/Date'
-    CoreFacilitydataschemaNppesInnerAddressesInner:
+        effectiveDate:
+          $ref: '#/components/schemas/Date'
+        source:
+          type: string
+        status:
+          type: string
+        policyNumber:
+          type: string
+        aggregateCoverageAmount:
+          type: string
+        occuranceCoverageAmount:
+          type: string
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        type:
+          type: string
+        unlimitedCoverage:
+          type: boolean
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    NpiValidationRequest:
       type: object
       required:
-      - address1
-      - addressType
-      - city
-      - countryCode
-      - countryName
-      - state
+      - npi
+      description: Request to validate an NPI
       properties:
-        address1:
+        npi:
           type: string
-        addressPurpose:
+          examples:
+          - '1234567890'
+          description: The NPI to validate
+    EducationTypeEnum:
+      type: string
+      enum:
+      - medicalSchool
+      - alliedHealthEducation
+      - podiatricMedicine
+      - chiropracticSchool
+      - nursingSchool
+      - OTHER
+    CoreFacilitydataschemaCertificationsInner:
+      type: object
+      properties:
+        certificateId:
           type: string
-        addressType:
+        certificateType:
           type: string
-        city:
+        durationType:
           type: string
-        countryCode:
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        issueDate:
+          $ref: '#/components/schemas/Date'
+        speciality:
           type: string
-        countryName:
+        subspeciality:
           type: string
-        faxNumber:
+        verifiedBy:
           type: string
-        postalCode:
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        moc:
           type: string
-        state:
+        status:
           type: string
-        telephoneNumber:
+        occurrenceType:
           type: string
+        recordType:
+          type: string
+        number:
+          type: string
+        source:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityAttachment'
     CorePractitionerdatabaseschemaEmailsInner:
       type: object
       properties:
@@ -2596,12 +2462,342 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerdatabaseschemaSiteVisitsInner:
+    CorePractitionerdatabaseschemaCompactLicensesInner:
+      type: object
+      required:
+      - compactType
+      - licenseNumber
+      - coveredStates
+      properties:
+        compactType:
+          type: string
+        licenseNumber:
+          type: string
+        issueDate:
+          $ref: '#/components/schemas/Date'
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        status:
+          type: string
+        homeLicenseNumber:
+          type: string
+        homeLicenseState:
+          type: string
+        homeLicenseType:
+          type: string
+        homeLicenseLinkSource:
+          $ref: '#/components/schemas/HomeLicenseLinkSourceEnum'
+        coveredStates:
+          type: array
+          items:
+            type: string
+            pattern: ^[A-Z]{2}$
+        effectiveStatus:
+          $ref: '#/components/schemas/EffectiveStatusEnum'
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        dataSource:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+    CorePractitionerdatabaseschemaNppesInner:
       type: object
       properties:
-        date:
+        npi:
+          type: string
+        active:
+          type: boolean
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorePractitionerdatabaseschemaNppesInnerAddressesInner'
+        certificationDate:
           $ref: '#/components/schemas/Date'
-        grade:
+        createdBy:
+          type: string
+        createdByName:
+          type: string
+        credential:
+          type: string
+        enumerationDate:
+          $ref: '#/components/schemas/Date'
+        enumerationType:
+          type: string
+        firstName:
+          type: string
+        gender:
+          type: string
+        id:
+          type: string
+        identifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoreFacilitydataschemaNppesInnerIdentifiersInner'
+        lastName:
+          type: string
+        lastUpdatedAt:
+          $ref: '#/components/schemas/Date'
+        middleName:
+          type: string
+        organizationId:
+          type: string
+        otherNames:
+          type: array
+          items:
+            type: string
+        prefix:
+          type: string
+        providerId:
+          type: string
+        status:
+          type: string
+        suffix:
+          type: string
+        taxonomies:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorePractitionerdatabaseschemaNppesInnerTaxonomiesInner'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        verifiedAt:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CoreFacilitydataschemaSpecialtiesInner:
+      type: object
+      properties:
+        type:
+          type: string
+        specialty:
+          type: string
+        subspecialty:
+          type: string
+        primarySpecialty:
+          type: boolean
+        source:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityAttachment'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+    CorePractitionerdatabaseschemaDeaInner:
+      type: object
+      properties:
+        expireDate:
+          $ref: '#/components/schemas/Date'
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        affiliation:
+          type: string
+        deaNumber:
+          type: string
+        number:
+          type: string
+        schedules:
+          type: string
+        cdsLicenseNumber:
+          type: string
+        state:
+          type: string
+        providerType:
+          type: string
+        verifiedBy:
+          type: string
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        source:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        status:
+          type: string
+        reportDate:
+          $ref: '#/components/schemas/Date'
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
+        url:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaNpdbReportsInnerSubmitter:
+      type: object
+      properties:
+        entityDBID:
+          type: string
+        agentDBID:
+          type: string
+        vendorID:
+          type: string
+    CorePractitionerdatabaseschemaDeathMasterMatchesInner:
+      type: object
+      properties:
+        isDeceased:
+          type: boolean
+        dateOfDeath:
+          $ref: '#/components/schemas/Date'
+        dateOfBirth:
+          $ref: '#/components/schemas/Date'
+        name:
+          type: string
+        confidence:
+          $ref: '#/components/schemas/ConfidenceEnum'
+        matchedOn:
+          $ref: '#/components/schemas/MatchedOnEnum'
+        reason:
+          type: string
+        matchedAt:
+          $ref: '#/components/schemas/Date'
+        source:
+          type: string
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+    FacilityBusinessPurpose:
+      type: object
+      properties:
+        isForCredentialing:
+          $ref: '#/components/schemas/FacilityBusinessPurposeIsForCredentialing'
+        isForMonitoring:
+          $ref: '#/components/schemas/FacilityBusinessPurposeIsForMonitoring'
+    CoreFacilitydataschemaLicensesInner:
+      type: object
+      properties:
+        type:
+          type: string
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        issueDate:
+          $ref: '#/components/schemas/Date'
+        licenseNumber:
+          type: string
+        state:
+          type: string
+        licenseType:
+          type: string
+        licenseStatus:
+          type: string
+        licenseSource:
+          type: string
+        reportDate:
+          $ref: '#/components/schemas/Date'
+        licenseNumberVariations:
+          type: string
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
+        dataSource:
+          type: string
+        url:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacilityAttachment'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+    NpiValidationResponse:
+      type: object
+      description: NPI validation response
+      properties:
+        npi:
+          type: string
+          examples:
+          - '1234567890'
+          description: NPI number
+        isValid:
+          type: boolean
+          examples:
+          - true
+          description: Whether the NPI is valid
+        status:
+          type: string
+          examples:
+          - VALID_AND_FOUND
+          description: 'Validation status: VALID_AND_FOUND, VALID_FOUND_IN_NPPES, or VALID_FOUND_IN_NPPES_BUT_FAILED_CROSSWALK_CREATION'
+        providerDetails:
+          oneOf:
+          - $ref: '#/components/schemas/CorePractitionerResponse'
+          - $ref: '#/components/schemas/CoreFacilityResponse'
+          - $ref: '#/components/schemas/NppesMappedProviderDetails'
+          description: 'Provider details. Shape depends on entityType: PRACTITIONER → CorePractitionerResponse (DAL canonical schema); FACILITY → CoreFacilityResponse (DAL canonical schema). For both, when the record is sourced from the live NPPES registry, the crosswalk is upserted first and the record is then re-fetched from the DAL so the structure is identical to a direct DAL hit. in case the upsert fails, the response is the NPPES-transformed (NppesProviderDetails) data with the failure status; GROUP → always returns NppesProviderDetails; bypasses the DAL and queries NPPES directly; no crosswalk upsert is performed.'
+    CorePractitionerdatabaseschemaCaqhPdqs:
+      type: object
+      properties:
+        practitionerProfessionalId:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalId'
+        practitionerSpecialty:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialty'
+        attestationDate:
+          $ref: '#/components/schemas/Date'
+        caqhApiResponseId:
+          type: string
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+    DelegationStatusEnum1:
+      type: string
+      enum:
+      - Delegated
+      - Direct
+    CorePractitionerdatabaseschemaAppVerificationsInner:
+      type: object
+      properties:
+        verificationType:
+          type: string
+        explanation:
           type: string
         source:
           type: string
@@ -2629,98 +2825,50 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerdatabaseschemaNpdbReportsInnerCertificationPhone:
+    CorePractitionerResponse:
       type: object
       properties:
-        number:
+        certifyId:
           type: string
-    CorePractitionerdatabaseschemaEducationInner:
-      type: object
-      properties:
-        toDate:
+        crosswalkId:
+          type: string
+        sourceId:
+          type: string
+        sourceUrl:
+          type: string
+        sourceType:
+          type: string
+        sourceName:
+          type: string
+        sourceDescription:
+          type: string
+        sourceTenantId:
+          type: string
+        sourceTags:
+          type: array
+          items:
+            type: string
+        data:
+          $ref: '#/components/schemas/CorePractitionerdataschema'
+        rawSourceData:
+          $ref: '#/components/schemas/JsonNode'
+        deletedData:
+          $ref: '#/components/schemas/JsonNode'
+        survivorId:
+          type: string
+        createdAt:
           $ref: '#/components/schemas/Date'
-        schoolName:
-          type: string
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
-    CorePractitionerdatabaseschemaPracticeLocationsInnerLocationAccessibility:
-      type: object
-      properties:
-        adaAccessibilityFlag:
-          type: boolean
-        handicappedAccessFlag:
-          type: boolean
-        parkingAccessFlag:
-          type: boolean
-        restroomAccessFlag:
-          type: boolean
-        otherDisabilityServicesFlag:
-          type: boolean
-        ttyAccessFlag:
-          type: boolean
-        aslAccessFlag:
-          type: boolean
-        impairmentServicesFlag:
-          type: boolean
-        publicTransportationAccessFlag:
-          type: boolean
-        busAccessFlag:
-          type: boolean
-        subwayAccessFlag:
-          type: boolean
-        trainAccessFlag:
-          type: boolean
-    NpiValidationResponse:
-      type: object
-      description: NPI validation response
-      properties:
-        npi:
-          type: string
-          examples:
-          - '1234567890'
-          description: NPI number
-        isValid:
-          type: boolean
-          examples:
-          - true
-          description: Whether the NPI is valid
-        status:
-          type: string
-          examples:
-          - VALID_AND_FOUND
-          description: 'Validation status: VALID_AND_FOUND, VALID_FOUND_IN_NPPES, or VALID_FOUND_IN_NPPES_BUT_FAILED_CROSSWALK_CREATION'
-        providerDetails:
-          oneOf:
-          - $ref: '#/components/schemas/CorePractitionerResponse'
-          - $ref: '#/components/schemas/CoreFacilityResponse'
-          - $ref: '#/components/schemas/NppesMappedProviderDetails'
-          description: 'Provider details. Shape depends on entityType: PRACTITIONER → CorePractitionerResponse (DAL canonical schema); FACILITY → CoreFacilityResponse (DAL canonical schema). For both, when the record is sourced from the live NPPES registry, the crosswalk is upserted first and the record is then re-fetched from the DAL so the structure is identical to a direct DAL hit. in case the upsert fails, the response is the NPPES-transformed (NppesProviderDetails) data with the failure status; GROUP → always returns NppesProviderDetails; bypasses the DAL and queries NPPES directly; no crosswalk upsert is performed.'
-    CoreFacilitydataschemaAccreditationsInner:
-      type: object
-      properties:
-        idNumber:
-          type: string
-        accreditationBody:
-          type: string
-        status:
-          type: string
-        effectiveDate:
+        updatedAt:
           $ref: '#/components/schemas/Date'
-        expirationDate:
+        mdmProcessResult:
+          $ref: '#/components/schemas/MdmProcessResponse'
+      title: CorePractitionerResponse
+    CoreFacilitydataschemaMedicareStarRatingsInner:
+      type: object
+      properties:
+        starRating:
+          type: string
+        reportDate:
           $ref: '#/components/schemas/Date'
         source:
           type: string
@@ -2739,17 +2887,6 @@ components:
         verifiedDate:
           $ref: '#/components/schemas/Date'
         verifiedBy:
-          type: string
-    CorePractitionerdatabaseschemaLanguagesInner:
-      type: object
-      properties:
-        language:
-          type: string
-        isPrimary:
-          type: boolean
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
           type: string
     CorePractitionerdatabaseschemaProfessionalIdsInner:
       type: object
@@ -2790,32 +2927,21 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerdatabaseschemaNpdbReportsInnerEnrollmentStatus:
+    CoreFacilitydataschemaSanctionsInner:
       type: object
       properties:
-        dataBank:
-          type: string
-        status:
-          type: string
-        statusCode:
-          type: string
-        section1128e:
-          type: boolean
-        section1921:
-          type: boolean
-        titleIV:
-          type: boolean
-        startDate:
+        dateOfReport:
           $ref: '#/components/schemas/Date'
-        endDate:
+        sanctionType:
+          type: string
+        typeOfAction:
+          type: string
+        data:
+          type: string
+        flaggedDate:
           $ref: '#/components/schemas/Date'
-    CoreFacilitydataschemaEmailsInner:
-      type: object
-      properties:
-        email:
-          type: string
-        emailType:
-          type: string
+        sanctionStartDate:
+          $ref: '#/components/schemas/Date'
         source:
           type: string
         createdAt:
@@ -2826,156 +2952,24 @@ components:
           $ref: '#/components/schemas/Date'
         updatedBy:
           type: string
-    CoreFacilityResponse:
-      type: object
-      properties:
-        certifyFacilityId:
-          type: string
-        crosswalkId:
-          type: string
-        sourceId:
-          type: string
-        sourceUrl:
-          type: string
-        sourceType:
-          type: string
-        sourceName:
-          type: string
-        sourceDescription:
-          type: string
-        data:
-          $ref: '#/components/schemas/CoreFacilitydataschema'
-        rawSourceData:
-          $ref: '#/components/schemas/JsonNode'
-        survivorId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        mdmProcessResult:
-          $ref: '#/components/schemas/MdmProcessResponse'
-      title: CoreFacilityResponse
-    Address:
-      type: object
-      description: Address record within an NPPES entry
-      properties:
-        address1:
-          type: string
-          examples:
-          - 9239 KENNETH AVE
-        address2:
-          type: string
-          examples:
-          - ''
-        city:
-          type: string
-          examples:
-          - SKOKIE
-        state:
-          type: string
-          examples:
-          - IL
-        postalCode:
-          type: string
-          examples:
-          - '600761617'
-        addressPurpose:
-          type: string
-          examples:
-          - ''
-        countryCode:
-          type: string
-          examples:
-          - US
-        countryName:
-          type: string
-          examples:
-          - US
-        phone:
-          type: string
-          examples:
-          - 773-710-5375
-        faxNumber:
-          type: string
-          examples:
-          - 773-710-5375
-        addressType:
-          type: string
-          examples:
-          - mailing
-          description: mailing or practice
-        telephoneNumber:
-          type: string
-          examples:
-          - 773-710-5375
-    CorePractitionerdatabaseschemaComplianceTrainingsInnerCulturalCompetency:
-      type: object
-    CorePractitionerdatabaseschemaDeathMasterMatchesInner:
-      type: object
-      properties:
-        isDeceased:
-          type: boolean
-        dateOfDeath:
-          $ref: '#/components/schemas/Date'
-        dateOfBirth:
-          $ref: '#/components/schemas/Date'
-        name:
-          type: string
-        confidence:
-          $ref: '#/components/schemas/ConfidenceEnum'
-        matchedOn:
-          $ref: '#/components/schemas/MatchedOnEnum'
-        reason:
-          type: string
-        matchedAt:
-          $ref: '#/components/schemas/Date'
-        source:
-          type: string
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
-    CorePractitionerdatabaseschemaChangeDetailsInner:
-      type: object
-      properties:
-        changeEffectiveDate:
-          $ref: '#/components/schemas/Date'
-        changeReasonCode:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        rosterId:
-          type: string
-    MdmStepResult:
-      type: object
-      properties:
-        status:
-          type: string
-        retryCount:
-          type: integer
-          format: int32
-        matchedEntities:
+        attachments:
           type: array
           items:
-            type: string
-        certifyId:
+            $ref: '#/components/schemas/FacilityAttachment'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
           type: string
-        errorCode:
-          type: string
-        errorDetails:
-          type: string
-        message:
-          type: string
-        skipReason:
-          type: string
-        npi:
-          type: string
-    DelegationStatusEnum1:
+    DayOfWeekEnum:
       type: string
       enum:
-      - Delegated
-      - Direct
+      - Monday
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
+      - Saturday
+      - Sunday
     CorePractitionerdatabaseschemaBoardCertificationsInner:
       type: object
       properties:
@@ -3049,100 +3043,13 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerdatabaseschemaComplianceTrainingsInner:
+    CoreFacilitydataschemaEmailsInner:
       type: object
       properties:
-        culturalCompetency:
-          $ref: '#/components/schemas/CorePractitionerdatabaseschemaComplianceTrainingsInnerCulturalCompetency'
-        annualFWATraining:
-          type: boolean
-        modelOfCareTraining:
-          type: boolean
-        criticalIncidentTraining:
-          type: boolean
-    CorePractitionerdatabaseschemaNpdbReportsInnerMaintainedUnder:
-      type: object
-      properties:
-        statute:
-          type: array
-          items:
-            type: string
-    NpiValidationRequest:
-      type: object
-      required:
-      - npi
-      description: Request to validate an NPI
-      properties:
-        npi:
+        email:
           type: string
-          examples:
-          - '1234567890'
-          description: The NPI to validate
-    EffectiveStatusEnum:
-      type: string
-      enum:
-      - PENDING_LINKAGE
-      - INELIGIBLE
-      - EXPIRED
-      - ACTIVE
-    CorePractitionerdatabaseschemaPerformanceIndicatorsInner:
-      type: object
-      properties:
-        totalComplaints:
-          type: integer
-          format: int32
-        clinicalComplaints:
-          type: integer
-          format: int32
-        serviceComplaints:
-          type: integer
-          format: int32
-        benefitsComplaints:
-          type: integer
-          format: int32
-        claimComplaints:
-          type: integer
-          format: int32
-        accessIssueComplaints:
-          type: integer
-          format: int32
-        reportDate:
-          $ref: '#/components/schemas/Date'
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
+        emailType:
           type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-        credWorkflowRecordOrigin:
-          type: string
-        credentialingDisplayGroupKey:
-          type: string
-    CoreFacilitydataschemaSanctionsInner:
-      type: object
-      properties:
-        dateOfReport:
-          $ref: '#/components/schemas/Date'
-        sanctionType:
-          type: string
-        typeOfAction:
-          type: string
-        data:
-          type: string
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        sanctionStartDate:
-          $ref: '#/components/schemas/Date'
         source:
           type: string
         createdAt:
@@ -3153,52 +3060,7 @@ components:
           $ref: '#/components/schemas/Date'
         updatedBy:
           type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/FacilityAttachment'
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        verifiedBy:
-          type: string
-    MdmProcessResponse:
-      type: object
-      properties:
-        requestId:
-          type: string
-        entityType:
-          type: string
-        entityId:
-          type: string
-        status:
-          $ref: '#/components/schemas/MdmProcessStatus'
-        executionSummary:
-          $ref: '#/components/schemas/MdmExecutionSummary'
-        stepResults:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/MdmStepResult'
-        error:
-          $ref: '#/components/schemas/MdmErrorDetail'
-    MdmExecutionSummary:
-      type: object
-      properties:
-        stepsExecuted:
-          type: array
-          items:
-            type: string
-        stepsSkipped:
-          type: array
-          items:
-            type: string
-        stepsFailed:
-          type: array
-          items:
-            type: string
-        totalDurationMs:
-          type: integer
-          format: int64
-    FacilityAddressesInner:
+    PractitionerAddressesInner:
       type: object
       properties:
         address1:
@@ -3225,71 +3087,37 @@ components:
           $ref: '#/components/schemas/Date'
         updatedBy:
           type: string
-        isPrimary:
-          type: boolean
-        county:
-          type: string
-        zipExtension:
-          type: string
-        latitude:
-          type: number
-        longitude:
-          type: number
-        stateFips:
-          type: string
-        countyFips:
-          type: string
-        formattedAddress:
-          type: string
-    CorePractitionerdatabaseschemaMalpracticeInsuranceInner:
-      type: object
-      properties:
-        carrierName:
-          type: string
-        expiryDate:
-          $ref: '#/components/schemas/Date'
-        effectiveDate:
-          $ref: '#/components/schemas/Date'
-        flaggedDate:
-          $ref: '#/components/schemas/Date'
-        source:
-          type: string
-        status:
-          type: string
-        policyNumber:
-          type: string
-        aggregateCoverageAmount:
-          type: string
-        occuranceCoverageAmount:
-          type: string
-        verifiedBy:
-          type: string
-        verifiedDate:
-          $ref: '#/components/schemas/Date'
-        type:
-          type: string
-        unlimitedCoverage:
-          type: boolean
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        createdBy:
-          type: string
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        updatedBy:
-          type: string
-        attachments:
-          type: array
-          items:
-            $ref: '#/components/schemas/Attachment1'
-        dataAcquireDate:
-          $ref: '#/components/schemas/Date'
-        sourceUpdateDate:
-          $ref: '#/components/schemas/Date'
         credWorkflowRecordOrigin:
           type: string
         credentialingDisplayGroupKey:
           type: string
+    CorePractitionerdatabaseschemaPracticeLocationsInnerLocationAccessibility:
+      type: object
+      properties:
+        adaAccessibilityFlag:
+          type: boolean
+        handicappedAccessFlag:
+          type: boolean
+        parkingAccessFlag:
+          type: boolean
+        restroomAccessFlag:
+          type: boolean
+        otherDisabilityServicesFlag:
+          type: boolean
+        ttyAccessFlag:
+          type: boolean
+        aslAccessFlag:
+          type: boolean
+        impairmentServicesFlag:
+          type: boolean
+        publicTransportationAccessFlag:
+          type: boolean
+        busAccessFlag:
+          type: boolean
+        subwayAccessFlag:
+          type: boolean
+        trainAccessFlag:
+          type: boolean
     PractitionerMedicaidInner:
       type: object
       properties:
@@ -3337,82 +3165,32 @@ components:
           type: string
         credentialingDisplayGroupKey:
           type: string
-    CorePractitionerResponse:
+    FacilityBusinessPurposeIsForCredentialing:
       type: object
       properties:
-        certifyId:
+        value:
+          type: boolean
+        reason:
           type: string
-        crosswalkId:
-          type: string
-        sourceId:
-          type: string
-        sourceUrl:
-          type: string
-        sourceType:
-          type: string
-        sourceName:
-          type: string
-        sourceDescription:
-          type: string
-        sourceTenantId:
-          type: string
-        sourceTags:
-          type: array
-          items:
-            type: string
-        data:
-          $ref: '#/components/schemas/CorePractitionerdataschema'
-        rawSourceData:
-          $ref: '#/components/schemas/JsonNode'
-        deletedData:
-          $ref: '#/components/schemas/JsonNode'
-        survivorId:
-          type: string
-        createdAt:
-          $ref: '#/components/schemas/Date'
-        updatedAt:
-          $ref: '#/components/schemas/Date'
-        mdmProcessResult:
-          $ref: '#/components/schemas/MdmProcessResponse'
-      title: CorePractitionerResponse
-    CorePractitionerdatabaseschemaCompactLicensesInner:
+    CorePractitionerdatabaseschemaMedicareInner:
       type: object
-      required:
-      - compactType
-      - licenseNumber
-      - coveredStates
       properties:
-        compactType:
+        medicareNumber:
           type: string
-        licenseNumber:
+        medicareState:
           type: string
         issueDate:
           $ref: '#/components/schemas/Date'
         expirationDate:
           $ref: '#/components/schemas/Date'
-        status:
+        source:
           type: string
-        homeLicenseNumber:
+        url:
           type: string
-        homeLicenseState:
-          type: string
-        homeLicenseType:
-          type: string
-        homeLicenseLinkSource:
-          $ref: '#/components/schemas/HomeLicenseLinkSourceEnum'
-        coveredStates:
-          type: array
-          items:
-            type: string
-            pattern: ^[A-Z]{2}$
-        effectiveStatus:
-          $ref: '#/components/schemas/EffectiveStatusEnum'
-        verifiedBy:
-          type: string
-        verifiedDate:
+        reportDate:
           $ref: '#/components/schemas/Date'
-        dataSource:
-          type: string
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
         createdAt:
           $ref: '#/components/schemas/Date'
         createdBy:
@@ -3420,6 +3198,228 @@ components:
         updatedAt:
           $ref: '#/components/schemas/Date'
         updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaCliaCertificatesInner:
+      type: object
+      properties:
+        certificateNumber:
+          type: string
+        expirationDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    CorePractitionerdatabaseschemaNppesInnerTaxonomiesInner:
+      type: object
+      properties:
+        code:
+          type: string
+        desc:
+          type: string
+        license:
+          type: string
+        primary:
+          type: boolean
+        state:
+          type: string
+        taxonomyGroup:
+          type: string
+    CorePractitionerdatabaseschemaLanguagesInner:
+      type: object
+      properties:
+        language:
+          type: string
+        isPrimary:
+          type: boolean
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
+          type: string
+    HomeLicenseLinkSourceEnum:
+      type: string
+      enum:
+      - INGESTED
+      - MANUAL
+      - UNLINKED
+    MdmErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        failedStep:
+          type: string
+    CorePractitionerdatabaseschemaNpdbReportsInnerMaintainedUnder:
+      type: object
+      properties:
+        statute:
+          type: array
+          items:
+            type: string
+    CorePractitionerdatabaseschemaChangeDetailsInner:
+      type: object
+      properties:
+        changeEffectiveDate:
+          $ref: '#/components/schemas/Date'
+        changeReasonCode:
+          type: string
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        rosterId:
+          type: string
+    CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialtyOtherSpecialty:
+      type: object
+      properties:
+        listedUnderPPOFlag:
+          type: boolean
+    CorePractitionerdatabaseschemaNpdbReportsInner:
+      type: object
+      properties:
+        ssn:
+          type: string
+        birthdate:
+          $ref: '#/components/schemas/Date'
+        flaggedDate:
+          $ref: '#/components/schemas/Date'
+        licensureField:
+          type: string
+        reportDate:
+          $ref: '#/components/schemas/Date'
+        processDate:
+          $ref: '#/components/schemas/Date'
+        verifiedBy:
+          type: string
+        data: {}
+        verifiedDate:
+          $ref: '#/components/schemas/Date'
+        typeOfAction:
+          type: string
+        createdDate:
+          $ref: '#/components/schemas/Date'
+        deceased:
+          type: string
+        paymentAmount:
+          type: string
+        paymentDate:
+          $ref: '#/components/schemas/Date'
+        patientAge:
+          type: string
+        patientGender:
+          type: string
+        patientType:
+          type: string
+        medicalConditionDescription:
+          type: string
+        procedureDescription:
+          type: string
+        allegationsDescription:
+          type: string
+        allegationNature:
+          type: string
+        specificAllegation:
+          type: string
+        specificAllegationDate:
+          $ref: '#/components/schemas/Date'
+        outcome:
+          type: string
+        source:
+          type: string
+        reportType:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+        gender:
+          type: string
+        npi:
+          type: string
+        homeAddress:
+          type: string
+        homeCity:
+          type: string
+        homeState:
+          type: string
+        homeZip:
+          type: string
+        dcn:
+          type: string
+        reportDCN:
+          type: string
+        notes:
+          type: array
+          items:
+            type: string
+        maintainedUnder:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerMaintainedUnder'
+        correctedFields:
+          type: array
+          items:
+            type: string
+        previousDCN:
+          type: string
+        previousTransaction:
+          type: string
+        databankSubjectId:
+          type: string
+          minLength: 1
+        otherName:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerOtherNameInner'
+        certification:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerCertification'
+        submitter:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerSubmitter'
+        enrollmentStatus:
+          $ref: '#/components/schemas/CorePractitionerdatabaseschemaNpdbReportsInnerEnrollmentStatus'
+        transactionTypeCode:
+          type: string
+        transactionType:
+          type: string
+        recentChangeDate:
+          $ref: '#/components/schemas/Date'
+        createdAt:
+          $ref: '#/components/schemas/Date'
+        createdBy:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/Date'
+        updatedBy:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment1'
+        dataAcquireDate:
+          $ref: '#/components/schemas/Date'
+        sourceUpdateDate:
+          $ref: '#/components/schemas/Date'
+        credWorkflowRecordOrigin:
+          type: string
+        credentialingDisplayGroupKey:
           type: string
   securitySchemes:
     jwt:

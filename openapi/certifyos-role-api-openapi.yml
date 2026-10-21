@@ -735,98 +735,38 @@ paths:
       - jwt: []
 components:
   schemas:
-    ErrorObject:
+    ApiError:
       type: object
-      description: Individual error object containing details about a specific validation or processing error
+      description: Standard API error response containing a list of error objects
       properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
-    PageLinks:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    RoleCreateRequest:
       type: object
-      description: HATEOAS-style pagination links.
+      required:
+      - name
+      description: Request body for creating a new role
       properties:
-        self:
+        name:
           type: string
-          description: Link to the current page.
-        next:
+          examples:
+          - Credentialing Reviewer
+          maxLength: 100
+          description: Role name
+        description:
           type: string
-          description: Link to the next page; null on the last page.
-        prev:
-          type: string
-          description: Link to the previous page; null on the first page.
+          examples:
+          - Read-only access to credentialing workflows and audit logs
+          maxLength: 500
+          description: Role description
     OffsetDateTime:
       type: string
       format: date-time
       examples:
       - '2022-03-10T12:15:50-04:00'
-    RoleResponseDto:
-      type: object
-      description: Role information response
-      properties:
-        id:
-          type: string
-          examples:
-          - 3fa85f64-5717-4562-b3fc-2c963f66afa6
-          description: Role ID
-        name:
-          type: string
-          examples:
-          - Business Admin
-          description: Role name
-        tenantId:
-          type: string
-          examples:
-          - 8f14e45f-ceea-467e-9906-ccfb98d21f95
-          description: Tenant ID
-        description:
-          type: string
-          examples:
-          - Full access to all operations
-          description: Role description
-        createdAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-          type: string
-          examples:
-          - '2026-01-15T09:30:00Z'
-          description: Creation timestamp
-        updatedAt:
-          $ref: '#/components/schemas/OffsetDateTime'
-          type: string
-          examples:
-          - '2026-02-03T14:12:45Z'
-          description: Last update timestamp
-        createdBy:
-          type: string
-          examples:
-          - b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
-          description: ID of the user who created the role
-        updatedBy:
-          type: string
-          examples:
-          - b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
-          description: ID of the user who last updated the role
     RolePermissionBulkUpdateRequest:
       type: object
       description: Request body for adding and/or removing permissions from a role in a single operation
@@ -845,37 +785,6 @@ components:
           items:
             type: string
           description: IDs of permissions to remove from the role. Omit or leave empty if only adding.
-    RoleListResponseDto:
-      type: object
-      description: Paginated list of roles
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoleResponseDto'
-          description: List of roles
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of roles
-        links:
-          $ref: '#/components/schemas/PageLinks'
-          type: object
-          description: Pagination links
-    RolePermissionAddRequest:
-      type: object
-      required:
-      - permissionIds
-      description: Request body for adding permissions to a role without removing existing ones
-      properties:
-        permissionIds:
-          type: array
-          examples:
-          - - 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
-            - 7a1e9c3d-8b2f-4a6e-9d3c-1f5b7e2a4c88
-          items:
-            type: string
-          description: IDs of the permissions to add to the role
     PermissionResponseDto:
       type: object
       description: Permission information response
@@ -926,33 +835,124 @@ components:
           - Read and comment access to credentialing workflows
           maxLength: 500
           description: Role description
-    ApiError:
+    RoleListResponseDto:
       type: object
-      description: Standard API error response containing a list of error objects
+      description: Paginated list of roles
       properties:
-        errors:
+        data:
           type: array
           items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    RoleCreateRequest:
+            $ref: '#/components/schemas/RoleResponseDto'
+          description: List of roles
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of roles
+        links:
+          $ref: '#/components/schemas/PageLinks'
+          type: object
+          description: Pagination links
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    PageLinks:
+      type: object
+      description: HATEOAS-style pagination links.
+      properties:
+        self:
+          type: string
+          description: Link to the current page.
+        next:
+          type: string
+          description: Link to the next page; null on the last page.
+        prev:
+          type: string
+          description: Link to the previous page; null on the first page.
+    RolePermissionAddRequest:
       type: object
       required:
-      - name
-      description: Request body for creating a new role
+      - permissionIds
+      description: Request body for adding permissions to a role without removing existing ones
       properties:
+        permissionIds:
+          type: array
+          examples:
+          - - 2c5ea4c0-4067-4c5f-9dd1-3f4a0d2c5b09
+            - 7a1e9c3d-8b2f-4a6e-9d3c-1f5b7e2a4c88
+          items:
+            type: string
+          description: IDs of the permissions to add to the role
+    RoleResponseDto:
+      type: object
+      description: Role information response
+      properties:
+        id:
+          type: string
+          examples:
+          - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+          description: Role ID
         name:
           type: string
           examples:
-          - Credentialing Reviewer
-          maxLength: 100
+          - Business Admin
           description: Role name
+        tenantId:
+          type: string
+          examples:
+          - 8f14e45f-ceea-467e-9906-ccfb98d21f95
+          description: Tenant ID
         description:
           type: string
           examples:
-          - Read-only access to credentialing workflows and audit logs
-          maxLength: 500
+          - Full access to all operations
           description: Role description
+        createdAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          examples:
+          - '2026-01-15T09:30:00Z'
+          description: Creation timestamp
+        updatedAt:
+          $ref: '#/components/schemas/OffsetDateTime'
+          type: string
+          examples:
+          - '2026-02-03T14:12:45Z'
+          description: Last update timestamp
+        createdBy:
+          type: string
+          examples:
+          - b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+          description: ID of the user who created the role
+        updatedBy:
+          type: string
+          examples:
+          - b7e685c1-6b2a-4e3a-9c1a-2f8b6d9e4a11
+          description: ID of the user who last updated the role
   securitySchemes:
     jwt:
       type: http

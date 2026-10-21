@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-outreach-settings-request-schema.json",
+  "title": "OutreachSettingsRequest",
+  "description": "Request to create or update outreach settings for a specific outreach type. The type is specified in the URL path, not in the request body.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-organization-outreach-settings-resource-api-openapi.yml#/components/schemas/OutreachSettingsRequest",
+  "type": "object",
+  "properties": {
+    "credentialingCycle": {
+      "type": "string",
+      "enum": [
+        "INITIAL",
+        "RECREDENTIALING"
+      ],
+      "description": "Credentialing cycle for which these settings apply"
+    },
+    "emailRecipientPreferences": {
+      "$ref": "#/$defs/EmailRecipientPreferencesDto",
+      "type": "object",
+      "description": "Email recipient preferences"
+    },
+    "template": {
+      "$ref": "#/$defs/OutreachTemplateDto",
+      "type": "object",
+      "description": "Email template configuration"
+    },
+    "outreachReasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/OutreachReasonDto"
+      },
+      "description": "List of outreach reasons with instructions"
+    },
+    "smartOutreach": {
+      "$ref": "#/$defs/SmartOutreachSettingsDto",
+      "type": "object",
+      "description": "Smart outreach automation settings"
+    }
+  },
+  "$defs": {
+    "EmailRecipientPreferencesDto": {
+      "type": "object",
+      "description": "Email recipient preferences for outreach",
+      "properties": {
+        "primaryEmail": {
+          "type": "boolean",
+          "description": "Enable Primary Email recipient"
+        },
+        "caqhPrimaryEmail": {
+          "type": "boolean",
+          "description": "Enable CAQH Primary Email recipient"
+        },
+        "credentialingPrimaryContact": {
+          "type": "boolean",
+          "description": "Enable Credentialing Primary Contact recipient"
+        },
+        "credentialingOfficeManager": {
+          "type": "boolean",
+          "description": "Enable Credentialing Office Manager recipient"
+        }
+      }
+    },
+    "OutreachLogoDto": {
+      "type": "object",
+      "description": "Logo settings for outreach email template",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to include the logo in emails"
+        },
+        "url": {
+          "type": "string",
+          "description": "Logo URL/address"
+        },
+        "width": {
+          "type": "string",
+          "description": "Logo display width"
+        }
+      }
+    },
+    "OutreachReasonDto": {
+      "type": "object",
+      "required": [
+        "reason",
+        "instruction"
+      ],
+      "description": "Outreach reason with instruction",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the outreach reason"
+        },
+        "reason": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Reason title"
+        },
+        "instruction": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Instruction text"
+        },
+        "isCaqhResolvable": {
+          "type": "boolean",
+          "description": "Whether the reason is resolvable directly in CAQH (external action, no upload)"
+        },
+        "submitFormText": {
+          "type": "string",
+          "description": "Text shown to the provider on the submit form for this reason"
+        }
+      }
+    },
+    "OutreachTemplateDto": {
+      "type": "object",
+      "required": [
+        "subject",
+        "body"
+      ],
+      "description": "Email template configuration for outreach",
+      "properties": {
+        "ccEmails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Template-specific CC email addresses"
+        },
+        "subject": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Email subject line with placeholders"
+        },
+        "body": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Email body content with placeholders (supports HTML/rich text)"
+        },
+        "logo": {
+          "$ref": "#/$defs/OutreachLogoDto",
+          "type": "object",
+          "description": "Logo settings"
+        }
+      }
+    },
+    "SmartOutreachSettingsDto": {
+      "type": "object",
+      "description": "Smart outreach automation settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable smart outreach automation"
+        },
+        "businessDaysBetweenAttempts": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Business days between outreach attempts (display value, persisted as hours)",
+          "minimum": 1
+        },
+        "maxAttemptsPerReason": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum outreach attempts per reason",
+          "minimum": 1
+        },
+        "recredCadenceDays": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32",
+          "description": "Recredentialing cadence in days (null disables recred override)",
+          "minimum": 1
+        },
+        "dryRunEnabled": {
+          "type": "boolean",
+          "description": "Dry run mode: evaluate exclusions without sending (per client)"
+        },
+        "useCalendarDays": {
+          "type": "boolean",
+          "description": "Count days between attempts on calendar days (weekends/holidays included) instead of business days. Defaults to false (business days)."
+        },
+        "caqhValidStatuses": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "CAQH provider_status values that qualify as a valid update and suppress outreach. Defaults to [\"Reattestation\", \"Initial Application Complete\"] when null or empty."
+        }
+      }
+    }
+  }
+}

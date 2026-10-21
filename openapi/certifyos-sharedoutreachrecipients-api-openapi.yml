@@ -75,36 +75,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    SharedOutreachRecipient:
-      type: object
-      required:
-      - email
-      - tenantIds
-      - sources
-      description: One address the composer may send to.
-      properties:
-        email:
-          type: string
-          description: The address, trimmed, in the casing it was first found in.
-        tenantIds:
-          type: array
-          items:
-            type: string
-          description: The member tenants holding this address, in tenant order.
-        sources:
-          type: array
-          items:
-            type: string
-          description: 'Where it was found, each one of: primaryEmail, caqhPrimaryEmail, secondaryEmail, emails (the practitioner email fields on a member workflow), or caqhExtracted (the email read from the member''s CAQH application form).'
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     SharedOutreachRecipientsResponse:
       type: object
       required:
@@ -116,6 +86,15 @@ components:
           items:
             $ref: '#/components/schemas/SharedOutreachRecipient'
           description: One entry per distinct address (case-insensitive); may be empty.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -144,6 +123,27 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
+    SharedOutreachRecipient:
+      type: object
+      required:
+      - email
+      - tenantIds
+      - sources
+      description: One address the composer may send to.
+      properties:
+        email:
+          type: string
+          description: The address, trimmed, in the casing it was first found in.
+        tenantIds:
+          type: array
+          items:
+            type: string
+          description: The member tenants holding this address, in tenant order.
+        sources:
+          type: array
+          items:
+            type: string
+          description: 'Where it was found, each one of: primaryEmail, caqhPrimaryEmail, secondaryEmail, emails (the practitioner email fields on a member workflow), or caqhExtracted (the email read from the member''s CAQH application form).'
   securitySchemes:
     jwt:
       type: http

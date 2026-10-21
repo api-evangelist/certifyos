@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-webhook-request-schema.json",
+  "title": "WebhookRequest",
+  "description": "Request to create a new webhook",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhook-api-openapi.yml#/components/schemas/WebhookRequest",
+  "type": "object",
+  "required": [
+    "webhookUrl",
+    "eventTypes"
+  ],
+  "properties": {
+    "webhookUrl": {
+      "type": "string",
+      "pattern": "^https?://[^\\s]+$",
+      "description": "The URL where webhook events will be sent"
+    },
+    "eventTypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "maxLength": 100,
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,3}$"
+      },
+      "description": "Event types this webhook should receive. A webhook receives an event if, and only if, the event type matches one of these strings **exactly** (case-sensitive).\n\n\n**Open namespace.** Any lowercase `domain.entity.action` value of 2-4 dot-separated segments is accepted, so you can subscribe to your own events and publish them via POST /webhooks/events without a change to this service.\n\n\n**Event types published by CertifyOS:**\n\n- `credential_workflow.status.changed` - Triggered automatically when a credentialing workflow status changes (timeline event is created). See webhook-api-credential-workflow-events.md for detailed payload structure and documentation.\n\n- `facility_credential_workflow.status.changed` - Triggered automatically when a facility credentialing workflow status changes.\n\n- `form.submission.submitted` - Triggered when a form submission is received by POST /forms/submissions.\n\n- `roster_job.status.changed` - Triggered when a roster job reaches a client-facing status (PENDING_CORRECTION, PENDING_APPROVAL, IMPORTED, FAILED).\n\n- `facility.global_termination.completed` - Triggered once per facility when a facility global termination (POST /facilities/terminate) completes. Payload: `certifyFacilityId`, `facilityName`, `npi`, `tin`, `terminationDate`, `terminationReason`, `status`. A global termination ends everything the facility has, so there is no per-location detail. `facilityName`, `npi` and `tin` are read from the facility and are `null` when unavailable. \n\n- `practitioner.terminated` - Triggered when a practitioner is terminated via PUT /practitioners/terminate (any of the 9 `terminationType` values, including `FULL_EXIT`) or by a roster STOP row. Payload: `certifyPractitionerId`, `npi`, `terminationType`, `terminationDate`, `terminationReason`. Keys are always present; a value that is unknown or not applicable is sent as an explicit `null`."
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Custom headers to include in webhook requests"
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Whether the webhook is active. Defaults to true if not provided"
+    },
+    "oauthConfiguration": {
+      "$ref": "#/$defs/WebhookOauthConfiguration",
+      "type": "object",
+      "description": "Optional OAuth client-credentials configuration. When provided, a token is minted before each delivery and sent as Authorization: Bearer <token>."
+    }
+  },
+  "$defs": {
+    "WebhookOauthConfiguration": {
+      "type": "object",
+      "required": [
+        "tokenUrl",
+        "clientId",
+        "clientSecret"
+      ],
+      "description": "OAuth client-credentials configuration. When present, a token is fetched before each delivery and injected as Authorization: Bearer <token>.",
+      "properties": {
+        "tokenUrl": {
+          "type": "string",
+          "pattern": "",
+          "description": "OAuth token endpoint URL"
+        },
+        "clientId": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "OAuth client ID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "OAuth client secret"
+        },
+        "scope": {
+          "type": "string",
+          "description": "OAuth scope(s) to request, space-separated"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Additional headers to send with the token request"
+        },
+        "resource": {
+          "type": "string",
+          "description": "Resource to request"
+        }
+      }
+    }
+  }
+}

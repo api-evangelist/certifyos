@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-replay-termination-webhooks-request-schema.json",
+  "title": "ReplayTerminationWebhooksRequest",
+  "description": "Request to replay practitioner.terminated webhooks for already-terminated practitioners",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhook-api-openapi.yml#/components/schemas/ReplayTerminationWebhooksRequest",
+  "type": "object",
+  "required": [
+    "certifyPractitionerIds"
+  ],
+  "properties": {
+    "certifyPractitionerIds": {
+      "type": "array",
+      "maxItems": 500,
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Practitioners to replay the termination event for. Each must already be terminated; ids with no recorded terminationDate are skipped."
+    },
+    "terminationType": {
+      "type": "string",
+      "description": "Termination type to stamp on the replayed events. Optional: `terminationType` is not persisted with the termination, so it cannot be reconstructed. When omitted the replayed payload carries an explicit `null` for this field; every other field is rebuilt from the practitioner's current record."
+    }
+  }
+}

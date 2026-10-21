@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-outreach-detail-response-schema.json",
+  "title": "OutreachDetailResponse",
+  "description": "Response containing outreach details including emails, replies, and timeline",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-credentialing-outreach-resource-api-openapi.yml#/components/schemas/OutreachDetailResponse",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Outreach record ID"
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Tenant that owns this outreach record"
+    },
+    "workflowId": {
+      "type": "string",
+      "description": "Credentialing workflow (practitioner or facility) this outreach was sent for"
+    },
+    "outreachType": {
+      "type": "string",
+      "enum": [
+        "PRACTITIONER_CREDENTIALING",
+        "FACILITY_CREDENTIALING",
+        "PRACTITIONER_MONITORING"
+      ],
+      "description": "Outreach category this record was created for"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/OutreachReasonWithLabel"
+      },
+      "description": "List of outreach reasons with IDs and labels. Note: This field changed from List<String> to List<OutreachReasonWithLabel> to provide enriched reason information with labels."
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Whether this outreach is still open/awaiting a response"
+    },
+    "attemptsCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of outreach emails sent for this record"
+    },
+    "lastAttemptedAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Timestamp of the most recent outreach attempt"
+    },
+    "workflowStatus": {
+      "type": "string",
+      "description": "Status of the referenced credentialing workflow at the time of this response"
+    },
+    "createdBy": {
+      "type": "string",
+      "description": "User ID that created this outreach record"
+    },
+    "createdByName": {
+      "type": "string",
+      "description": "Display name of the user that created this outreach record"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Timestamp this outreach record was created"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Timestamp this outreach record was last updated"
+    },
+    "emails": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EmailWithReplies"
+      },
+      "description": "Full email thread for this outreach, each with its replies and attachments"
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TimelineItem"
+      },
+      "description": "Chronological activity entries recording status transitions and key events"
+    }
+  },
+  "$defs": {
+    "Attachment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Attachment ID, usable with GET /{outreach-resource}/attachments/{attachmentId}/download"
+        },
+        "name": {
+          "type": "string",
+          "description": "Original file name of the attachment"
+        },
+        "type": {
+          "type": "string",
+          "description": "MIME type of the attachment"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "description": "File size in bytes"
+        },
+        "reasonId": {
+          "type": "string",
+          "description": "Outreach reason this attachment answers (provider portal submissions only)"
+        }
+      }
+    },
+    "EmailReply": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Reply record ID"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Reply subject line"
+        },
+        "body": {
+          "type": "string",
+          "description": "Reply body content"
+        },
+        "fromAddress": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sender email address(es) of the reply"
+        },
+        "toAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Recipient email addresses of the reply"
+        },
+        "ccAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CC email addresses of the reply"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "INBOUND",
+            "OUTBOUND"
+          ],
+          "description": "Whether this reply was sent by CertifyOS or received from a recipient"
+        },
+        "deliveryStatus": {
+          "type": "string",
+          "description": "Delivery status for this reply, when applicable"
+        },
+        "submitterEmail": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this reply was created"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this reply was last updated"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          },
+          "description": "Files attached to this reply; each id is usable with the attachment download endpoint"
+        }
+      }
+    },
+    "EmailWithReplies": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Email record ID"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Email subject line"
+        },
+        "body": {
+          "type": "string",
+          "description": "Email body content"
+        },
+        "fromAddress": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sender email address(es)"
+        },
+        "toAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Recipient email addresses"
+        },
+        "ccAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "CC email addresses"
+        },
+        "bccAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "BCC email addresses"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "INBOUND",
+            "OUTBOUND"
+          ],
+          "description": "Whether this email was sent by CertifyOS or received from a recipient"
+        },
+        "deliveryStatus": {
+          "type": "string",
+          "enum": [
+            "processed",
+            "deferred",
+            "delivered"
+          ],
+          "description": "Latest SendGrid delivery status for this email"
+        },
+        "engagementData": {
+          "type": "string",
+          "description": "Raw engagement event data reported by SendGrid for this email"
+        },
+        "dispatched": {
+          "type": "boolean",
+          "description": "Whether this email was successfully dispatched via SendGrid"
+        },
+        "sendgridId": {
+          "type": "string",
+          "description": "SendGrid message ID for this email, null if it was never dispatched"
+        },
+        "statusCode": {
+          "type": "integer",
+          "format": "int32",
+          "description": "HTTP status code returned by SendGrid for this email's send attempt"
+        },
+        "submitterEmail": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this email record was created"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this email record was last updated"
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EmailReply"
+          },
+          "description": "Replies received to this email"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment"
+          },
+          "description": "Files attached to this email; each id is usable with the attachment download endpoint"
+        }
+      }
+    },
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "OutreachReasonWithLabel": {
+      "type": "object",
+      "description": "Outreach reason with ID and label",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the outreach reason"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display label for the outreach reason"
+        }
+      }
+    },
+    "TimelineItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID of the underlying outreach or email record this timeline entry describes"
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable label for this timeline entry"
+        },
+        "date": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp this event occurred"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "outreach",
+            "email"
+          ],
+          "description": "Kind of record this entry describes"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status label at this point in the timeline"
+        }
+      }
+    }
+  }
+}

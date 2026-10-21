@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-roster-response-schema.json",
+  "title": "RosterResponse",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-roster-api-openapi.yml#/components/schemas/RosterResponse",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "tenantId": {
+      "type": "string"
+    },
+    "templateId": {
+      "type": "string"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/Date"
+    },
+    "createdBy": {
+      "type": "string"
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Date"
+    },
+    "updatedBy": {
+      "type": "string"
+    },
+    "data": {
+      "$ref": "#/$defs/RosterJobData"
+    },
+    "invalidCount": {
+      "type": "integer",
+      "format": "int64"
+    },
+    "validCount": {
+      "type": "integer",
+      "format": "int64"
+    },
+    "completedCount": {
+      "type": "integer",
+      "format": "int64"
+    },
+    "failedCount": {
+      "type": "integer",
+      "format": "int64"
+    }
+  },
+  "$defs": {
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "RosterAttemptSummary": {
+      "title": "RosterAttemptSummary",
+      "type": "object",
+      "description": "One finished upload attempt of a roster job, as retained in the job's attempts ledger. Keys are abbreviated because the ledger is stored inline on the job record; the full row-level history for an attempt lives in the history store, not here.",
+      "properties": {
+        "n": {
+          "type": "integer",
+          "description": "Attempt number this entry describes; 1 is the first upload."
+        },
+        "f": {
+          "type": "string",
+          "description": "Name of the file uploaded for this attempt."
+        },
+        "s": {
+          "type": "string",
+          "description": "The status this attempt finished in, before the next upload superseded it.",
+          "enum": [
+            "PENDING",
+            "IN_PROGRESS",
+            "VALIDATION_IN_PROGRESS",
+            "VALIDATION_FAILED",
+            "PRE_PROCESSING",
+            "VALIDATED",
+            "COMPLETED",
+            "APPROVED",
+            "PARTIAL_IMPORTED",
+            "REVALIDATE",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "t": {
+          "type": "integer",
+          "description": "Rows found in that attempt's file."
+        },
+        "v": {
+          "type": "integer",
+          "description": "Rows that passed validation on that attempt."
+        },
+        "i": {
+          "type": "integer",
+          "description": "Rows that failed validation on that attempt."
+        },
+        "at": {
+          "type": "string",
+          "description": "When the attempt finished, as an ISO-8601 instant."
+        },
+        "c": {
+          "type": "boolean",
+          "description": "Whether that attempt's rows reached long-term history. False means the capture did not complete, so this summary is the only surviving record of the attempt."
+        }
+      }
+    },
+    "RosterJobData": {
+      "title": "RosterJobData",
+      "type": "object",
+      "description": "Payload of a roster import job. Keys appear as processing progresses - none is guaranteed present at every stage, and new keys may be introduced by newer features, so treat unknown keys as valid. Key names mirror RosterDataRecord.",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Current stage of the job. See the roster read operations' descriptions for the meaning of each value.",
+          "enum": [
+            "PENDING",
+            "IN_PROGRESS",
+            "VALIDATION_IN_PROGRESS",
+            "VALIDATION_FAILED",
+            "PRE_PROCESSING",
+            "VALIDATED",
+            "COMPLETED",
+            "APPROVED",
+            "PARTIAL_IMPORTED",
+            "REVALIDATE",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "jobType": {
+          "type": "string",
+          "description": "Kind of entity the file contains. GROUP uploads require the tenant's supportGroupRosters configuration.",
+          "enum": [
+            "PRACTITIONER",
+            "FACILITY",
+            "GROUP"
+          ]
+        },
+        "templateId": {
+          "type": "string",
+          "description": "Identifier of the roster template describing the file's column layout."
+        },
+        "description": {
+          "type": "string",
+          "description": "Free-text note supplied when the roster was uploaded."
+        },
+        "filename": {
+          "type": "string",
+          "description": "Name of the file currently attached to the job."
+        },
+        "filePath": {
+          "type": "string",
+          "description": "Storage path of that file, relative to the bucket."
+        },
+        "bucketName": {
+          "type": "string",
+          "description": "Storage bucket holding the file."
+        },
+        "sheetName": {
+          "type": "string",
+          "description": "Worksheet read from the file, for .xlsx uploads only."
+        },
+        "initialFilename": {
+          "type": "string",
+          "description": "The file first uploaded, retained after a reupload replaces it."
+        },
+        "initialFilePath": {
+          "type": "string",
+          "description": "Storage path of the first uploaded file, retained after a reupload."
+        },
+        "uploadCount": {
+          "type": "integer",
+          "description": "How many times a file has been uploaded to this job; 1 until the first reupload."
+        },
+        "attemptNumber": {
+          "type": "integer",
+          "description": "Which upload attempt the job is currently on. Increments on every reupload, including an internal admin's - unlike uploadCount, which does not. Absent on jobs that predate attempt tracking, which means no history was recorded for them rather than that they had zero attempts."
+        },
+        "attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RosterAttemptSummary"
+          },
+          "description": "Summaries of this job's finished upload attempts, oldest first. Bounded, not complete: the job record keeps only the more recent attempts so it stays small - how many is configurable, and a size guard on the stored array can leave fewer - so treat the array as a window on the history rather than all of it, and read attemptsTruncated for how many summaries were dropped. Returned on single-job reads and on list responses. GET /roster/{id}/attempts serves this same bounded set; it does not return the dropped summaries."
+        },
+        "attemptsTruncated": {
+          "type": "integer",
+          "description": "How many attempt summaries have been dropped from the inline cache to keep the job record small. Greater than zero means attempts is not the full history. The dropped summaries are not served by GET /roster/{id}/attempts either - that endpoint returns this same bounded array - so this count, and not a second request, is what tells you history is missing."
+        },
+        "orderedFileColumns": {
+          "type": "string",
+          "description": "The file's column headers in the order they appear in the header row, joined by the \",/\" separator."
+        },
+        "totalRecords": {
+          "type": "integer",
+          "description": "Rows found in the file."
+        },
+        "validRecords": {
+          "type": "integer",
+          "description": "Rows that passed validation."
+        },
+        "invalidRecords": {
+          "type": "integer",
+          "description": "Rows that failed validation."
+        },
+        "softErrorRecords": {
+          "type": "integer",
+          "description": "Rows whose only validation issues are soft warnings; still imported on approval. Disjoint from validRecords and invalidRecords; absent on rosters validated before CP-37160, where it reads as 0."
+        },
+        "completedRecords": {
+          "type": "integer",
+          "description": "Rows that were ingested successfully."
+        },
+        "failedRecords": {
+          "type": "integer",
+          "description": "Rows that could not be ingested."
+        },
+        "rosterFileUrl": {
+          "type": "string",
+          "description": "Time-limited link to the uploaded roster file. Present on the single-job read only."
+        },
+        "templateUrl": {
+          "type": "string",
+          "description": "Time-limited link to the template the roster was mapped with. Present on the single-job read only."
+        },
+        "mappingsFileUrl": {
+          "type": "string",
+          "description": "Time-limited link to the resolved column mappings. Present on the single-job read only."
+        },
+        "failureReasons": {
+          "type": "string",
+          "description": "Validation or ingestion errors explaining why rows did not succeed."
+        },
+        "importedAt": {
+          "type": "string",
+          "description": "When ingestion finished, as an ISO-8601 timestamp in UTC."
+        },
+        "roster-export-path": {
+          "type": "string",
+          "description": "Storage path of the failed-records export, present once one has been generated."
+        },
+        "roster-export-url": {
+          "type": "string",
+          "description": "Time-limited link to the failed-records export, present once one has been generated."
+        }
+      }
+    }
+  }
+}

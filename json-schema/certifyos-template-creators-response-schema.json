@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-template-creators-response-schema.json",
+  "title": "TemplateCreatorsResponse",
+  "description": "Distinct egress-template creators, with a truncation signal for the bounded scan",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-egresstemplate-api-openapi.yml#/components/schemas/TemplateCreatorsResponse",
+  "type": "object",
+  "properties": {
+    "creators": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TemplateCreatorResponse"
+      },
+      "description": "Distinct creators, in first-seen order"
+    },
+    "truncated": {
+      "type": "boolean",
+      "description": "True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned."
+    }
+  },
+  "$defs": {
+    "TemplateCreatorResponse": {
+      "type": "object",
+      "description": "A distinct egress-template creator",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Raw createdBy user ID (the value to filter the list endpoint by)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Resolved display name, or null when unresolved"
+        },
+        "email": {
+          "type": "string",
+          "description": "Resolved email, or null when unresolved"
+        }
+      }
+    }
+  }
+}

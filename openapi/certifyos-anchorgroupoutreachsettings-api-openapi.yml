@@ -153,16 +153,37 @@ paths:
       - jwt: []
 components:
   schemas:
-    Reason:
+    Logo:
       type: object
       properties:
-        id:
+        enabled:
+          type: boolean
+        url:
           type: string
-          description: Server-assigned; omit for a new reason
-        reason:
+        width:
           type: string
-        instruction:
-          type: string
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    SmartOutreach:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        businessDaysBetweenAttempts:
+          type: integer
+          format: int32
+          minimum: 1
+        maxAttemptsPerReason:
+          type: integer
+          format: int32
+          minimum: 1
     Template:
       type: object
       properties:
@@ -176,6 +197,57 @@ components:
           type: string
         logo:
           $ref: '#/components/schemas/Logo'
+    Recipients1:
+      type: object
+      properties:
+        primaryEmail:
+          type: boolean
+        caqhPrimaryEmail:
+          type: boolean
+        credentialingPrimaryContact:
+          type: boolean
+        credentialingOfficeManager:
+          type: boolean
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    Reason:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Server-assigned; omit for a new reason
+        reason:
+          type: string
+        instruction:
+          type: string
+    AnchorGroupOutreachSettingsRequest:
+      type: object
+      description: Save one cycle of an anchor group's outreach settings
+      properties:
+        version:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: The version last read; null to create the group's first settings
+        emailRecipientPreferences:
+          $ref: '#/components/schemas/Recipients'
+          type: object
+          description: 'The To: which practitioner addresses outreach goes to (both cycles)'
+        template:
+          $ref: '#/components/schemas/Template'
+          type: object
+          description: This cycle's template; null keeps the stored one
+        outreachReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reason'
+          description: This cycle's reasons; new ones omit id
+        smartOutreach:
+          $ref: '#/components/schemas/SmartOutreach'
+          type: object
+          description: This cycle's Smart Outreach
     SmartOutreach1:
       type: object
       properties:
@@ -198,6 +270,17 @@ components:
           type: array
           items:
             type: string
+    Recipients:
+      type: object
+      properties:
+        primaryEmail:
+          type: boolean
+        caqhPrimaryEmail:
+          type: boolean
+        credentialingPrimaryContact:
+          type: boolean
+        credentialingOfficeManager:
+          type: boolean
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -226,6 +309,19 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
+    Reason1:
+      type: object
+      properties:
+        id:
+          type: string
+        reason:
+          type: string
+        instruction:
+          type: string
+        isCaqhResolvable:
+          type: boolean
+        submitFormText:
+          type: string
     Template1:
       type: object
       properties:
@@ -248,82 +344,6 @@ components:
           type: string
         width:
           type: string
-    Reason1:
-      type: object
-      properties:
-        id:
-          type: string
-        reason:
-          type: string
-        instruction:
-          type: string
-        isCaqhResolvable:
-          type: boolean
-        submitFormText:
-          type: string
-    AnchorGroupOutreachSettingsRequest:
-      type: object
-      description: Save one cycle of an anchor group's outreach settings
-      properties:
-        version:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          description: The version last read; null to create the group's first settings
-        emailRecipientPreferences:
-          $ref: '#/components/schemas/Recipients'
-          type: object
-          description: 'The To: which practitioner addresses outreach goes to (both cycles)'
-        template:
-          $ref: '#/components/schemas/Template'
-          type: object
-          description: This cycle's template; null keeps the stored one
-        outreachReasons:
-          type: array
-          items:
-            $ref: '#/components/schemas/Reason'
-          description: This cycle's reasons; new ones omit id
-        smartOutreach:
-          $ref: '#/components/schemas/SmartOutreach'
-          type: object
-          description: This cycle's Smart Outreach
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    SmartOutreach:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        businessDaysBetweenAttempts:
-          type: integer
-          format: int32
-          minimum: 1
-        maxAttemptsPerReason:
-          type: integer
-          format: int32
-          minimum: 1
-    Recipients:
-      type: object
-      properties:
-        primaryEmail:
-          type: boolean
-        caqhPrimaryEmail:
-          type: boolean
-        credentialingPrimaryContact:
-          type: boolean
-        credentialingOfficeManager:
-          type: boolean
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
     AnchorGroupOutreachSettingsResponse:
       type: object
       description: One cycle's view of an anchor group's outreach settings
@@ -367,26 +387,6 @@ components:
           $ref: '#/components/schemas/Instant'
         updatedBy:
           type: string
-    Logo:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        url:
-          type: string
-        width:
-          type: string
-    Recipients1:
-      type: object
-      properties:
-        primaryEmail:
-          type: boolean
-        caqhPrimaryEmail:
-          type: boolean
-        credentialingPrimaryContact:
-          type: boolean
-        credentialingOfficeManager:
-          type: boolean
   securitySchemes:
     jwt:
       type: http

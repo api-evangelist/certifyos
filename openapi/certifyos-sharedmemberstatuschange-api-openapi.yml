@@ -79,87 +79,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    SharedMemberStatusChangeRequest:
-      type: object
-      required:
-      - workflowIds
-      - timelineEventData
-      description: Request to change the status of a shared workflow's members.
-      properties:
-        workflowIds:
-          type: array
-          maxItems: 500
-          minItems: 1
-          items:
-            type: string
-            pattern: \S
-          description: Member workflow ids to move. At most 500 entries; blanks are rejected and duplicates removed (first occurrence wins), so a repeated id is moved once.
-        timelineEventData:
-          $ref: '#/components/schemas/CreateTimelineEventRequest'
-          type: object
-          description: Timeline event to apply to each member; its name is the target status.
-        memberReasons:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/MemberReason'
-          description: Optional change reason per member, keyed by workflow id. A member with an entry uses it; the others use timelineEventData.changeReason. Every key must also be in workflowIds.
-    MemberReason:
-      type: object
-      description: One member's own change reason, and for a single-member request its hide choices.
-      properties:
-        changeReason:
-          type: string
-          maxLength: 1000
-          description: This member's change reason; at most 1000 characters.
-        hiddenCoverKeys:
-          type: array
-          maxItems: 100
-          items:
-            type: string
-            pattern: \S
-          description: Cover keys to hide from the packet. Allowed only when the request moves exactly one workflow; at most 100 non-blank entries.
-        hiddenFindingRuleKeys:
-          type: array
-          maxItems: 100
-          items:
-            type: string
-            pattern: \S
-          description: The full desired set of non-clean reasons (finding rule keys) hidden from the packet. Absent leaves the marks as they are; an empty list removes every mark. Allowed only when the request moves exactly one workflow; at most 100 non-blank entries.
-        acknowledgedCoverKeys:
-          type: array
-          maxItems: 500
-          items:
-            type: string
-            pattern: \S
-          description: 'CP-42729: cover keys of the open PSV blockers this reason moves past, as the progression read returned them. Allowed with any number of members; at most 500 non-blank entries. When the open blockers are not all among them the member is refused with BLOCKERS_CHANGED.'
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
     SharedMemberStatusChangeResponse:
       type: object
       required:
@@ -203,70 +122,15 @@ components:
           examples:
           - PSV_READY
           description: The group's derived status after the recompute.
-    StatusChangeResult:
+    ApiError:
       type: object
-      description: Result of a single workflow status change
+      description: Standard API error response containing a list of error objects
       properties:
-        workflowId:
-          type: string
-          examples:
-          - a2b4f213-f56e-49b7-9ffe-070ff70f0539
-          description: Workflow ID that was processed
-        timelineEvent:
-          $ref: '#/components/schemas/TimelineEventResponse'
-          type: object
-          description: Timeline event response if successful
-        errorMessage:
-          type: string
-          description: Error message if the operation failed
-        errorCode:
-          type: string
-          description: Error code if the operation failed
-        blockers:
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/GatedRuleItem'
-          description: 'CP-42729: the open PSV blockers when the PSV progression gate refused the move; absent otherwise'
-    TimelineEventResponse:
-      type: object
-      description: Response containing timeline event information
-      properties:
-        id:
-          type: string
-          examples:
-          - te_123456
-          description: Unique identifier for the timeline event
-        workflowId:
-          type: string
-          examples:
-          - cw_123456
-          description: ID of the associated credentialing workflow
-        data:
-          $ref: '#/components/schemas/TimelineEventData'
-          type: object
-          description: Timeline event data containing name, changeReason, and date fields
-        createdBy:
-          type: string
-          examples:
-          - user_123456
-          description: ID of the user who created the timeline event
-        updatedBy:
-          type: string
-          examples:
-          - user_123456
-          description: ID of the user who last updated the timeline event
-        createdAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          description: Timestamp when the timeline event was created
-        updatedAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          examples:
-          - '2024-01-01T00:00:00Z'
-          description: Timestamp when the timeline event was last updated
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     NextCredentialingDateChangeLogEntry:
       type: object
       required:
@@ -307,46 +171,6 @@ components:
           examples:
           - '2024-01-15T10:30:00Z'
           description: Timestamp when the change was made
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    GatedRuleItem:
-      type: object
-      required:
-      - ruleKey
-      description: 'A PSV rule result: its key, the PSV type it belongs to and a description'
-      properties:
-        ruleKey:
-          type: string
-          examples:
-          - LICENSE_ACTIVE
-          description: Key of the rule
-        psvType:
-          type: string
-          examples:
-          - License
-          description: PSV type the rule belongs to, '-' when unknown
-        description:
-          type: string
-          examples:
-          - License is expired
-          description: Human readable description of the rule result
-        coverKey:
-          type: string
-          examples:
-          - LICENSE_ACTIVE|lic_1
-          description: Stable key of the open blocker, used to match covers and acknowledgements
-        hiddenFromPacket:
-          type: boolean
-          examples:
-          - true
-          description: True when the analyst chose to hide this rule from the PSV packet (CP-40893)
     Instant:
       type: string
       format: date-time
@@ -395,11 +219,163 @@ components:
             type: string
             pattern: \S
           description: 'Single-tenant Withdraw / Cancel at PSV Complete: the full desired set of non-clean reasons (finding rule keys) hidden from the packet. Absent leaves the marks as they are; an empty list removes every mark; a key that is not a finding is ignored. Request-only. Ignored at PSV Ready or later and when PSV transparency is off for the tenant; refused on the bulk route. At most 100 non-blank entries.'
+    GatedRuleItem:
+      type: object
+      required:
+      - ruleKey
+      description: 'A PSV rule result: its key, the PSV type it belongs to and a description'
+      properties:
+        ruleKey:
+          type: string
+          examples:
+          - LICENSE_ACTIVE
+          description: Key of the rule
+        psvType:
+          type: string
+          examples:
+          - License
+          description: PSV type the rule belongs to, '-' when unknown
+        description:
+          type: string
+          examples:
+          - License is expired
+          description: Human readable description of the rule result
+        coverKey:
+          type: string
+          examples:
+          - LICENSE_ACTIVE|lic_1
+          description: Stable key of the open blocker, used to match covers and acknowledgements
+        hiddenFromPacket:
+          type: boolean
+          examples:
+          - true
+          description: True when the analyst chose to hide this rule from the PSV packet (CP-40893)
+    MemberReason:
+      type: object
+      description: One member's own change reason, and for a single-member request its hide choices.
+      properties:
+        changeReason:
+          type: string
+          maxLength: 1000
+          description: This member's change reason; at most 1000 characters.
+        hiddenCoverKeys:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            pattern: \S
+          description: Cover keys to hide from the packet. Allowed only when the request moves exactly one workflow; at most 100 non-blank entries.
+        hiddenFindingRuleKeys:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+            pattern: \S
+          description: The full desired set of non-clean reasons (finding rule keys) hidden from the packet. Absent leaves the marks as they are; an empty list removes every mark. Allowed only when the request moves exactly one workflow; at most 100 non-blank entries.
+        acknowledgedCoverKeys:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+            pattern: \S
+          description: 'CP-42729: cover keys of the open PSV blockers this reason moves past, as the progression read returned them. Allowed with any number of members; at most 500 non-blank entries. When the open blockers are not all among them the member is refused with BLOCKERS_CHANGED.'
+    StatusChangeResult:
+      type: object
+      description: Result of a single workflow status change
+      properties:
+        workflowId:
+          type: string
+          examples:
+          - a2b4f213-f56e-49b7-9ffe-070ff70f0539
+          description: Workflow ID that was processed
+        timelineEvent:
+          $ref: '#/components/schemas/TimelineEventResponse'
+          type: object
+          description: Timeline event response if successful
+        errorMessage:
+          type: string
+          description: Error message if the operation failed
+        errorCode:
+          type: string
+          description: Error code if the operation failed
+        blockers:
+          type: array
+          items:
+            $ref: '#/components/schemas/GatedRuleItem'
+          description: 'CP-42729: the open PSV blockers when the PSV progression gate refused the move; absent otherwise'
     LocalDate:
       type: string
       format: date
       examples:
       - '2022-03-10'
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    TimelineEventResponse:
+      type: object
+      description: Response containing timeline event information
+      properties:
+        id:
+          type: string
+          examples:
+          - te_123456
+          description: Unique identifier for the timeline event
+        workflowId:
+          type: string
+          examples:
+          - cw_123456
+          description: ID of the associated credentialing workflow
+        data:
+          $ref: '#/components/schemas/TimelineEventData'
+          type: object
+          description: Timeline event data containing name, changeReason, and date fields
+        createdBy:
+          type: string
+          examples:
+          - user_123456
+          description: ID of the user who created the timeline event
+        updatedBy:
+          type: string
+          examples:
+          - user_123456
+          description: ID of the user who last updated the timeline event
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          description: Timestamp when the timeline event was created
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          examples:
+          - '2024-01-01T00:00:00Z'
+          description: Timestamp when the timeline event was last updated
     TimelineEventData:
       type: object
       required:
@@ -473,6 +449,30 @@ components:
           examples:
           - true
           description: Indicates if the timeline event is an override bypassing the default validations
+    SharedMemberStatusChangeRequest:
+      type: object
+      required:
+      - workflowIds
+      - timelineEventData
+      description: Request to change the status of a shared workflow's members.
+      properties:
+        workflowIds:
+          type: array
+          maxItems: 500
+          minItems: 1
+          items:
+            type: string
+            pattern: \S
+          description: Member workflow ids to move. At most 500 entries; blanks are rejected and duplicates removed (first occurrence wins), so a repeated id is moved once.
+        timelineEventData:
+          $ref: '#/components/schemas/CreateTimelineEventRequest'
+          type: object
+          description: Timeline event to apply to each member; its name is the target status.
+        memberReasons:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MemberReason'
+          description: Optional change reason per member, keyed by workflow id. A member with an entry uses it; the others use timelineEventData.changeReason. Every key must also be in workflowIds.
   securitySchemes:
     jwt:
       type: http

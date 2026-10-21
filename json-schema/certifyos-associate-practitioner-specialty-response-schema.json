@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-associate-practitioner-specialty-response-schema.json",
+  "title": "AssociatePractitionerSpecialtyResponse",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-practitioner-api-openapi.yml#/components/schemas/AssociatePractitionerSpecialtyResponse",
+  "type": "object",
+  "properties": {
+    "practitionerSpecialty": {
+      "$ref": "#/$defs/TenantPractitionerSpecialtyResponse",
+      "type": "object",
+      "description": "Response from creating the practitioner specialty association"
+    },
+    "groupPractitionerSpecialty": {
+      "$ref": "#/$defs/TenantGroupPractitionerSpecialtyResponse",
+      "type": "object",
+      "description": "Response from creating the group practitioner specialty association"
+    },
+    "groupPractitionerLocation": {
+      "$ref": "#/$defs/GroupPractitionerLocationResponse1",
+      "type": "object",
+      "description": "Response from the group practitioner location lookup/update"
+    },
+    "groupLocationSpecialty": {
+      "$ref": "#/$defs/TenantGroupLocationSpecialtyResponse",
+      "type": "object",
+      "description": "Response from creating the group location specialty association"
+    },
+    "groupPractitionerLocationSpecialty": {
+      "$ref": "#/$defs/GroupPractitionerLocationSpecialtyResponse",
+      "type": "object",
+      "description": "Response from creating the group practitioner location specialty association"
+    },
+    "groupLocationParticipationSpecialty": {
+      "$ref": "#/$defs/TenantGroupLocationParticipationSpecialtyResponse",
+      "type": "object",
+      "description": "Response from creating the group location participation specialty association"
+    },
+    "groupPractitionerLocationNetworkSpecialty": {
+      "$ref": "#/$defs/TenantGroupPractitionerLocationNetworkSpecialtyResponse",
+      "type": "object",
+      "description": "Response from creating the group practitioner location network specialty association"
+    },
+    "groupPractitionerNetwork": {
+      "$ref": "#/$defs/TenantGroupPractitionerNetworkResponse",
+      "type": "object",
+      "description": "Response from the group practitioner network lookup/update"
+    },
+    "groupPractitionerLocationNetwork": {
+      "$ref": "#/$defs/TenantGroupLocationPractitionerNetworkResponse",
+      "type": "object",
+      "description": "Response from the group practitioner location network lookup/update (populated when location and network are provided)"
+    },
+    "notCreated": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SpecialtyNotCreated"
+      },
+      "description": "Specialty associations that could not be created (e.g. missing dependencies). Empty when all requested levels succeeded."
+    }
+  },
+  "$defs": {
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "GroupPractitionerLocationResponse1": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantGroupLocationId": {
+          "type": "string"
+        },
+        "tenantGroupPractitionerId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "GroupPractitionerLocationSpecialtyResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "groupPractitionerLocationId": {
+          "type": "string"
+        },
+        "practitionerSpecialtyId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    },
+    "SpecialtyAssociationLevel": {
+      "type": "string",
+      "enum": [
+        "GROUP",
+        "LOCATION",
+        "NETWORK_GROUP",
+        "NETWORK_LOCATION"
+      ]
+    },
+    "SpecialtyNotCreated": {
+      "type": "object",
+      "required": [
+        "level",
+        "reason",
+        "message"
+      ],
+      "description": "A specialty association that could not be created at this level, with reason and message",
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/SpecialtyAssociationLevel",
+          "type": "string",
+          "description": "The relationship level (GROUP, LOCATION, NETWORK_GROUP, NETWORK_LOCATION)"
+        },
+        "reason": {
+          "$ref": "#/$defs/SpecialtyNotCreatedReason",
+          "type": "string",
+          "description": "Reason code: MISSING_DEPENDENCY, DOWNSTREAM_ERROR, CONFLICT, VALIDATION_ERROR"
+        },
+        "message": {
+          "type": "string",
+          "description": "User-facing message explaining what went wrong and how to fix it"
+        }
+      }
+    },
+    "SpecialtyNotCreatedReason": {
+      "type": "string",
+      "enum": [
+        "MISSING_DEPENDENCY",
+        "DOWNSTREAM_ERROR",
+        "CONFLICT",
+        "VALIDATION_ERROR"
+      ]
+    },
+    "TenantGroupLocationParticipationSpecialtyResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantGroupLocationEnrollmentId": {
+          "type": "string"
+        },
+        "tenantGroupLocationSpecialtyId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "TenantGroupLocationPractitionerNetworkResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "groupPractitionerLocationId": {
+          "type": "string"
+        },
+        "networkId": {
+          "type": "string"
+        },
+        "contractId": {
+          "type": "string"
+        },
+        "practitionerSpecialtyId": {
+          "type": "string"
+        },
+        "sourceFileId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "TenantGroupLocationSpecialtyResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantGroupLocationId": {
+          "type": "string"
+        },
+        "tenantSpecialtyId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "TenantGroupPractitionerLocationNetworkSpecialtyResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantGroupLocationPractitionerNetworkId": {
+          "type": "string"
+        },
+        "tenantGroupPractitionerLocationSpecialtyId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "TenantGroupPractitionerNetworkResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantGroupPractitionerId": {
+          "type": "string"
+        },
+        "contractedNetworkId": {
+          "type": "string"
+        },
+        "networkId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "TenantGroupPractitionerSpecialtyResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantGroupPractitionerId": {
+          "type": "string"
+        },
+        "specialtyId": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    },
+    "TenantPractitionerSpecialtyResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tenantPractitionerId": {
+          "type": "string"
+        },
+        "tenantSpecialtyId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode"
+        }
+      }
+    }
+  }
+}

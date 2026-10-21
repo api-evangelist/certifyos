@@ -1,5 +1,6 @@
 ---
-name: Upload, map, validate and approve a provider roster
+name: certifyos-upload-and-approve-a-roster
+title: "Upload, map, validate and approve a provider roster"
 description: >-
   Push a bulk provider roster CSV into Certify, map its columns to a template,
   fix validation failures, and approve the import.

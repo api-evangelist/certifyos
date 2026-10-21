@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-flag-calculator-request-schema.json",
+  "title": "FlagCalculatorRequest",
+  "description": "Request body for POST /flag-calculator, identifying the monitoring workflow to evaluate and, optionally, which practitioner data sections to limit the calculation to.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-flagcalculator-api-openapi.yml#/components/schemas/FlagCalculatorRequest",
+  "type": "object",
+  "required": [
+    "monitoringWorkflowId"
+  ],
+  "properties": {
+    "monitoringWorkflowId": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "ID of the monitoring workflow to calculate flags for. Must reference a workflow that already exists and belongs to the tenant identified by the tenant-id header, or the call returns 404."
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Practitioner data sections to limit flag calculation to. Valid values: appVerifications, boardCertifications, cds, dea, educationTraining, hospitalAffiliations, licenses, licensureActions, malpracticeInsurance, npdbReports, nppes, performanceIndicators, practiceLocations, professionalIds, sanctions, siteVisits, specialties, supportingDocuments. If omitted or empty, flags are calculated across all sections. Any value outside this list is silently ignored rather than rejected — it will not cause a 400 and will not match any flags."
+    }
+  }
+}

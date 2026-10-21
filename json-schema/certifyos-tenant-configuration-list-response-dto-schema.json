@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-tenant-configuration-list-response-dto-schema.json",
+  "title": "TenantConfigurationListResponseDto",
+  "description": "List of all tenant configurations for a tenant",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-tenant-configuration-api-openapi.yml#/components/schemas/TenantConfigurationListResponseDto",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TenantConfigurationItemDto"
+      },
+      "description": "List of tenant configurations"
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total number of tenant configurations"
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "TenantConfigurationItemDto": {
+      "type": "object",
+      "description": "A tenant configuration item",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the configuration"
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant ID this configuration belongs to"
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace for the configuration"
+        },
+        "configurationTypeId": {
+          "type": "string",
+          "description": "Type identifier for the configuration"
+        },
+        "configuration": {
+          "description": "Configuration data as JSON. The structure is flexible and depends on `configurationTypeId`."
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp when the configuration was last updated"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "Timestamp when the configuration was created"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-termination-request-schema.json",
+  "title": "TerminationRequest",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-practitioner-api-openapi.yml#/components/schemas/TerminationRequest",
+  "type": "object",
+  "required": [
+    "terminationType",
+    "terminationDate"
+  ],
+  "properties": {
+    "networkId": {
+      "type": "string",
+      "description": "Optional network ID scope for termination"
+    },
+    "tenantGroupLocationId": {
+      "type": "string",
+      "description": "Optional tenant group location ID scope for termination. Required for INFERRED_LOCATION."
+    },
+    "tenantPractitionerId": {
+      "type": "string",
+      "description": "Tenant practitioner ID. Required for the 7 legacy termination types. IGNORED for FULL_EXIT and INFERRED_LOCATION, which both identify the practitioner via certifyPractitionerId instead."
+    },
+    "certifyPractitionerId": {
+      "type": "string",
+      "description": "Certify practitioner ID. MANDATORY when terminationType is FULL_EXIT or INFERRED_LOCATION -- both identify the practitioner this way, in place of tenantPractitionerId, and a request for either type without it fails with 400. Ignored for the 7 legacy termination types."
+    },
+    "tenantGroupId": {
+      "type": "string",
+      "description": "Tenant group ID. Required for all termination types except INFERRED_LOCATION and FULL_EXIT, which resolve the practitioner's group(s) without it."
+    },
+    "terminationType": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "Termination scope (NETWORK | GROUP | GROUP_LOCATIONS | LOCATION_NETWORK | NETWORK_SPECIALTY | GROUP_SPECIALTY | GROUP_LOCATION_SPECIALTY | INFERRED_LOCATION | FULL_EXIT)"
+    },
+    "terminationDate": {
+      "type": "string",
+      "pattern": "\\S",
+      "description": "Termination effective date (YYYY-MM-DD). For FULL_EXIT a malformed value is rejected with 400 rather than coerced — parsing is strict, so an out-of-range month or day (e.g. 2026-15-15) is an error, not a roll-over into the following year."
+    },
+    "terminationReason": {
+      "type": "string",
+      "description": "Termination reason"
+    },
+    "terminationInformedDate": {
+      "type": "string",
+      "description": "Date when termination was informed (YYYY-MM-DD). Optional; when supplied on a FULL_EXIT request it is validated the same way as terminationDate."
+    },
+    "continuityOfCare": {
+      "type": "boolean",
+      "description": "Whether Continuity of Care applies for this termination. Defaults to false when omitted."
+    },
+    "tenantSpecialtyId": {
+      "type": "string",
+      "description": "Optional tenant specialty ID scope for termination"
+    },
+    "tenantGroupPractitionerLocationId": {
+      "type": "string",
+      "description": "Optional tenant group practitioner location ID scope for termination"
+    },
+    "tenantGroupPractitionerNetworkId": {
+      "type": "string",
+      "description": "Optional tenant group practitioner network ID scope for termination"
+    },
+    "tenantGroupLocationPractitionerNetworkId": {
+      "type": "string",
+      "description": "Optional tenant group location practitioner network ID scope for termination"
+    },
+    "tenantGroupPractitionerLocationSpecialtyId": {
+      "type": "string",
+      "description": "Optional tenant group practitioner location specialty ID scope for termination"
+    },
+    "tenantGroupPractitionerSpecialtyId": {
+      "type": "string",
+      "description": "Optional tenant group practitioner specialty ID scope for termination"
+    },
+    "tenantPractitionerSpecialtyId": {
+      "type": "string",
+      "description": "Optional practitioner specialty ID scope for termination"
+    },
+    "acknowledgedLocationNetworkTermination": {
+      "type": "boolean",
+      "description": "Optional opt-in for GROUP_LOCATIONS: when true (and the practitioner.termination.group-locations.cascade-network.enabled config flag is also on), terminating the practitioner from the selected group location also ends their network enrollment at that location (TenantGroupLocationPractitionerNetwork) — group membership (TenantGroupPractitioner) and group-wide network enrollment (TenantGroupPractitionerNetwork) are never affected either way. Omitting this field (or sending false) is not an error; it just keeps the legacy GPL-only termination, so existing callers that don't send it are unaffected."
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-drain-dlq-request-schema.json",
+  "title": "DrainDlqRequest",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhooks-api-openapi.yml#/components/schemas/DrainDlqRequest",
+  "type": "object",
+  "properties": {
+    "maxMessages": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Maximum number of messages to pull from the DLQ in this invocation. Integer between 1 and 1000; defaults to 100 when omitted.",
+      "maximum": 1000,
+      "minimum": 1
+    },
+    "webhookId": {
+      "type": "string",
+      "description": "Optional filter: only re-enqueue events for this webhook id. When omitted, events for all webhooks (within the tenant) are eligible."
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Optional in the payload but always overridden by the tenant-id header for security; a caller-supplied value that differs from the header is ignored."
+    },
+    "targetQueue": {
+      "type": "string",
+      "description": "Optional Cloud Tasks queue to re-enqueue matching events to. Must be an allowed webhook delivery queue; defaults to the primary webhook-delivery queue when omitted."
+    },
+    "dryRun": {
+      "type": "boolean",
+      "description": "When true, pull and inspect matching messages but do not re-enqueue them (messages are nacked back to the subscription). Defaults to false."
+    }
+  }
+}

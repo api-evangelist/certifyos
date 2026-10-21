@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-anchor-practitioner-detail-schema.json",
+  "title": "AnchorPractitionerDetail",
+  "description": "The Anchor Ops detail panel payload for one practitioner in one anchor group.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-anchorgrouppractitioner-api-openapi.yml#/components/schemas/AnchorPractitionerDetail",
+  "type": "object",
+  "required": [
+    "anchorGroupPractitionerId"
+  ],
+  "properties": {
+    "anchorGroupPractitionerId": {
+      "type": "string",
+      "description": "Anchor group practitioner id — the key every write uses."
+    },
+    "anchorGroupId": {
+      "type": "string",
+      "description": "Anchor group id."
+    },
+    "practitionerRegistryId": {
+      "type": "string",
+      "description": "Practitioner registry id."
+    },
+    "firstName": {
+      "type": "string",
+      "description": "Practitioner first name."
+    },
+    "lastName": {
+      "type": "string",
+      "description": "Practitioner last name."
+    },
+    "npi": {
+      "type": "string",
+      "description": "Practitioner NPI."
+    },
+    "effectiveAnchorDate": {
+      "$ref": "#/$defs/LocalDate",
+      "type": "string",
+      "description": "Effective anchor date (yyyy-MM-dd)."
+    },
+    "computedAnchorDate": {
+      "$ref": "#/$defs/LocalDate",
+      "type": "string",
+      "description": "Platform-calculated anchor date (yyyy-MM-dd)."
+    },
+    "manualOverrideAnchorDate": {
+      "$ref": "#/$defs/LocalDate",
+      "type": "string",
+      "description": "Stored manual override anchor date (yyyy-MM-dd)."
+    },
+    "contributingTenantId": {
+      "type": "string",
+      "description": "Tenant that contributed the platform date."
+    },
+    "controlStatus": {
+      "type": "string",
+      "description": "Who owns the date — AUTOMATIC or MANUAL. Null only on a row no writer has touched."
+    },
+    "reviewStatus": {
+      "type": "string",
+      "description": "Whether review is required — REQUIRED or NOT_REQUIRED. Null only on a row no writer has touched."
+    },
+    "updatedAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "Last change to the row, by any writer."
+    },
+    "updatedBy": {
+      "type": "string",
+      "description": "The operator who last acted on this record. Not tied to updatedAt — the two describe different events. Null until an operator acts."
+    },
+    "updatedByName": {
+      "type": "string",
+      "description": "That operator's name, or email when no name is on file. Null when the lookup found nothing; the panel falls back to updatedBy."
+    },
+    "lastOperatorActionAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "When that operator acted. Pairs with updatedBy — same audit event — not with updatedAt. Null until an operator acts."
+    },
+    "reviewRaisedAt": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "When the platform raised the current review. Pairs with reviewStatus — not with updatedBy, who did not raise it. Null unless review is REQUIRED."
+    },
+    "participatingTenants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/AnchorTenantParticipation"
+      },
+      "description": "Every tenant with a participation row under this record."
+    },
+    "overrideActive": {
+      "type": "boolean",
+      "description": "Whether an operator override is in force on this record."
+    },
+    "operationalStatus": {
+      "type": "string",
+      "description": "Operational status: AUTOMATIC, MANUAL_OVERRIDE, REVIEW_REQUIRED or NO_ANCHOR_YET."
+    },
+    "platformEligibleTenantIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tenants the platform currently rates eligible for this practitioner."
+    }
+  },
+  "$defs": {
+    "AnchorTenantParticipation": {
+      "type": "object",
+      "required": [
+        "tenantId"
+      ],
+      "description": "One tenant's eligibility, participation and scheduling date for a practitioner.",
+      "properties": {
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant id."
+        },
+        "tenantName": {
+          "type": "string",
+          "description": "Tenant display name."
+        },
+        "eligible": {
+          "type": "boolean",
+          "description": "Whether the platform currently rates this tenant eligible."
+        },
+        "exclusionReason": {
+          "type": "string",
+          "description": "Exclusion reason code when not eligible."
+        },
+        "participating": {
+          "type": "boolean",
+          "description": "Effective participation — the value the checkbox renders from."
+        },
+        "participationOverride": {
+          "type": "boolean",
+          "description": "Raw stored is_participating; null means 'follows eligibility'."
+        },
+        "tenantSchedulingDate": {
+          "$ref": "#/$defs/LocalDate",
+          "type": "string",
+          "description": "Stored tenant scheduling date (yyyy-MM-dd)."
+        },
+        "tenantSchedulingDateSource": {
+          "type": "string",
+          "description": "Source of the stored scheduling date."
+        }
+      }
+    },
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "LocalDate": {
+      "type": "string",
+      "format": "date"
+    }
+  }
+}

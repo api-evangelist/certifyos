@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-timeline-event-paged-response-schema.json",
+  "title": "SharedTimelineEventPagedResponse",
+  "description": "Paginated list of shared workflow timeline events.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedtimelineevent-api-openapi.yml#/components/schemas/SharedTimelineEventPagedResponse",
+  "type": "object",
+  "required": [
+    "data"
+  ],
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SharedTimelineEvent"
+      },
+      "description": "The page of timeline events, newest first."
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total events across all pages."
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "SharedTimelineEvent": {
+      "type": "object",
+      "required": [
+        "id",
+        "status"
+      ],
+      "description": "One entry in a shared workflow's status history.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Event id."
+        },
+        "status": {
+          "type": "string",
+          "description": "The group's derived status at this event."
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Instant",
+          "type": "string",
+          "description": "When the event was appended."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The user whose action produced the status change."
+        }
+      }
+    }
+  }
+}

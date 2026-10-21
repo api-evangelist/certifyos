@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-roster-rows-draft-bulk-response-schema.json",
+  "title": "RosterRowsDraftBulkResponse",
+  "description": "Result of a bulk draft save",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-rosterrecord-api-openapi.yml#/components/schemas/RosterRowsDraftBulkResponse",
+  "type": "object",
+  "properties": {
+    "succeeded": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of rows whose edits were successfully saved"
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DraftRowSaveFailure"
+      },
+      "description": "Per-row failures (other rows may still have succeeded)"
+    }
+  },
+  "$defs": {
+    "DraftRowSaveFailure": {
+      "type": "object",
+      "description": "Per-row failure from a bulk draft save",
+      "properties": {
+        "recordKey": {
+          "type": "string",
+          "description": "recordKey / row_id that failed"
+        },
+        "message": {
+          "type": "string",
+          "description": "Reason the row was not updated"
+        }
+      }
+    }
+  }
+}

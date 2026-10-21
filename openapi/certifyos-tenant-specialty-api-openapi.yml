@@ -483,6 +483,27 @@ paths:
       - jwt: []
 components:
   schemas:
+    CreateTenantSpecialtyRequest:
+      type: object
+      required:
+      - specialtyId
+      properties:
+        specialtyId:
+          type: string
+          description: Identifier of the global specialty this tenant specialty is based on. Required and must reference an existing global specialty; a missing or blank value is rejected with 400 before any other validation runs.
+        data:
+          $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+          type: object
+          description: Tenant-specific metadata for this specialty (e.g. display name, description, change reason). Validated against the TenantSpecialty JSON Schema; on PUT this value fully replaces any previously stored data — fields omitted here are cleared, not preserved.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     GetTenantSpecialtyResponse:
       type: object
       properties:
@@ -490,6 +511,22 @@ components:
           $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
           type: object
           description: The tenant specialty record.
+    GetTenantSpecialtiesResponse:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of tenant specialty records matching the query, before pagination. Note the underlying list endpoints return at most a single fixed page of results, so this may exceed the number of items in `data`.
+        data:
+          type: array
+          items:
+            $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
+            type: object
+            properties:
+              jsonNode:
+                $ref: '#/components/schemas/JsonNode'
+          description: The page of matching tenant specialty records.
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -518,43 +555,18 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
-    CreateTenantSpecialtyRequest:
-      type: object
-      required:
-      - specialtyId
-      properties:
-        specialtyId:
-          type: string
-          description: Identifier of the global specialty this tenant specialty is based on. Required and must reference an existing global specialty; a missing or blank value is rejected with 400 before any other validation runs.
-        data:
-          $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
-          type: object
-          description: Tenant-specific metadata for this specialty (e.g. display name, description, change reason). Validated against the TenantSpecialty JSON Schema; on PUT this value fully replaces any previously stored data — fields omitted here are cleared, not preserved.
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    GetTenantSpecialtiesResponse:
-      type: object
-      properties:
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of tenant specialty records matching the query, before pagination. Note the underlying list endpoints return at most a single fixed page of results, so this may exceed the number of items in `data`.
-        data:
-          type: array
-          items:
-            $ref: https://schemas.certifyos.com/entities/TenantSpecialty.schema.json
-            type: object
-            properties:
-              jsonNode:
-                $ref: '#/components/schemas/JsonNode'
-          description: The page of matching tenant specialty records.
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     JsonNode:
       type: object
       properties:
@@ -602,18 +614,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
   securitySchemes:
     jwt:
       type: http

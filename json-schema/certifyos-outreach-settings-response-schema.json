@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-outreach-settings-response-schema.json",
+  "title": "OutreachSettingsResponse",
+  "description": "Response containing outreach settings for a specific outreach type",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-organization-outreach-settings-resource-api-openapi.yml#/components/schemas/OutreachSettingsResponse",
+  "type": "object",
+  "properties": {
+    "type": {
+      "$ref": "#/$defs/OutreachType",
+      "type": "string",
+      "description": "Type of outreach"
+    },
+    "credentialingCycle": {
+      "type": "string",
+      "enum": [
+        "INITIAL",
+        "RECREDENTIALING"
+      ],
+      "description": "Credentialing cycle for which these template/reasons apply"
+    },
+    "emailRecipientPreferences": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Email recipient preferences. Null when nothing has been saved for this type/cycle.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EmailRecipientPreferencesDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "template": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Email template configuration. Null when nothing has been saved for this type/cycle.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OutreachTemplateDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "outreachReasons": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/$defs/OutreachReasonDto"
+      },
+      "description": "List of outreach reasons with instructions. Null when nothing has been saved for this type/cycle."
+    },
+    "smartOutreach": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Smart outreach automation settings. Null when nothing has been saved for this type/cycle.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SmartOutreachSettingsDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "providerPortalEnabled": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether the provider outreach portal is enabled for this organization. Organization-wide (not per type/cycle); null when the organization has never saved the setting, which consumers must treat as disabled."
+    },
+    "stateSpecificPlan": {
+      "type": "object",
+      "description": "Organization-wide state-specific plan settings driving the state_specific_plan dynamic email field (CP-36692). Not per type/cycle; null when the organization has never saved the setting, which consumers must treat as disabled.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StateSpecificPlanSettingsDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "EmailRecipientPreferencesDto": {
+      "type": "object",
+      "description": "Email recipient preferences for outreach",
+      "properties": {
+        "primaryEmail": {
+          "type": "boolean",
+          "description": "Enable Primary Email recipient"
+        },
+        "caqhPrimaryEmail": {
+          "type": "boolean",
+          "description": "Enable CAQH Primary Email recipient"
+        },
+        "credentialingPrimaryContact": {
+          "type": "boolean",
+          "description": "Enable Credentialing Primary Contact recipient"
+        },
+        "credentialingOfficeManager": {
+          "type": "boolean",
+          "description": "Enable Credentialing Office Manager recipient"
+        }
+      }
+    },
+    "OutreachLogoDto": {
+      "type": "object",
+      "description": "Logo settings for outreach email template",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to include the logo in emails"
+        },
+        "url": {
+          "type": "string",
+          "description": "Logo URL/address"
+        },
+        "width": {
+          "type": "string",
+          "description": "Logo display width"
+        }
+      }
+    },
+    "OutreachReasonDto": {
+      "type": "object",
+      "required": [
+        "reason",
+        "instruction"
+      ],
+      "description": "Outreach reason with instruction",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the outreach reason"
+        },
+        "reason": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Reason title"
+        },
+        "instruction": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Instruction text"
+        },
+        "isCaqhResolvable": {
+          "type": "boolean",
+          "description": "Whether the reason is resolvable directly in CAQH (external action, no upload)"
+        },
+        "submitFormText": {
+          "type": "string",
+          "description": "Text shown to the provider on the submit form for this reason"
+        }
+      }
+    },
+    "OutreachTemplateDto": {
+      "type": "object",
+      "required": [
+        "subject",
+        "body"
+      ],
+      "description": "Email template configuration for outreach",
+      "properties": {
+        "ccEmails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Template-specific CC email addresses"
+        },
+        "subject": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Email subject line with placeholders"
+        },
+        "body": {
+          "type": "string",
+          "pattern": "\\S",
+          "description": "Email body content with placeholders (supports HTML/rich text)"
+        },
+        "logo": {
+          "$ref": "#/$defs/OutreachLogoDto",
+          "type": "object",
+          "description": "Logo settings"
+        }
+      }
+    },
+    "OutreachType": {
+      "type": "string",
+      "enum": [
+        "PRACTITIONER_CREDENTIALING",
+        "FACILITY_CREDENTIALING",
+        "PRACTITIONER_MONITORING"
+      ],
+      "description": "The outreach configuration category a settings record applies to. PRACTITIONER_CREDENTIALING covers outreach for individual practitioners going through initial or recredentialing review. FACILITY_CREDENTIALING covers the same for facilities. PRACTITIONER_MONITORING covers ongoing monitoring-triggered outreach for practitioners, outside the credentialing review cycle."
+    },
+    "SmartOutreachSettingsDto": {
+      "type": "object",
+      "description": "Smart outreach automation settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable smart outreach automation"
+        },
+        "businessDaysBetweenAttempts": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Business days between outreach attempts (display value, persisted as hours)",
+          "minimum": 1
+        },
+        "maxAttemptsPerReason": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Maximum outreach attempts per reason",
+          "minimum": 1
+        },
+        "recredCadenceDays": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32",
+          "description": "Recredentialing cadence in days (null disables recred override)",
+          "minimum": 1
+        },
+        "dryRunEnabled": {
+          "type": "boolean",
+          "description": "Dry run mode: evaluate exclusions without sending (per client)"
+        },
+        "useCalendarDays": {
+          "type": "boolean",
+          "description": "Count days between attempts on calendar days (weekends/holidays included) instead of business days. Defaults to false (business days)."
+        },
+        "caqhValidStatuses": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "CAQH provider_status values that qualify as a valid update and suppress outreach. Defaults to [\"Reattestation\", \"Initial Application Complete\"] when null or empty."
+        }
+      }
+    },
+    "StateSpecificPlanSettingsDto": {
+      "type": "object",
+      "description": "State-specific plan settings for an organization",
+      "properties": {
+        "enableStateSpecificPlan": {
+          "type": "boolean",
+          "description": "Whether the state_specific_plan email field resolves through the mapping. Defaults to false when the organization has never saved this setting."
+        },
+        "stateSpecificPlanMapping": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Map of 2-letter uppercase state code to plan name"
+        }
+      }
+    }
+  }
+}

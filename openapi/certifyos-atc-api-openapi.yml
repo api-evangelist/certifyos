@@ -117,6 +117,46 @@ paths:
       - jwt: []
 components:
   schemas:
+    Filters:
+      type: object
+      properties:
+        entity_types:
+          type: array
+          items:
+            type: string
+        sources:
+          type: array
+          items:
+            type: string
+        include_cascaded:
+          type: boolean
+        include_scripts:
+          type: boolean
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    AtcCounts:
+      type: object
+      description: Add / Change / Term / Delete counts for a tenant and date range.
+      properties:
+        range:
+          $ref: '#/components/schemas/Range'
+        freshness:
+          $ref: '#/components/schemas/Freshness'
+        filters:
+          $ref: '#/components/schemas/Filters'
+        entities:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/Entity'
+        totals:
+          $ref: '#/components/schemas/Totals'
     Terms:
       type: object
       properties:
@@ -153,6 +193,24 @@ components:
         total:
           type: integer
           format: int64
+    Range:
+      type: object
+      properties:
+        start:
+          type: string
+          description: Inclusive start, ISO-8601 with offset
+        end:
+          type: string
+          description: Exclusive end, ISO-8601 with offset
+        basis:
+          type: string
+          description: EVENT_TIME
+    Changes:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int64
     Totals:
       type: object
       properties:
@@ -168,36 +226,23 @@ components:
         deleted:
           type: integer
           format: int64
-    Deleted:
+    Freshness:
       type: object
       properties:
-        entity:
-          type: integer
+        as_of:
+          type:
+          - string
+          - 'null'
+          description: Watermark of the last successful refresh, null before the first
+        lag_minutes:
+          type:
+          - integer
+          - 'null'
           format: int64
-        from_network:
-          type: integer
-          format: int64
-        from_group:
-          type: integer
-          format: int64
-        from_location:
-          type: integer
-          format: int64
-        total:
-          type: integer
-          format: int64
-    Range:
-      type: object
-      properties:
-        start:
+          description: Minutes between the watermark and now
+        completeness:
           type: string
-          description: Inclusive start, ISO-8601 with offset
-        end:
-          type: string
-          description: Exclusive end, ISO-8601 with offset
-        basis:
-          type: string
-          description: EVENT_TIME
+          description: 'best_effort: counts are a lower bound'
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -226,52 +271,24 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
-    Changes:
+    Deleted:
       type: object
       properties:
+        entity:
+          type: integer
+          format: int64
+        from_network:
+          type: integer
+          format: int64
+        from_group:
+          type: integer
+          format: int64
+        from_location:
+          type: integer
+          format: int64
         total:
           type: integer
           format: int64
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    AtcCounts:
-      type: object
-      description: Add / Change / Term / Delete counts for a tenant and date range.
-      properties:
-        range:
-          $ref: '#/components/schemas/Range'
-        freshness:
-          $ref: '#/components/schemas/Freshness'
-        filters:
-          $ref: '#/components/schemas/Filters'
-        entities:
-          type: object
-          additionalProperties:
-            $ref: '#/components/schemas/Entity'
-        totals:
-          $ref: '#/components/schemas/Totals'
-    Filters:
-      type: object
-      properties:
-        entity_types:
-          type: array
-          items:
-            type: string
-        sources:
-          type: array
-          items:
-            type: string
-        include_cascaded:
-          type: boolean
-        include_scripts:
-          type: boolean
     Entity:
       type: object
       properties:
@@ -283,23 +300,6 @@ components:
           $ref: '#/components/schemas/Terms'
         deleted:
           $ref: '#/components/schemas/Deleted'
-    Freshness:
-      type: object
-      properties:
-        as_of:
-          type:
-          - string
-          - 'null'
-          description: Watermark of the last successful refresh, null before the first
-        lag_minutes:
-          type:
-          - integer
-          - 'null'
-          format: int64
-          description: Minutes between the watermark and now
-        completeness:
-          type: string
-          description: 'best_effort: counts are a lower bound'
   securitySchemes:
     jwt:
       type: http

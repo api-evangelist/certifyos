@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-contract-schema.json",
+  "title": "Contract",
+  "description": "A contract between a healthcare provider and a payer.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-contracts-api-openapi.yml#/components/schemas/Contract",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Server-assigned unique identifier (UUID). Ignored if supplied in a create request; on replace (PUT), the existing contract's id is always preserved regardless of what is sent."
+    },
+    "planId": {
+      "type": "string",
+      "description": "Identifier of the plan this contract belongs to. Required on create. On replace (PUT), any value supplied here is ignored - the existing contract's planId is always preserved."
+    },
+    "networkId": {
+      "type": "string",
+      "description": "Identifier of the network this contract belongs to. Required on create. On replace (PUT), any value supplied here is ignored - the existing contract's networkId is always preserved."
+    },
+    "documentId": {
+      "type": "string",
+      "description": "Caller-supplied business document identifier for this contract. Required on create. On replace (PUT), any value supplied here is ignored - the existing contract's documentId is always preserved."
+    },
+    "createdBy": {
+      "type": "string",
+      "description": "User ID of the caller who originally created the contract. Always set by the server from the authenticated caller on create; any value supplied in the request body is ignored. Preserved unchanged on every subsequent replace (PUT), regardless of the request body."
+    },
+    "updatedBy": {
+      "type": "string",
+      "description": "User ID of the caller who most recently created or replaced the contract. Always set by the server from the authenticated caller; any value supplied in the request body is ignored."
+    },
+    "generalInfo": {
+      "$ref": "#/$defs/ContractGeneralInfo",
+      "type": "object",
+      "description": "Core contract identity and classification fields. The section itself is not strictly required, but if supplied, its `contractId`/`contractName`/`contractType`/`contractStatus` fields are required."
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/ContractLifeCycleInfo",
+      "type": "object",
+      "description": "Contract lifecycle dates (effective, term, termination, billing). Optional."
+    },
+    "financial": {
+      "$ref": "#/$defs/ContractFinancialInfo",
+      "type": "object",
+      "description": "Contract financial and payment terms. Optional."
+    },
+    "administrativeAndLegal": {
+      "$ref": "#/$defs/ContractAdministrativeAndLegalInfo",
+      "type": "object",
+      "description": "Contract administrative and legal terms (notice periods, filing limits). Optional."
+    },
+    "clinicalAndQuality": {
+      "$ref": "#/$defs/ContractClinicalAndQualityInfo",
+      "type": "object",
+      "description": "Contract clinical and quality program terms. Optional."
+    }
+  },
+  "$defs": {
+    "ContractAdministrativeAndLegalInfo": {
+      "type": "object",
+      "description": "Contract administrative and legal terms. All fields are optional.",
+      "properties": {
+        "amendmentOnFile": {
+          "type": "boolean",
+          "description": "Whether a signed amendment to this contract is on file."
+        },
+        "amendmentNumber": {
+          "type": "string",
+          "description": "Identifier/number of the amendment on file, if any."
+        },
+        "practitionersTerminationNoticePeriod": {
+          "type": "string",
+          "enum": [
+            "30",
+            "60",
+            "90",
+            "120"
+          ],
+          "description": "Notice period, in days, a practitioner must give before terminating this contract."
+        },
+        "providersManualUpdatesNoticePeriod": {
+          "type": "string",
+          "enum": [
+            "30",
+            "60",
+            "90",
+            "120"
+          ],
+          "description": "Notice period, in days, the payer must give providers before manual updates take effect."
+        },
+        "policyUpdateNotificationRequired": {
+          "type": "boolean",
+          "description": "Whether providers must be notified before a policy update takes effect."
+        },
+        "claimFilingLimit": {
+          "type": "string",
+          "description": "Deadline for submitting claims after the date of service."
+        },
+        "reimbursementScheduleUpdateFrequency": {
+          "type": "string",
+          "enum": [
+            "Monthly",
+            "Quarterly"
+          ],
+          "description": "How often the reimbursement schedule is updated."
+        },
+        "timelyPaymentCommitment": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of days within which the payer commits to paying a clean claim."
+        }
+      }
+    },
+    "ContractClinicalAndQualityInfo": {
+      "type": "object",
+      "description": "Contract clinical and quality program terms. All fields are optional.",
+      "properties": {
+        "hasQualityProgram": {
+          "type": "boolean",
+          "description": "Whether this contract includes a quality incentive program."
+        },
+        "qualityProgramInitiatives": {
+          "type": "string",
+          "description": "Free-text description of the quality program's initiatives."
+        },
+        "averageStarsAndPmpmBonus": {
+          "type": "string",
+          "description": "Free-text summary of the star rating and per-member-per-month (PMPM) bonus tied to it."
+        },
+        "hasMlrTarget": {
+          "type": "boolean",
+          "description": "Whether this contract includes a medical loss ratio (MLR) target."
+        },
+        "mlrTargetDescription": {
+          "type": "string",
+          "description": "Free-text description of the medical loss ratio (MLR) target, if any."
+        },
+        "performanceReportingRequirements": {
+          "type": "string",
+          "description": "Description of the performance reporting the provider must submit under this contract."
+        },
+        "credentialingDelegation": {
+          "type": "boolean",
+          "description": "Whether credentialing responsibilities are delegated to the provider organization."
+        },
+        "recredentialingInterval": {
+          "type": "string",
+          "enum": [
+            "1 yr",
+            "2 yr",
+            "3 yr"
+          ],
+          "description": "How often practitioners under this contract must be recredentialed."
+        },
+        "referralRequirements": {
+          "type": "boolean",
+          "description": "Whether this contract imposes referral requirements (e.g. requires PCP referral)."
+        },
+        "priorAuthorizationRequired": {
+          "type": "boolean",
+          "description": "Whether prior authorization is required for services under this contract."
+        },
+        "panelSizeLimits": {
+          "type": "string",
+          "description": "Free-text description of any panel size limits imposed on providers."
+        },
+        "providerRosterUpdateFrequency": {
+          "type": "string",
+          "enum": [
+            "Monthly",
+            "Quarterly"
+          ],
+          "description": "How often the provider roster must be updated under this contract."
+        }
+      }
+    },
+    "ContractFinancialInfo": {
+      "type": "object",
+      "description": "Contract financial and payment terms. All fields are optional.",
+      "properties": {
+        "feeSchedule": {
+          "type": "string",
+          "description": "Name of the fee schedule used for standard reimbursement."
+        },
+        "additionalFeeSchedule": {
+          "type": "string",
+          "description": "Name of a supplemental fee schedule applied alongside the primary one, if any."
+        },
+        "contractPaymentType": {
+          "type": "string",
+          "enum": [
+            "Per Claim",
+            "Capitation",
+            "Shared Savings"
+          ],
+          "description": "How the provider is paid under this contract."
+        },
+        "nonTypicalContractTerms": {
+          "type": "string",
+          "description": "Free-text description of any non-standard financial terms in this contract."
+        },
+        "providerRateCalculation": {
+          "type": "string",
+          "description": "Description of how the provider's reimbursement rate is calculated."
+        },
+        "rateLesserOfClaimAllowed": {
+          "type": "boolean",
+          "description": "Whether the contract allows paying the lesser of the billed charge or the contracted rate."
+        },
+        "sequestrationAllowed": {
+          "type": "boolean",
+          "description": "Whether Medicare sequestration reductions apply to payments under this contract."
+        },
+        "sharedSavings": {
+          "type": "boolean",
+          "description": "Whether this contract includes a shared-savings arrangement."
+        },
+        "bonus": {
+          "type": "boolean",
+          "description": "Whether this contract includes a performance bonus arrangement."
+        },
+        "claimSubmissionCycle": {
+          "type": "string",
+          "enum": [
+            "Weekly",
+            "Biweekly",
+            "Monthly"
+          ],
+          "description": "How often claims must be submitted under this contract."
+        },
+        "snfCorporateChampionRate": {
+          "type": "number",
+          "description": "SNF corporate champion capitation rate, in dollars."
+        },
+        "snfCapitationPartARate": {
+          "type": "number",
+          "description": "SNF Medicare Part A capitation rate, in dollars."
+        },
+        "snfCapitationPartBRate": {
+          "type": "number",
+          "description": "SNF Medicare Part B capitation rate, in dollars."
+        },
+        "snfCapitationBillAboveRate": {
+          "type": "number",
+          "description": "Per-diem rate billed above the SNF capitation threshold, in dollars."
+        },
+        "hasGssRate": {
+          "type": "boolean",
+          "description": "Whether this contract includes a gain-share/shared-savings (GSS) rate."
+        },
+        "gssRateDetails": {
+          "type": "string",
+          "description": "Free-text details of the gain-share/shared-savings (GSS) rate arrangement."
+        },
+        "gssMinimumMM": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Minimum member-months (MM) required for the GSS rate to apply."
+        },
+        "gssTerm": {
+          "type": "string",
+          "description": "Free-text description of the GSS rate's contract term."
+        },
+        "gssFrequency": {
+          "type": "string",
+          "enum": [
+            "Monthly",
+            "Quarterly",
+            "Annual"
+          ],
+          "description": "How often the GSS rate is calculated and settled."
+        },
+        "appPenalty": {
+          "type": "string",
+          "description": "Description of any penalty applied for missed appointment (no-show) policies."
+        },
+        "telehealthNoShow": {
+          "type": "string",
+          "description": "Description of the telehealth no-show policy for this contract."
+        }
+      }
+    },
+    "ContractGeneralInfo": {
+      "type": "object",
+      "description": "Core contract identity and classification fields.",
+      "properties": {
+        "contractId": {
+          "type": "string",
+          "description": "Business contract identifier assigned by the caller. Distinct from the top-level server-assigned `Contract.id`. Required."
+        },
+        "contractName": {
+          "type": "string",
+          "description": "Human-readable name of the contract. Required."
+        },
+        "contractTemplate": {
+          "type": "string",
+          "description": "Name of the contract template this agreement was drafted from."
+        },
+        "contractRate": {
+          "type": "string",
+          "description": "Free-text description of the contracted rate."
+        },
+        "reimbursementCode": {
+          "type": "string",
+          "description": "Reimbursement code associated with this contract."
+        },
+        "contractType": {
+          "type": "string",
+          "enum": [
+            "FFS",
+            "Capitation",
+            "VBC"
+          ],
+          "description": "Type of contract arrangement. Required. `FFS` = fee-for-service (paid per rendered service); `Capitation` = fixed per-member payment regardless of services rendered; `VBC` = value-based care (payment tied to outcomes/quality rather than volume)."
+        },
+        "vbcAttribution": {
+          "type": "string",
+          "description": "Description of value-based-care attribution methodology, if applicable."
+        },
+        "contractStatus": {
+          "type": "string",
+          "enum": [
+            "Active",
+            "Terminated",
+            "Contracting",
+            "Not Known"
+          ],
+          "description": "Current lifecycle status of the contract. Required. `Active` = currently in effect; `Terminated` = ended; `Contracting` = under negotiation, not yet effective; `Not Known` = status could not be determined at the time of entry."
+        },
+        "contractAgreementType": {
+          "type": "string",
+          "enum": [
+            "Single",
+            "Multiple Provider",
+            "IPA",
+            "System"
+          ],
+          "description": "Structure of the contracting arrangement. Optional. `Single` = one provider entity; `Multiple Provider` = a named group of provider entities; `IPA` = Independent Practice Association (a legal entity of independent providers contracting collectively); `System` = a health system encompassing multiple facilities/providers."
+        },
+        "groupId": {
+          "type": "string",
+          "description": "Identifier of the group this contract applies to, if any."
+        },
+        "practitionerId": {
+          "type": "string",
+          "description": "Identifier of the individual practitioner this contract applies to, if any."
+        },
+        "networkId": {
+          "type": "string",
+          "description": "Identifier of the network this contract belongs to, mirroring the top-level `Contract.networkId`."
+        },
+        "planId": {
+          "type": "string",
+          "description": "Identifier of the plan this contract belongs to, mirroring the top-level `Contract.planId`."
+        }
+      }
+    },
+    "ContractLifeCycleInfo": {
+      "type": "object",
+      "description": "Contract lifecycle dates. All fields are optional and use the ISO-8601 `date` format (YYYY-MM-DD, no time or offset).",
+      "properties": {
+        "contractEffectiveDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the contract terms take effect."
+        },
+        "initialTermDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the contract's initial term ends (subject to renewal)."
+        },
+        "terminationInformedDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date on which notice of termination was given."
+        },
+        "terminationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the contract terminates."
+        },
+        "billingEffectiveDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date from which billing under this contract is effective."
+        },
+        "billingTerminationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date after which billing under this contract stops."
+        }
+      }
+    }
+  }
+}

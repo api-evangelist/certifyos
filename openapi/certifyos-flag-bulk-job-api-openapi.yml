@@ -171,38 +171,15 @@ paths:
       - jwt: []
 components:
   schemas:
-    CreateFlagBulkJobRequest:
+    ApiError:
       type: object
-      required:
-      - filter
-      - expectedCount
-      - targetStatus
-      - attested
-      description: Request to move every flag matching a filter, up to 2,000, as a background job
+      description: Standard API error response containing a list of error objects
       properties:
-        filter:
-          $ref: '#/components/schemas/JsonNode'
-          type: object
-          description: 'Flags list filter; must contain exactly one source status as {"data.status": {"eq": "<status>"}}'
-        expectedCount:
-          type: integer
-          format: int32
-          examples:
-          - 355
-          description: The match count the user saw; the job acts on the oldest min(expectedCount, 2000) flags still matching at submit
-        targetStatus:
-          type: string
-          examples:
-          - seen
-          description: Status to move the flags to
-        comment:
-          type: string
-          description: Optional reason, recorded on every moved flag's history
-        attested:
-          type: boolean
-          examples:
-          - true
-          description: The policy attestation; must be true
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     FlagBulkJobPage:
       type: object
       description: A page of bulk flag jobs, newest first
@@ -215,34 +192,6 @@ components:
           type: integer
           format: int64
           description: All jobs of the tenant
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
     FlagBulkJob:
       type: object
       description: A bulk flag job; progress is processedCount / totalCount
@@ -293,15 +242,78 @@ components:
         errorCode:
           type: string
           description: STALLED (the run stopped heartbeating) or EXECUTE_ERROR (a chunk kept failing)
-    ApiError:
+    CreateFlagBulkJobRequest:
       type: object
-      description: Standard API error response containing a list of error objects
+      required:
+      - filter
+      - expectedCount
+      - targetStatus
+      - attested
+      description: Request to move every flag matching a filter, up to 2,000, as a background job
       properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
+        filter:
+          $ref: '#/components/schemas/JsonNode'
+          type: object
+          description: 'Flags list filter; must contain exactly one source status as {"data.status": {"eq": "<status>"}}'
+        expectedCount:
+          type: integer
+          format: int32
+          examples:
+          - 355
+          description: The match count the user saw; the job acts on the oldest min(expectedCount, 2000) flags still matching at submit
+        targetStatus:
+          type: string
+          examples:
+          - seen
+          description: Status to move the flags to
+        comment:
+          type: string
+          description: Optional reason, recorded on every moved flag's history
+        attested:
+          type: boolean
+          examples:
+          - true
+          description: The policy attestation; must be true
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    JsonNodeType:
+      type: string
+      enum:
+      - ARRAY
+      - BINARY
+      - BOOLEAN
+      - MISSING
+      - 'NULL'
+      - NUMBER
+      - OBJECT
+      - POJO
+      - STRING
     JsonNode:
       type: object
       properties:
@@ -349,18 +361,6 @@ components:
           type: boolean
         binary:
           type: boolean
-    JsonNodeType:
-      type: string
-      enum:
-      - ARRAY
-      - BINARY
-      - BOOLEAN
-      - MISSING
-      - 'NULL'
-      - NUMBER
-      - OBJECT
-      - POJO
-      - STRING
   securitySchemes:
     jwt:
       type: http

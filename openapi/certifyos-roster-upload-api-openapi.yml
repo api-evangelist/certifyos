@@ -351,86 +351,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    GetUploadMappingsRequest:
-      type: object
-      description: Column headers read from an uploaded roster file, submitted for mapping analysis.
-      properties:
-        columns:
-          type: array
-          examples:
-          - - NPI
-            - First Name
-            - Provider Nickname
-          items:
-            type: string
-          description: Raw column headers exactly as they appear in the uploaded file's header row. Order is preserved in the analysis.
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-          type: string
-          examples:
-          - PRACTITIONER
-          description: Entity catalogue the headers should be matched against. One of PRACTITIONER, FACILITY, or GROUP.
-        compareAgainstTemplate:
-          type: boolean
-          description: When true, clears mappedEntity on every returned system field and enables verbose diagnostic logging. Does not change how columns are matched, and the operation stays read-only either way. Defaults to false.
-          default: false
-    SaveMappingsRequest:
-      type: object
-      description: Confirmed column mappings to persist as a roster upload template.
-      properties:
-        updateExistingTemplate:
-          type: boolean
-          description: When true, updates the template named by the path parameter; when false or omitted, creates a new template. Creating twice with the same mappings produces two templates.
-          default: false
-        jobType:
-          $ref: '#/components/schemas/RosterJobType'
-          type: string
-          examples:
-          - PRACTITIONER
-          description: Entity catalogue the mappings belong to. One of PRACTITIONER, FACILITY, or GROUP, and must match the template being created or updated.
-        mappings:
-          type: array
-          items:
-            $ref: '#/components/schemas/Field'
-          description: The confirmed column-to-field mappings to persist. Validated before anything is written; a null list is treated as empty rather than rejected.
-        templateName:
-          type: string
-          examples:
-          - Florida Blue Practitioner Roster
-          description: Human-readable name for the template, shown when choosing a template for a future upload. Not enforced by this endpoint on create or update.
-        templateDescription:
-          type: string
-          examples:
-          - Monthly practitioner roster layout
-          description: Longer note describing what this template is for. Not enforced by this endpoint on create or update.
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
     ApiError:
       type: object
       description: Standard API error response containing a list of error objects
@@ -440,12 +360,6 @@ components:
           items:
             $ref: '#/components/schemas/ErrorObject'
           description: List of error objects describing validation or processing failures
-    RosterJobType:
-      type: string
-      enum:
-      - PRACTITIONER
-      - FACILITY
-      - GROUP
     Field:
       type: object
       description: One roster column and the Certify system field it maps to.
@@ -549,6 +463,29 @@ components:
           type: boolean
         skipped:
           type: boolean
+    GetUploadMappingsRequest:
+      type: object
+      description: Column headers read from an uploaded roster file, submitted for mapping analysis.
+      properties:
+        columns:
+          type: array
+          examples:
+          - - NPI
+            - First Name
+            - Provider Nickname
+          items:
+            type: string
+          description: Raw column headers exactly as they appear in the uploaded file's header row. Order is preserved in the analysis.
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+          type: string
+          examples:
+          - PRACTITIONER
+          description: Entity catalogue the headers should be matched against. One of PRACTITIONER, FACILITY, or GROUP.
+        compareAgainstTemplate:
+          type: boolean
+          description: When true, clears mappedEntity on every returned system field and enables verbose diagnostic logging. Does not change how columns are matched, and the operation stays read-only either way. Defaults to false.
+          default: false
     ErrorMessage:
       type: object
       description: Single-message error body returned by the roster endpoints' error paths.
@@ -556,6 +493,35 @@ components:
         error:
           type: string
           description: Human-readable message describing why the request failed.
+    SingleStepTemplateFlowResponse:
+      type: object
+      description: 'Result of a single-step template create or update: the resolved column mappings, final status, and the GCS object paths of the template artifacts.'
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/Field'
+          description: The template's resolved column mappings. After a file upload these are the mappings extracted from the uploaded mappings CSV; after a metadata-only update they are the template's existing stored columns.
+        status:
+          type: string
+          examples:
+          - success
+          description: Final template status. `success` when the validation schema was generated and the template is ready for roster uploads; `failure` when schema generation failed with an I/O error. Metadata-only updates preserve and return the template's existing status.
+        templateId:
+          type: string
+          examples:
+          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
+          description: Server-generated ID of the created or updated template.
+        templateUrl:
+          type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
+          description: GCS object path (not a signed URL) of the stored template CSV. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `templateUrl` in the record's `data`.
+        schemaUrl:
+          type: string
+          examples:
+          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
+          description: GCS object path (not a signed URL) of the generated JSON validation schema. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `schemaUrl` in the record's `data`.
     GetUploadMappingsResponse:
       type: object
       description: Result of matching a file's column headers against a roster upload template. Every submitted header appears in mapped, unMapped, skipped, or cachedMapped. A cachedMapped header is also listed in unMapped while the cache-hits-also-unmapped setting is on (the default), so clients should treat cachedMapped as pre-filled suggestions for those unMapped headers.
@@ -589,35 +555,69 @@ components:
           items:
             $ref: '#/components/schemas/Field'
           description: Suggested mappings for headers the template did not match, recovered from the tenant's column mapping cache of previously confirmed choices. Suggestions only - nothing is applied until the mappings are saved. Each entry carries the header in name and the suggested system field in mappedKey.
-    SingleStepTemplateFlowResponse:
+    SaveMappingsRequest:
       type: object
-      description: 'Result of a single-step template create or update: the resolved column mappings, final status, and the GCS object paths of the template artifacts.'
+      description: Confirmed column mappings to persist as a roster upload template.
       properties:
-        fields:
+        updateExistingTemplate:
+          type: boolean
+          description: When true, updates the template named by the path parameter; when false or omitted, creates a new template. Creating twice with the same mappings produces two templates.
+          default: false
+        jobType:
+          $ref: '#/components/schemas/RosterJobType'
+          type: string
+          examples:
+          - PRACTITIONER
+          description: Entity catalogue the mappings belong to. One of PRACTITIONER, FACILITY, or GROUP, and must match the template being created or updated.
+        mappings:
           type: array
           items:
             $ref: '#/components/schemas/Field'
-          description: The template's resolved column mappings. After a file upload these are the mappings extracted from the uploaded mappings CSV; after a metadata-only update they are the template's existing stored columns.
-        status:
+          description: The confirmed column-to-field mappings to persist. Validated before anything is written; a null list is treated as empty rather than rejected.
+        templateName:
           type: string
           examples:
-          - success
-          description: Final template status. `success` when the validation schema was generated and the template is ready for roster uploads; `failure` when schema generation failed with an I/O error. Metadata-only updates preserve and return the template's existing status.
-        templateId:
+          - Florida Blue Practitioner Roster
+          description: Human-readable name for the template, shown when choosing a template for a future upload. Not enforced by this endpoint on create or update.
+        templateDescription:
           type: string
           examples:
-          - 3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37
-          description: Server-generated ID of the created or updated template.
-        templateUrl:
+          - Monthly practitioner roster layout
+          description: Longer note describing what this template is for. Not enforced by this endpoint on create or update.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
           type: string
           examples:
-          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/template.csv
-          description: GCS object path (not a signed URL) of the stored template CSV. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `templateUrl` in the record's `data`.
-        schemaUrl:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
           type: string
           examples:
-          - roster/templates/3f8e2b6c-9d41-4a7b-b6a0-5e2f8c1d9a37/schema.json
-          description: GCS object path (not a signed URL) of the generated JSON validation schema. Fetch a signed download URL via `GET /templates/{id}`, which returns it as `schemaUrl` in the record's `data`.
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    RosterJobType:
+      type: string
+      enum:
+      - PRACTITIONER
+      - FACILITY
+      - GROUP
   securitySchemes:
     jwt:
       type: http

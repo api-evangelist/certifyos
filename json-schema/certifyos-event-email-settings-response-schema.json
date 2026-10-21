@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-event-email-settings-response-schema.json",
+  "title": "EventEmailSettingsResponse",
+  "description": "Event email settings for a single context+mode, as returned by GET, POST, or PUT /organizations/{organizationId}/event-email-settings/{context}/{mode}.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-event-email-settings-api-openapi.yml#/components/schemas/EventEmailSettingsResponse",
+  "type": "object",
+  "required": [
+    "context",
+    "mode",
+    "recipientPreferences",
+    "typeSettings"
+  ],
+  "properties": {
+    "context": {
+      "type": "string",
+      "enum": [
+        "practitioner",
+        "facility"
+      ],
+      "description": "The context these settings apply to. \"practitioner\" covers practitioner-facing event emails; \"facility\" covers facility-facing ones."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "credentialing",
+        "recredentialing"
+      ],
+      "description": "The workflow mode these settings apply to. \"credentialing\" is the initial verification cycle; \"recredentialing\" is the periodic renewal cycle."
+    },
+    "recipientPreferences": {
+      "$ref": "#/$defs/EventEmailRecipientPreferencesDto",
+      "type": "object",
+      "description": "Resolved recipient preference flags for this context (context-level; shared across both modes)."
+    },
+    "ccEmail": {
+      "type": "string",
+      "description": "Resolved CC email for this context+mode: the context-level ccEmail if set, otherwise falling back to a mode-level value (credentialing checked before recredentialing, regardless of the mode requested). Null if neither is set."
+    },
+    "logoUrl": {
+      "type": "string",
+      "description": "Resolved logo image URL for this context+mode, using the same context-then-credentialing-then-recredentialing fallback as ccEmail. Null if none is set."
+    },
+    "logoWidth": {
+      "type": "string",
+      "description": "Resolved logo display width for this context+mode, using the same fallback as ccEmail/logoUrl, as a percentage string (e.g. \"50%\"); no format is enforced server-side. Null if none is set."
+    },
+    "typeSettings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EventEmailTypeSettingsDto"
+      },
+      "description": "One entry per configured event email type for this mode (initiated, approved, denied, cancelled, psvReady, inProgress)."
+    }
+  },
+  "$defs": {
+    "EventEmailRecipientPreferencesDto": {
+      "type": "object",
+      "description": "Boolean flags controlling which recipient types receive event emails for a context.",
+      "properties": {
+        "primaryEmail": {
+          "type": "boolean",
+          "description": "true to send event emails to the practitioner's or facility's primary email on file; false or null to skip this recipient."
+        },
+        "caqhPrimaryEmail": {
+          "type": "boolean",
+          "description": "true to send event emails to the CAQH-sourced primary email on file; false or null to skip this recipient."
+        },
+        "credentialingPrimaryContact": {
+          "type": "boolean",
+          "description": "true to send event emails to the credentialing workflow's primary contact; false or null to skip this recipient."
+        },
+        "credentialingOfficeManager": {
+          "type": "boolean",
+          "description": "true to send event emails to the office manager on the credentialing workflow; false or null to skip this recipient."
+        }
+      }
+    },
+    "EventEmailTemplateDto": {
+      "type": "object",
+      "required": [
+        "subject",
+        "bodyHtml"
+      ],
+      "description": "Subject and body content for one event email type's template.",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "description": "Email subject line. Required and must be non-blank when the parent typeSettings entry has enabled: true."
+        },
+        "bodyHtml": {
+          "type": "string",
+          "description": "Email body as HTML markup. Required and must be non-blank when the parent typeSettings entry has enabled: true."
+        }
+      }
+    },
+    "EventEmailTypeSettingsDto": {
+      "type": "object",
+      "required": [
+        "type",
+        "template",
+        "enabled"
+      ],
+      "description": "Template and enablement settings for one event email type within a mode.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "initiated",
+            "approved",
+            "denied",
+            "cancelled",
+            "psvReady",
+            "inProgress"
+          ],
+          "pattern": "\\S",
+          "description": "Which workflow event this entry configures: \"initiated\" (workflow started), \"approved\" (credentialing/recredentialing approved), \"denied\" (application denied), \"cancelled\" (workflow cancelled), \"psvReady\" (primary source verification complete), \"inProgress\" (workflow in progress)."
+        },
+        "template": {
+          "$ref": "#/$defs/EventEmailTemplateDto",
+          "type": "object",
+          "description": "Email subject/body template for this event type. Required (non-blank subject and bodyHtml) when enabled is true; the server rejects the save with 400 otherwise."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether an email is sent for this event type. When true, template.subject and template.bodyHtml must be non-blank."
+        }
+      }
+    }
+  }
+}

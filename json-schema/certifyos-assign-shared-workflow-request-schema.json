@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-assign-shared-workflow-request-schema.json",
+  "title": "AssignSharedWorkflowRequest",
+  "description": "Assign or unassign one shared credentialing group",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedcredentialingworkflow-api-openapi.yml#/components/schemas/AssignSharedWorkflowRequest",
+  "type": "object",
+  "required": [
+    "tenantId"
+  ],
+  "properties": {
+    "assignedTo": {
+      "type": "string",
+      "description": "Analyst for ordinary members; null or absent unassigns"
+    },
+    "onshoreAssignedTo": {
+      "type": "string",
+      "description": "Analyst for onshore-only members, when the group has any"
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional reason, carried to the audit row"
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Tenant written by the enqueuer; asserted against the tenant-id header"
+    },
+    "expectedAssignedTo": {
+      "type": "string",
+      "description": "The analyst this group held when the task was enqueued. Stamped by the dispatcher so a retried older task cannot undo a newer assignment: Cloud Tasks does not preserve order, and retries make it less ordered still."
+    },
+    "hasExpectedAssignedTo": {
+      "type": "boolean",
+      "description": "Whether expectedAssignedTo was stamped at all. Needed because null is a real expectation -- the group was unassigned -- and absent is not."
+    },
+    "expectedMembersAssignedTo": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The member-level analysts the group held when the task was enqueued. Compared as a set, because R15 legitimately splits one group across two analysts and a member-level reassignment can leave assignedTo untouched."
+    },
+    "unassign": {
+      "type": "boolean"
+    }
+  }
+}

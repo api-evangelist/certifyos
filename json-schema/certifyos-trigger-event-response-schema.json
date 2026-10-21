@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-trigger-event-response-schema.json",
+  "title": "TriggerEventResponse",
+  "description": "Result of accepting a webhook event for asynchronous delivery",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhook-api-openapi.yml#/components/schemas/TriggerEventResponse",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "description": "Pub/Sub message ID for this event. Correlates with delivery logs and with the Idempotency-Key sent to subscribers."
+    },
+    "eventType": {
+      "type": "string",
+      "description": "Event type that was accepted"
+    },
+    "matchedWebhooks": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Active webhooks matching this event type at accept time. Not a delivery guarantee. A value of 0 usually means the event type is misspelled or nothing is subscribed to it; -1 means the subscription lookup failed and the count is unknown (the event was still published)."
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable outcome"
+    }
+  }
+}

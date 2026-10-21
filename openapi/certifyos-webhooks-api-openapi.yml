@@ -227,34 +227,15 @@ paths:
       - jwt: []
 components:
   schemas:
-    ErrorObject:
+    ApiError:
       type: object
-      description: Individual error object containing details about a specific validation or processing error
+      description: Standard API error response containing a list of error objects
       properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
     DrainResult:
       type: object
       properties:
@@ -288,15 +269,6 @@ components:
           examples:
           - to webhook-delivery
           description: Human-readable detail for the outcome, such as the target queue or the failure reason.
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
     DrainDlqResponse:
       type: object
       properties:
@@ -329,6 +301,34 @@ components:
           items:
             $ref: '#/components/schemas/DrainResult'
           description: Per-message outcome details for the messages pulled in this drain.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
     DrainDlqRequest:
       type: object
       properties:

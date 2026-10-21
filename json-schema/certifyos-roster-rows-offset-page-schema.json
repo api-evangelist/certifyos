@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-roster-rows-offset-page-schema.json",
+  "title": "RosterRowsOffsetPage",
+  "description": "One page of roster rows, navigated by page number, with totals for the filtered set.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-rosterrecord-api-openapi.yml#/components/schemas/RosterRowsOffsetPage",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RosterRowItem"
+      },
+      "description": "The roster rows in this page."
+    },
+    "page": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Zero-based number of the page returned."
+    },
+    "size": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of rows requested per page. Defaults to 50 and is capped at 1000."
+    },
+    "totalCount": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Total rows matching the request across every page, after any status filter is applied."
+    },
+    "totalPages": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Total number of pages available at the current page size."
+    },
+    "hasMore": {
+      "type": "boolean",
+      "description": "True when more pages remain after this one."
+    }
+  },
+  "$defs": {
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    },
+    "RosterRowItem": {
+      "type": "object",
+      "description": "A single data row within a roster job, as read from the roster's stored rows.",
+      "properties": {
+        "rowId": {
+          "type": "string",
+          "description": "Stable identifier of this row within the roster. Pass it as recordKey when saving draft edits, and use it to correlate Smart Fix suggestions back to the row they belong to."
+        },
+        "status": {
+          "type": "string",
+          "description": "Processing state of this row. One of PENDING, IN_PROGRESS, VALIDATION_IN_PROGRESS, PRE_PROCESSING, VALIDATION_FAILED, VALIDATED, VALIDATED_WITH_WARNINGS, COMPLETED, CRED_STARTED, FAILED, or CANCELLED. CRED_STARTED means the row imported and its post-import credentialing workflow was created (pdmTransactionType=START). Only rows in VALIDATION_FAILED accept draft edits."
+        },
+        "data": {
+          "$ref": "#/$defs/JsonNode",
+          "type": "object",
+          "description": "The row's field values, keyed by the column headers of the uploaded file. Free-form because the columns differ per roster template; consult the roster's effective schema for the fields it is validated against."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "When the row was first stored, as an ISO-8601 timestamp in UTC."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "When the row was last changed, as an ISO-8601 timestamp in UTC. Updated when draft edits are saved or validation re-runs."
+        }
+      }
+    }
+  }
+}

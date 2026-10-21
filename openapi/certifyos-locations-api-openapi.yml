@@ -459,45 +459,6 @@ paths:
       - jwt: []
 components:
   schemas:
-    HospitalAdmittingPrivilege:
-      type: object
-      properties:
-        privilege:
-          type: string
-        status:
-          type: string
-        effectiveDate:
-          type: string
-        terminationDate:
-          type: string
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
     LocationUpdateRequest:
       type: object
       required:
@@ -555,6 +516,54 @@ components:
         groupLocationUserDefinedFields:
           type: object
           description: Free-form key/value map persisted to GroupLocation.data.userDefinedFields (CP-31476). Deep-merged into existing data; omitted/null keys preserve their prior value.
+    ApiError:
+      type: object
+      description: Standard API error response containing a list of error objects
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    ApiError1:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorObject1'
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    HospitalAdmittingPrivilege:
+      type: object
+      properties:
+        privilege:
+          type: string
+        status:
+          type: string
+        effectiveDate:
+          type: string
+        terminationDate:
+          type: string
+    LocationRequest:
+      type: object
+      required:
+      - groupId
+      properties:
+        groupId:
+          type: string
+        locationData:
+          $ref: https://schemas.certifyos.com/entities/Location.schema.json
+          type: object
+        groupLocationData:
+          $ref: https://schemas.certifyos.com/entities/GroupRegistryLocation.schema.json
+          type: object
+        tenantGroupLocationData:
+          $ref: https://schemas.certifyos.com/entities/TenantGroupLocation.schema.json
+          type: object
     ErrorObject1:
       type: object
       properties:
@@ -574,6 +583,66 @@ components:
         opIndex:
           type: integer
           format: int32
+    LocationSearchResult:
+      type: object
+      required:
+      - id
+      - name
+      description: A single location match for autocomplete dropdowns.
+      properties:
+        id:
+          type: string
+          examples:
+          - a1b2c3d4-e5f6-7890-abcd-ef1234567890
+          description: certifyLocationId — the stored reference for a selected location.
+        name:
+          type: string
+          examples:
+          - Main Street Clinic
+          description: Location display name.
+    ErrorObject:
+      type: object
+      description: Individual error object containing details about a specific validation or processing error
+      properties:
+        httpStatus:
+          type: integer
+          format: int32
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
+          type: string
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
+          type: string
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
+    LocationSearchPagedResponse:
+      type: object
+      required:
+      - data
+      description: Paginated list of location search results.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationSearchResult'
+          description: Locations matching the search term.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total number of matching locations across all pages.
     LocationGeneralInfo:
       type: object
       properties:
@@ -620,30 +689,73 @@ components:
           type: boolean
         tty:
           type: string
-    LocationContact2:
+    LocationAddress2:
       type: object
       properties:
-        type:
+        addressLine1:
           type: string
-        name:
+        addressLine2:
           type: string
-        mainPhoneNumber:
+        city:
           type: string
-        afterHoursPhoneNumber:
+        state:
           type: string
-        email:
+        zip:
+          type: string
+        country:
+          type: string
+        county:
+          type: string
+        phone:
           type: string
         fax:
           type: string
-        tty:
+        email:
           type: string
-    ApiError1:
+        url:
+          type: string
+        use:
+          type: string
+        type:
+          type: string
+    PagedResponse:
       type: object
       properties:
-        errors:
+        data:
           type: array
+          items: {}
+          description: The page of results for this request.
+        totalCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Total number of records matching the request, across all pages.
+        identifiersSearched:
+          type: integer
+          format: int64
+          examples:
+          - 2
+          description: Count of identifiers submitted for a bulk-identifier search (e.g. bulk NPI search). Omitted/null for standard (non-bulk) list requests.
+        matchedCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Count of submitted identifiers that matched a record. Omitted/null for standard (non-bulk) list requests.
+        notFoundCount:
+          type: integer
+          format: int64
+          examples:
+          - 1
+          description: Count of submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
+        unmatchedIdentifiers:
+          type: array
+          examples:
+          - - '9999999999'
           items:
-            $ref: '#/components/schemas/ErrorObject1'
+            type: string
+          description: Submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
     LocationResponse:
       type: object
       properties:
@@ -737,135 +849,23 @@ components:
           $ref: '#/components/schemas/Instant'
         terminationDate:
           $ref: '#/components/schemas/Instant'
-    ApiError:
+    LocationContact2:
       type: object
-      description: Standard API error response containing a list of error objects
       properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    LocationSearchResult:
-      type: object
-      required:
-      - id
-      - name
-      description: A single location match for autocomplete dropdowns.
-      properties:
-        id:
+        type:
           type: string
-          examples:
-          - a1b2c3d4-e5f6-7890-abcd-ef1234567890
-          description: certifyLocationId — the stored reference for a selected location.
         name:
           type: string
-          examples:
-          - Main Street Clinic
-          description: Location display name.
-    LocationAddress2:
-      type: object
-      properties:
-        addressLine1:
+        mainPhoneNumber:
           type: string
-        addressLine2:
-          type: string
-        city:
-          type: string
-        state:
-          type: string
-        zip:
-          type: string
-        country:
-          type: string
-        county:
-          type: string
-        phone:
-          type: string
-        fax:
+        afterHoursPhoneNumber:
           type: string
         email:
           type: string
-        url:
+        fax:
           type: string
-        use:
+        tty:
           type: string
-        type:
-          type: string
-    LocationSearchPagedResponse:
-      type: object
-      required:
-      - data
-      description: Paginated list of location search results.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/LocationSearchResult'
-          description: Locations matching the search term.
-        totalCount:
-          type: integer
-          format: int64
-          description: Total number of matching locations across all pages.
-    LocationRequest:
-      type: object
-      required:
-      - groupId
-      properties:
-        groupId:
-          type: string
-        locationData:
-          $ref: https://schemas.certifyos.com/entities/Location.schema.json
-          type: object
-        groupLocationData:
-          $ref: https://schemas.certifyos.com/entities/GroupRegistryLocation.schema.json
-          type: object
-        tenantGroupLocationData:
-          $ref: https://schemas.certifyos.com/entities/TenantGroupLocation.schema.json
-          type: object
-    PagedResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items: {}
-          description: The page of results for this request.
-        totalCount:
-          type: integer
-          format: int64
-          examples:
-          - 1
-          description: Total number of records matching the request, across all pages.
-        identifiersSearched:
-          type: integer
-          format: int64
-          examples:
-          - 2
-          description: Count of identifiers submitted for a bulk-identifier search (e.g. bulk NPI search). Omitted/null for standard (non-bulk) list requests.
-        matchedCount:
-          type: integer
-          format: int64
-          examples:
-          - 1
-          description: Count of submitted identifiers that matched a record. Omitted/null for standard (non-bulk) list requests.
-        notFoundCount:
-          type: integer
-          format: int64
-          examples:
-          - 1
-          description: Count of submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
-        unmatchedIdentifiers:
-          type: array
-          examples:
-          - - '9999999999'
-          items:
-            type: string
-          description: Submitted identifiers that did not match any record. Omitted/null for standard (non-bulk) list requests.
   securitySchemes:
     jwt:
       type: http

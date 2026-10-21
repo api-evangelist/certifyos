@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-shared-member-status-change-request-schema.json",
+  "title": "SharedMemberStatusChangeRequest",
+  "description": "Request to change the status of a shared workflow's members.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-sharedmemberstatuschange-api-openapi.yml#/components/schemas/SharedMemberStatusChangeRequest",
+  "type": "object",
+  "required": [
+    "workflowIds",
+    "timelineEventData"
+  ],
+  "properties": {
+    "workflowIds": {
+      "type": "array",
+      "maxItems": 500,
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "\\S"
+      },
+      "description": "Member workflow ids to move. At most 500 entries; blanks are rejected and duplicates removed (first occurrence wins), so a repeated id is moved once."
+    },
+    "timelineEventData": {
+      "$ref": "#/$defs/CreateTimelineEventRequest",
+      "type": "object",
+      "description": "Timeline event to apply to each member; its name is the target status."
+    },
+    "memberReasons": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/MemberReason"
+      },
+      "description": "Optional change reason per member, keyed by workflow id. A member with an entry uses it; the others use timelineEventData.changeReason. Every key must also be in workflowIds."
+    }
+  },
+  "$defs": {
+    "CreateTimelineEventRequest": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "changeReason": {
+          "type": "string"
+        },
+        "credentialingDecisionDate": {
+          "$ref": "#/$defs/LocalDate"
+        },
+        "nextCredentialingDate": {
+          "$ref": "#/$defs/LocalDate"
+        },
+        "overrideReason": {
+          "type": "string"
+        },
+        "isOverride": {
+          "type": "boolean"
+        },
+        "progressionReason": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "The reason to move past the open PSV blockers. At most 1000 characters."
+        },
+        "acknowledgedCoverKeys": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "description": "Cover keys of the open PSV blockers this move goes past, as the progression read returned them. Request-only, never stored. At most 500 non-blank entries."
+        },
+        "hiddenCoverKeys": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "description": "Cover keys of the open blockers to hide from the PSV packet: on a move to PSV Complete (the gate writes the mark on the stored covered blockers), or on a single-tenant Withdraw / Cancel before PSV Complete (from GET {workflowId}/psv-progression). Request-only, never stored. Refused on the bulk route; ignored when PSV transparency is off for the tenant. At most 100 non-blank entries."
+        },
+        "hiddenFindingRuleKeys": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "description": "Single-tenant Withdraw / Cancel at PSV Complete: the full desired set of non-clean reasons (finding rule keys) hidden from the packet. Absent leaves the marks as they are; an empty list removes every mark; a key that is not a finding is ignored. Request-only. Ignored at PSV Ready or later and when PSV transparency is off for the tenant; refused on the bulk route. At most 100 non-blank entries."
+        }
+      }
+    },
+    "LocalDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "MemberReason": {
+      "type": "object",
+      "description": "One member's own change reason, and for a single-member request its hide choices.",
+      "properties": {
+        "changeReason": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "This member's change reason; at most 1000 characters."
+        },
+        "hiddenCoverKeys": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "description": "Cover keys to hide from the packet. Allowed only when the request moves exactly one workflow; at most 100 non-blank entries."
+        },
+        "hiddenFindingRuleKeys": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "description": "The full desired set of non-clean reasons (finding rule keys) hidden from the packet. Absent leaves the marks as they are; an empty list removes every mark. Allowed only when the request moves exactly one workflow; at most 100 non-blank entries."
+        },
+        "acknowledgedCoverKeys": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "description": "CP-42729: cover keys of the open PSV blockers this reason moves past, as the progression read returned them. Allowed with any number of members; at most 500 non-blank entries. When the open blockers are not all among them the member is refused with BLOCKERS_CHANGED."
+        }
+      }
+    }
+  }
+}

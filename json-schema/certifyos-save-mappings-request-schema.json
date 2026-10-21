@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-save-mappings-request-schema.json",
+  "title": "SaveMappingsRequest",
+  "description": "Confirmed column mappings to persist as a roster upload template.",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-roster-upload-api-openapi.yml#/components/schemas/SaveMappingsRequest",
+  "type": "object",
+  "properties": {
+    "updateExistingTemplate": {
+      "type": "boolean",
+      "description": "When true, updates the template named by the path parameter; when false or omitted, creates a new template. Creating twice with the same mappings produces two templates.",
+      "default": false
+    },
+    "jobType": {
+      "$ref": "#/$defs/RosterJobType",
+      "type": "string",
+      "description": "Entity catalogue the mappings belong to. One of PRACTITIONER, FACILITY, or GROUP, and must match the template being created or updated."
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Field"
+      },
+      "description": "The confirmed column-to-field mappings to persist. Validated before anything is written; a null list is treated as empty rather than rejected."
+    },
+    "templateName": {
+      "type": "string",
+      "description": "Human-readable name for the template, shown when choosing a template for a future upload. Not enforced by this endpoint on create or update."
+    },
+    "templateDescription": {
+      "type": "string",
+      "description": "Longer note describing what this template is for. Not enforced by this endpoint on create or update."
+    }
+  },
+  "$defs": {
+    "Field": {
+      "type": "object",
+      "description": "One roster column and the Certify system field it maps to.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "CSV column header this mapping applies to, exactly as it appears in the roster file."
+        },
+        "mappedKey": {
+          "type": "string",
+          "description": "Key of the Certify system field this column maps to, from the field catalog returned by `GET /templates/fields`. The sentinel `[skipped]` marks a column the user explicitly chose not to map: skipped columns persist in the template/mappings CSVs but are excluded from the generated validation schema."
+        },
+        "mappedEntity": {
+          "type": "string",
+          "description": "Entity that owns the mapped attribute (for example `practitioner` or `location`). When set, `mappedKey` is accepted as-is instead of being validated against the system-field catalog."
+        },
+        "entityGroup": {
+          "type": "string",
+          "description": "Group label linking columns that belong to the same repeating entity instance (a multiple-value group), so related columns are ingested together."
+        },
+        "isRequired": {
+          "type": "boolean",
+          "description": "Whether every roster row must supply a value for this column; drives the `required` constraint in the generated validation schema."
+        },
+        "isStaticField": {
+          "type": "boolean",
+          "description": "Catalog metadata: whether the mapped system field is a static (fixed-value) field rather than one populated from roster data."
+        },
+        "isSingleSelect": {
+          "type": "boolean",
+          "description": "Catalog metadata: whether the mapped system field accepts a single value from a fixed option list."
+        },
+        "validationRegex": {
+          "type": "string",
+          "description": "Regular expression applied to this column's values during roster validation. Rows whose values do not match are rejected."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the mapped system field, from the field catalog."
+        },
+        "hasPattern": {
+          "type": "boolean",
+          "description": "Catalog metadata (CP-40222): true when the system field schema validates values with a regular expression. The expression itself is deliberately NOT exposed here — the mapping UI shows the plain-language `message.pattern` text instead, and `validationRegex` stays reserved for user-defined per-column rules so a catalog entry posted back as a mapping cannot tighten the generated schema."
+        },
+        "format": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "JSON Schema `format` of the system field (`date`, `email`, `uri`, ...) when it has one. Catalog metadata for the mapping UI (CP-40222); the accepted formats are described in `message.format`."
+        },
+        "message": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Plain-language validation texts from the system field schema, keyed by the rule they describe (`pattern`, `format`, `enum`, `type`, `minLength`, `maxLength`). The mapping UI shows these instead of raw regexes (CP-40222). Absent when the schema defines none."
+        },
+        "conditionallyRequired": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {},
+          "description": "When present, the field is required only under a tenant condition: `condition` names the tenant setting, `value` the value that triggers the requirement and `message` the explanation shown to users (CP-40222)."
+        },
+        "minLength": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32",
+          "description": "Minimum accepted length of the value, when the schema bounds it."
+        },
+        "maxLength": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32",
+          "description": "Maximum accepted length of the value, when the schema bounds it."
+        },
+        "enum": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Allowed values for enum-type system fields; roster values outside this list fail validation. Absent for free-form fields."
+        },
+        "separator": {
+          "type": "string",
+          "description": "Literal separator character used to split a single cell value into multiple tokens for multi-value attributes. Blank or absent defaults to a comma at schema-generation time."
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Free-text note on this template column, such as a pre-processing instruction. Stored per template in the `Notes` column of the template's mappings CSV; not used by validation or ingestion. Blank or absent means no note."
+        },
+        "singleSelect": {
+          "type": "boolean"
+        },
+        "skipped": {
+          "type": "boolean"
+        }
+      }
+    },
+    "RosterJobType": {
+      "type": "string",
+      "enum": [
+        "PRACTITIONER",
+        "FACILITY",
+        "GROUP"
+      ]
+    }
+  }
+}

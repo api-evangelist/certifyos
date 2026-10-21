@@ -1,0 +1,4678 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-npi-validation-response-schema.json",
+  "title": "NpiValidationResponse",
+  "description": "NPI validation response",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-npivalidation-api-openapi.yml#/components/schemas/NpiValidationResponse",
+  "type": "object",
+  "properties": {
+    "npi": {
+      "type": "string",
+      "description": "NPI number"
+    },
+    "isValid": {
+      "type": "boolean",
+      "description": "Whether the NPI is valid"
+    },
+    "status": {
+      "type": "string",
+      "description": "Validation status: VALID_AND_FOUND, VALID_FOUND_IN_NPPES, or VALID_FOUND_IN_NPPES_BUT_FAILED_CROSSWALK_CREATION"
+    },
+    "providerDetails": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CorePractitionerResponse"
+        },
+        {
+          "$ref": "#/$defs/CoreFacilityResponse"
+        },
+        {
+          "$ref": "#/$defs/NppesMappedProviderDetails"
+        }
+      ],
+      "description": "Provider details. Shape depends on entityType: PRACTITIONER → CorePractitionerResponse (DAL canonical schema); FACILITY → CoreFacilityResponse (DAL canonical schema). For both, when the record is sourced from the live NPPES registry, the crosswalk is upserted first and the record is then re-fetched from the DAL so the structure is identical to a direct DAL hit. in case the upsert fails, the response is the NPPES-transformed (NppesProviderDetails) data with the failure status; GROUP → always returns NppesProviderDetails; bypasses the DAL and queries NPPES directly; no crosswalk upsert is performed."
+    }
+  },
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "description": "Address record within an NPPES entry",
+      "properties": {
+        "address1": {
+          "type": "string"
+        },
+        "address2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "addressPurpose": {
+          "type": "string"
+        },
+        "countryCode": {
+          "type": "string"
+        },
+        "countryName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "faxNumber": {
+          "type": "string"
+        },
+        "addressType": {
+          "type": "string",
+          "description": "mailing or practice"
+        },
+        "telephoneNumber": {
+          "type": "string"
+        }
+      }
+    },
+    "Attachment1": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "fileType": {},
+        "fileUrl": {
+          "type": "string"
+        },
+        "originalFileName": {
+          "type": "string"
+        },
+        "state": {},
+        "expirationDate": {},
+        "source": {},
+        "createdBy": {},
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "ClassificationSourceEnum": {
+      "type": "string",
+      "enum": [
+        "NUCC",
+        "CMS",
+        "HSD",
+        "NPPES",
+        "Custom"
+      ]
+    },
+    "ConfidenceEnum": {
+      "type": "string",
+      "enum": [
+        "high",
+        "low"
+      ]
+    },
+    "CoreFacilityResponse": {
+      "type": "object",
+      "properties": {
+        "certifyFacilityId": {
+          "type": "string"
+        },
+        "crosswalkId": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceUrl": {
+          "type": "string"
+        },
+        "sourceType": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        },
+        "sourceDescription": {
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/CoreFacilitydataschema"
+        },
+        "rawSourceData": {
+          "$ref": "#/$defs/JsonNode"
+        },
+        "survivorId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "mdmProcessResult": {
+          "$ref": "#/$defs/MdmProcessResponse"
+        }
+      },
+      "title": "CoreFacilityResponse"
+    },
+    "CoreFacilitydataschema": {
+      "type": "object",
+      "properties": {
+        "lastCredentialedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "lastCredentialingDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "initialCredentialingDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "nextCredentialingDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dba": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "primaryEmail": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "tin": {
+          "type": "string"
+        },
+        "externalId": {
+          "type": "string"
+        },
+        "ncpdpId": {
+          "type": "string"
+        },
+        "facilityType": {
+          "type": "string"
+        },
+        "deceasedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "lineOfBusiness": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attestationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "statesToCredential": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "userDefinedFields": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "delegationStatus": {
+          "$ref": "#/$defs/DelegationStatusEnum1"
+        },
+        "jurisdictionOfInterest": {
+          "type": "string"
+        },
+        "businessPurpose": {
+          "$ref": "#/$defs/FacilityBusinessPurpose"
+        },
+        "emails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaEmailsInner"
+          }
+        },
+        "phoneNumbers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaPhoneNumbersInner"
+          }
+        },
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAddressesInner"
+          }
+        },
+        "licenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaLicensesInner"
+          }
+        },
+        "npdbReports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaNpdbReportsInner"
+          }
+        },
+        "nppes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaNppesInner"
+          }
+        },
+        "certifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaCertificationsInner"
+          }
+        },
+        "supportingDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "insurances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaInsurancesInner"
+          }
+        },
+        "sanctions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaSanctionsInner"
+          }
+        },
+        "specialties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaSpecialtiesInner"
+          }
+        },
+        "accreditations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaAccreditationsInner"
+          }
+        },
+        "siteVisits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaSiteVisitsInner"
+          }
+        },
+        "medicareStarRatings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaMedicareStarRatingsInner"
+          }
+        },
+        "appVerifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaAppVerificationsInner"
+          }
+        },
+        "performanceIndicators": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaPerformanceIndicatorsInner"
+          }
+        }
+      }
+    },
+    "CoreFacilitydataschemaAccreditationsInner": {
+      "type": "object",
+      "properties": {
+        "idNumber": {
+          "type": "string"
+        },
+        "accreditationBody": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaAppVerificationsInner": {
+      "type": "object",
+      "properties": {
+        "verificationType": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaCertificationsInner": {
+      "type": "object",
+      "properties": {
+        "certificateId": {
+          "type": "string"
+        },
+        "certificateType": {
+          "type": "string"
+        },
+        "durationType": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "speciality": {
+          "type": "string"
+        },
+        "subspeciality": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "moc": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "occurrenceType": {
+          "type": "string"
+        },
+        "recordType": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        }
+      }
+    },
+    "CoreFacilitydataschemaEmailsInner": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "emailType": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaInsurancesInner": {
+      "type": "object",
+      "properties": {
+        "carrierName": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "policyNumber": {
+          "type": "string"
+        },
+        "aggregateCoverageAmount": {
+          "type": "string"
+        },
+        "occurrenceCoverageAmount": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "type": {
+          "type": "string"
+        },
+        "unlimitedCoverage": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        }
+      }
+    },
+    "CoreFacilitydataschemaLicensesInner": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "licenseNumber": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "licenseType": {
+          "type": "string"
+        },
+        "licenseStatus": {
+          "type": "string"
+        },
+        "licenseSource": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "licenseNumberVariations": {
+          "type": "string"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataSource": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaMedicareStarRatingsInner": {
+      "type": "object",
+      "properties": {
+        "starRating": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaNpdbReportsInner": {
+      "type": "object",
+      "properties": {
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "processDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "data": {},
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "typeOfAction": {
+          "type": "string"
+        },
+        "createdDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "deceased": {
+          "type": "string"
+        },
+        "paymentAmount": {
+          "type": "string"
+        },
+        "paymentDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "patientAge": {
+          "type": "string"
+        },
+        "patientGender": {
+          "type": "string"
+        },
+        "patientType": {
+          "type": "string"
+        },
+        "medicalConditionDescription": {
+          "type": "string"
+        },
+        "procedureDescription": {
+          "type": "string"
+        },
+        "allegationsDescription": {
+          "type": "string"
+        },
+        "allegationNature": {
+          "type": "string"
+        },
+        "specificAllegation": {
+          "type": "string"
+        },
+        "specificAllegationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "reportType": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "homeAddress": {
+          "type": "string"
+        },
+        "homeCity": {
+          "type": "string"
+        },
+        "homeState": {
+          "type": "string"
+        },
+        "homeZip": {
+          "type": "string"
+        },
+        "dcn": {
+          "type": "string"
+        },
+        "databankSubjectId": {
+          "$ref": "#/$defs/Date"
+        },
+        "enrollmentStatus": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        }
+      }
+    },
+    "CoreFacilitydataschemaNppesInner": {
+      "type": "object",
+      "properties": {
+        "npi": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaNppesInnerAddressesInner"
+          }
+        },
+        "certificationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "createdByName": {
+          "type": "string"
+        },
+        "credential": {
+          "type": "string"
+        },
+        "enumerationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "enumerationType": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaNppesInnerIdentifiersInner"
+          }
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "lastUpdatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "organizationId": {
+          "type": "string"
+        },
+        "otherNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "providerId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "taxonomies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaNppesInnerTaxonomiesInner"
+          }
+        }
+      }
+    },
+    "CoreFacilitydataschemaNppesInnerAddressesInner": {
+      "type": "object",
+      "required": [
+        "address1",
+        "addressType",
+        "city",
+        "countryCode",
+        "countryName",
+        "state"
+      ],
+      "properties": {
+        "address1": {
+          "type": "string"
+        },
+        "addressPurpose": {
+          "type": "string"
+        },
+        "addressType": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "countryCode": {
+          "type": "string"
+        },
+        "countryName": {
+          "type": "string"
+        },
+        "faxNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "telephoneNumber": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaNppesInnerIdentifiersInner": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaNppesInnerTaxonomiesInner": {
+      "type": "object",
+      "required": [
+        "code",
+        "desc"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "desc": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "taxonomyGroup": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaPerformanceIndicatorsInner": {
+      "type": "object",
+      "properties": {
+        "totalComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "clinicalComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "serviceComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "benefitsComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "claimComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accessIssueComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaPhoneNumbersInner": {
+      "type": "object",
+      "properties": {
+        "phoneNumber": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaSanctionsInner": {
+      "type": "object",
+      "properties": {
+        "dateOfReport": {
+          "$ref": "#/$defs/Date"
+        },
+        "sanctionType": {
+          "type": "string"
+        },
+        "typeOfAction": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sanctionStartDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaSiteVisitsInner": {
+      "type": "object",
+      "properties": {
+        "grade": {
+          "type": "string"
+        },
+        "date": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CoreFacilitydataschemaSpecialtiesInner": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "specialty": {
+          "type": "string"
+        },
+        "subspecialty": {
+          "type": "string"
+        },
+        "primarySpecialty": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FacilityAttachment"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerResponse": {
+      "type": "object",
+      "properties": {
+        "certifyId": {
+          "type": "string"
+        },
+        "crosswalkId": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceUrl": {
+          "type": "string"
+        },
+        "sourceType": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        },
+        "sourceDescription": {
+          "type": "string"
+        },
+        "sourceTenantId": {
+          "type": "string"
+        },
+        "sourceTags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "$ref": "#/$defs/CorePractitionerdataschema"
+        },
+        "rawSourceData": {
+          "$ref": "#/$defs/JsonNode"
+        },
+        "deletedData": {
+          "$ref": "#/$defs/JsonNode"
+        },
+        "survivorId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "mdmProcessResult": {
+          "$ref": "#/$defs/MdmProcessResponse"
+        }
+      },
+      "title": "CorePractitionerResponse"
+    },
+    "CorePractitionerdatabaseschemaAppVerificationsInner": {
+      "type": "object",
+      "properties": {
+        "verificationType": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaBoardCertificationsInner": {
+      "type": "object",
+      "properties": {
+        "abmsId": {
+          "type": "string"
+        },
+        "certificateId": {
+          "type": "string"
+        },
+        "certifyingBoardName": {
+          "type": "string"
+        },
+        "isPrimary": {
+          "type": "boolean"
+        },
+        "certificateType": {
+          "type": "string"
+        },
+        "durationType": {
+          "type": "string"
+        },
+        "expireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "reverificationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "speciality": {
+          "type": "string"
+        },
+        "subspeciality": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "moc": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "occuranceType": {
+          "type": "string"
+        },
+        "recordType": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "zipCode": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCaqhPdqs": {
+      "type": "object",
+      "properties": {
+        "practitionerProfessionalId": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalId"
+        },
+        "practitionerSpecialty": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialty"
+        },
+        "attestationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "caqhApiResponseId": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalId": {
+      "type": "object",
+      "properties": {
+        "practitionerEcfmg": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalIdPractitionerEcfmg"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCaqhPdqsPractitionerProfessionalIdPractitionerEcfmg": {
+      "type": "object",
+      "properties": {
+        "ecfmgNumber": {
+          "type": "string"
+        },
+        "ecfmgIssueDate": {
+          "$ref": "#/$defs/Date"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialty": {
+      "type": "object",
+      "properties": {
+        "otherSpecialty": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialtyOtherSpecialty"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCaqhPdqsPractitionerSpecialtyOtherSpecialty": {
+      "type": "object",
+      "properties": {
+        "listedUnderPPOFlag": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCdsInner": {
+      "type": "object",
+      "properties": {
+        "expireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "number": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "providerType": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "url": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaChangeDetailsInner": {
+      "type": "object",
+      "properties": {
+        "changeEffectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "changeReasonCode": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "rosterId": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCliaCertificatesInner": {
+      "type": "object",
+      "properties": {
+        "certificateNumber": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCmsSpecialtiesInner": {
+      "type": "object",
+      "properties": {
+        "cmsTypeCode": {
+          "type": "string"
+        },
+        "cmsTypeName": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaCompactLicensesInner": {
+      "type": "object",
+      "required": [
+        "compactType",
+        "licenseNumber",
+        "coveredStates"
+      ],
+      "properties": {
+        "compactType": {
+          "type": "string"
+        },
+        "licenseNumber": {
+          "type": "string"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "status": {
+          "type": "string"
+        },
+        "homeLicenseNumber": {
+          "type": "string"
+        },
+        "homeLicenseState": {
+          "type": "string"
+        },
+        "homeLicenseType": {
+          "type": "string"
+        },
+        "homeLicenseLinkSource": {
+          "$ref": "#/$defs/HomeLicenseLinkSourceEnum"
+        },
+        "coveredStates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          }
+        },
+        "effectiveStatus": {
+          "$ref": "#/$defs/EffectiveStatusEnum"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataSource": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaComplianceTrainingsInner": {
+      "type": "object",
+      "properties": {
+        "culturalCompetency": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaComplianceTrainingsInnerCulturalCompetency"
+        },
+        "annualFWATraining": {
+          "type": "boolean"
+        },
+        "modelOfCareTraining": {
+          "type": "boolean"
+        },
+        "criticalIncidentTraining": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaComplianceTrainingsInnerCulturalCompetency": {
+      "type": "object"
+    },
+    "CorePractitionerdatabaseschemaDeaInner": {
+      "type": "object",
+      "properties": {
+        "expireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "affiliation": {
+          "type": "string"
+        },
+        "deaNumber": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "schedules": {
+          "type": "string"
+        },
+        "cdsLicenseNumber": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "providerType": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/TypeEnum"
+        },
+        "status": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "url": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaDeathMasterMatchesInner": {
+      "type": "object",
+      "properties": {
+        "isDeceased": {
+          "type": "boolean"
+        },
+        "dateOfDeath": {
+          "$ref": "#/$defs/Date"
+        },
+        "dateOfBirth": {
+          "$ref": "#/$defs/Date"
+        },
+        "name": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/ConfidenceEnum"
+        },
+        "matchedOn": {
+          "$ref": "#/$defs/MatchedOnEnum"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "matchedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaDisclosureQuestionsInner": {
+      "type": "object",
+      "properties": {
+        "explanation": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "answerFlag": {
+          "type": "boolean"
+        },
+        "disclosureDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaEducationInner": {
+      "type": "object",
+      "properties": {
+        "toDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "schoolName": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaEducationTrainingInner": {
+      "type": "object",
+      "properties": {
+        "startDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "endDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "type": {
+          "type": "string"
+        },
+        "educationType": {
+          "$ref": "#/$defs/EducationTypeEnum"
+        },
+        "degree": {
+          "type": "string"
+        },
+        "speciality": {
+          "type": "string"
+        },
+        "subspecialty": {
+          "type": "string"
+        },
+        "institution": {
+          "type": "string"
+        },
+        "licensingBoardReference": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "status": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaEmailsInner": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "emailType": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaHospitalAffiliationsInner": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "specialty": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "isPrimary": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string"
+        },
+        "startDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "endDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "status": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaLanguagesInner": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "isPrimary": {
+          "type": "boolean"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaLicensesInner": {
+      "type": "object",
+      "properties": {
+        "expiration": {
+          "$ref": "#/$defs/Date"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "licenseNumber": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "licenseType": {
+          "type": "string"
+        },
+        "practitionerType": {
+          "type": "string"
+        },
+        "specialty": {
+          "type": "string"
+        },
+        "licenseStatus": {
+          "type": "string"
+        },
+        "licenseSource": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "licenseNumberVariations": {
+          "type": "string"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataSource": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "boardActionFlag": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "scraperScreenshotUrl": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        },
+        "diagnosticPrivilege": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaLicensureActionsInner": {
+      "type": "object",
+      "properties": {
+        "licenseNumber": {
+          "type": "string"
+        },
+        "details": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "lastActionDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "actionType": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "url": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaMalpracticeInsuranceInner": {
+      "type": "object",
+      "properties": {
+        "carrierName": {
+          "type": "string"
+        },
+        "expiryDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "policyNumber": {
+          "type": "string"
+        },
+        "aggregateCoverageAmount": {
+          "type": "string"
+        },
+        "occuranceCoverageAmount": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "type": {
+          "type": "string"
+        },
+        "unlimitedCoverage": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaMalpracticeInsurancesInner": {
+      "type": "object",
+      "properties": {
+        "carrierName": {
+          "type": "string"
+        },
+        "expiryDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "policyNumber": {
+          "type": "string"
+        },
+        "aggregateCoverageAmount": {
+          "type": "string"
+        },
+        "occuranceCoverageAmount": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "type": {
+          "type": "string"
+        },
+        "unlimitedCoverage": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaMedicareInner": {
+      "type": "object",
+      "properties": {
+        "medicareNumber": {
+          "type": "string"
+        },
+        "medicareState": {
+          "type": "string"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInner": {
+      "type": "object",
+      "properties": {
+        "ssn": {
+          "type": "string"
+        },
+        "birthdate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "licensureField": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "processDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "data": {},
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "typeOfAction": {
+          "type": "string"
+        },
+        "createdDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "deceased": {
+          "type": "string"
+        },
+        "paymentAmount": {
+          "type": "string"
+        },
+        "paymentDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "patientAge": {
+          "type": "string"
+        },
+        "patientGender": {
+          "type": "string"
+        },
+        "patientType": {
+          "type": "string"
+        },
+        "medicalConditionDescription": {
+          "type": "string"
+        },
+        "procedureDescription": {
+          "type": "string"
+        },
+        "allegationsDescription": {
+          "type": "string"
+        },
+        "allegationNature": {
+          "type": "string"
+        },
+        "specificAllegation": {
+          "type": "string"
+        },
+        "specificAllegationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "reportType": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "homeAddress": {
+          "type": "string"
+        },
+        "homeCity": {
+          "type": "string"
+        },
+        "homeState": {
+          "type": "string"
+        },
+        "homeZip": {
+          "type": "string"
+        },
+        "dcn": {
+          "type": "string"
+        },
+        "reportDCN": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "maintainedUnder": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInnerMaintainedUnder"
+        },
+        "correctedFields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "previousDCN": {
+          "type": "string"
+        },
+        "previousTransaction": {
+          "type": "string"
+        },
+        "databankSubjectId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "otherName": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInnerOtherNameInner"
+          }
+        },
+        "certification": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInnerCertification"
+        },
+        "submitter": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInnerSubmitter"
+        },
+        "enrollmentStatus": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInnerEnrollmentStatus"
+        },
+        "transactionTypeCode": {
+          "type": "string"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "recentChangeDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInnerCertification": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "phone": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInnerCertificationPhone"
+        },
+        "date": {
+          "$ref": "#/$defs/Date"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInnerCertificationPhone": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInnerEnrollmentStatus": {
+      "type": "object",
+      "properties": {
+        "dataBank": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "statusCode": {
+          "type": "string"
+        },
+        "section1128e": {
+          "type": "boolean"
+        },
+        "section1921": {
+          "type": "boolean"
+        },
+        "titleIV": {
+          "type": "boolean"
+        },
+        "startDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "endDate": {
+          "$ref": "#/$defs/Date"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInnerMaintainedUnder": {
+      "type": "object",
+      "properties": {
+        "statute": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInnerOtherNameInner": {
+      "type": "object",
+      "required": [
+        "firstName",
+        "lastName"
+      ],
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNpdbReportsInnerSubmitter": {
+      "type": "object",
+      "properties": {
+        "entityDBID": {
+          "type": "string"
+        },
+        "agentDBID": {
+          "type": "string"
+        },
+        "vendorID": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNppesInner": {
+      "type": "object",
+      "properties": {
+        "npi": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaNppesInnerAddressesInner"
+          }
+        },
+        "certificationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "createdByName": {
+          "type": "string"
+        },
+        "credential": {
+          "type": "string"
+        },
+        "enumerationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "enumerationType": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CoreFacilitydataschemaNppesInnerIdentifiersInner"
+          }
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "lastUpdatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "organizationId": {
+          "type": "string"
+        },
+        "otherNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "providerId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "taxonomies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaNppesInnerTaxonomiesInner"
+          }
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNppesInnerAddressesInner": {
+      "type": "object",
+      "properties": {
+        "address1": {
+          "type": "string"
+        },
+        "addressPurpose": {
+          "type": "string"
+        },
+        "addressType": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "countryCode": {
+          "type": "string"
+        },
+        "countryName": {
+          "type": "string"
+        },
+        "faxNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "telephoneNumber": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaNppesInnerTaxonomiesInner": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "desc": {
+          "type": "string"
+        },
+        "license": {
+          "type": "string"
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "state": {
+          "type": "string"
+        },
+        "taxonomyGroup": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaPerformanceIndicatorsInner": {
+      "type": "object",
+      "properties": {
+        "totalComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "clinicalComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "serviceComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "benefitsComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "claimComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "accessIssueComplaints": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaPhoneNumbersInner": {
+      "type": "object",
+      "properties": {
+        "phoneNumber": {
+          "type": "string"
+        },
+        "faxNumber": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaPracticeLocationsInner": {
+      "type": "object",
+      "properties": {
+        "address1": {
+          "type": "string"
+        },
+        "address2": {
+          "type": "string"
+        },
+        "address3": {
+          "type": "string"
+        },
+        "address4": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "county": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "zipcode": {
+          "type": "string"
+        },
+        "healthcareServiceName": {
+          "type": "string"
+        },
+        "faxNumber": {
+          "type": "string"
+        },
+        "telephoneNumber": {
+          "type": "string"
+        },
+        "tin": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "startDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "phoneCoverage24x7": {
+          "type": "boolean"
+        },
+        "totalLocationHours": {
+          "type": "number"
+        },
+        "locationHours": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaPracticeLocationsInnerLocationHoursInner"
+          }
+        },
+        "drawingBlood": {
+          "type": "boolean"
+        },
+        "laboratoryServices": {
+          "type": "boolean"
+        },
+        "cliaNumber": {
+          "type": "string"
+        },
+        "cliaExpirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "locationAccessibility": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaPracticeLocationsInnerLocationAccessibility"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaPracticeLocationsInnerLocationAccessibility": {
+      "type": "object",
+      "properties": {
+        "adaAccessibilityFlag": {
+          "type": "boolean"
+        },
+        "handicappedAccessFlag": {
+          "type": "boolean"
+        },
+        "parkingAccessFlag": {
+          "type": "boolean"
+        },
+        "restroomAccessFlag": {
+          "type": "boolean"
+        },
+        "otherDisabilityServicesFlag": {
+          "type": "boolean"
+        },
+        "ttyAccessFlag": {
+          "type": "boolean"
+        },
+        "aslAccessFlag": {
+          "type": "boolean"
+        },
+        "impairmentServicesFlag": {
+          "type": "boolean"
+        },
+        "publicTransportationAccessFlag": {
+          "type": "boolean"
+        },
+        "busAccessFlag": {
+          "type": "boolean"
+        },
+        "subwayAccessFlag": {
+          "type": "boolean"
+        },
+        "trainAccessFlag": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaPracticeLocationsInnerLocationHoursInner": {
+      "type": "object",
+      "properties": {
+        "dayOfWeek": {
+          "$ref": "#/$defs/DayOfWeekEnum"
+        },
+        "startHours": {
+          "type": "string"
+        },
+        "endHours": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaProfessionalIdsInner": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaResidencyInner": {
+      "type": "object",
+      "properties": {
+        "schoolName": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaSanctionsInner": {
+      "type": "object",
+      "properties": {
+        "dateOfReport": {
+          "$ref": "#/$defs/Date"
+        },
+        "sanctionType": {
+          "type": "string"
+        },
+        "typeOfAction": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sanctionStartDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "exclusionInitiatedBy": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "url": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaSiteVisitsInner": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "$ref": "#/$defs/Date"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaSpecialtiesInner": {
+      "type": "object",
+      "properties": {
+        "specialty": {
+          "type": "string"
+        },
+        "subspecialty": {
+          "type": "string"
+        },
+        "primarySpecialty": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "taxonomyCode": {
+          "type": "string"
+        },
+        "classificationSource": {
+          "$ref": "#/$defs/ClassificationSourceEnum"
+        },
+        "boardName": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        },
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "terminationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "tenantPractitionerSpecialtyId": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaWorkHistoryGapsInner": {
+      "type": "object",
+      "properties": {
+        "explanation": {
+          "type": "string"
+        },
+        "gapStartDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "gapEndDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdatabaseschemaXRayLicensesInner": {
+      "type": "object",
+      "properties": {
+        "licenseNumber": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "CorePractitionerdataschema": {
+      "type": "object",
+      "properties": {
+        "caqhPdqs": {
+          "$ref": "#/$defs/CorePractitionerdatabaseschemaCaqhPdqs"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "caqhPrimaryEmail": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "primaryEmail": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "externalId": {
+          "type": "string"
+        },
+        "enrollmentStartDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "reimbursementId": {
+          "type": "string"
+        },
+        "supervisingPractitionerId": {
+          "type": "string"
+        },
+        "caqhProviderId": {
+          "type": "string"
+        },
+        "providerType": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "practitionerType": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "practitionerSpecializedTraining": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "practitionerTypesToCredential": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewCompleteDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "statesToCredential": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "practitionerRoles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "practitionerRolesMap": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/PractitionerRolesMapValue"
+          }
+        },
+        "lineOfBusiness": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "providerId": {
+          "type": "string"
+        },
+        "dateOfBirth": {
+          "$ref": "#/$defs/Date"
+        },
+        "ssn": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "race": {
+          "type": "string"
+        },
+        "ethnicity": {
+          "type": "string"
+        },
+        "providerCreatedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "npdbDatabankSubjectId": {
+          "type": "string"
+        },
+        "npdbDcn": {
+          "type": "string"
+        },
+        "isDeceased": {
+          "type": "boolean"
+        },
+        "deceasedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "deceasedExplanation": {
+          "type": "string"
+        },
+        "lastCredentialedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "lastCredentialingDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "nextCredentialingDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "initialCredentialingDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "terminationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "terminationReason": {
+          "type": "string"
+        },
+        "emails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaEmailsInner"
+          }
+        },
+        "userDefinedFields": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "delegationStatus": {
+          "$ref": "#/$defs/DelegationStatusEnum"
+        },
+        "jurisdictionOfInterest": {
+          "type": "string"
+        },
+        "businessPurpose": {
+          "$ref": "#/$defs/PractitionerBusinessPurpose"
+        },
+        "phoneNumbers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaPhoneNumbersInner"
+          }
+        },
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PractitionerAddressesInner"
+          }
+        },
+        "licenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaLicensesInner"
+          }
+        },
+        "compactLicenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaCompactLicensesInner"
+          }
+        },
+        "deathMasterMatches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaDeathMasterMatchesInner"
+          }
+        },
+        "medicaid": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PractitionerMedicaidInner"
+          }
+        },
+        "malpracticeInsurances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaMalpracticeInsurancesInner"
+          }
+        },
+        "malpracticeInsurance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaMalpracticeInsuranceInner"
+          }
+        },
+        "supportingDocuments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "boardCertifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaBoardCertificationsInner"
+          }
+        },
+        "hospitalAffiliations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaHospitalAffiliationsInner"
+          }
+        },
+        "sanctions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaSanctionsInner"
+          }
+        },
+        "sanctionsLineage": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/SanctionsLineageValue"
+          }
+        },
+        "workHistoryGaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaWorkHistoryGapsInner"
+          }
+        },
+        "disclosureQuestions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaDisclosureQuestionsInner"
+          }
+        },
+        "nppes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaNppesInner"
+          }
+        },
+        "practiceLocations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaPracticeLocationsInner"
+          }
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaLanguagesInner"
+          }
+        },
+        "licensureActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaLicensureActionsInner"
+          }
+        },
+        "dea": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaDeaInner"
+          }
+        },
+        "cds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaCdsInner"
+          }
+        },
+        "cmsSpecialties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaCmsSpecialtiesInner"
+          }
+        },
+        "npdbReports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaNpdbReportsInner"
+          }
+        },
+        "educationTraining": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaEducationTrainingInner"
+          }
+        },
+        "residency": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaResidencyInner"
+          }
+        },
+        "education": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaEducationInner"
+          }
+        },
+        "cliaCertificates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaCliaCertificatesInner"
+          }
+        },
+        "medicare": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaMedicareInner"
+          }
+        },
+        "xRayLicenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaXRayLicensesInner"
+          }
+        },
+        "specialties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaSpecialtiesInner"
+          }
+        },
+        "appVerifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaAppVerificationsInner"
+          }
+        },
+        "professionalIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaProfessionalIdsInner"
+          }
+        },
+        "siteVisits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaSiteVisitsInner"
+          }
+        },
+        "performanceIndicators": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaPerformanceIndicatorsInner"
+          }
+        },
+        "complianceTrainings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaComplianceTrainingsInner"
+          }
+        },
+        "changeDetails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CorePractitionerdatabaseschemaChangeDetailsInner"
+          }
+        }
+      }
+    },
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "DayOfWeekEnum": {
+      "type": "string",
+      "enum": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ]
+    },
+    "DelegationStatusEnum": {
+      "type": "string",
+      "enum": [
+        "Delegated",
+        "Direct",
+        "CredNotRequired",
+        "DeDelegated"
+      ]
+    },
+    "DelegationStatusEnum1": {
+      "type": "string",
+      "enum": [
+        "Delegated",
+        "Direct"
+      ]
+    },
+    "EducationTypeEnum": {
+      "type": "string",
+      "enum": [
+        "medicalSchool",
+        "alliedHealthEducation",
+        "podiatricMedicine",
+        "chiropracticSchool",
+        "nursingSchool",
+        "OTHER"
+      ]
+    },
+    "EffectiveStatusEnum": {
+      "type": "string",
+      "enum": [
+        "PENDING_LINKAGE",
+        "INELIGIBLE",
+        "EXPIRED",
+        "ACTIVE"
+      ]
+    },
+    "FacilityAddressesInner": {
+      "type": "object",
+      "properties": {
+        "address1": {
+          "type": "string"
+        },
+        "address2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "zipcode": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "isPrimary": {
+          "type": "boolean"
+        },
+        "county": {
+          "type": "string"
+        },
+        "zipExtension": {
+          "type": "string"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "stateFips": {
+          "type": "string"
+        },
+        "countyFips": {
+          "type": "string"
+        },
+        "formattedAddress": {
+          "type": "string"
+        }
+      }
+    },
+    "FacilityAttachment": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "fileType": {
+          "type": "string"
+        },
+        "fileUrl": {
+          "type": "string"
+        },
+        "originalFileName": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string"
+        }
+      }
+    },
+    "FacilityBusinessPurpose": {
+      "type": "object",
+      "properties": {
+        "isForCredentialing": {
+          "$ref": "#/$defs/FacilityBusinessPurposeIsForCredentialing"
+        },
+        "isForMonitoring": {
+          "$ref": "#/$defs/FacilityBusinessPurposeIsForMonitoring"
+        }
+      }
+    },
+    "FacilityBusinessPurposeIsForCredentialing": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "FacilityBusinessPurposeIsForMonitoring": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "HomeLicenseLinkSourceEnum": {
+      "type": "string",
+      "enum": [
+        "INGESTED",
+        "MANUAL",
+        "UNLINKED"
+      ]
+    },
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    },
+    "MatchedOnEnum": {
+      "type": "string",
+      "enum": [
+        "ssn_dob",
+        "ssn_only",
+        "name_dob"
+      ]
+    },
+    "MdmErrorDetail": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "failedStep": {
+          "type": "string"
+        }
+      }
+    },
+    "MdmExecutionSummary": {
+      "type": "object",
+      "properties": {
+        "stepsExecuted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stepsSkipped": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stepsFailed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "totalDurationMs": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "MdmProcessResponse": {
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string"
+        },
+        "entityType": {
+          "type": "string"
+        },
+        "entityId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/MdmProcessStatus"
+        },
+        "executionSummary": {
+          "$ref": "#/$defs/MdmExecutionSummary"
+        },
+        "stepResults": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/MdmStepResult"
+          }
+        },
+        "error": {
+          "$ref": "#/$defs/MdmErrorDetail"
+        }
+      }
+    },
+    "MdmProcessStatus": {
+      "type": "string",
+      "enum": [
+        "SUCCESS",
+        "FAILED"
+      ]
+    },
+    "MdmStepResult": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "matchedEntities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "certifyId": {
+          "type": "string"
+        },
+        "errorCode": {
+          "type": "string"
+        },
+        "errorDetails": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "skipReason": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        }
+      }
+    },
+    "NppesEntry": {
+      "type": "object",
+      "description": "NPPES entry for a GROUP NPI lookup",
+      "properties": {
+        "npi": {
+          "type": "string",
+          "description": "NPI number"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the record is active in NPPES"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "credential": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "enumerationDate": {
+          "type": "string",
+          "description": "Date NPI was enumerated (YYYY-MM-DD)"
+        },
+        "lastUpdatedAt": {
+          "type": "string",
+          "description": "Date record was last updated in NPPES (YYYY-MM-DD)"
+        },
+        "certificationDate": {
+          "type": "string",
+          "description": "Certification date (YYYY-MM-DD)"
+        },
+        "enumerationType": {
+          "type": "string",
+          "description": "NPPES enumeration type: 1=individual, 2=organization"
+        },
+        "organizationId": {
+          "type": "string",
+          "description": "Organization name associated with this GROUP NPI"
+        },
+        "addresses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Address"
+          },
+          "description": "Mailing and practice addresses for this entry"
+        },
+        "taxonomies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Taxonomy"
+          },
+          "description": "Taxonomy classifications"
+        },
+        "identifiers": {
+          "type": "array",
+          "items": {},
+          "description": "Other identifiers (e.g. state licence IDs)"
+        },
+        "id": {
+          "type": "string"
+        },
+        "providerId": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "createdByName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "verifiedAt": {
+          "type": "string"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "type": "string"
+        },
+        "verifiedByName": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "otherNames": {
+          "type": "array",
+          "items": {},
+          "description": "Alternate names on record"
+        }
+      }
+    },
+    "NppesMappedProviderDetails": {
+      "type": "object",
+      "description": "providerDetails shape for entityType=GROUP or when the upsert fails for practitioner or facility. GROUP bypasses the DAL and always queries the live NPPES registry; no crosswalk upsert is performed. The nppes[] array carries the NPPES-mapped entries with both practitioner-level fields (firstName, lastName, organizationId) and nested addresses/taxonomies.",
+      "properties": {
+        "npi": {
+          "type": "string",
+          "description": "NPI number"
+        },
+        "nppes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NppesEntry"
+          },
+          "description": "NPPES registry entries mapped for this GROUP NPI"
+        },
+        "emails": {
+          "type": "array",
+          "items": {},
+          "description": "Email addresses on record"
+        },
+        "phoneNumbers": {
+          "type": "array",
+          "items": {},
+          "description": "Phone numbers on record"
+        },
+        "addresses": {
+          "type": "array",
+          "items": {},
+          "description": "Addresses on record (top-level; detailed addresses are inside nppes[])"
+        },
+        "licenses": {
+          "type": "array",
+          "items": {},
+          "description": "Licenses on record"
+        },
+        "npdbReports": {
+          "type": "array",
+          "items": {},
+          "description": "NPDB reports"
+        },
+        "certifications": {
+          "type": "array",
+          "items": {},
+          "description": "Certifications"
+        },
+        "supportingDocuments": {
+          "type": "array",
+          "items": {},
+          "description": "Supporting documents"
+        },
+        "insurances": {
+          "type": "array",
+          "items": {},
+          "description": "Insurance records"
+        },
+        "sanctions": {
+          "type": "array",
+          "items": {},
+          "description": "Sanction records"
+        },
+        "specialties": {
+          "type": "array",
+          "items": {},
+          "description": "Specialties"
+        },
+        "accreditations": {
+          "type": "array",
+          "items": {},
+          "description": "Accreditations"
+        },
+        "siteVisits": {
+          "type": "array",
+          "items": {},
+          "description": "Site visits"
+        },
+        "medicareStarRatings": {
+          "type": "array",
+          "items": {},
+          "description": "Medicare star ratings"
+        },
+        "appVerifications": {
+          "type": "array",
+          "items": {},
+          "description": "Application verifications"
+        },
+        "performanceIndicators": {
+          "type": "array",
+          "items": {},
+          "description": "Performance indicators"
+        },
+        "lineOfBusiness": {
+          "type": "array",
+          "items": {},
+          "description": "Lines of business"
+        },
+        "statesToCredential": {
+          "type": "array",
+          "items": {},
+          "description": "States to credential in"
+        }
+      },
+      "title": "NppesMappedProviderDetails"
+    },
+    "PractitionerAddressesInner": {
+      "type": "object",
+      "properties": {
+        "address1": {
+          "type": "string"
+        },
+        "address2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "country": {
+          "type": "string"
+        },
+        "zipcode": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "PractitionerBusinessPurpose": {
+      "type": "object",
+      "properties": {
+        "isForCredentialing": {
+          "$ref": "#/$defs/PractitionerBusinessPurposeIsForCredentialing"
+        },
+        "isForMonitoring": {
+          "$ref": "#/$defs/PractitionerBusinessPurposeIsForMonitoring"
+        }
+      }
+    },
+    "PractitionerBusinessPurposeIsForCredentialing": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "PractitionerBusinessPurposeIsForMonitoring": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "PractitionerMedicaidInner": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string"
+        },
+        "medicaidNumber": {
+          "type": "string"
+        },
+        "medicaidState": {
+          "type": "string"
+        },
+        "cdsNumber": {
+          "type": "string"
+        },
+        "issueDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "expirationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "source": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "reportDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "flaggedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/Date"
+        },
+        "updatedBy": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Attachment1"
+          }
+        },
+        "verifiedDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "verifiedBy": {
+          "type": "string"
+        },
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "credWorkflowRecordOrigin": {
+          "type": "string"
+        },
+        "credentialingDisplayGroupKey": {
+          "type": "string"
+        }
+      }
+    },
+    "PractitionerRolesMapValue": {
+      "type": "object",
+      "properties": {
+        "effectiveDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "terminationDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "continuityOfCare": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SanctionsLineageValue": {
+      "type": "object",
+      "properties": {
+        "dataAcquireDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "sourceUpdateDate": {
+          "$ref": "#/$defs/Date"
+        },
+        "fileUrl": {
+          "type": "string"
+        },
+        "sourceType": {
+          "type": "string"
+        },
+        "sanctionType": {
+          "type": "string"
+        },
+        "typeOfAction": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        }
+      }
+    },
+    "Taxonomy": {
+      "type": "object",
+      "description": "Taxonomy classification for a GROUP NPI entry",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "NUCC taxonomy code"
+        },
+        "desc": {
+          "type": "string",
+          "description": "Human-readable taxonomy description"
+        },
+        "license": {
+          "type": "string"
+        },
+        "primary": {
+          "type": "boolean",
+          "description": "Whether this is the primary taxonomy"
+        },
+        "state": {
+          "type": "string"
+        },
+        "taxonomyGroup": {
+          "type": "string"
+        }
+      }
+    },
+    "TypeEnum": {
+      "type": "string",
+      "enum": [
+        "DEA",
+        "CDS"
+      ]
+    }
+  }
+}

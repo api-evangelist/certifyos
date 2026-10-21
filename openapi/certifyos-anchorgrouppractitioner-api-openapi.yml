@@ -172,78 +172,35 @@ paths:
       - jwt: []
 components:
   schemas:
-    AnchorGroupPractitionerRow:
+    ApiError:
       type: object
-      required:
-      - anchorGroupPractitionerId
-      description: One practitioner row of the Anchor Ops inventory.
+      description: Standard API error response containing a list of error objects
       properties:
-        anchorGroupPractitionerId:
-          type: string
-          description: Anchor group practitioner id.
-        practitionerRegistryId:
-          type: string
-          description: Practitioner registry id.
-        firstName:
-          type: string
-          description: Practitioner first name.
-        lastName:
-          type: string
-          description: Practitioner last name.
-        npi:
-          type: string
-          description: Practitioner NPI.
-        effectiveAnchorDate:
-          $ref: '#/components/schemas/LocalDate'
-          type: string
-          description: Effective anchor date (yyyy-MM-dd).
-        computedAnchorDate:
-          $ref: '#/components/schemas/LocalDate'
-          type: string
-          description: Platform-calculated anchor date (yyyy-MM-dd).
-        participatingTenants:
+        errors:
           type: array
           items:
-            $ref: '#/components/schemas/ParticipatingTenant'
-          description: Tenants this anchor currently covers.
-        operationalStatus:
-          type: string
-          description: Operational status.
-        updatedAt:
-          $ref: '#/components/schemas/Instant'
-          type: string
-          description: Last update to the row.
-    AnchorTenantParticipation:
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    AnchorGroupPractitionerPagedResponse:
       type: object
       required:
-      - tenantId
-      description: One tenant's eligibility, participation and scheduling date for a practitioner.
+      - data
+      description: Paginated Anchor Ops inventory.
       properties:
-        tenantId:
-          type: string
-          description: Tenant id.
-        tenantName:
-          type: string
-          description: Tenant display name.
-        eligible:
-          type: boolean
-          description: Whether the platform currently rates this tenant eligible.
-        exclusionReason:
-          type: string
-          description: Exclusion reason code when not eligible.
-        participating:
-          type: boolean
-          description: Effective participation — the value the checkbox renders from.
-        participationOverride:
-          type: boolean
-          description: Raw stored is_participating; null means 'follows eligibility'.
-        tenantSchedulingDate:
-          $ref: '#/components/schemas/LocalDate'
-          type: string
-          description: Stored tenant scheduling date (yyyy-MM-dd).
-        tenantSchedulingDateSource:
-          type: string
-          description: Source of the stored scheduling date.
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnchorGroupPractitionerRow'
+          description: Inventory rows on this page.
+        totalCount:
+          type: integer
+          format: int64
+          description: Total matching rows across all pages.
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
     AnchorPractitionerDetail:
       type: object
       required:
@@ -323,6 +280,87 @@ components:
           items:
             type: string
           description: Tenants the platform currently rates eligible for this practitioner.
+    AnchorGroupPractitionerRow:
+      type: object
+      required:
+      - anchorGroupPractitionerId
+      description: One practitioner row of the Anchor Ops inventory.
+      properties:
+        anchorGroupPractitionerId:
+          type: string
+          description: Anchor group practitioner id.
+        practitionerRegistryId:
+          type: string
+          description: Practitioner registry id.
+        firstName:
+          type: string
+          description: Practitioner first name.
+        lastName:
+          type: string
+          description: Practitioner last name.
+        npi:
+          type: string
+          description: Practitioner NPI.
+        effectiveAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Effective anchor date (yyyy-MM-dd).
+        computedAnchorDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Platform-calculated anchor date (yyyy-MM-dd).
+        participatingTenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParticipatingTenant'
+          description: Tenants this anchor currently covers.
+        operationalStatus:
+          type: string
+          description: Operational status.
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+          type: string
+          description: Last update to the row.
+    AnchorOperationsSummary:
+      type: object
+      description: Group-level counts for the four Anchor Ops summary cards.
+      properties:
+        total:
+          type: integer
+          format: int64
+          description: Total practitioners in the Anchor Group.
+        automatic:
+          type: integer
+          format: int64
+          description: Practitioners with an automatic anchor.
+        manualOverride:
+          type: integer
+          format: int64
+          description: Practitioners with a manual override. Nonzero only once a recompute has observed an override on the row.
+        reviewRequired:
+          type: integer
+          format: int64
+          description: Practitioners flagged for review. Nonzero only once a recompute has observed an override on the row and platform drift under it.
+    LocalDate:
+      type: string
+      format: date
+      examples:
+      - '2022-03-10'
+    ParticipatingTenant:
+      type: object
+      required:
+      - tenantId
+      description: A tenant this practitioner's anchor currently covers.
+      properties:
+        tenantId:
+          type: string
+          description: Tenant id.
+        tenantName:
+          type: string
+          description: Tenant display name.
+        withdrawable:
+          type: boolean
+          description: 'Withdraw preview only: whether this tenant has a member that can be withdrawn. Absent outside the preview.'
     ErrorObject:
       type: object
       description: Individual error object containing details about a specific validation or processing error
@@ -351,31 +389,11 @@ components:
         rejectedValue:
           type: string
           description: The value that was rejected, omitted for sensitive fields such as SSN
-    AnchorOperationsSummary:
-      type: object
-      description: Group-level counts for the four Anchor Ops summary cards.
-      properties:
-        total:
-          type: integer
-          format: int64
-          description: Total practitioners in the Anchor Group.
-        automatic:
-          type: integer
-          format: int64
-          description: Practitioners with an automatic anchor.
-        manualOverride:
-          type: integer
-          format: int64
-          description: Practitioners with a manual override. Nonzero only once a recompute has observed an override on the row.
-        reviewRequired:
-          type: integer
-          format: int64
-          description: Practitioners flagged for review. Nonzero only once a recompute has observed an override on the row and platform drift under it.
-    ParticipatingTenant:
+    AnchorTenantParticipation:
       type: object
       required:
       - tenantId
-      description: A tenant this practitioner's anchor currently covers.
+      description: One tenant's eligibility, participation and scheduling date for a practitioner.
       properties:
         tenantId:
           type: string
@@ -383,43 +401,25 @@ components:
         tenantName:
           type: string
           description: Tenant display name.
-        withdrawable:
+        eligible:
           type: boolean
-          description: 'Withdraw preview only: whether this tenant has a member that can be withdrawn. Absent outside the preview.'
-    ApiError:
-      type: object
-      description: Standard API error response containing a list of error objects
-      properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    AnchorGroupPractitionerPagedResponse:
-      type: object
-      required:
-      - data
-      description: Paginated Anchor Ops inventory.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnchorGroupPractitionerRow'
-          description: Inventory rows on this page.
-        totalCount:
-          type: integer
-          format: int64
-          description: Total matching rows across all pages.
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    LocalDate:
-      type: string
-      format: date
-      examples:
-      - '2022-03-10'
+          description: Whether the platform currently rates this tenant eligible.
+        exclusionReason:
+          type: string
+          description: Exclusion reason code when not eligible.
+        participating:
+          type: boolean
+          description: Effective participation — the value the checkbox renders from.
+        participationOverride:
+          type: boolean
+          description: Raw stored is_participating; null means 'follows eligibility'.
+        tenantSchedulingDate:
+          $ref: '#/components/schemas/LocalDate'
+          type: string
+          description: Stored tenant scheduling date (yyyy-MM-dd).
+        tenantSchedulingDateSource:
+          type: string
+          description: Source of the stored scheduling date.
   securitySchemes:
     jwt:
       type: http

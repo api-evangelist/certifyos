@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-update-group-request-schema.json",
+  "title": "UpdateGroupRequest",
+  "description": "Request to update an existing group with complete data",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-group-api-openapi.yml#/components/schemas/UpdateGroupRequest",
+  "type": "object",
+  "properties": {
+    "certifyGroupId": {
+      "type": "string",
+      "description": "Primary key - Certify Group ID"
+    },
+    "sourceId": {
+      "type": "string",
+      "description": "Foreign key - Source ID"
+    },
+    "crosswalkId": {
+      "type": "string",
+      "description": "Foreign key - Crosswalk ID"
+    },
+    "affiliation": {
+      "type": "string",
+      "description": "Group affiliation"
+    },
+    "npi": {
+      "type": "string",
+      "pattern": "^\\d{10}$",
+      "description": "National Provider Identifier"
+    },
+    "name": {
+      "type": "string",
+      "description": "Group name"
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Contact1"
+      },
+      "description": "Group contacts"
+    },
+    "parentHealthcareOrg": {
+      "type": "string",
+      "description": "Parent healthcare organization ID"
+    },
+    "tin": {
+      "type": "string",
+      "description": "Tax Identification Number. Characters other than digits are removed before the group is saved, so 12-3456789 is stored as 123456789."
+    },
+    "type": {
+      "type": "string",
+      "description": "Group type"
+    },
+    "legalTaxName": {
+      "type": "string",
+      "description": "Legal tax name"
+    },
+    "email": {
+      "type": "string",
+      "description": "Group Overview email address — an email with no associated contact type (CP-35967). Distinct from contacts[] entries and from the typed contractingContact/officeManager/credentialingContact emails."
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Whether the group is active"
+    },
+    "telemedicineAvailable": {
+      "type": "boolean",
+      "description": "Whether telemedicine is available"
+    },
+    "taxInfo": {
+      "$ref": "#/$defs/TaxInfo",
+      "type": "object",
+      "description": "Tax information"
+    },
+    "bedCount": {
+      "type": "integer",
+      "format": "int32",
+      "description": "Number of beds"
+    },
+    "dea": {
+      "type": "string",
+      "description": "DEA number"
+    },
+    "specialtyIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Specialty IDs to associate with the group (consistent with create practitioner pattern)"
+    },
+    "groupEffectiveDate": {
+      "$ref": "#/$defs/LocalDate",
+      "type": "string",
+      "description": "Group effective date"
+    },
+    "externalGroupId": {
+      "type": "string",
+      "description": "External group ID from tenant system"
+    },
+    "contactPerson": {
+      "type": "object",
+      "description": "Contact person information as JSON"
+    },
+    "userDefinedFields": {
+      "type": "object",
+      "description": "Custom user-defined fields. Replaces the entire userDefinedFields object (PUT semantics)."
+    },
+    "credentialingContact": {
+      "$ref": "#/$defs/CredentialingContact",
+      "type": "object",
+      "description": "Credentialing contact information"
+    },
+    "npdbEnrollmentEnabled": {
+      "type": "boolean",
+      "description": "Whether NPDB enrollment is enabled"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/LocalDateTime",
+      "type": "string",
+      "description": "Creation timestamp"
+    },
+    "createdBy": {
+      "type": "string",
+      "description": "Foreign key - Created by User ID"
+    },
+    "addresses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GroupAddressData"
+      },
+      "description": "Group addresses to update"
+    }
+  },
+  "$defs": {
+    "Contact1": {
+      "type": "object",
+      "description": "Contact information",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Contact name"
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone"
+        },
+        "title": {
+          "type": "string",
+          "description": "Contact title"
+        },
+        "department": {
+          "type": "string",
+          "description": "Contact department"
+        }
+      }
+    },
+    "CredentialingContact": {
+      "type": "object",
+      "description": "Credentialing contact information",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Contact name"
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone"
+        },
+        "title": {
+          "type": "string",
+          "description": "Contact title"
+        },
+        "department": {
+          "type": "string",
+          "description": "Contact department"
+        }
+      }
+    },
+    "GroupAddressData": {
+      "type": "object",
+      "description": "Group address information",
+      "properties": {
+        "addressType": {
+          "type": "string",
+          "description": "Address type"
+        },
+        "addressLine1": {
+          "type": "string",
+          "description": "Address line 1"
+        },
+        "addressLine2": {
+          "type": "string",
+          "description": "Address line 2"
+        },
+        "city": {
+          "type": "string",
+          "description": "City"
+        },
+        "state": {
+          "type": "string",
+          "description": "State"
+        },
+        "zip": {
+          "type": "string",
+          "description": "ZIP code"
+        },
+        "county": {
+          "type": "string",
+          "description": "County"
+        },
+        "country": {
+          "type": "string",
+          "description": "Country"
+        },
+        "isPrimary": {
+          "type": "boolean",
+          "description": "Whether this is the primary address"
+        }
+      }
+    },
+    "LocalDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "LocalDateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "TaxInfo": {
+      "type": "object",
+      "properties": {
+        "legalTaxName": {
+          "type": "string"
+        },
+        "taxEntityStates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "irs575File": {
+          "type": "string"
+        },
+        "w9File": {
+          "type": "string"
+        },
+        "billingTin": {
+          "type": "string",
+          "description": "Billing Tax Identification Number (TIN) used for billing purposes."
+        },
+        "billingNpi": {
+          "type": "string",
+          "pattern": "^\\d{10}$",
+          "description": "Billing National Provider Identifier (NPI) used for billing purposes."
+        }
+      }
+    }
+  }
+}

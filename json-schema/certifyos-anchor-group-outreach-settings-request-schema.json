@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-anchor-group-outreach-settings-request-schema.json",
+  "title": "AnchorGroupOutreachSettingsRequest",
+  "description": "Save one cycle of an anchor group's outreach settings",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-anchorgroupoutreachsettings-api-openapi.yml#/components/schemas/AnchorGroupOutreachSettingsRequest",
+  "type": "object",
+  "properties": {
+    "version": {
+      "$ref": "#/$defs/Instant",
+      "type": "string",
+      "description": "The version last read; null to create the group's first settings"
+    },
+    "emailRecipientPreferences": {
+      "$ref": "#/$defs/Recipients",
+      "type": "object",
+      "description": "The To: which practitioner addresses outreach goes to (both cycles)"
+    },
+    "template": {
+      "$ref": "#/$defs/Template",
+      "type": "object",
+      "description": "This cycle's template; null keeps the stored one"
+    },
+    "outreachReasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Reason"
+      },
+      "description": "This cycle's reasons; new ones omit id"
+    },
+    "smartOutreach": {
+      "$ref": "#/$defs/SmartOutreach",
+      "type": "object",
+      "description": "This cycle's Smart Outreach"
+    }
+  },
+  "$defs": {
+    "Instant": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "Logo": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "url": {
+          "type": "string"
+        },
+        "width": {
+          "type": "string"
+        }
+      }
+    },
+    "Reason": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Server-assigned; omit for a new reason"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "instruction": {
+          "type": "string"
+        }
+      }
+    },
+    "Recipients": {
+      "type": "object",
+      "properties": {
+        "primaryEmail": {
+          "type": "boolean"
+        },
+        "caqhPrimaryEmail": {
+          "type": "boolean"
+        },
+        "credentialingPrimaryContact": {
+          "type": "boolean"
+        },
+        "credentialingOfficeManager": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SmartOutreach": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "businessDaysBetweenAttempts": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1
+        },
+        "maxAttemptsPerReason": {
+          "type": "integer",
+          "format": "int32",
+          "minimum": 1
+        }
+      }
+    },
+    "Template": {
+      "type": "object",
+      "properties": {
+        "ccEmails": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "logo": {
+          "$ref": "#/$defs/Logo"
+        }
+      }
+    }
+  }
+}

@@ -952,49 +952,62 @@ paths:
       - jwt: []
 components:
   schemas:
-    EgressFieldCatalogItem:
+    ApiError:
       type: object
+      description: Standard API error response containing a list of error objects
       properties:
-        key:
-          type: string
-        label:
-          type: string
-        entityGroup:
-          type: string
-        dataType:
-          type: string
-        isDate:
-          type: boolean
-        isExpandable:
-          type: boolean
-        isSensitive:
-          type: boolean
-        expansionKey:
-          type: string
-        isJoinable:
-          type: boolean
-        mappedEntity:
-          type: string
-        description:
-          type: string
-        hasPattern:
-          type: boolean
-        format:
-          type: string
-        message:
-          type: object
-          additionalProperties:
-            type: string
-        minLength:
-          type: integer
-          format: int32
-        maxLength:
-          type: integer
-          format: int32
-        enum:
+        errors:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/ErrorObject'
+          description: List of error objects describing validation or processing failures
+    JsonNode:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        valueNode:
+          type: boolean
+        containerNode:
+          type: boolean
+        missingNode:
+          type: boolean
+        array:
+          type: boolean
+        object:
+          type: boolean
+        nodeType:
+          $ref: '#/components/schemas/JsonNodeType'
+        pojo:
+          type: boolean
+        number:
+          type: boolean
+        integralNumber:
+          type: boolean
+        floatingPointNumber:
+          type: boolean
+        short:
+          type: boolean
+        int:
+          type: boolean
+        long:
+          type: boolean
+        float:
+          type: boolean
+        double:
+          type: boolean
+        bigDecimal:
+          type: boolean
+        bigInteger:
+          type: boolean
+        textual:
+          type: boolean
+        boolean:
+          type: boolean
+        'null':
+          type: boolean
+        binary:
+          type: boolean
     EgressFieldSuggestion:
       type: object
       properties:
@@ -1004,63 +1017,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EgressFieldCatalogItem'
-    TemplateCreatorsResponse:
-      type: object
-      description: Distinct egress-template creators, with a truncation signal for the bounded scan
-      properties:
-        creators:
-          type: array
-          items:
-            $ref: '#/components/schemas/TemplateCreatorResponse'
-          description: Distinct creators, in first-seen order
-        truncated:
-          type: boolean
-          description: True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned.
-    ErrorObject:
-      type: object
-      description: Individual error object containing details about a specific validation or processing error
-      properties:
-        httpStatus:
-          type: integer
-          format: int32
-          examples:
-          - 400
-          description: HTTP status code for this error
-        reason:
-          type: string
-          examples:
-          - VALIDATION_ERROR
-          description: Error reason/code
-        title:
-          type: string
-          examples:
-          - 'Validation failed for field: eventTypes'
-          description: Error title/summary
-        detail:
-          type: string
-          examples:
-          - eventTypes is required and cannot be empty or null
-          description: Detailed error message
-        rejectedValue:
-          type: string
-          description: The value that was rejected, omitted for sensitive fields such as SSN
-    SuggestEgressColumnMappingsRequest:
-      type: object
-      properties:
-        entityType:
-          type: string
-        columnNames:
-          type: array
-          maxItems: 500
-          items:
-            type: string
-        sampleValues:
-          type: array
-          maxItems: 500
-          items:
-            type: array
-            items:
-              type: string
     EgressTemplateResponse:
       type: object
       properties:
@@ -1211,6 +1167,88 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EgressFieldCatalogItem'
+    EgressTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressTemplateResponse'
+          description: Egress templates on this page, in DAL-returned order. Empty (not null) when no templates match the filters.
+        total:
+          type: integer
+          format: int32
+          description: Total number of templates matching the filters across all pages.
+        page:
+          type: integer
+          format: int32
+          description: Zero-based page number returned, per the `page` query parameter.
+        size:
+          type: integer
+          format: int32
+          description: Number of templates requested per page, per the `size` query parameter.
+        hasMore:
+          type: boolean
+          description: Whether at least one further page is available after this one.
+    EgressTemplateColumnsResponse:
+      type: object
+      properties:
+        templateId:
+          type: string
+        entityType:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgressTemplateColumnDto'
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - '2022-03-10T16:15:50Z'
+    EgressFieldCatalogItem:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        entityGroup:
+          type: string
+        dataType:
+          type: string
+        isDate:
+          type: boolean
+        isExpandable:
+          type: boolean
+        isSensitive:
+          type: boolean
+        expansionKey:
+          type: string
+        isJoinable:
+          type: boolean
+        mappedEntity:
+          type: string
+        description:
+          type: string
+        hasPattern:
+          type: boolean
+        format:
+          type: string
+        message:
+          type: object
+          additionalProperties:
+            type: string
+        minLength:
+          type: integer
+          format: int32
+        maxLength:
+          type: integer
+          format: int32
+        enum:
+          type: array
+          items:
+            type: string
     TemplateCreatorResponse:
       type: object
       description: A distinct egress-template creator
@@ -1251,101 +1289,34 @@ components:
           type: string
         fallbackJsonExtractionPath:
           type: string
-    ApiError:
+    ErrorObject:
       type: object
-      description: Standard API error response containing a list of error objects
+      description: Individual error object containing details about a specific validation or processing error
       properties:
-        errors:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorObject'
-          description: List of error objects describing validation or processing failures
-    EgressTemplateListResponse:
-      type: object
-      properties:
-        templates:
-          type: array
-          items:
-            $ref: '#/components/schemas/EgressTemplateResponse'
-          description: Egress templates on this page, in DAL-returned order. Empty (not null) when no templates match the filters.
-        total:
+        httpStatus:
           type: integer
           format: int32
-          description: Total number of templates matching the filters across all pages.
-        page:
-          type: integer
-          format: int32
-          description: Zero-based page number returned, per the `page` query parameter.
-        size:
-          type: integer
-          format: int32
-          description: Number of templates requested per page, per the `size` query parameter.
-        hasMore:
-          type: boolean
-          description: Whether at least one further page is available after this one.
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - '2022-03-10T16:15:50Z'
-    EgressTemplateColumnsResponse:
-      type: object
-      properties:
-        templateId:
+          examples:
+          - 400
+          description: HTTP status code for this error
+        reason:
           type: string
-        entityType:
+          examples:
+          - VALIDATION_ERROR
+          description: Error reason/code
+        title:
           type: string
-        columns:
-          type: array
-          items:
-            $ref: '#/components/schemas/EgressTemplateColumnDto'
-    JsonNode:
-      type: object
-      properties:
-        empty:
-          type: boolean
-        valueNode:
-          type: boolean
-        containerNode:
-          type: boolean
-        missingNode:
-          type: boolean
-        array:
-          type: boolean
-        object:
-          type: boolean
-        nodeType:
-          $ref: '#/components/schemas/JsonNodeType'
-        pojo:
-          type: boolean
-        number:
-          type: boolean
-        integralNumber:
-          type: boolean
-        floatingPointNumber:
-          type: boolean
-        short:
-          type: boolean
-        int:
-          type: boolean
-        long:
-          type: boolean
-        float:
-          type: boolean
-        double:
-          type: boolean
-        bigDecimal:
-          type: boolean
-        bigInteger:
-          type: boolean
-        textual:
-          type: boolean
-        boolean:
-          type: boolean
-        'null':
-          type: boolean
-        binary:
-          type: boolean
+          examples:
+          - 'Validation failed for field: eventTypes'
+          description: Error title/summary
+        detail:
+          type: string
+          examples:
+          - eventTypes is required and cannot be empty or null
+          description: Detailed error message
+        rejectedValue:
+          type: string
+          description: The value that was rejected, omitted for sensitive fields such as SSN
     JsonNodeType:
       type: string
       enum:
@@ -1358,6 +1329,35 @@ components:
       - OBJECT
       - POJO
       - STRING
+    SuggestEgressColumnMappingsRequest:
+      type: object
+      properties:
+        entityType:
+          type: string
+        columnNames:
+          type: array
+          maxItems: 500
+          items:
+            type: string
+        sampleValues:
+          type: array
+          maxItems: 500
+          items:
+            type: array
+            items:
+              type: string
+    TemplateCreatorsResponse:
+      type: object
+      description: Distinct egress-template creators, with a truncation signal for the bounded scan
+      properties:
+        creators:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateCreatorResponse'
+          description: Distinct creators, in first-seen order
+        truncated:
+          type: boolean
+          description: True when the bounded creator scan hit its page cap and the list may be incomplete; false when the full creator set was returned.
   securitySchemes:
     jwt:
       type: http

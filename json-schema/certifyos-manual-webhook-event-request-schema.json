@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/certifyos/main/json-schema/certifyos-manual-webhook-event-request-schema.json",
+  "title": "ManualWebhookEventRequest",
+  "description": "Request payload for manual webhook event triggering",
+  "x-generated": "2026-10-20",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/certifyos-webhook-api-openapi.yml#/components/schemas/ManualWebhookEventRequest",
+  "type": "object",
+  "required": [
+    "eventType",
+    "eventData"
+  ],
+  "properties": {
+    "eventType": {
+      "$ref": "#/$defs/WebhookEventType",
+      "type": "string",
+      "description": "Event type identifier. Each event type has a corresponding JSON Schema that defines\nthe required structure for eventData. See WebhookEventType enum for available event types."
+    },
+    "eventData": {
+      "$ref": "#/$defs/JsonNode",
+      "type": "object",
+      "description": "Event-specific payload data. Currently only `credential_workflow.status.changed` is validated against a published JSON Schema on this path: invalid payloads for that type return a 400 Bad Request with detailed validation error messages (see the Supported Event Types and Schemas section above for its schema URL). Other event types (e.g. `facility_credential_workflow.status.changed`, `form.submission.submitted`, `facility.global_termination.completed`, `practitioner.terminated`) are not schema-validated here today and are published as provided."
+    }
+  },
+  "$defs": {
+    "JsonNode": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "valueNode": {
+          "type": "boolean"
+        },
+        "containerNode": {
+          "type": "boolean"
+        },
+        "missingNode": {
+          "type": "boolean"
+        },
+        "array": {
+          "type": "boolean"
+        },
+        "object": {
+          "type": "boolean"
+        },
+        "nodeType": {
+          "$ref": "#/$defs/JsonNodeType"
+        },
+        "pojo": {
+          "type": "boolean"
+        },
+        "number": {
+          "type": "boolean"
+        },
+        "integralNumber": {
+          "type": "boolean"
+        },
+        "floatingPointNumber": {
+          "type": "boolean"
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "int": {
+          "type": "boolean"
+        },
+        "long": {
+          "type": "boolean"
+        },
+        "float": {
+          "type": "boolean"
+        },
+        "double": {
+          "type": "boolean"
+        },
+        "bigDecimal": {
+          "type": "boolean"
+        },
+        "bigInteger": {
+          "type": "boolean"
+        },
+        "textual": {
+          "type": "boolean"
+        },
+        "boolean": {
+          "type": "boolean"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "binary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "JsonNodeType": {
+      "type": "string",
+      "enum": [
+        "ARRAY",
+        "BINARY",
+        "BOOLEAN",
+        "MISSING",
+        "NULL",
+        "NUMBER",
+        "OBJECT",
+        "POJO",
+        "STRING"
+      ]
+    },
+    "WebhookEventType": {
+      "type": "string",
+      "enum": [
+        "credential_workflow.status.changed",
+        "facility_credential_workflow.status.changed",
+        "form.submission.submitted",
+        "facility.global_termination.completed",
+        "practitioner.terminated",
+        "roster_job.status.changed"
+      ]
+    }
+  }
+}
